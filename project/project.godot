@@ -12,3 +12,7 @@ config_version=5
 
 config/name="godot-bone-cloth"
 config/features=PackedStringArray("4.7", "Forward Plus")
+
+[rendering]
+
+lights_and_shadows/use_physical_light_units=true

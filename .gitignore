@@ -89,3 +89,5 @@ x64/
 # Test characters from paid packs, never published
 project/characters/
 
+# The test stage's sky, from a paid pack
+project/studio/pack/

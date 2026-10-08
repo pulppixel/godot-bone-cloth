@@ -1,11 +1,75 @@
 [gd_scene format=3 uid="uid://ljjloheqvke8"]
 
 [ext_resource type="PackedScene" uid="uid://btfjuhsnlwpjt" path="res://characters/lilith/lilith.gltf" id="1_6eo5e"]
+[ext_resource type="Texture2D" uid="uid://ckip2vbaauu4v" path="res://studio/pack/TC_Demo_02_2k.HDR" id="2_aees8"]
+[ext_resource type="PackedScene" uid="uid://dhy55s0vfy687" path="res://studio/cyclorama.gltf" id="3_rnkuw"]
+
+[sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_aees8"]
+panorama = ExtResource("2_aees8")
+
+[sub_resource type="Sky" id="Sky_6eo5e"]
+sky_material = SubResource("PanoramaSkyMaterial_aees8")
+
+[sub_resource type="Environment" id="Environment_6eo5e"]
+background_mode = 2
+sky = SubResource("Sky_6eo5e")
+tonemap_mode = 4
+tonemap_agx_white = 4.0
+tonemap_agx_contrast = 1.35
+ssao_enabled = true
+ssao_radius = 2.0
+ssao_intensity = 1.0
+ssao_power = 0.3
+glow_enabled = true
+glow_levels/1 = 0.85
+glow_levels/2 = 0.13
+glow_levels/3 = 0.02
+glow_levels/4 = 0.0
+glow_intensity = 0.26
+glow_blend_mode = 0
+adjustment_enabled = true
+adjustment_saturation = 1.2
+
+[sub_resource type="CameraAttributesPractical" id="CameraAttributesPractical_aees8"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_rnkuw"]
 
 [node name="Stage" type="Node3D" unique_id=287086239]
 
 [node name="lilith" parent="." unique_id=1126799021 instance=ExtResource("1_6eo5e")]
 
-[node name="BoneClothSimulator3D" type="BoneClothSimulator3D" parent="lilith/Armature/Skeleton3D" parent_id_path=PackedInt32Array(1126799021, 32514078) index="17" unique_id=1189167275]
+[node name="BoneClothSimulator3D" type="BoneClothSimulator3D" parent="lilith/Armature/Skeleton3D" parent_id_path=PackedInt32Array(1126799021, 1275439442) index="17" unique_id=1189167275]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1150259320]
+environment = SubResource("Environment_6eo5e")
+camera_attributes = SubResource("CameraAttributesPractical_aees8")
+
+[node name="Sun" type="DirectionalLight3D" parent="." unique_id=1046903856]
+transform = Transform3D(0.81915206, -0.43938506, 0.36868784, 0, 0.64278764, 0.76604444, -0.57357645, -0.62750685, 0.5265408, 0, 10, 0)
+light_temperature = 5600.0
+light_color = Color(1, 0.972549, 0.95686275, 1)
+light_angular_distance = 0.5
+shadow_enabled = true
+
+[node name="Rim" type="DirectionalLight3D" parent="." unique_id=1885138835]
+transform = Transform3D(-0.90630776, 0.24240392, -0.34618866, 0, 0.81915206, 0.57357645, 0.42261833, 0.5198368, -0.74240386, 0, 10, 0)
+light_intensity_lux = 80000.0
+light_temperature = 9000.0
+
+[node name="cyclorama" parent="." unique_id=1708363437 instance=ExtResource("3_rnkuw")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -2)
+
+[node name="Cyclorama" parent="cyclorama" index="0" unique_id=323128486]
+surface_material_override/0 = SubResource("StandardMaterial3D_rnkuw")
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=1790056850]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.95, 3.4)
+fov = 40.0
+
+[node name="CameraFill" type="DirectionalLight3D" parent="Camera3D" unique_id=1014711665]
+transform = Transform3D(0.9396926, 0.14454395, -0.3099755, 0, 0.90630776, 0.42261827, 0.34202012, -0.39713126, 0.8516507, 0, 0, 0)
+light_intensity_lux = 40000.0
+light_temperature = 6000.0
 
 [editable path="lilith"]
+[editable path="cyclorama"]
