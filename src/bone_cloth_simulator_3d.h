@@ -49,6 +49,7 @@ namespace godot {
 
 		LocalVector<Chain> chains;
 		LinkMode link_mode = LINK_MODE_NONE;
+		float link_stiffness = 1.0f;
 		float end_bone_length = 0.1f;
 		float damping = 0.1f;
 		float stiffness = 0.05f;
@@ -67,6 +68,7 @@ namespace godot {
 		void _simulate(Chain& p_chain, double p_delta, const Vector3& p_gravity);
 		void _solve_links(double p_delta);
 		void _collide(Chain& p_chain, const LocalVector<BoneClothCapsule3D*>& p_capsules);
+		void _collide_links(const LocalVector<BoneClothCapsule3D*>& p_capsules);
 		void _restore_lengths(Chain& p_chain);
 		void _write_rotations(Skeleton3D* p_skeleton, const Chain& p_chain);
 
@@ -81,6 +83,8 @@ namespace godot {
 		int get_chain_count() const;
 		void set_link_mode(LinkMode p_mode);
 		LinkMode get_link_mode() const;
+		void set_link_stiffness(float p_stiffness);
+		float get_link_stiffness() const;
 		void set_end_bone_length(float p_length);
 		float get_end_bone_length() const;
 		void set_damping(float p_damping);

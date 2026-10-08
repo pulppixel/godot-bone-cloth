@@ -1,6 +1,7 @@
 #include "bone_cloth_capsule_3d.h"
 #include "bone_cloth_simulator_3d.h"
 
+#include <godot_cpp/classes/geometry3d.hpp>
 #include <godot_cpp/core/class_db.hpp>
 
 
@@ -163,4 +164,29 @@ Vector3 BoneClothCapsule3D::collide(const Vector3& p_point, float p_radius) cons
 
 	const Vector3 direction = distance_squared > CMP_EPSILON2 ? offset / Math::sqrt(distance_squared) : fallback_direction;
 	return closest + direction * limit;
+}
+
+// The line from r_a to r_b, thick by p_radius, out of the capsule, so a leg cannot pass between two joints that it does not touch.
+// The push at the line's nearest point is split between the two ends by how near that point is to each, scaled so the nearest point
+// moves by exactly the push: the usual position-based split, as Magica Cloth 2's edge collision does.
+void BoneClothCapsule3D::collide_segment(Vector3& r_a, Vector3& r_b, float p_radius) const
+{
+	const PackedVector3Array closest = Geometry3D::get_singleton()->get_closest_points_between_segments(r_a, r_b, head, tail);
+	const Vector3 offset = closest[0] - closest[1];
+	const float limit = radius + p_radius;
+	const float distance_squared = offset.length_squared();
+	if (distance_squared >= limit * limit) {
+		return;
+	}
+
+	const float distance = Math::sqrt(distance_squared);
+	const Vector3 direction = distance > CMP_EPSILON ? offset / distance : fallback_direction;
+	const Vector3 push = direction * (limit - distance);
+
+	const Vector3 line = r_b - r_a;
+	const float line_length_squared = line.length_squared();
+	const float s = line_length_squared > 0.0f ? (closest[0] - r_a).dot(line) / line_length_squared : 0.0f;
+	const float scale = 1.0f / ((1.0f - s) * (1.0f - s) + s * s);
+	r_a += push * ((1.0f - s) * scale);
+	r_b += push * (s * scale);
 }

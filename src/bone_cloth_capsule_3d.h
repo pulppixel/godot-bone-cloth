@@ -45,6 +45,8 @@ namespace godot {
 
 		void sync_pose();
 		Vector3 collide(const Vector3& p_point, float p_radius) const;
+		void collide_segment(Vector3& r_a, Vector3& r_b, float p_radius) const;
+
 	};
 
 

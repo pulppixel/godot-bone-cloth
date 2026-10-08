@@ -131,8 +131,14 @@ void BoneClothSimulator3D::_simulate(Chain& p_chain, double p_delta, const Vecto
 
 // One XPBD pass over the links with equal masses.
 // KawaiiPhysics resets lambda before each pass and runs one iteration, so its lambda term is always zero and left out here.
+// link_stiffness scales the correction, per step at TARGET_FPS like stiffness: 1 is KawaiiPhysics' link, 0 keeps no distance and leaves the links to the collision.
 void BoneClothSimulator3D::_solve_links(double p_delta)
 {
+	const float strength = 1.0f - Math::pow(1.0f - link_stiffness, float(TARGET_FPS * p_delta));
+	if (strength <= 0.0f) {
+		return;
+	}
+
 	const float compliance = LINK_COMPLIANCE / float(p_delta * p_delta);
 	for (const Link& link : links) {
 		Joint& joint_a = chains[link.chain_a].joints[link.depth];
@@ -143,7 +149,7 @@ void BoneClothSimulator3D::_solve_links(double p_delta)
 			continue;
 		}
 
-		const float delta_lambda = (distance - link.length) / (2.0f + compliance);
+		const float delta_lambda = (distance - link.length) / (2.0f + compliance) * strength;
 		const Vector3 correction = delta / distance * delta_lambda;
 		joint_a.location += correction;
 		joint_b.location -= correction;
@@ -158,6 +164,18 @@ void BoneClothSimulator3D::_collide(Chain& p_chain, const LocalVector<BoneClothC
 		Joint& joint = p_chain.joints[i];
 		for (const BoneClothCapsule3D* capsule : p_capsules) {
 			joint.location = capsule->collide(joint.location, radius);
+		}
+	}
+}
+
+// Every link against every capsule as a line, where KawaiiPhysics feeds its bridge points' collision back to the two ends.
+void BoneClothSimulator3D::_collide_links(const LocalVector<BoneClothCapsule3D*>& p_capsules)
+{
+	for (const Link& link : links) {
+		Joint& joint_a = chains[link.chain_a].joints[link.depth];
+		Joint& joint_b = chains[link.chain_b].joints[link.depth];
+		for (const BoneClothCapsule3D* capsule : p_capsules) {
+			capsule->collide_segment(joint_a.location, joint_b.location, radius);
 		}
 	}
 }
@@ -193,6 +211,8 @@ void BoneClothSimulator3D::_bind_methods()
 	ClassDB::bind_method(D_METHOD("get_chain_count"), &BoneClothSimulator3D::get_chain_count);
 	ClassDB::bind_method(D_METHOD("set_link_mode", "mode"), &BoneClothSimulator3D::set_link_mode);
 	ClassDB::bind_method(D_METHOD("get_link_mode"), &BoneClothSimulator3D::get_link_mode);
+	ClassDB::bind_method(D_METHOD("set_link_stiffness", "stiffness"), &BoneClothSimulator3D::set_link_stiffness);
+	ClassDB::bind_method(D_METHOD("get_link_stiffness"), &BoneClothSimulator3D::get_link_stiffness);
 
 	ClassDB::bind_method(D_METHOD("set_end_bone_length", "length"), &BoneClothSimulator3D::set_end_bone_length);
 	ClassDB::bind_method(D_METHOD("get_end_bone_length"), &BoneClothSimulator3D::get_end_bone_length);
@@ -207,6 +227,7 @@ void BoneClothSimulator3D::_bind_methods()
 	ClassDB::bind_method(D_METHOD("reset"), &BoneClothSimulator3D::reset);
 
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "link_mode", PROPERTY_HINT_ENUM, "None,Sequential,Loop"), "set_link_mode", "get_link_mode");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "link_stiffness", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_link_stiffness", "get_link_stiffness");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "end_bone_length", PROPERTY_HINT_RANGE, "0,1,0.001,or_greater,suffix:m"), "set_end_bone_length", "get_end_bone_length");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "damping", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_damping", "get_damping");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "stiffness", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_stiffness", "get_stiffness");
@@ -308,6 +329,16 @@ void BoneClothSimulator3D::set_link_mode(LinkMode p_mode)
 BoneClothSimulator3D::LinkMode BoneClothSimulator3D::get_link_mode() const
 {
 	return link_mode;
+}
+
+void BoneClothSimulator3D::set_link_stiffness(float p_stiffness)
+{
+	link_stiffness = p_stiffness;
+}
+
+float BoneClothSimulator3D::get_link_stiffness() const
+{
+	return link_stiffness;
 }
 
 void BoneClothSimulator3D::set_end_bone_length(float p_length)
@@ -433,6 +464,8 @@ void BoneClothSimulator3D::_process_modification_with_delta(double p_delta)
 		for (Chain& chain : chains) {
 			_collide(chain, capsules);
 		}
+
+		_collide_links(capsules);
 		_solve_links(p_delta);
 
 		delta_old = p_delta;
