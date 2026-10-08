@@ -13,6 +13,14 @@ namespace godot {
 	class BoneClothSimulator3D : public SkeletonModifier3D {
 		GDCLASS(BoneClothSimulator3D, SkeletonModifier3D)
 
+	public:
+		enum LinkMode {
+			LINK_MODE_NONE,
+			LINK_MODE_SEQUENTIAL,
+			LINK_MODE_LOOP,
+		};
+
+	private:
 		// Everything is in skeleton space.
 		struct Joint {
 			int bone = -1;
@@ -22,35 +30,53 @@ namespace godot {
 			Basis pose_basis;
 		};
 
-		String root_bone;
-		String end_bone;
+		struct Chain {
+			String root_bone;
+			String end_bone;
+			LocalVector<Joint> joints;
+			Vector3 end_axis;
+		};
+
+		// Two joints at the same depth of neighbouring chains, kept at their rest distance.
+		struct Link {
+			uint32_t chain_a = 0;
+			uint32_t chain_b = 0;
+			uint32_t depth = 0;
+			float length = 0.0f;
+		};
+
+		LocalVector<Chain> chains;
+		LinkMode link_mode = LINK_MODE_NONE;
 		float end_bone_length = 0.1f;
 		float damping = 0.1f;
 		float stiffness = 0.05f;
 		Vector3 gravity;
 
-		LocalVector<Joint> joints;
-		Vector3 end_axis;
+		LocalVector<Link> links;
 		bool joints_dirty = true;
 		bool needs_reset = true;
 		double delta_old = 0.0;
 
 		// State
-		bool _build_joints(Skeleton3D* p_skeleton);
-		void _read_pose(Skeleton3D* p_skeleton);
-		void _simulate(double p_delta, const Vector3& p_gravity);
-		void _restore_lengths();
-		void _write_rotations(Skeleton3D* p_skeleton);
+		bool _build_joints(Skeleton3D* p_skeleton, Chain& p_chain);
+		void _build_links(Skeleton3D* p_skeleton);
+		void _read_pose(Skeleton3D* p_skeleton, Chain& p_chain);
+		void _simulate(Chain& p_chain, double p_delta, const Vector3& p_gravity);
+		void _solve_links(double p_delta);
+		void _restore_lengths(Chain& p_chain);
+		void _write_rotations(Skeleton3D* p_skeleton, const Chain& p_chain);
 
 	protected:
 		static void _bind_methods();
-		void _validate_property(PropertyInfo& p_property) const;
+		bool _set(const StringName& p_name, const Variant& p_value);
+		bool _get(const StringName& p_name, Variant& r_ret) const;
+		void _get_property_list(List<PropertyInfo>* p_list) const;
 
 	public:
-		void set_root_bone(const String& p_bone);
-		String get_root_bone() const;
-		void set_end_bone(const String& p_bone);
-		String get_end_bone() const;
+		void set_chain_count(int p_count);
+		int get_chain_count() const;
+		void set_link_mode(LinkMode p_mode);
+		LinkMode get_link_mode() const;
 		void set_end_bone_length(float p_length);
 		float get_end_bone_length() const;
 		void set_damping(float p_damping);
@@ -67,4 +93,5 @@ namespace godot {
 
 }
 
+VARIANT_ENUM_CAST(BoneClothSimulator3D::LinkMode);
 

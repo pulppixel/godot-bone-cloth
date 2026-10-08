@@ -40,15 +40,15 @@ adjustment_saturation = 1.2
 [node name="lilith" parent="." unique_id=1126799021 instance=ExtResource("1_6eo5e")]
 
 [node name="GeneralSkeleton" parent="lilith/Armature" parent_id_path=PackedInt32Array(1126799021, 1458929827) index="0" unique_id=835554210]
-bones/10/position = Vector3(-0.011989573, 0.93768376, -0.08594949)
-bones/10/rotation = Quaternion(0.14732333, 0.059832625, 0.0059247, 0.98725927)
-bones/41/rotation = Quaternion(0.024380496, -0.004666496, 0.004598796, 0.9996813)
-bones/44/rotation = Quaternion(0.051985722, -0.008972809, 0.008370973, 0.99857247)
-bones/47/rotation = Quaternion(0.09446498, -0.009605176, 0.008710171, 0.9954438)
-bones/48/rotation = Quaternion(0.45888183, 0.51134723, 0.514589, -0.5129811)
-bones/49/rotation = Quaternion(0.050336722, 0.9036755, -0.4092011, 0.11572091)
-bones/50/rotation = Quaternion(0.5451702, -0.5090203, 0.42963013, 0.5090244)
-bones/51/rotation = Quaternion(0.105173685, 0.5735109, 0.12980567, 0.8019815)
+bones/10/position = Vector3(-0.00851268, 0.9996045, -0.08174647)
+bones/10/rotation = Quaternion(0.15642117, 0.024058733, 0.0061689126, 0.9873782)
+bones/41/rotation = Quaternion(0.022219997, 0.0109828655, 0.007314867, 0.9996661)
+bones/44/rotation = Quaternion(0.047800053, 0.0109810205, 0.010249103, 0.998744)
+bones/47/rotation = Quaternion(0.089625746, 0.0014770782, 0.00912797, 0.99593264)
+bones/48/rotation = Quaternion(0.47939187, 0.49092036, 0.5017708, -0.5266941)
+bones/49/rotation = Quaternion(-0.036573973, 0.9049252, -0.4236694, 0.016643878)
+bones/50/rotation = Quaternion(0.5468323, -0.5075734, 0.43093997, 0.507577)
+bones/51/rotation = Quaternion(0.09822289, 0.56697685, 0.13056569, 0.80736744)
 bones/53/rotation = Quaternion(0.3899594, 0.020170137, -0.23525205, 0.8900457)
 bones/54/rotation = Quaternion(0.4082171, 6.258487e-07, -0.27695024, 0.86986053)
 bones/55/rotation = Quaternion(0.25736538, -9.3877316e-07, -0.17459598, 0.9504101)
@@ -65,10 +65,10 @@ bones/68/rotation = Quaternion(0.40224415, 0.70386595, 0.47513705, 0.3420779)
 bones/69/rotation = Quaternion(0.1846886, 2.6239177e-06, -0.08808287, 0.978842)
 bones/70/rotation = Quaternion(0.4052746, 1.966953e-06, -0.193288, 0.893528)
 bones/70/scale = Vector3(1.0000132, 0.9999873, 0.99999994)
-bones/78/rotation = Quaternion(0.47423753, -0.4999361, -0.49873537, -0.52576214)
-bones/79/rotation = Quaternion(-0.01850949, 0.8907168, -0.45274684, -0.036074594)
-bones/80/rotation = Quaternion(0.5529789, 0.50214714, -0.43579334, 0.50214213)
-bones/81/rotation = Quaternion(0.10577212, -0.55935806, -0.12221223, 0.813016)
+bones/78/rotation = Quaternion(0.45243308, -0.51824164, -0.5116011, -0.5147759)
+bones/79/rotation = Quaternion(-0.10430987, 0.88294953, -0.43858516, -0.13100706)
+bones/80/rotation = Quaternion(0.5516469, 0.5033333, -0.4347439, 0.50332814)
+bones/81/rotation = Quaternion(0.11196673, -0.5657959, -0.120590106, 0.8079583)
 bones/83/rotation = Quaternion(0.32479006, -0.023369089, 0.216894, 0.9202839)
 bones/84/rotation = Quaternion(0.36554098, 1.4901163e-07, 0.24799576, 0.89715)
 bones/85/rotation = Quaternion(0.23783116, 2.2649765e-06, 0.16136104, 0.9578095)
@@ -85,20 +85,31 @@ bones/98/rotation = Quaternion(0.3676411, -0.7150975, -0.47890872, 0.35230958)
 bones/99/rotation = Quaternion(0.17611566, 3.0385856e-06, 0.083999015, 0.9807791)
 bones/100/rotation = Quaternion(0.21366084, 3.695488e-06, 0.10190225, 0.97157866)
 bones/100/scale = Vector3(1.0000123, 0.99999076, 0.9999968)
-bones/108/rotation = Quaternion(-0.15541352, -0.009215394, -0.0058261035, 0.98778945)
-bones/110/rotation = Quaternion(-0.039794177, -0.010681002, -0.0057189506, 0.9991344)
-bones/149/rotation = Quaternion(0.023298657, 0.30276915, 0.9522375, -0.032122724)
-bones/150/rotation = Quaternion(-0.0012132387, 0.49061164, -0.87082994, 0.030888483)
-bones/153/rotation = Quaternion(-0.024004262, 0.74461305, -0.6655171, -0.045413453)
-bones/154/rotation = Quaternion(1.7504957e-05, 1, -0.00039126855, 5.0834653e-05)
-bones/157/rotation = Quaternion(-0.050178576, 0.2604754, 0.9627859, -0.051750034)
-bones/158/rotation = Quaternion(0.0005725214, 0.91203105, -0.40986302, -0.014538766)
-bones/161/rotation = Quaternion(-0.044394355, 0.50597876, -0.8568673, 0.088277705)
-bones/162/rotation = Quaternion(0.0025566784, 0.9983558, 0.05679042, 0.0073474706)
+bones/108/rotation = Quaternion(-0.15267244, -0.008989075, -0.012290785, 0.9881596)
+bones/110/rotation = Quaternion(-0.040559523, -0.02334084, -0.008345483, 0.9988697)
+bones/149/rotation = Quaternion(0.020122318, 0.419935, 0.9073298, 0.0015846686)
+bones/150/rotation = Quaternion(-0.0010356939, 0.6686782, -0.7430839, 0.026358046)
+bones/153/rotation = Quaternion(-0.021046618, 0.7476583, -0.65734833, -0.09196372)
+bones/154/rotation = Quaternion(2.0683796e-05, 0.99999994, -0.0004598844, 5.975264e-05)
+bones/157/rotation = Quaternion(-0.090724535, 0.120680094, 0.98749244, -0.04543228)
+bones/158/rotation = Quaternion(0.0004991309, 0.93397117, -0.3571236, -0.012668144)
+bones/161/rotation = Quaternion(-0.034002107, 0.6452221, -0.76164305, 0.04931859)
+bones/162/rotation = Quaternion(0.0009001227, 0.9997966, 0.019983817, 0.0025855755)
 
 [node name="BoneClothSimulator3D" type="BoneClothSimulator3D" parent="lilith/Armature/GeneralSkeleton" index="17" unique_id=279156758]
-root_bone = "lilith_skirt_side_01_l"
-end_bone = "lilith_skirt_side_04_l"
+chain_count = 6
+chains/0/root_bone = "lilith_skirt_front_01_l"
+chains/0/end_bone = "lilith_skirt_front_04_l"
+chains/1/root_bone = "lilith_skirt_side_01_l"
+chains/1/end_bone = "lilith_skirt_side_04_l"
+chains/2/root_bone = "lilith_skirt_back_01_l"
+chains/2/end_bone = "lilith_skirt_back_04_l"
+chains/3/root_bone = "lilith_skirt_back_01_r"
+chains/3/end_bone = "lilith_skirt_back_04_r"
+chains/4/root_bone = "lilith_skirt_side_01_r"
+chains/4/end_bone = "lilith_skirt_side_04_r"
+chains/5/root_bone = "lilith_skirt_front_01_r"
+chains/5/end_bone = "lilith_skirt_front_04_r"
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="lilith" unique_id=1935651821]
 libraries/rpg_motions = ExtResource("2_gx6sy")
@@ -127,7 +138,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -2)
 surface_material_override/0 = SubResource("StandardMaterial3D_rnkuw")
 
 [node name="Camera3D" type="Camera3D" parent="." unique_id=1790056850]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.95, 3.4)
+transform = Transform3D(-0.6391776, -0.30887944, 0.70430505, -3.7252903e-09, 0.9158008, 0.4016329, -0.7690592, 0.25671476, -0.5853594, 1.3725157, 1.8657517, -1.3267348)
 fov = 40.0
 
 [node name="CameraFill" type="DirectionalLight3D" parent="Camera3D" unique_id=1014711665]
