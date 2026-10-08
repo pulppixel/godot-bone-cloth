@@ -1,0 +1,6 @@
+config_version=5
+
+[application]
+
+config/name="godot-bone-cloth"
+config/features=PackedStringArray("4.7", "Forward Plus")
