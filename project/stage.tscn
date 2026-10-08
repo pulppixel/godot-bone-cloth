@@ -1,0 +1,150 @@
+[gd_scene format=3 uid="uid://ljjloheqvke8"]
+
+[ext_resource type="PackedScene" uid="uid://btfjuhsnlwpjt" path="res://characters/lilith/lilith.gltf" id="1_6eo5e"]
+[ext_resource type="Texture2D" uid="uid://ckip2vbaauu4v" path="res://studio/pack/TC_Demo_02_2k.HDR" id="2_aees8"]
+[ext_resource type="AnimationLibrary" uid="uid://djorkafjfum8w" path="res://characters/rpg_motions/pack/rpg_motions.gltf" id="2_gx6sy"]
+[ext_resource type="PackedScene" uid="uid://dhy55s0vfy687" path="res://studio/cyclorama.gltf" id="3_rnkuw"]
+
+[sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_aees8"]
+panorama = ExtResource("2_aees8")
+
+[sub_resource type="Sky" id="Sky_6eo5e"]
+sky_material = SubResource("PanoramaSkyMaterial_aees8")
+
+[sub_resource type="Environment" id="Environment_6eo5e"]
+background_mode = 2
+sky = SubResource("Sky_6eo5e")
+tonemap_mode = 4
+tonemap_agx_white = 4.0
+tonemap_agx_contrast = 1.35
+ssao_enabled = true
+ssao_radius = 2.0
+ssao_intensity = 1.0
+ssao_power = 0.3
+glow_enabled = true
+glow_levels/1 = 0.85
+glow_levels/2 = 0.13
+glow_levels/3 = 0.02
+glow_levels/4 = 0.0
+glow_intensity = 0.26
+glow_blend_mode = 0
+adjustment_enabled = true
+adjustment_saturation = 1.2
+
+[sub_resource type="CameraAttributesPractical" id="CameraAttributesPractical_aees8"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_rnkuw"]
+
+[node name="Stage" type="Node3D" unique_id=287086239]
+
+[node name="lilith" parent="." unique_id=1126799021 instance=ExtResource("1_6eo5e")]
+
+[node name="GeneralSkeleton" parent="lilith/Armature" parent_id_path=PackedInt32Array(1126799021, 1458929827) index="0" unique_id=835554210]
+bones/10/position = Vector3(-0.00851268, 0.9996045, -0.08174647)
+bones/10/rotation = Quaternion(0.15642117, 0.024058733, 0.0061689126, 0.9873782)
+bones/41/rotation = Quaternion(0.022219997, 0.0109828655, 0.007314867, 0.9996661)
+bones/44/rotation = Quaternion(0.047800053, 0.0109810205, 0.010249103, 0.998744)
+bones/47/rotation = Quaternion(0.089625746, 0.0014770782, 0.00912797, 0.99593264)
+bones/48/rotation = Quaternion(0.47939187, 0.49092036, 0.5017708, -0.5266941)
+bones/49/rotation = Quaternion(-0.036573973, 0.9049252, -0.4236694, 0.016643878)
+bones/50/rotation = Quaternion(0.5468323, -0.5075734, 0.43093997, 0.507577)
+bones/51/rotation = Quaternion(0.09822289, 0.56697685, 0.13056569, 0.80736744)
+bones/53/rotation = Quaternion(0.3899594, 0.020170137, -0.23525205, 0.8900457)
+bones/54/rotation = Quaternion(0.4082171, 6.258487e-07, -0.27695024, 0.86986053)
+bones/55/rotation = Quaternion(0.25736538, -9.3877316e-07, -0.17459598, 0.9504101)
+bones/57/rotation = Quaternion(0.42833185, 0.023986105, -0.2730191, 0.8610558)
+bones/58/rotation = Quaternion(0.41899025, -1.1324884e-06, -0.20750883, 0.8839612)
+bones/59/rotation = Quaternion(0.3199147, -1.9669533e-06, -0.15843797, 0.9341049)
+bones/61/rotation = Quaternion(0.29979932, 0.116311476, -0.29922676, 0.89836264)
+bones/62/rotation = Quaternion(0.48569617, -2.7045608e-06, -0.080286026, 0.8704329)
+bones/63/rotation = Quaternion(0.30185354, -7.0035463e-07, -0.049901374, 0.95204747)
+bones/65/rotation = Quaternion(0.3481604, 0.05971372, -0.30217898, 0.8853849)
+bones/66/rotation = Quaternion(0.45165005, -5.066394e-07, -0.13932408, 0.88124967)
+bones/67/rotation = Quaternion(0.32893905, -1.3411044e-07, -0.10147403, 0.9388834)
+bones/68/rotation = Quaternion(0.40224415, 0.70386595, 0.47513705, 0.3420779)
+bones/69/rotation = Quaternion(0.1846886, 2.6239177e-06, -0.08808287, 0.978842)
+bones/70/rotation = Quaternion(0.4052746, 1.966953e-06, -0.193288, 0.893528)
+bones/70/scale = Vector3(1.0000132, 0.9999873, 0.99999994)
+bones/78/rotation = Quaternion(0.45243308, -0.51824164, -0.5116011, -0.5147759)
+bones/79/rotation = Quaternion(-0.10430987, 0.88294953, -0.43858516, -0.13100706)
+bones/80/rotation = Quaternion(0.5516469, 0.5033333, -0.4347439, 0.50332814)
+bones/81/rotation = Quaternion(0.11196673, -0.5657959, -0.120590106, 0.8079583)
+bones/83/rotation = Quaternion(0.32479006, -0.023369089, 0.216894, 0.9202839)
+bones/84/rotation = Quaternion(0.36554098, 1.4901163e-07, 0.24799576, 0.89715)
+bones/85/rotation = Quaternion(0.23783116, 2.2649765e-06, 0.16136104, 0.9578095)
+bones/87/rotation = Quaternion(0.36895296, -0.019312514, 0.25772107, 0.8927938)
+bones/88/rotation = Quaternion(0.3756622, -2.8312203e-07, 0.18606208, 0.907887)
+bones/89/rotation = Quaternion(0.296962, 1.2218952e-06, 0.14708593, 0.9434931)
+bones/91/rotation = Quaternion(0.23800659, -0.09807427, 0.26750702, 0.9285334)
+bones/92/rotation = Quaternion(0.43034384, 2.682209e-06, 0.07115376, 0.8998563)
+bones/93/rotation = Quaternion(0.24930513, 1.847744e-06, 0.04122424, 0.96754724)
+bones/95/rotation = Quaternion(0.29202858, -0.053185828, 0.2718691, 0.91541123)
+bones/96/rotation = Quaternion(0.41530043, -1.385808e-06, 0.12811801, 0.90061724)
+bones/97/rotation = Quaternion(0.27170688, 6.2584877e-07, 0.08382425, 0.9587226)
+bones/98/rotation = Quaternion(0.3676411, -0.7150975, -0.47890872, 0.35230958)
+bones/99/rotation = Quaternion(0.17611566, 3.0385856e-06, 0.083999015, 0.9807791)
+bones/100/rotation = Quaternion(0.21366084, 3.695488e-06, 0.10190225, 0.97157866)
+bones/100/scale = Vector3(1.0000123, 0.99999076, 0.9999968)
+bones/108/rotation = Quaternion(-0.15267244, -0.008989075, -0.012290785, 0.9881596)
+bones/110/rotation = Quaternion(-0.040559523, -0.02334084, -0.008345483, 0.9988697)
+bones/149/rotation = Quaternion(0.020122318, 0.419935, 0.9073298, 0.0015846686)
+bones/150/rotation = Quaternion(-0.0010356939, 0.6686782, -0.7430839, 0.026358046)
+bones/153/rotation = Quaternion(-0.021046618, 0.7476583, -0.65734833, -0.09196372)
+bones/154/rotation = Quaternion(2.0683796e-05, 0.99999994, -0.0004598844, 5.975264e-05)
+bones/157/rotation = Quaternion(-0.090724535, 0.120680094, 0.98749244, -0.04543228)
+bones/158/rotation = Quaternion(0.0004991309, 0.93397117, -0.3571236, -0.012668144)
+bones/161/rotation = Quaternion(-0.034002107, 0.6452221, -0.76164305, 0.04931859)
+bones/162/rotation = Quaternion(0.0009001227, 0.9997966, 0.019983817, 0.0025855755)
+
+[node name="BoneClothSimulator3D" type="BoneClothSimulator3D" parent="lilith/Armature/GeneralSkeleton" index="17" unique_id=279156758]
+chain_count = 6
+chains/0/root_bone = "lilith_skirt_front_01_l"
+chains/0/end_bone = "lilith_skirt_front_04_l"
+chains/1/root_bone = "lilith_skirt_side_01_l"
+chains/1/end_bone = "lilith_skirt_side_04_l"
+chains/2/root_bone = "lilith_skirt_back_01_l"
+chains/2/end_bone = "lilith_skirt_back_04_l"
+chains/3/root_bone = "lilith_skirt_back_01_r"
+chains/3/end_bone = "lilith_skirt_back_04_r"
+chains/4/root_bone = "lilith_skirt_side_01_r"
+chains/4/end_bone = "lilith_skirt_side_04_r"
+chains/5/root_bone = "lilith_skirt_front_01_r"
+chains/5/end_bone = "lilith_skirt_front_04_r"
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="lilith" unique_id=1935651821]
+libraries/rpg_motions = ExtResource("2_gx6sy")
+autoplay = &"rpg_motions/Run_A_F"
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1150259320]
+environment = SubResource("Environment_6eo5e")
+camera_attributes = SubResource("CameraAttributesPractical_aees8")
+
+[node name="Sun" type="DirectionalLight3D" parent="." unique_id=1046903856]
+transform = Transform3D(0.81915206, -0.43938506, 0.36868784, 0, 0.64278764, 0.76604444, -0.57357645, -0.62750685, 0.5265408, 0, 10, 0)
+light_temperature = 5600.0
+light_color = Color(1, 0.972549, 0.95686275, 1)
+light_angular_distance = 0.5
+shadow_enabled = true
+
+[node name="Rim" type="DirectionalLight3D" parent="." unique_id=1885138835]
+transform = Transform3D(-0.90630776, 0.24240392, -0.34618866, 0, 0.81915206, 0.57357645, 0.42261833, 0.5198368, -0.74240386, 0, 10, 0)
+light_intensity_lux = 80000.0
+light_temperature = 9000.0
+
+[node name="cyclorama" parent="." unique_id=1708363437 instance=ExtResource("3_rnkuw")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -2)
+
+[node name="Cyclorama" parent="cyclorama" index="0" unique_id=323128486]
+surface_material_override/0 = SubResource("StandardMaterial3D_rnkuw")
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=1790056850]
+transform = Transform3D(-0.6391776, -0.30887944, 0.70430505, -3.7252903e-09, 0.9158008, 0.4016329, -0.7690592, 0.25671476, -0.5853594, 1.3725157, 1.8657517, -1.3267348)
+fov = 40.0
+
+[node name="CameraFill" type="DirectionalLight3D" parent="Camera3D" unique_id=1014711665]
+transform = Transform3D(0.9396926, 0.14454395, -0.3099755, 0, 0.90630776, 0.42261827, 0.34202012, -0.39713126, 0.8516507, 0, 0, 0)
+light_intensity_lux = 40000.0
+light_temperature = 6000.0
+
+[editable path="lilith"]
+[editable path="cyclorama"]
