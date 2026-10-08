@@ -86,3 +86,6 @@ project/addons/bone_cloth/bin/
 *.vcxproj.user
 x64/
 
+# Test characters from paid packs, never published
+project/characters/
+

@@ -1,0 +1,11 @@
+[gd_scene format=3 uid="uid://ljjloheqvke8"]
+
+[ext_resource type="PackedScene" uid="uid://btfjuhsnlwpjt" path="res://characters/lilith/lilith.gltf" id="1_6eo5e"]
+
+[node name="Stage" type="Node3D" unique_id=287086239]
+
+[node name="lilith" parent="." unique_id=1126799021 instance=ExtResource("1_6eo5e")]
+
+[node name="BoneClothSimulator3D" type="BoneClothSimulator3D" parent="lilith/Armature/Skeleton3D" parent_id_path=PackedInt32Array(1126799021, 32514078) index="17" unique_id=1189167275]
+
+[editable path="lilith"]
