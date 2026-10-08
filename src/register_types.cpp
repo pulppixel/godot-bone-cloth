@@ -5,6 +5,7 @@
 #include <godot_cpp/core/defs.hpp>
 #include <godot_cpp/godot.hpp>
 
+#include "bone_cloth_capsule_3d.h"
 #include "bone_cloth_simulator_3d.h"
 
 using namespace godot;
@@ -15,6 +16,8 @@ void initialize_bone_cloth_module(ModuleInitializationLevel p_level) {
 	}
 
 	GDREGISTER_CLASS(BoneClothSimulator3D);
+	GDREGISTER_CLASS(BoneClothCapsule3D);
+
 }
 
 void uninitialize_bone_cloth_module(ModuleInitializationLevel p_level) {
