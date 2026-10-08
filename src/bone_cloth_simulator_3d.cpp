@@ -6,7 +6,7 @@
 
 using namespace godot;
 
-// KawaiiPhysics' TargetFramerate (AnimNode_KawaiiPhysics.h)
+// KawaiiPhysics' TargetFramerate
 static constexpr double TARGET_FPS = 60.0;
 
 // KawaiiPhysics' default link compliance, Leather.
