@@ -150,6 +150,18 @@ void BoneClothSimulator3D::_solve_links(double p_delta)
 	}
 }
 
+// Every joint below the root against every capsule, as KawaiiPhysics' collision pass.
+// The roots follow the pose and are never pushed.
+void BoneClothSimulator3D::_collide(Chain& p_chain, const LocalVector<BoneClothCapsule3D*>& p_capsules)
+{
+	for (uint32_t i = 1; i < p_chain.joints.size(); i++) {
+		Joint& joint = p_chain.joints[i];
+		for (const BoneClothCapsule3D* capsule : p_capsules) {
+			joint.location = capsule->collide(joint.location, radius);
+		}
+	}
+}
+
 // Each joint back to its pose distance from the parent.
 void BoneClothSimulator3D::_restore_lengths(Chain& p_chain)
 {
@@ -188,6 +200,8 @@ void BoneClothSimulator3D::_bind_methods()
 	ClassDB::bind_method(D_METHOD("get_damping"), &BoneClothSimulator3D::get_damping);
 	ClassDB::bind_method(D_METHOD("set_stiffness", "stiffness"), &BoneClothSimulator3D::set_stiffness);
 	ClassDB::bind_method(D_METHOD("get_stiffness"), &BoneClothSimulator3D::get_stiffness);
+	ClassDB::bind_method(D_METHOD("set_radius", "radius"), &BoneClothSimulator3D::set_radius);
+	ClassDB::bind_method(D_METHOD("get_radius"), &BoneClothSimulator3D::get_radius);
 	ClassDB::bind_method(D_METHOD("set_gravity", "gravity"), &BoneClothSimulator3D::set_gravity);
 	ClassDB::bind_method(D_METHOD("get_gravity"), &BoneClothSimulator3D::get_gravity);
 	ClassDB::bind_method(D_METHOD("reset"), &BoneClothSimulator3D::reset);
@@ -196,6 +210,7 @@ void BoneClothSimulator3D::_bind_methods()
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "end_bone_length", PROPERTY_HINT_RANGE, "0,1,0.001,or_greater,suffix:m"), "set_end_bone_length", "get_end_bone_length");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "damping", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_damping", "get_damping");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "stiffness", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_stiffness", "get_stiffness");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "radius", PROPERTY_HINT_RANGE, "0,0.2,0.001,or_greater,suffix:m"), "set_radius", "get_radius");
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR3, "gravity", PROPERTY_HINT_NONE, "suffix:m/s^2"), "set_gravity", "get_gravity");
 
 	// The engine's ADD_ARRAY_COUNT, which godot-cpp does not have: the
@@ -326,6 +341,16 @@ float BoneClothSimulator3D::get_stiffness() const
 	return stiffness;
 }
 
+void BoneClothSimulator3D::set_radius(float p_radius)
+{
+	radius = p_radius;
+}
+
+float BoneClothSimulator3D::get_radius() const
+{
+	return radius;
+}
+
 void BoneClothSimulator3D::set_gravity(const Vector3& p_gravity)
 {
 	gravity = p_gravity;
@@ -387,6 +412,16 @@ void BoneClothSimulator3D::_process_modification_with_delta(double p_delta)
 		}
 	}
 
+	// The capsules follow their bones before the step, as SpringBoneSimulator3D syncs its collisions; also while paused, so the editor shows them in place.
+	LocalVector<BoneClothCapsule3D*> capsules;
+	for (int i = 0; i < get_child_count(); i++) {
+		BoneClothCapsule3D* capsule = Object::cast_to<BoneClothCapsule3D>(get_child(i));
+		if (capsule) {
+			capsule->sync_pose();
+			capsules.push_back(capsule);
+		}
+	}
+
 	if (p_delta > 0.0) {
 		const Vector3 skeleton_gravity = skeleton->get_global_transform().basis.inverse().xform(gravity);
 		for (Chain& chain : chains) {
@@ -395,6 +430,9 @@ void BoneClothSimulator3D::_process_modification_with_delta(double p_delta)
 
 		// KawaiiPhysics solves the links once before the collision and once after it (AnimNode_KawaiiPhysicsSimulation.cpp:919-1002).
 		_solve_links(p_delta);
+		for (Chain& chain : chains) {
+			_collide(chain, capsules);
+		}
 		_solve_links(p_delta);
 
 		delta_old = p_delta;
