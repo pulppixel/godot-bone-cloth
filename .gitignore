@@ -66,3 +66,21 @@ vcpkg_installed/
 # test output & cache
 Testing/
 .cache/
+
+# Godot: the editor's import cache, rebuilt on open
+.godot/
+
+# SCons: build state and the object files godot-cpp's build leaves
+.sconsign*.dblite
+*.os
+*.exp
+
+# Build output; binaries ship in releases, not in the repository
+project/addons/bone_cloth/bin/
+
+# Visual Studio: a local front end to SCons, with the Godot path of this machine
+.vs/
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
