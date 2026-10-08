@@ -6,7 +6,7 @@
 
 namespace godot {
 
-	class bone_cloth_simulator_3d : public SkeletonModifier3D {
+	class BoneClothSimulator3D : public SkeletonModifier3D {
 		GDCLASS(BoneClothSimulator3D, SkeletonModifier3D)
 
 	protected:

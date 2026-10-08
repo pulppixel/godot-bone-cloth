@@ -84,3 +84,5 @@ project/addons/bone_cloth/bin/
 *.vcxproj
 *.vcxproj.filters
 *.vcxproj.user
+x64/
+
