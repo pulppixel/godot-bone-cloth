@@ -28,7 +28,11 @@ namespace godot {
 			int bone = -1;
 			Vector3 location;
 			Vector3 prev_location;
+			// pose_location is the target of the step running, between prev_pose_location (last frame) and current_pose_location.
 			Vector3 pose_location;
+			Vector3 prev_pose_location;
+			Vector3 current_pose_location;
+
 			Basis pose_basis;
 		};
 
@@ -55,18 +59,27 @@ namespace godot {
 		float stiffness = 0.05f;
 		float radius = 0.03f;
 		Vector3 gravity;
+		float inertia = 1.0f;
+		float movement_speed_limit = 5.0f;
+		float rotation_speed_limit = Math::deg_to_rad(720.0f);
+		float teleport_distance = 0.5f;
+		float teleport_angle = Math::deg_to_rad(90.0f);
 
 		LocalVector<Link> links;
 		bool joints_dirty = true;
 		bool needs_reset = true;
-		double delta_old = 0.0;
+		double step_time = 0.0;
+		Transform3D prev_skeleton_transform;
+		Vector3 prev_step_move;
+		Quaternion prev_step_turn;
 
 		// State
 		bool _build_joints(Skeleton3D* p_skeleton, Chain& p_chain);
 		void _build_links(Skeleton3D* p_skeleton);
 		void _read_pose(Skeleton3D* p_skeleton, Chain& p_chain);
-		void _simulate(Chain& p_chain, double p_delta, const Vector3& p_gravity);
-		void _solve_links(double p_delta);
+		void _step(const Vector3& p_gravity, const Vector3& p_move, const Quaternion& p_turn, const LocalVector<BoneClothCapsule3D*>& p_capsules);
+		void _simulate(Chain& p_chain, const Vector3& p_gravity, const Vector3& p_move, const Quaternion& p_turn);
+		void _solve_links();
 		void _collide(Chain& p_chain, const LocalVector<BoneClothCapsule3D*>& p_capsules);
 		void _collide_links(const LocalVector<BoneClothCapsule3D*>& p_capsules);
 		void _restore_lengths(Chain& p_chain);
@@ -95,6 +108,16 @@ namespace godot {
 		float get_radius() const;
 		void set_gravity(const Vector3& p_gravity);
 		Vector3 get_gravity() const;
+		void set_inertia(float p_inertia);
+		float get_inertia() const;
+		void set_movement_speed_limit(float p_limit);
+		float get_movement_speed_limit() const;
+		void set_rotation_speed_limit(float p_limit);
+		float get_rotation_speed_limit() const;
+		void set_teleport_distance(float p_distance);
+		float get_teleport_distance() const;
+		void set_teleport_angle(float p_angle);
+		float get_teleport_angle() const;
 
 		void reset();
 		void _process_modification_with_delta(double p_delta) override;
