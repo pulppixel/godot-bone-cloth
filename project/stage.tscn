@@ -41,6 +41,7 @@ adjustment_saturation = 1.2
 
 [node name="lilith" parent="." unique_id=1126799021 instance=ExtResource("1_6eo5e")]
 script = ExtResource("2_16g40")
+speed = 2.0
 
 [node name="GeneralSkeleton" parent="lilith/Armature" parent_id_path=PackedInt32Array(1126799021, 1458929827) index="0" unique_id=835554210]
 bones/10/position = Vector3(-0.0061495984, 1.031732, -0.07964681)
@@ -102,6 +103,8 @@ bones/162/rotation = Quaternion(5.3673153e-05, 0.9999994, 0.0011745229, 0.000152
 [node name="BoneClothSimulator3D" type="BoneClothSimulator3D" parent="lilith/Armature/GeneralSkeleton" index="17" unique_id=279156758]
 link_mode = 2
 link_stiffness = 0.0
+damping = 0.15
+stiffness = 0.1
 chain_count = 6
 chains/0/root_bone = "lilith_skirt_front_01_l"
 chains/0/end_bone = "lilith_skirt_front_04_l"
