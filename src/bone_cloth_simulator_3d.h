@@ -5,6 +5,7 @@
 
 #include "bone_cloth_capsule_3d.h"
 
+#include <godot_cpp/classes/curve.hpp>
 #include <godot_cpp/classes/skeleton3d.hpp>
 #include <godot_cpp/classes/skeleton_modifier3d.hpp>
 #include <godot_cpp/templates/local_vector.hpp>
@@ -34,6 +35,12 @@ namespace godot {
 			Vector3 current_pose_location;
 
 			Basis pose_basis;
+			// The joint's share of the chain's rest length from the root, where the curves are read, and its settings scaled by them.
+			float length_rate = 0.0f;
+			float damping = 0.0f;
+			float stiffness = 0.0f;
+			float radius = 0.0f;
+			float limit_angle = 0.0f;
 		};
 
 		struct Chain {
@@ -56,9 +63,13 @@ namespace godot {
 		float link_stiffness = 0.0f;
 		float end_bone_length = 0.1f;
 		float damping = 0.1f;
+		Ref<Curve> damping_curve;
 		float stiffness = 0.05f;
+		Ref<Curve> stiffness_curve;
 		float radius = 0.03f;
+		Ref<Curve> radius_curve;
 		float limit_angle = 0.0f;
+		Ref<Curve> limit_angle_curve;
 		Vector3 gravity;
 		float inertia = 1.0f;
 		float movement_speed_limit = 5.0f;
@@ -78,6 +89,7 @@ namespace godot {
 		bool _build_joints(Skeleton3D* p_skeleton, Chain& p_chain);
 		void _build_links(Skeleton3D* p_skeleton);
 		void _read_pose(Skeleton3D* p_skeleton, Chain& p_chain);
+		void _update_joint_settings(Chain& p_chain);
 		void _step(const Vector3& p_gravity, const Vector3& p_move, const Quaternion& p_turn, const LocalVector<BoneClothCapsule3D*>& p_capsules);
 		void _simulate(Chain& p_chain, const Vector3& p_gravity, const Vector3& p_move, const Quaternion& p_turn);
 		void _solve_links();
@@ -103,12 +115,20 @@ namespace godot {
 		float get_end_bone_length() const;
 		void set_damping(float p_damping);
 		float get_damping() const;
+		void set_damping_curve(const Ref<Curve>& p_curve);
+		Ref<Curve> get_damping_curve() const;
 		void set_stiffness(float p_stiffness);
 		float get_stiffness() const;
+		void set_stiffness_curve(const Ref<Curve>& p_curve);
+		Ref<Curve> get_stiffness_curve() const;
 		void set_radius(float p_radius);
 		float get_radius() const;
+		void set_radius_curve(const Ref<Curve>& p_curve);
+		Ref<Curve> get_radius_curve() const;
 		void set_limit_angle(float p_angle);
 		float get_limit_angle() const;
+		void set_limit_angle_curve(const Ref<Curve>& p_curve);
+		Ref<Curve> get_limit_angle_curve() const;
 		void set_gravity(const Vector3& p_gravity);
 		Vector3 get_gravity() const;
 		void set_inertia(float p_inertia);

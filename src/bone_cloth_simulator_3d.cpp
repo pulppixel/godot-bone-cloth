@@ -46,6 +46,20 @@ bool BoneClothSimulator3D::_build_joints(Skeleton3D* p_skeleton, Chain& p_chain)
 	const Transform3D rest = p_skeleton->get_bone_rest(end);
 	p_chain.end_axis = rest.basis.xform_inv(rest.origin).normalized();
 
+	// KawaiiPhysics' LengthRateFromRoot: the rest length from the root to each joint over the whole chain's, the tip included.
+	// By length rather than by count, as bones in one chain differ.
+	float length = 0.0f;
+	for (uint32_t i = 1; i < p_chain.joints.size(); i++) {
+		Joint& joint = p_chain.joints[i];
+		const Vector3 parent_rest = p_skeleton->get_bone_global_rest(p_chain.joints[i - 1].bone).origin;
+		length += joint.bone >= 0 ? (p_skeleton->get_bone_global_rest(joint.bone).origin - parent_rest).length() : end_bone_length;
+		joint.length_rate = length;
+	}
+
+	for (Joint& joint : p_chain.joints) {
+		joint.length_rate = length > 0.0f ? joint.length_rate / length : 0.0f;
+	}
+
 	return true;
 }
 
@@ -109,6 +123,25 @@ void BoneClothSimulator3D::_read_pose(Skeleton3D* p_skeleton, Chain& p_chain)
 	}
 }
 
+// A curve's value at the rate, or 1 without a curve or with one that has no points yet.
+// Curve gives 0 with no points, and a curve just made in the inspector has none: the skirt would freeze to its pose. KawaiiPhysics reads an empty curve as 1 too.
+static float sample_curve(const Ref<Curve>& p_curve, float p_rate)
+{
+	return p_curve.is_valid() && p_curve->get_point_count() > 0 ? p_curve->sample_baked(p_rate) : 1.0f;
+}
+
+// KawaiiPhysics' UpdatePhysicsSettingsOfModifyBones: each joint takes the node's settings scaled by the curves at its length rate.
+// Every frame, so a value or a curve changed while running shows at once.
+void BoneClothSimulator3D::_update_joint_settings(Chain& p_chain)
+{
+	for (Joint& joint : p_chain.joints) {
+		joint.damping = CLAMP(damping * sample_curve(damping_curve, joint.length_rate), 0.0f, 1.0f);
+		joint.stiffness = CLAMP(stiffness * sample_curve(stiffness_curve, joint.length_rate), 0.0f, 1.0f);
+		joint.radius = MAX(radius * sample_curve(radius_curve, joint.length_rate), 0.0f);
+		joint.limit_angle = MAX(limit_angle * sample_curve(limit_angle_curve, joint.length_rate), 0.0f);
+	}
+}
+
 // One step of KawaiiPhysics' SimulateOnce, in its order.
 void BoneClothSimulator3D::_step(const Vector3& p_gravity, const Vector3& p_move, const Quaternion& p_turn, const LocalVector<BoneClothCapsule3D*>& p_capsules)
 {
@@ -151,7 +184,7 @@ void BoneClothSimulator3D::_simulate(Chain& p_chain, const Vector3& p_gravity, c
 
 		Vector3 velocity = (joint.location - joint.prev_location) / dt;
 		joint.prev_location = joint.location;
-		velocity *= 1.0f - damping;
+		velocity *= 1.0f - joint.damping;
 		velocity += p_gravity * dt;
 		joint.location += velocity * dt;
 
@@ -161,7 +194,7 @@ void BoneClothSimulator3D::_simulate(Chain& p_chain, const Vector3& p_gravity, c
 		joint.location += p_turn.xform(joint.prev_location) - prev_step_turn.xform(joint.prev_location);
 
 		const Vector3 target = parent.location + (joint.pose_location - parent.pose_location);
-		joint.location += (target - joint.location) * stiffness;
+		joint.location += (target - joint.location) * joint.stiffness;
 	}
 }
 
@@ -199,7 +232,7 @@ void BoneClothSimulator3D::_collide(Chain& p_chain, const LocalVector<BoneClothC
 	for (uint32_t i = 1; i < p_chain.joints.size(); i++) {
 		Joint& joint = p_chain.joints[i];
 		for (const BoneClothCapsule3D* capsule : p_capsules) {
-			joint.location = capsule->collide(joint.location, radius);
+			joint.location = capsule->collide(joint.location, joint.radius);
 		}
 	}
 }
@@ -210,8 +243,9 @@ void BoneClothSimulator3D::_collide_links(const LocalVector<BoneClothCapsule3D*>
 	for (const Link& link : links) {
 		Joint& joint_a = chains[link.chain_a].joints[link.depth];
 		Joint& joint_b = chains[link.chain_b].joints[link.depth];
+		const float link_radius = (joint_a.radius + joint_b.radius) * 0.5f;
 		for (const BoneClothCapsule3D* capsule : p_capsules) {
-			capsule->collide_segment(joint_a.location, joint_b.location, radius);
+			capsule->collide_segment(joint_a.location, joint_b.location, link_radius);
 		}
 	}
 }
@@ -226,17 +260,18 @@ void BoneClothSimulator3D::_restore_limits_and_lengths(Chain& p_chain)
 		const Joint& parent = p_chain.joints[i - 1];
 		const Vector3 pose_vector = joint.pose_location - parent.pose_location;
 
+		// limit_angle 0 turns the limit off; a joint whose curve brings it to 0 is held to its pose direction instead, as KawaiiPhysics does.
 		if (limit_angle > 0.0f) {
 			const Vector3 offset = joint.location - parent.location;
 			const Vector3 pose_direction = pose_vector.normalized();
 			const Vector3 direction = offset.normalized();
 			const Vector3 axis = pose_direction.cross(direction);
 			const float angle = Math::atan2(axis.length(), pose_direction.dot(direction));
-			if (angle > limit_angle) {
+			if (angle > joint.limit_angle) {
 				// Pointing straight back the cross product vanishes and any axis across the pose direction turns it back.
 				// KawaiiPhysics takes the parent's X axis there, but which bone axis lies across the bone differs between rigs.
 				const Vector3 turn_axis = axis.is_zero_approx() ? pose_direction.get_any_perpendicular() : axis.normalized();
-				joint.location = parent.location + offset.rotated(turn_axis, limit_angle - angle);
+				joint.location = parent.location + offset.rotated(turn_axis, joint.limit_angle - angle);
 			}
 		}
 
@@ -273,12 +308,20 @@ void BoneClothSimulator3D::_bind_methods()
 	ClassDB::bind_method(D_METHOD("get_end_bone_length"), &BoneClothSimulator3D::get_end_bone_length);
 	ClassDB::bind_method(D_METHOD("set_damping", "damping"), &BoneClothSimulator3D::set_damping);
 	ClassDB::bind_method(D_METHOD("get_damping"), &BoneClothSimulator3D::get_damping);
+	ClassDB::bind_method(D_METHOD("set_damping_curve", "curve"), &BoneClothSimulator3D::set_damping_curve);
+	ClassDB::bind_method(D_METHOD("get_damping_curve"), &BoneClothSimulator3D::get_damping_curve);
 	ClassDB::bind_method(D_METHOD("set_stiffness", "stiffness"), &BoneClothSimulator3D::set_stiffness);
 	ClassDB::bind_method(D_METHOD("get_stiffness"), &BoneClothSimulator3D::get_stiffness);
+	ClassDB::bind_method(D_METHOD("set_stiffness_curve", "curve"), &BoneClothSimulator3D::set_stiffness_curve);
+	ClassDB::bind_method(D_METHOD("get_stiffness_curve"), &BoneClothSimulator3D::get_stiffness_curve);
 	ClassDB::bind_method(D_METHOD("set_radius", "radius"), &BoneClothSimulator3D::set_radius);
 	ClassDB::bind_method(D_METHOD("get_radius"), &BoneClothSimulator3D::get_radius);
+	ClassDB::bind_method(D_METHOD("set_radius_curve", "curve"), &BoneClothSimulator3D::set_radius_curve);
+	ClassDB::bind_method(D_METHOD("get_radius_curve"), &BoneClothSimulator3D::get_radius_curve);
 	ClassDB::bind_method(D_METHOD("set_limit_angle", "angle"), &BoneClothSimulator3D::set_limit_angle);
 	ClassDB::bind_method(D_METHOD("get_limit_angle"), &BoneClothSimulator3D::get_limit_angle);
+	ClassDB::bind_method(D_METHOD("set_limit_angle_curve", "curve"), &BoneClothSimulator3D::set_limit_angle_curve);
+	ClassDB::bind_method(D_METHOD("get_limit_angle_curve"), &BoneClothSimulator3D::get_limit_angle_curve);
 	ClassDB::bind_method(D_METHOD("set_gravity", "gravity"), &BoneClothSimulator3D::set_gravity);
 	ClassDB::bind_method(D_METHOD("get_gravity"), &BoneClothSimulator3D::get_gravity);
 	ClassDB::bind_method(D_METHOD("set_inertia", "inertia"), &BoneClothSimulator3D::set_inertia);
@@ -298,9 +341,13 @@ void BoneClothSimulator3D::_bind_methods()
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "link_stiffness", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_link_stiffness", "get_link_stiffness");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "end_bone_length", PROPERTY_HINT_RANGE, "0,1,0.001,or_greater,suffix:m"), "set_end_bone_length", "get_end_bone_length");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "damping", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_damping", "get_damping");
+	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_damping_curve", "get_damping_curve");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "stiffness", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_stiffness", "get_stiffness");
+	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "stiffness_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_stiffness_curve", "get_stiffness_curve");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "radius", PROPERTY_HINT_RANGE, "0,0.2,0.001,or_greater,suffix:m"), "set_radius", "get_radius");
+	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "radius_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_radius_curve", "get_radius_curve");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "limit_angle", PROPERTY_HINT_RANGE, "0,180,0.1,radians_as_degrees"), "set_limit_angle", "get_limit_angle");
+	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "limit_angle_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_limit_angle_curve", "get_limit_angle_curve");
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR3, "gravity", PROPERTY_HINT_NONE, "suffix:m/s^2"), "set_gravity", "get_gravity");
 	ADD_GROUP("Inertia", "");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "inertia", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_inertia", "get_inertia");
@@ -438,6 +485,16 @@ float BoneClothSimulator3D::get_damping() const
 	return damping;
 }
 
+void BoneClothSimulator3D::set_damping_curve(const Ref<Curve>& p_curve)
+{
+	damping_curve = p_curve;
+}
+
+Ref<Curve> BoneClothSimulator3D::get_damping_curve() const
+{
+	return damping_curve;
+}
+
 void BoneClothSimulator3D::set_stiffness(float p_stiffness)
 {
 	stiffness = p_stiffness;
@@ -446,6 +503,16 @@ void BoneClothSimulator3D::set_stiffness(float p_stiffness)
 float BoneClothSimulator3D::get_stiffness() const
 {
 	return stiffness;
+}
+
+void BoneClothSimulator3D::set_stiffness_curve(const Ref<Curve>& p_curve)
+{
+	stiffness_curve = p_curve;
+}
+
+Ref<Curve> BoneClothSimulator3D::get_stiffness_curve() const
+{
+	return stiffness_curve;
 }
 
 void BoneClothSimulator3D::set_radius(float p_radius)
@@ -458,6 +525,16 @@ float BoneClothSimulator3D::get_radius() const
 	return radius;
 }
 
+void BoneClothSimulator3D::set_radius_curve(const Ref<Curve>& p_curve)
+{
+	radius_curve = p_curve;
+}
+
+Ref<Curve> BoneClothSimulator3D::get_radius_curve() const
+{
+	return radius_curve;
+}
+
 void BoneClothSimulator3D::set_limit_angle(float p_angle)
 {
 	limit_angle = p_angle;
@@ -466,6 +543,16 @@ void BoneClothSimulator3D::set_limit_angle(float p_angle)
 float BoneClothSimulator3D::get_limit_angle() const
 {
 	return limit_angle;
+}
+
+void BoneClothSimulator3D::set_limit_angle_curve(const Ref<Curve>& p_curve)
+{
+	limit_angle_curve = p_curve;
+}
+
+Ref<Curve> BoneClothSimulator3D::get_limit_angle_curve() const
+{
+	return limit_angle_curve;
 }
 
 void BoneClothSimulator3D::set_gravity(const Vector3& p_gravity)
@@ -555,6 +642,7 @@ void BoneClothSimulator3D::_process_modification_with_delta(double p_delta)
 	for (Chain& chain : chains) {
 		if (!chain.joints.is_empty()) {
 			_read_pose(skeleton, chain);
+			_update_joint_settings(chain);
 		}
 	}
 
