@@ -33,6 +33,8 @@ namespace godot {
 			Vector3 pose_location;
 			Vector3 prev_pose_location;
 			Vector3 current_pose_location;
+			// Where the joint is drawn, which moves every frame even when no step runs.
+			Vector3 display_location;
 
 			Basis pose_basis;
 			// The joint's share of the chain's rest length from the root, where the curves are read, and its settings scaled by them.
@@ -96,6 +98,7 @@ namespace godot {
 		void _collide(Chain& p_chain, const LocalVector<BoneClothCapsule3D*>& p_capsules);
 		void _collide_links(const LocalVector<BoneClothCapsule3D*>& p_capsules);
 		void _restore_limits_and_lengths(Chain& p_chain);
+		void _update_display(Chain& p_chain, float p_follow);
 		void _write_rotations(Skeleton3D* p_skeleton, const Chain& p_chain);
 
 	protected:

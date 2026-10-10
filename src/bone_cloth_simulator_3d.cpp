@@ -250,9 +250,25 @@ void BoneClothSimulator3D::_collide_links(const LocalVector<BoneClothCapsule3D*>
 	}
 }
 
+// KawaiiPhysics' AdjustByAngleLimit: an offset from the parent leaning more than p_limit from the pose direction is turned back onto that cone.
+static Vector3 limit_to_cone(const Vector3& p_offset, const Vector3& p_pose_vector, float p_limit)
+{
+	const Vector3 pose_direction = p_pose_vector.normalized();
+	const Vector3 direction = p_offset.normalized();
+	const Vector3 axis = pose_direction.cross(direction);
+	const float angle = Math::atan2(axis.length(), pose_direction.dot(direction));
+	if (angle <= p_limit) {
+		return p_offset;
+	}
+
+	// Pointing straight back the cross product vanishes and any axis across the pose direction turns it back.
+	// KawaiiPhysics takes the parent's X axis there, but which bone axis lies across the bone differs between rigs.
+	const Vector3 turn_axis = axis.is_zero_approx() ? pose_direction.get_any_perpendicular() : axis.normalized();
+	return p_offset.rotated(turn_axis, p_limit - angle);
+}
+
 // KawaiiPhysics' RestoreBoneLengthsAndLimits, last in the step so the limit and the length win over the links and the collision.
-// The angle limit is a cone of limit_angle around the bone's pose direction: a joint leaning further out is turned back onto the cone (AdjustByAngleLimit).
-// Then each joint goes back to its pose distance from the parent.
+// Each joint is held inside the cone of its limit angle around the bone's pose direction, then goes back to its pose distance from the parent.
 void BoneClothSimulator3D::_restore_limits_and_lengths(Chain& p_chain)
 {
 	for (uint32_t i = 1; i < p_chain.joints.size(); i++) {
@@ -261,37 +277,53 @@ void BoneClothSimulator3D::_restore_limits_and_lengths(Chain& p_chain)
 		const Vector3 pose_vector = joint.pose_location - parent.pose_location;
 
 		// limit_angle 0 turns the limit off; a joint whose curve brings it to 0 is held to its pose direction instead, as KawaiiPhysics does.
+		Vector3 offset = joint.location - parent.location;
 		if (limit_angle > 0.0f) {
-			const Vector3 offset = joint.location - parent.location;
-			const Vector3 pose_direction = pose_vector.normalized();
-			const Vector3 direction = offset.normalized();
-			const Vector3 axis = pose_direction.cross(direction);
-			const float angle = Math::atan2(axis.length(), pose_direction.dot(direction));
-			if (angle > joint.limit_angle) {
-				// Pointing straight back the cross product vanishes and any axis across the pose direction turns it back.
-				// KawaiiPhysics takes the parent's X axis there, but which bone axis lies across the bone differs between rigs.
-				const Vector3 turn_axis = axis.is_zero_approx() ? pose_direction.get_any_perpendicular() : axis.normalized();
-				joint.location = parent.location + offset.rotated(turn_axis, joint.limit_angle - angle);
-			}
+			offset = limit_to_cone(offset, pose_vector, joint.limit_angle);
 		}
 
-		joint.location = parent.location + (joint.location - parent.location).normalized() * pose_vector.length();
+		joint.location = parent.location + offset.normalized() * pose_vector.length();
 	}
 }
 
-// Each bone turns by the arc from its pose direction to its simulated direction.
+// Magica Cloth 2's future prediction (SimulationCalcDisplayPosition): the last step's motion says where the next step will put each joint,
+// and the drawn joint moves toward that point by the share of the time left to it that this frame took.
+// A step every frame keeps it on the steps' results; with steps further apart (slow motion, a display over 60 Hz) it moves every frame instead of standing still and jumping at each step.
+// A guess runs past where a joint turns back, so each drawn joint is then held to the limit and the length as the step holds it, around this frame's pose from the root down.
+// Magica clamps only the distance from the root, but its points are drawn as they are; here they become bone rotations.
+void BoneClothSimulator3D::_update_display(Chain& p_chain, float p_follow)
+{
+	Joint& root = p_chain.joints[0];
+	root.display_location = root.current_pose_location;
+
+	for (uint32_t i = 1; i < p_chain.joints.size(); i++) {
+		Joint& joint = p_chain.joints[i];
+		const Joint& parent = p_chain.joints[i - 1];
+		const Vector3 next_location = joint.location + (joint.location - joint.prev_location);
+		joint.display_location = joint.display_location.lerp(next_location, p_follow);
+
+		const Vector3 pose_vector = joint.current_pose_location - parent.current_pose_location;
+		Vector3 offset = joint.display_location - parent.display_location;
+		if (limit_angle > 0.0f) {
+			offset = limit_to_cone(offset, pose_vector, joint.limit_angle);
+		}
+
+		joint.display_location = parent.display_location + offset.normalized() * pose_vector.length();
+	}
+}
+
+// Each bone turns by the arc from its pose direction to its drawn direction.
 // Rotation only: the lengths stay the pose's. Root first, because set_bone_global_pose works out the local pose from the parent's global pose.
-// The root keeps its pose location, as KawaiiPhysics writes only the bones below it: in a frame with no step its simulated location is a frame old.
+// The root is drawn at its pose location, as KawaiiPhysics writes only the bones below it.
 void BoneClothSimulator3D::_write_rotations(Skeleton3D* p_skeleton, const Chain& p_chain)
 {
 	for (uint32_t i = 1; i < p_chain.joints.size(); i++) {
 		const Joint& joint = p_chain.joints[i];
 		const Joint& parent = p_chain.joints[i - 1];
 		const Vector3 pose_vector = joint.current_pose_location - parent.current_pose_location;
-		const Vector3 sim_vector = joint.location - parent.location;
-		const Basis basis = Basis(Quaternion(pose_vector, sim_vector)) * parent.pose_basis;
-		const Vector3 origin = i == 1 ? parent.current_pose_location : parent.location;
-		p_skeleton->set_bone_global_pose(parent.bone, Transform3D(basis, origin));
+		const Vector3 display_vector = joint.display_location - parent.display_location;
+		const Basis basis = Basis(Quaternion(pose_vector, display_vector)) * parent.pose_basis;
+		p_skeleton->set_bone_global_pose(parent.bone, Transform3D(basis, parent.display_location));
 	}
 }
 
@@ -657,6 +689,7 @@ void BoneClothSimulator3D::_process_modification_with_delta(double p_delta)
 				joint.prev_location = joint.current_pose_location;
 				joint.pose_location = joint.current_pose_location;
 				joint.prev_pose_location = joint.current_pose_location;
+				joint.display_location = joint.current_pose_location;
 			}
 		}
 
@@ -725,6 +758,14 @@ void BoneClothSimulator3D::_process_modification_with_delta(double p_delta)
 		// The move not yet spent waits for the next step; a teleport and dropped time are thrown away (KawaiiPhysics' AdvancePreSkelCompTransform).
 		const double spent = teleported ? 1.0 : (step_count * STEP + dropped) / elapsed;
 		prev_skeleton_transform = prev_skeleton_transform.interpolate_with(skeleton_transform, float(spent));
+
+		// This frame's share of the time from the last frame to the next step, which is step_time short of a whole step away.
+		const float follow = float(p_delta / (STEP - step_time + p_delta));
+		for (Chain& chain : chains) {
+			if (!chain.joints.is_empty()) {
+				_update_display(chain, follow);
+			}
+		}
 	}
 
 	for (Chain& chain : chains) {
