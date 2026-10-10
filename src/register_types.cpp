@@ -5,7 +5,11 @@
 #include <godot_cpp/core/defs.hpp>
 #include <godot_cpp/godot.hpp>
 
-#include "bone_cloth_capsule_3d.h"
+#include "bone_cloth_collision_3d.h"
+#include "bone_cloth_collision_capsule_3d.h"
+#include "bone_cloth_collision_plane_3d.h"
+#include "bone_cloth_collision_sphere_3d.h"
+
 #include "bone_cloth_simulator_3d.h"
 
 using namespace godot;
@@ -16,7 +20,10 @@ void initialize_bone_cloth_module(ModuleInitializationLevel p_level) {
 	}
 
 	GDREGISTER_CLASS(BoneClothSimulator3D);
-	GDREGISTER_CLASS(BoneClothCapsule3D);
+	GDREGISTER_VIRTUAL_CLASS(BoneClothCollision3D);
+	GDREGISTER_CLASS(BoneClothCollisionSphere3D);
+	GDREGISTER_CLASS(BoneClothCollisionCapsule3D);
+	GDREGISTER_CLASS(BoneClothCollisionPlane3D);
 
 }
 

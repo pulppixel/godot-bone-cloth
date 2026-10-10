@@ -137,7 +137,7 @@ chains/5/root_bone = 23
 chains/5/end_bone_name = "lilith_skirt_front_04_r"
 chains/5/end_bone = 26
 
-[node name="Hips" type="BoneClothCapsule3D" parent="lilith/Armature/GeneralSkeleton/BoneClothSimulator3D" unique_id=1170173859]
+[node name="Hips" type="BoneClothCollisionCapsule3D" parent="lilith/Armature/GeneralSkeleton/BoneClothSimulator3D" unique_id=1170173859]
 bone_name = "Hips"
 radius = 0.09
 height = 0.32
@@ -145,28 +145,28 @@ position_offset = Vector3(0, -0.092, -0.026)
 rotation_offset = Quaternion(0, 0, -0.707107, 0.707107)
 transform = Transform3D(-0.005723894, 0.99886185, -0.047352456, -0.9492859, -0.020313907, -0.3137572, -0.31436202, 0.043155104, 0.94832176, 0.0071383887, 0.90699494, -0.1353606)
 
-[node name="LeftThigh" type="BoneClothCapsule3D" parent="lilith/Armature/GeneralSkeleton/BoneClothSimulator3D" unique_id=2126747546]
+[node name="LeftThigh" type="BoneClothCollisionCapsule3D" parent="lilith/Armature/GeneralSkeleton/BoneClothSimulator3D" unique_id=2126747546]
 bone_name = "LeftUpperLeg"
 radius = 0.075
 height = 0.608
 position_offset = Vector3(0, 0.229, 0)
 transform = Transform3D(-0.9874734, -0.08299774, 0.13419354, 0.07880229, -0.9962297, -0.036288112, 0.13669941, -0.02525881, 0.9902905, 0.07835725, 0.729125, -0.092412405)
 
-[node name="LeftCalf" type="BoneClothCapsule3D" parent="lilith/Armature/GeneralSkeleton/BoneClothSimulator3D" unique_id=251832674]
+[node name="LeftCalf" type="BoneClothCollisionCapsule3D" parent="lilith/Armature/GeneralSkeleton/BoneClothSimulator3D" unique_id=251832674]
 bone_name = "LeftLowerLeg"
 radius = 0.05
 height = 0.573
 position_offset = Vector3(0, 0.237, 0)
 transform = Transform3D(0.9848226, -0.16039535, -0.06631664, -0.067585684, -0.70632064, 0.7046585, -0.15986472, -0.6894815, -0.7064406, 0.034474496, 0.33356154, -0.2723155)
 
-[node name="RightThigh" type="BoneClothCapsule3D" parent="lilith/Armature/GeneralSkeleton/BoneClothSimulator3D" unique_id=73874656]
+[node name="RightThigh" type="BoneClothCollisionCapsule3D" parent="lilith/Armature/GeneralSkeleton/BoneClothSimulator3D" unique_id=73874656]
 bone_name = "RightUpperLeg"
 radius = 0.075
 height = 0.608
 position_offset = Vector3(0, 0.229, 0)
 transform = Transform3D(-0.9951813, -0.06813805, -0.070506416, 0.023902155, -0.8659759, 0.4995138, -0.095092766, 0.49542165, 0.86343193, -0.10044152, 0.7626555, 0.018950447)
 
-[node name="RightCalf" type="BoneClothCapsule3D" parent="lilith/Armature/GeneralSkeleton/BoneClothSimulator3D" unique_id=52069274]
+[node name="RightCalf" type="BoneClothCollisionCapsule3D" parent="lilith/Armature/GeneralSkeleton/BoneClothSimulator3D" unique_id=52069274]
 bone_name = "RightLowerLeg"
 radius = 0.05
 height = 0.573

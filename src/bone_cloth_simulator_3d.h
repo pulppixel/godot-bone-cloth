@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "bone_cloth_capsule_3d.h"
+#include "bone_cloth_collision_3d.h"
 
 #include <godot_cpp/classes/curve.hpp>
 #include <godot_cpp/classes/skeleton3d.hpp>
@@ -95,11 +95,11 @@ namespace godot {
 		void _build_links(Skeleton3D* p_skeleton);
 		void _read_pose(Skeleton3D* p_skeleton, Chain& p_chain);
 		void _update_joint_settings(Chain& p_chain);
-		void _step(const Vector3& p_gravity, const Vector3& p_move, const Quaternion& p_turn, const LocalVector<BoneClothCapsule3D*>& p_capsules);
+		void _step(const Vector3& p_gravity, const Vector3& p_move, const Quaternion& p_turn, const LocalVector<BoneClothCollision3D*>& p_collisions);
 		void _simulate(Chain& p_chain, const Vector3& p_gravity, const Vector3& p_move, const Quaternion& p_turn);
 		void _solve_links();
-		void _collide(Chain& p_chain, const LocalVector<BoneClothCapsule3D*>& p_capsules);
-		void _collide_links(const LocalVector<BoneClothCapsule3D*>& p_capsules);
+		void _collide(Chain& p_chain, const LocalVector<BoneClothCollision3D*>& p_collisions);
+		void _collide_links(const LocalVector<BoneClothCollision3D*>& p_collisions);
 		void _restore_limits_and_lengths(Chain& p_chain);
 		void _update_display(Chain& p_chain, float p_follow);
 		void _write_rotations(Skeleton3D* p_skeleton, const Chain& p_chain);
