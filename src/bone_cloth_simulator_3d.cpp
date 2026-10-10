@@ -135,7 +135,7 @@ void BoneClothSimulator3D::_step(const Vector3& p_gravity, const Vector3& p_move
 	_solve_links();
 
 	for (Chain& chain : chains) {
-		_restore_lengths(chain);
+		_restore_limits_and_lengths(chain);
 	}
 }
 
@@ -216,14 +216,31 @@ void BoneClothSimulator3D::_collide_links(const LocalVector<BoneClothCapsule3D*>
 	}
 }
 
-// Each joint back to its pose distance from the parent.
-void BoneClothSimulator3D::_restore_lengths(Chain& p_chain)
+// KawaiiPhysics' RestoreBoneLengthsAndLimits, last in the step so the limit and the length win over the links and the collision.
+// The angle limit is a cone of limit_angle around the bone's pose direction: a joint leaning further out is turned back onto the cone (AdjustByAngleLimit).
+// Then each joint goes back to its pose distance from the parent.
+void BoneClothSimulator3D::_restore_limits_and_lengths(Chain& p_chain)
 {
 	for (uint32_t i = 1; i < p_chain.joints.size(); i++) {
 		Joint& joint = p_chain.joints[i];
 		const Joint& parent = p_chain.joints[i - 1];
-		const float length = (joint.pose_location - parent.pose_location).length();
-		joint.location = parent.location + (joint.location - parent.location).normalized() * length;
+		const Vector3 pose_vector = joint.pose_location - parent.pose_location;
+
+		if (limit_angle > 0.0f) {
+			const Vector3 offset = joint.location - parent.location;
+			const Vector3 pose_direction = pose_vector.normalized();
+			const Vector3 direction = offset.normalized();
+			const Vector3 axis = pose_direction.cross(direction);
+			const float angle = Math::atan2(axis.length(), pose_direction.dot(direction));
+			if (angle > limit_angle) {
+				// Pointing straight back the cross product vanishes and any axis across the pose direction turns it back.
+				// KawaiiPhysics takes the parent's X axis there, but which bone axis lies across the bone differs between rigs.
+				const Vector3 turn_axis = axis.is_zero_approx() ? pose_direction.get_any_perpendicular() : axis.normalized();
+				joint.location = parent.location + offset.rotated(turn_axis, limit_angle - angle);
+			}
+		}
+
+		joint.location = parent.location + (joint.location - parent.location).normalized() * pose_vector.length();
 	}
 }
 
@@ -260,6 +277,8 @@ void BoneClothSimulator3D::_bind_methods()
 	ClassDB::bind_method(D_METHOD("get_stiffness"), &BoneClothSimulator3D::get_stiffness);
 	ClassDB::bind_method(D_METHOD("set_radius", "radius"), &BoneClothSimulator3D::set_radius);
 	ClassDB::bind_method(D_METHOD("get_radius"), &BoneClothSimulator3D::get_radius);
+	ClassDB::bind_method(D_METHOD("set_limit_angle", "angle"), &BoneClothSimulator3D::set_limit_angle);
+	ClassDB::bind_method(D_METHOD("get_limit_angle"), &BoneClothSimulator3D::get_limit_angle);
 	ClassDB::bind_method(D_METHOD("set_gravity", "gravity"), &BoneClothSimulator3D::set_gravity);
 	ClassDB::bind_method(D_METHOD("get_gravity"), &BoneClothSimulator3D::get_gravity);
 	ClassDB::bind_method(D_METHOD("set_inertia", "inertia"), &BoneClothSimulator3D::set_inertia);
@@ -281,6 +300,7 @@ void BoneClothSimulator3D::_bind_methods()
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "damping", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_damping", "get_damping");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "stiffness", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_stiffness", "get_stiffness");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "radius", PROPERTY_HINT_RANGE, "0,0.2,0.001,or_greater,suffix:m"), "set_radius", "get_radius");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "limit_angle", PROPERTY_HINT_RANGE, "0,180,0.1,radians_as_degrees"), "set_limit_angle", "get_limit_angle");
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR3, "gravity", PROPERTY_HINT_NONE, "suffix:m/s^2"), "set_gravity", "get_gravity");
 	ADD_GROUP("Inertia", "");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "inertia", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_inertia", "get_inertia");
@@ -436,6 +456,16 @@ void BoneClothSimulator3D::set_radius(float p_radius)
 float BoneClothSimulator3D::get_radius() const
 {
 	return radius;
+}
+
+void BoneClothSimulator3D::set_limit_angle(float p_angle)
+{
+	limit_angle = p_angle;
+}
+
+float BoneClothSimulator3D::get_limit_angle() const
+{
+	return limit_angle;
 }
 
 void BoneClothSimulator3D::set_gravity(const Vector3& p_gravity)
