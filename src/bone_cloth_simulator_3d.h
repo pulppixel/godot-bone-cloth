@@ -39,15 +39,18 @@ namespace godot {
 			Basis pose_basis;
 			// The joint's share of the chain's rest length from the root, where the curves are read, and its settings scaled by them.
 			float length_rate = 0.0f;
-			float damping = 0.0f;
+			float drag = 0.0f;
 			float stiffness = 0.0f;
 			float radius = 0.0f;
 			float limit_angle = 0.0f;
 		};
 
 		struct Chain {
-			String root_bone;
-			String end_bone;
+			// SpringBoneSimulator3D's pair: the name is what the user picks and wins on load, the index is saved beside it.
+			String root_bone_name;
+			int root_bone = -1;
+			String end_bone_name;
+			int end_bone = -1;
 			LocalVector<Joint> joints;
 			Vector3 end_axis;
 		};
@@ -64,14 +67,14 @@ namespace godot {
 		LinkMode link_mode = LINK_MODE_NONE;
 		float link_stiffness = 0.0f;
 		float end_bone_length = 0.1f;
-		float damping = 0.1f;
-		Ref<Curve> damping_curve;
+		float drag = 0.1f;
+		Ref<Curve> drag_damping_curve;
 		float stiffness = 0.05f;
-		Ref<Curve> stiffness_curve;
+		Ref<Curve> stiffness_damping_curve;
 		float radius = 0.03f;
-		Ref<Curve> radius_curve;
+		Ref<Curve> radius_damping_curve;
 		float limit_angle = 0.0f;
-		Ref<Curve> limit_angle_curve;
+		Ref<Curve> limit_angle_damping_curve;
 		Vector3 gravity;
 		float inertia = 1.0f;
 		float movement_speed_limit = 5.0f;
@@ -110,28 +113,36 @@ namespace godot {
 	public:
 		void set_chain_count(int p_count);
 		int get_chain_count() const;
+		void set_root_bone_name(int p_index, const String& p_bone_name);
+		String get_root_bone_name(int p_index) const;
+		void set_root_bone(int p_index, int p_bone);
+		int get_root_bone(int p_index) const;
+		void set_end_bone_name(int p_index, const String& p_bone_name);
+		String get_end_bone_name(int p_index) const;
+		void set_end_bone(int p_index, int p_bone);
+		int get_end_bone(int p_index) const;
 		void set_link_mode(LinkMode p_mode);
 		LinkMode get_link_mode() const;
 		void set_link_stiffness(float p_stiffness);
 		float get_link_stiffness() const;
 		void set_end_bone_length(float p_length);
 		float get_end_bone_length() const;
-		void set_damping(float p_damping);
-		float get_damping() const;
-		void set_damping_curve(const Ref<Curve>& p_curve);
-		Ref<Curve> get_damping_curve() const;
+		void set_drag(float p_drag);
+		float get_drag() const;
+		void set_drag_damping_curve(const Ref<Curve>& p_curve);
+		Ref<Curve> get_drag_damping_curve() const;
 		void set_stiffness(float p_stiffness);
 		float get_stiffness() const;
-		void set_stiffness_curve(const Ref<Curve>& p_curve);
-		Ref<Curve> get_stiffness_curve() const;
+		void set_stiffness_damping_curve(const Ref<Curve>& p_curve);
+		Ref<Curve> get_stiffness_damping_curve() const;
 		void set_radius(float p_radius);
 		float get_radius() const;
-		void set_radius_curve(const Ref<Curve>& p_curve);
-		Ref<Curve> get_radius_curve() const;
+		void set_radius_damping_curve(const Ref<Curve>& p_curve);
+		Ref<Curve> get_radius_damping_curve() const;
 		void set_limit_angle(float p_angle);
 		float get_limit_angle() const;
-		void set_limit_angle_curve(const Ref<Curve>& p_curve);
-		Ref<Curve> get_limit_angle_curve() const;
+		void set_limit_angle_damping_curve(const Ref<Curve>& p_curve);
+		Ref<Curve> get_limit_angle_damping_curve() const;
 		void set_gravity(const Vector3& p_gravity);
 		Vector3 get_gravity() const;
 		void set_inertia(float p_inertia);
@@ -146,6 +157,7 @@ namespace godot {
 		float get_teleport_angle() const;
 
 		void reset();
+		void _validate_bone_names() override;
 		void _process_modification_with_delta(double p_delta) override;
 	};
 
