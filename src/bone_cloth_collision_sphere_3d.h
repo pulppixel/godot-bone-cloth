@@ -9,11 +9,13 @@
 namespace godot {
 
 	class BoneClothCollisionCapsule3D;
+	class BoneClothCollisionTaperedCapsule3D;
 
 	class BoneClothCollisionSphere3D : public BoneClothCollision3D {
 		GDCLASS(BoneClothCollisionSphere3D, BoneClothCollision3D)
 
-			friend class BoneClothCollisionCapsule3D;
+		friend class BoneClothCollisionCapsule3D;
+		friend class BoneClothCollisionTaperedCapsule3D;
 
 		float radius = 0.1f;
 		bool inside = false;

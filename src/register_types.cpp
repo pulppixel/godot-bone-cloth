@@ -9,6 +9,7 @@
 #include "bone_cloth_collision_capsule_3d.h"
 #include "bone_cloth_collision_plane_3d.h"
 #include "bone_cloth_collision_sphere_3d.h"
+#include "bone_cloth_collision_tapered_capsule_3d.h"
 
 #include "bone_cloth_simulator_3d.h"
 
@@ -24,6 +25,7 @@ void initialize_bone_cloth_module(ModuleInitializationLevel p_level) {
 	GDREGISTER_CLASS(BoneClothCollisionSphere3D);
 	GDREGISTER_CLASS(BoneClothCollisionCapsule3D);
 	GDREGISTER_CLASS(BoneClothCollisionPlane3D);
+	GDREGISTER_CLASS(BoneClothCollisionTaperedCapsule3D);
 
 }
 
