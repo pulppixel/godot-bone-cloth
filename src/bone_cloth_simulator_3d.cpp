@@ -143,7 +143,7 @@ void BoneClothSimulator3D::_update_joint_settings(Chain& p_chain)
 }
 
 // One step of KawaiiPhysics' SimulateOnce, in its order.
-void BoneClothSimulator3D::_step(const Vector3& p_gravity, const Vector3& p_move, const Quaternion& p_turn, const LocalVector<BoneClothCapsule3D*>& p_capsules)
+void BoneClothSimulator3D::_step(const Vector3& p_gravity, const Vector3& p_move, const Quaternion& p_turn, const LocalVector<BoneClothCollision3D*>& p_collisions)
 {
 	// The roots are kinematic: they follow the pose.
 	for (Chain& chain : chains) {
@@ -161,10 +161,10 @@ void BoneClothSimulator3D::_step(const Vector3& p_gravity, const Vector3& p_move
 	// KawaiiPhysics solves the links once before the collision and once after it.
 	_solve_links();
 	for (Chain& chain : chains) {
-		_collide(chain, p_capsules);
+		_collide(chain, p_collisions);
 	}
 
-	_collide_links(p_capsules);
+	_collide_links(p_collisions);
 	_solve_links();
 
 	for (Chain& chain : chains) {
@@ -225,27 +225,27 @@ void BoneClothSimulator3D::_solve_links()
 	}
 }
 
-// Every joint below the root against every capsule, as KawaiiPhysics' collision pass.
+// Every joint below the root against every collision, as KawaiiPhysics' collision pass.
 // The roots follow the pose and are never pushed.
-void BoneClothSimulator3D::_collide(Chain& p_chain, const LocalVector<BoneClothCapsule3D*>& p_capsules)
+void BoneClothSimulator3D::_collide(Chain& p_chain, const LocalVector<BoneClothCollision3D*>& p_collisions)
 {
 	for (uint32_t i = 1; i < p_chain.joints.size(); i++) {
 		Joint& joint = p_chain.joints[i];
-		for (const BoneClothCapsule3D* capsule : p_capsules) {
-			joint.location = capsule->collide(joint.location, joint.radius);
+		for (const BoneClothCollision3D* collision : p_collisions) {
+			joint.location = collision->collide(joint.location, joint.radius);
 		}
 	}
 }
 
-// Every link against every capsule as a line, where KawaiiPhysics feeds its bridge points' collision back to the two ends.
-void BoneClothSimulator3D::_collide_links(const LocalVector<BoneClothCapsule3D*>& p_capsules)
+// Every link against every collision as a line, where KawaiiPhysics feeds its bridge points' collision back to the two ends.
+void BoneClothSimulator3D::_collide_links(const LocalVector<BoneClothCollision3D*>& p_collisions)
 {
 	for (const Link& link : links) {
 		Joint& joint_a = chains[link.chain_a].joints[link.depth];
 		Joint& joint_b = chains[link.chain_b].joints[link.depth];
 		const float link_radius = (joint_a.radius + joint_b.radius) * 0.5f;
-		for (const BoneClothCapsule3D* capsule : p_capsules) {
-			capsule->collide_segment(joint_a.location, joint_b.location, link_radius);
+		for (const BoneClothCollision3D* collision : p_collisions) {
+			collision->collide_segment(joint_a.location, joint_b.location, link_radius);
 		}
 	}
 }
@@ -831,13 +831,13 @@ void BoneClothSimulator3D::_process_modification_with_delta(double p_delta)
 		prev_step_turn = Quaternion();
 	}
 
-	// The capsules follow their bones before the steps, as SpringBoneSimulator3D syncs its collisions; also while paused, so the editor shows them in place.
-	LocalVector<BoneClothCapsule3D*> capsules;
+	// The collisions follow their bones before the steps, as SpringBoneSimulator3D syncs its collisions; also while paused, so the editor shows them in place.
+	LocalVector<BoneClothCollision3D*> collisions;
 	for (int i = 0; i < get_child_count(); i++) {
-		BoneClothCapsule3D* capsule = Object::cast_to<BoneClothCapsule3D>(get_child(i));
-		if (capsule) {
-			capsule->sync_pose();
-			capsules.push_back(capsule);
+		BoneClothCollision3D* collision = Object::cast_to<BoneClothCollision3D>(get_child(i));
+		if (collision) {
+			collision->sync_pose();
+			collisions.push_back(collision);
 		}
 	}
 
@@ -882,7 +882,7 @@ void BoneClothSimulator3D::_process_modification_with_delta(double p_delta)
 				}
 			}
 
-			_step(skeleton_gravity, step_move, step_turn, capsules);
+			_step(skeleton_gravity, step_move, step_turn, collisions);
 			prev_step_move = step_move;
 			prev_step_turn = step_turn;
 		}
