@@ -3,6 +3,8 @@
 ## KawaiiPhysics
 
 The cloth solver is ported from KawaiiPhysics, https://github.com/pafuhana1213/KawaiiPhysics
+The presets accessory, breast, hair_soft, hair_stiff and tail in presets/ take their values from KawaiiPhysics'
+sample presets (Content/KawaiiPhysicsSample/Presets), in metres and radians.
 
 MIT License
 
