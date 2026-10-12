@@ -329,6 +329,53 @@ chains/5/root_bone = 21
 chains/5/end_bone_name = "skirt_front_04_r"
 chains/5/end_bone = 24
 
+[node name="Hips" type="BoneClothCollisionCapsule3D" parent="lucia/root/GeneralSkeleton/BoneClothSimulator3D" unique_id=495556557]
+radius = 0.09
+height = 0.32
+bone_name = "Hips"
+bone = 7
+position_offset = Vector3(0, -0.092, -0.026)
+rotation_offset = Quaternion(0, 0, -0.707107, 0.707107)
+transform = Transform3D(-0.0021373653, 0.9902527, -0.1392662, -0.9998964, -0.00013400766, 0.014392886, 0.014233932, 0.13928252, 0.9901504, -0.006719016, 0.86481494, -0.06527221)
+
+[node name="LeftThigh" type="BoneClothCollisionTaperedCapsule3D" parent="lucia/root/GeneralSkeleton/BoneClothSimulator3D" unique_id=1913947902]
+top_radius = 0.08
+bottom_radius = 0.1
+height = 0.606
+bone_name = "LeftUpperLeg"
+bone = 202
+position_offset = Vector3(0, 0.211, 0)
+rotation_offset = Quaternion(0, 0, 0, 1)
+transform = Transform3D(-0.99794805, -0.038598523, 0.05108507, 0.06076828, -0.8222977, 0.5658036, 0.020167962, 0.567747, 0.822956, 0.070128955, 0.7692323, 0.096916236)
+
+[node name="LeftCalf" type="BoneClothCollisionCapsule3D" parent="lucia/root/GeneralSkeleton/BoneClothSimulator3D" unique_id=2028555361]
+radius = 0.05
+height = 0.598
+bone_name = "LeftLowerLeg"
+bone = 203
+position_offset = Vector3(0, 0.247, 0)
+rotation_offset = Quaternion(0, 0, 0, 1)
+transform = Transform3D(0.9976348, -0.047478974, -0.04970094, -0.06368004, -0.9106073, -0.40833715, -0.025870614, 0.41053647, -0.911477, 0.067037314, 0.34643704, 0.31837353)
+
+[node name="RightThigh" type="BoneClothCollisionTaperedCapsule3D" parent="lucia/root/GeneralSkeleton/BoneClothSimulator3D" unique_id=705981842]
+top_radius = 0.08
+bottom_radius = 0.1
+height = 0.606
+bone_name = "RightUpperLeg"
+bone = 215
+position_offset = Vector3(0, 0.211, 0)
+rotation_offset = Quaternion(0, 0, 0, 1)
+transform = Transform3D(-0.98392, 0.054428317, -0.17011495, -0.02210488, -0.982223, -0.18641113, -0.17723686, -0.17965326, 0.96763206, -0.08860293, 0.7355094, -0.08587223)
+
+[node name="RightCalf" type="BoneClothCollisionCapsule3D" parent="lucia/root/GeneralSkeleton/BoneClothSimulator3D" unique_id=2108333336]
+radius = 0.05
+height = 0.598
+bone_name = "RightLowerLeg"
+bone = 216
+position_offset = Vector3(0, 0.247, 0)
+rotation_offset = Quaternion(0, 0, 0, 1)
+transform = Transform3D(0.9806656, 0.14781918, 0.12823611, 0.0112353545, -0.6967476, 0.7172282, 0.19536828, -0.7019202, -0.68493736, -0.05530842, 0.33894187, -0.31619868)
+
 [node name="Twintails" type="BoneClothSimulator3D" parent="lucia/root/GeneralSkeleton" index="21" unique_id=625231802]
 stiffness/value = 0.02
 radius/value = 0.02

@@ -45,8 +45,6 @@ bool BoneClothSimulator3D::_build_joints(Skeleton3D *p_skeleton, Chain &p_chain)
 	const Transform3D rest = p_skeleton->get_bone_rest(end);
 	p_chain.end_axis = rest.basis.xform_inv(rest.origin).normalized();
 
-	// KawaiiPhysics' LengthRateFromRoot: the rest length from the root to each joint over the whole chain's, the tip included.
-	// By length rather than by count, as bones in one chain differ.
 	float length = 0.0f;
 	for (uint32_t i = 1; i < p_chain.joints.size(); i++) {
 		Joint &joint = p_chain.joints[i];
