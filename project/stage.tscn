@@ -376,6 +376,42 @@ position_offset = Vector3(0, 0.247, 0)
 rotation_offset = Quaternion(0, 0, 0, 1)
 transform = Transform3D(0.9806656, 0.14781918, 0.12823611, 0.0112353545, -0.6967476, 0.7172282, 0.19536828, -0.7019202, -0.68493736, -0.05530842, 0.33894187, -0.31619868)
 
+[node name="LeftForearm" type="BoneClothCollisionCapsule3D" parent="lucia/root/GeneralSkeleton/BoneClothSimulator3D" unique_id=1349519977]
+radius = 0.06
+height = 0.346
+bone_name = "LeftLowerArm"
+bone = 39
+position_offset = Vector3(0, 0.113, 0)
+rotation_offset = Quaternion(0, 0, 0, 1)
+transform = Transform3D(-0.966072, 0.24102113, 0.092809774, -0.22457576, -0.96139234, 0.15903074, 0.12755623, 0.13279256, 0.9829019, 0.21079277, 1.0755693, -0.17232329)
+
+[node name="LeftHand" type="BoneClothCollisionCapsule3D" parent="lucia/root/GeneralSkeleton/BoneClothSimulator3D" unique_id=1344850152]
+radius = 0.07
+height = 0.313
+bone_name = "LeftHand"
+bone = 45
+position_offset = Vector3(0, 0.087, 0)
+rotation_offset = Quaternion(0, 0, 0, 1)
+transform = Transform3D(-0.26523983, 0.34694815, -0.899597, -0.17646948, -0.9347237, -0.30846474, -0.94789594, 0.07693453, 0.30915165, 0.2682058, 0.88563836, -0.15062821)
+
+[node name="RightForearm" type="BoneClothCollisionCapsule3D" parent="lucia/root/GeneralSkeleton/BoneClothSimulator3D" unique_id=1772877157]
+radius = 0.06
+height = 0.346
+bone_name = "RightLowerArm"
+bone = 65
+position_offset = Vector3(0, 0.113, 0)
+rotation_offset = Quaternion(0, 0, 0, 1)
+transform = Transform3D(-0.86647916, 0.0662686, 0.49479526, 0.39166537, -0.5243169, 0.75610197, 0.30953515, 0.8489406, 0.4283545, -0.22226636, 1.1206088, 0.16381687)
+
+[node name="RightHand" type="BoneClothCollisionCapsule3D" parent="lucia/root/GeneralSkeleton/BoneClothSimulator3D" unique_id=469797504]
+radius = 0.07
+height = 0.313
+bone_name = "RightHand"
+bone = 71
+position_offset = Vector3(0, 0.087, 0)
+rotation_offset = Quaternion(0, 0, 0, 1)
+transform = Transform3D(0.28206772, 0.21157806, 0.93577373, 0.83122444, -0.54094255, -0.12824681, 0.47906557, 0.8140121, -0.3284511, -0.19637248, 1.0143127, 0.33054394)
+
 [node name="Twintails" type="BoneClothSimulator3D" parent="lucia/root/GeneralSkeleton" index="21" unique_id=625231802]
 stiffness/value = 0.02
 radius/value = 0.02
