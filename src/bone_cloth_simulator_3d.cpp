@@ -1,9 +1,5 @@
 #include "bone_cloth_simulator_3d.h"
 
-#include <godot_cpp/classes/editor_interface.hpp>
-#include <godot_cpp/classes/editor_undo_redo_manager.hpp>
-#include <godot_cpp/classes/engine.hpp>
-
 #include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/core/math.hpp>
 
@@ -332,12 +328,8 @@ void BoneClothSimulator3D::_write_rotations(Skeleton3D* p_skeleton, const Chain&
 
 void BoneClothSimulator3D::_bind_methods()
 {
-	ClassDB::bind_method(D_METHOD("set_preset", "preset"), &BoneClothSimulator3D::set_preset);
-	ClassDB::bind_method(D_METHOD("get_preset"), &BoneClothSimulator3D::get_preset);
-	ClassDB::bind_method(D_METHOD("apply_preset"), &BoneClothSimulator3D::apply_preset);
+	ClassDB::bind_method(D_METHOD("apply_preset", "preset"), &BoneClothSimulator3D::apply_preset);
 	ClassDB::bind_method(D_METHOD("make_preset"), &BoneClothSimulator3D::make_preset);
-	ClassDB::bind_method(D_METHOD("_get_apply_preset_action"), &BoneClothSimulator3D::_get_apply_preset_action);
-	ClassDB::bind_method(D_METHOD("_get_make_preset_action"), &BoneClothSimulator3D::_get_make_preset_action);
 
 	ClassDB::bind_method(D_METHOD("set_chain_count", "count"), &BoneClothSimulator3D::set_chain_count);
 	ClassDB::bind_method(D_METHOD("get_chain_count"), &BoneClothSimulator3D::get_chain_count);
@@ -388,14 +380,6 @@ void BoneClothSimulator3D::_bind_methods()
 	ClassDB::bind_method(D_METHOD("get_teleport_angle"), &BoneClothSimulator3D::get_teleport_angle);
 
 	ClassDB::bind_method(D_METHOD("reset"), &BoneClothSimulator3D::reset);
-
-	// Two inspector buttons, @export_tool_button's form: a Callable property with PROPERTY_HINT_TOOL_BUTTON, shown but not saved.
-	// The getters start with an underscore so the class reference leaves them out.
-	ADD_GROUP("Preset", "");
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "preset", PROPERTY_HINT_RESOURCE_TYPE, "BoneClothPreset"), "set_preset", "get_preset");
-	ADD_PROPERTY(PropertyInfo(Variant::CALLABLE, "apply_preset_action", PROPERTY_HINT_TOOL_BUTTON, "Apply Preset,Load", PROPERTY_USAGE_EDITOR), "", "_get_apply_preset_action");
-	ADD_PROPERTY(PropertyInfo(Variant::CALLABLE, "make_preset_action", PROPERTY_HINT_TOOL_BUTTON, "Make Preset,ActionCopy", PROPERTY_USAGE_EDITOR), "", "_get_make_preset_action");
-	ADD_GROUP("", "");
 
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "link_mode", PROPERTY_HINT_ENUM, "None,Sequential,Loop"), "set_link_mode", "get_link_mode");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "link_stiffness", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_link_stiffness", "get_link_stiffness");
@@ -507,78 +491,25 @@ void BoneClothSimulator3D::_get_property_list(List<PropertyInfo>* p_list) const
 	}
 }
 
-void BoneClothSimulator3D::set_preset(const Ref<BoneClothPreset>& p_preset)
+// The preset's values onto this node, name by name. The chains, the link mode and the collisions are not in a preset.
+// The editor's Presets menu sets the same values through its undo history (editor/bone_cloth_simulator_3d_editor_plugin.cpp).
+void BoneClothSimulator3D::apply_preset(const Ref<BoneClothPreset>& p_preset)
 {
-	preset = p_preset;
-}
-
-Ref<BoneClothPreset> BoneClothSimulator3D::get_preset() const
-{
-	return preset;
-}
-
-// A curve goes over as a copy, so tuning the node's curve after an apply leaves the preset's file as it was.
-static Variant copy_preset_value(const Variant& p_value)
-{
-	const Ref<Curve> curve = p_value;
-	return curve.is_valid() ? Variant(curve->duplicate()) : p_value;
-}
-
-// The preset's values onto this node, name by name. In the editor it is one undo step, as the docs ask of a tool button
-// (@export_tool_button); in a running game it sets the values directly.
-void BoneClothSimulator3D::apply_preset()
-{
-	ERR_FAIL_COND_MSG(preset.is_null(), "No preset to apply.");
-
-	if (Engine::get_singleton()->is_editor_hint()) {
-		EditorUndoRedoManager* undo_redo = EditorInterface::get_singleton()->get_editor_undo_redo();
-		undo_redo->create_action("Apply Bone Cloth Preset", UndoRedo::MERGE_DISABLE, this);
-		for (const char* name : BoneClothPreset::VALUES) {
-			undo_redo->add_do_property(this, name, copy_preset_value(preset->get(name)));
-			undo_redo->add_undo_property(this, name, get(name));
-		}
-		undo_redo->commit_action();
-		return;
-	}
-
+	ERR_FAIL_COND_MSG(p_preset.is_null(), "No preset to apply.");
 	for (const char* name : BoneClothPreset::VALUES) {
-		set(name, copy_preset_value(preset->get(name)));
+		set(name, BoneClothPreset::copy_value(p_preset->get(name)));
 	}
 }
 
-// A new preset from this node's values, put in the preset slot to be saved from there (Save As in the slot's menu).
-// Always a new one, as KawaiiPhysics' Export Preset and Magica Cloth's Save: writing into the preset in the slot would
-// change a shipped preset's file the next time the editor saves.
-Ref<BoneClothPreset> BoneClothSimulator3D::make_preset()
+// A new preset from this node's values, which the editor's Presets menu saves to a file of its own.
+Ref<BoneClothPreset> BoneClothSimulator3D::make_preset() const
 {
 	Ref<BoneClothPreset> made;
 	made.instantiate();
 	for (const char* name : BoneClothPreset::VALUES) {
-		made->set(name, copy_preset_value(get(name)));
-	}
-
-	if (Engine::get_singleton()->is_editor_hint()) {
-		EditorUndoRedoManager* undo_redo = EditorInterface::get_singleton()->get_editor_undo_redo();
-		undo_redo->create_action("Make Bone Cloth Preset", UndoRedo::MERGE_DISABLE, this);
-		undo_redo->add_do_property(this, "preset", made);
-		undo_redo->add_undo_property(this, "preset", preset);
-		undo_redo->commit_action();
-	}
-	else {
-		set_preset(made);
+		made->set(name, BoneClothPreset::copy_value(get(name)));
 	}
 	return made;
-}
-
-// Method callables, not callable_mp: the inspector calls the method by name on every selected node.
-Callable BoneClothSimulator3D::_get_apply_preset_action()
-{
-	return Callable(this, "apply_preset");
-}
-
-Callable BoneClothSimulator3D::_get_make_preset_action()
-{
-	return Callable(this, "make_preset");
 }
 
 void BoneClothSimulator3D::set_chain_count(int p_count)

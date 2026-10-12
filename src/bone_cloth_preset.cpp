@@ -60,6 +60,12 @@ void BoneClothPreset::_bind_methods()
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "teleport_angle", PROPERTY_HINT_RANGE, "0,180,0.1,radians_as_degrees"), "set_teleport_angle", "get_teleport_angle");
 }
 
+Variant BoneClothPreset::copy_value(const Variant& p_value)
+{
+	const Ref<Curve> curve = p_value;
+	return curve.is_valid() ? Variant(curve->duplicate()) : p_value;
+}
+
 void BoneClothPreset::set_link_stiffness(float p_stiffness)
 {
 	link_stiffness = p_stiffness;

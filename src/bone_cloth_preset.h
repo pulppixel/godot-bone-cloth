@@ -55,6 +55,8 @@ namespace godot {
 			"teleport_angle",
 		};
 
+		// A curve goes over as a copy, so tuning the node's curve after an apply leaves the preset's file as it was.
+		static Variant copy_value(const Variant& p_value);
 		void set_link_stiffness(float p_stiffness);
 		float get_link_stiffness() const;
 		void set_end_bone_length(float p_length);

@@ -1,4 +1,4 @@
-[gd_resource type="BoneClothPreset" format=3]
+[gd_resource type="BoneClothPreset" format=3 uid="uid://chx22cf6jyqra"]
 
 [resource]
 stiffness/value = 0.02

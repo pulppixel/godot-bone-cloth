@@ -64,7 +64,6 @@ namespace godot {
 			float length = 0.0f;
 		};
 
-		Ref<BoneClothPreset> preset;
 		LocalVector<Chain> chains;
 		LinkMode link_mode = LINK_MODE_NONE;
 		float link_stiffness = 0.0f;
@@ -106,10 +105,6 @@ namespace godot {
 		void _update_display(Chain& p_chain, float p_follow);
 		void _write_rotations(Skeleton3D* p_skeleton, const Chain& p_chain);
 
-		// Preset
-		Callable _get_apply_preset_action();
-		Callable _get_make_preset_action();
-
 	protected:
 		static void _bind_methods();
 		bool _set(const StringName& p_name, const Variant& p_value);
@@ -117,10 +112,8 @@ namespace godot {
 		void _get_property_list(List<PropertyInfo>* p_list) const;
 
 	public:
-		void set_preset(const Ref<BoneClothPreset>& p_preset);
-		Ref<BoneClothPreset> get_preset() const;
-		void apply_preset();
-		Ref<BoneClothPreset> make_preset();
+		void apply_preset(const Ref<BoneClothPreset>& p_preset);
+		Ref<BoneClothPreset> make_preset() const;
 
 		void set_chain_count(int p_count);
 		int get_chain_count() const;
