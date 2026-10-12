@@ -1,0 +1,6 @@
+[gd_resource type="BoneClothPreset" format=3 uid="uid://dvcsjs6fbehjj"]
+
+[resource]
+drag/value = 0.12
+stiffness/value = 0.08
+radius/value = 0.04

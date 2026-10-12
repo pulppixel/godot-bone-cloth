@@ -3,7 +3,6 @@
 #include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/core/math.hpp>
 
-
 using namespace godot;
 
 // KawaiiPhysics' fixed substeps: 60 a second, at most 4 a frame, time beyond that dropped.
@@ -329,6 +328,9 @@ void BoneClothSimulator3D::_write_rotations(Skeleton3D* p_skeleton, const Chain&
 
 void BoneClothSimulator3D::_bind_methods()
 {
+	ClassDB::bind_method(D_METHOD("apply_preset", "preset"), &BoneClothSimulator3D::apply_preset);
+	ClassDB::bind_method(D_METHOD("make_preset"), &BoneClothSimulator3D::make_preset);
+
 	ClassDB::bind_method(D_METHOD("set_chain_count", "count"), &BoneClothSimulator3D::set_chain_count);
 	ClassDB::bind_method(D_METHOD("get_chain_count"), &BoneClothSimulator3D::get_chain_count);
 	ClassDB::bind_method(D_METHOD("set_root_bone_name", "index", "bone_name"), &BoneClothSimulator3D::set_root_bone_name);
@@ -382,6 +384,7 @@ void BoneClothSimulator3D::_bind_methods()
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "link_mode", PROPERTY_HINT_ENUM, "None,Sequential,Loop"), "set_link_mode", "get_link_mode");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "link_stiffness", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_link_stiffness", "get_link_stiffness");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "end_bone_length", PROPERTY_HINT_RANGE, "0,1,0.001,or_greater,suffix:m"), "set_end_bone_length", "get_end_bone_length");
+
 	// Each value folds with its curve as in SpringBoneSimulator3D's settings: <name>/value and <name>/damping_curve, the curve scaling the value along the chain.
 	// stiffness keeps KawaiiPhysics' meaning, a per step pull toward the pose from 0 to 1; the engine's stiffness runs 0 to 4 in another formula.
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "drag/value", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_drag", "get_drag");
@@ -486,6 +489,27 @@ void BoneClothSimulator3D::_get_property_list(List<PropertyInfo>* p_list) const
 		p_list->push_back(PropertyInfo(Variant::STRING, path + String("end_bone_name"), hint, bone_names));
 		p_list->push_back(PropertyInfo(Variant::INT, path + String("end_bone"), PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR));
 	}
+}
+
+// The preset's values onto this node, name by name. The chains, the link mode and the collisions are not in a preset.
+// The editor's Presets menu sets the same values through its undo history (editor/bone_cloth_simulator_3d_editor_plugin.cpp).
+void BoneClothSimulator3D::apply_preset(const Ref<BoneClothPreset>& p_preset)
+{
+	ERR_FAIL_COND_MSG(p_preset.is_null(), "No preset to apply.");
+	for (const char* name : BoneClothPreset::VALUES) {
+		set(name, BoneClothPreset::copy_value(p_preset->get(name)));
+	}
+}
+
+// A new preset from this node's values, which the editor's Presets menu saves to a file of its own.
+Ref<BoneClothPreset> BoneClothSimulator3D::make_preset() const
+{
+	Ref<BoneClothPreset> made;
+	made.instantiate();
+	for (const char* name : BoneClothPreset::VALUES) {
+		made->set(name, BoneClothPreset::copy_value(get(name)));
+	}
+	return made;
 }
 
 void BoneClothSimulator3D::set_chain_count(int p_count)

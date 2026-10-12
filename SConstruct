@@ -5,7 +5,7 @@
 env = SConscript("godot-cpp/SConstruct", {"api_version": "4.7"})
 
 env.Append(CPPPATH=["src/"])
-sources = Glob("src/*.cpp")
+sources = Glob("src/*.cpp") + Glob("src/editor/*.cpp")
 
 library = env.SharedLibrary(
     "project/addons/bone_cloth/bin/libbonecloth{}{}".format(env["suffix"], env["SHLIBSUFFIX"]),

@@ -4,6 +4,7 @@
 #pragma once
 
 #include "bone_cloth_collision_3d.h"
+#include "bone_cloth_preset.h"
 
 #include <godot_cpp/classes/curve.hpp>
 #include <godot_cpp/classes/skeleton3d.hpp>
@@ -111,6 +112,9 @@ namespace godot {
 		void _get_property_list(List<PropertyInfo>* p_list) const;
 
 	public:
+		void apply_preset(const Ref<BoneClothPreset>& p_preset);
+		Ref<BoneClothPreset> make_preset() const;
+
 		void set_chain_count(int p_count);
 		int get_chain_count() const;
 		void set_root_bone_name(int p_index, const String& p_bone_name);
