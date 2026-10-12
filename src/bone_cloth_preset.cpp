@@ -29,10 +29,14 @@ void BoneClothPreset::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_gravity"), &BoneClothPreset::get_gravity);
 	ClassDB::bind_method(D_METHOD("set_inertia", "inertia"), &BoneClothPreset::set_inertia);
 	ClassDB::bind_method(D_METHOD("get_inertia"), &BoneClothPreset::get_inertia);
+	ClassDB::bind_method(D_METHOD("set_inertia_smoothing", "smoothing"), &BoneClothPreset::set_inertia_smoothing);
+	ClassDB::bind_method(D_METHOD("get_inertia_smoothing"), &BoneClothPreset::get_inertia_smoothing);
 	ClassDB::bind_method(D_METHOD("set_movement_speed_limit", "limit"), &BoneClothPreset::set_movement_speed_limit);
 	ClassDB::bind_method(D_METHOD("get_movement_speed_limit"), &BoneClothPreset::get_movement_speed_limit);
 	ClassDB::bind_method(D_METHOD("set_rotation_speed_limit", "limit"), &BoneClothPreset::set_rotation_speed_limit);
 	ClassDB::bind_method(D_METHOD("get_rotation_speed_limit"), &BoneClothPreset::get_rotation_speed_limit);
+	ClassDB::bind_method(D_METHOD("set_joint_speed_limit", "limit"), &BoneClothPreset::set_joint_speed_limit);
+	ClassDB::bind_method(D_METHOD("get_joint_speed_limit"), &BoneClothPreset::get_joint_speed_limit);
 	ClassDB::bind_method(D_METHOD("set_teleport_distance", "distance"), &BoneClothPreset::set_teleport_distance);
 	ClassDB::bind_method(D_METHOD("get_teleport_distance"), &BoneClothPreset::get_teleport_distance);
 	ClassDB::bind_method(D_METHOD("set_teleport_angle", "angle"), &BoneClothPreset::set_teleport_angle);
@@ -53,8 +57,10 @@ void BoneClothPreset::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR3, "gravity", PROPERTY_HINT_NONE, "suffix:m/s^2"), "set_gravity", "get_gravity");
 	ADD_GROUP("Inertia", "");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "inertia", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_inertia", "get_inertia");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "inertia_smoothing", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_inertia_smoothing", "get_inertia_smoothing");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "movement_speed_limit", PROPERTY_HINT_RANGE, "0,20,0.01,or_greater,suffix:m/s"), "set_movement_speed_limit", "get_movement_speed_limit");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "rotation_speed_limit", PROPERTY_HINT_RANGE, "0,1440,0.1,radians_as_degrees,suffix:/s"), "set_rotation_speed_limit", "get_rotation_speed_limit");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "joint_speed_limit", PROPERTY_HINT_RANGE, "0,10,0.01,or_greater,suffix:m/s"), "set_joint_speed_limit", "get_joint_speed_limit");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "teleport_distance", PROPERTY_HINT_RANGE, "0,10,0.01,or_greater,suffix:m"), "set_teleport_distance", "get_teleport_distance");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "teleport_angle", PROPERTY_HINT_RANGE, "0,180,0.1,radians_as_degrees"), "set_teleport_angle", "get_teleport_angle");
 }
@@ -172,6 +178,15 @@ float BoneClothPreset::get_inertia() const {
 	return inertia;
 }
 
+void BoneClothPreset::set_inertia_smoothing(float p_smoothing) {
+	inertia_smoothing = p_smoothing;
+	emit_changed();
+}
+
+float BoneClothPreset::get_inertia_smoothing() const {
+	return inertia_smoothing;
+}
+
 void BoneClothPreset::set_movement_speed_limit(float p_limit) {
 	movement_speed_limit = p_limit;
 	emit_changed();
@@ -188,6 +203,15 @@ void BoneClothPreset::set_rotation_speed_limit(float p_limit) {
 
 float BoneClothPreset::get_rotation_speed_limit() const {
 	return rotation_speed_limit;
+}
+
+void BoneClothPreset::set_joint_speed_limit(float p_limit) {
+	joint_speed_limit = p_limit;
+	emit_changed();
+}
+
+float BoneClothPreset::get_joint_speed_limit() const {
+	return joint_speed_limit;
 }
 
 void BoneClothPreset::set_teleport_distance(float p_distance) {

@@ -258,6 +258,14 @@ void BoneClothSimulator3D::_simulate(Chain &p_chain, const Vector3 &p_gravity, c
 		const Joint &parent = p_chain.joints[i - 1];
 
 		Vector3 velocity = (joint.location - joint.prev_location) / dt;
+
+		// Magica Cloth 2's particle speed limit, on the joint's speed over the ground: the part the skeleton carried in the last step is taken off first and put back after.
+		// Magica's own comment: a capped speed moves better, hair in a turn above all, but a low cap weakens the push out of the colliders.
+		if (joint_speed_limit > 0.0f) {
+			const Vector3 carried = (prev_step_move + prev_step_turn.xform(joint.prev_location) - joint.prev_location) / dt;
+			velocity = (velocity - carried).limit_length(joint_speed_limit) + carried;
+		}
+
 		joint.prev_location = joint.location;
 		velocity *= 1.0f - joint.drag;
 		velocity += p_gravity * dt;
@@ -381,19 +389,24 @@ void BoneClothSimulator3D::_update_display(Chain &p_chain, float p_follow) {
 	}
 }
 
-// Each bone turns by the arc from its pose direction to its drawn direction.
+// Each bone first turns as the bone above it turned, then by the arc from where that leaves it pointing to its drawn direction,
+// as Magica Cloth 2 (VirtualMeshManager.cs, the child's rotation from its parent's) and the engine's SpringBoneSimulator3D do.
+// The arc is then the bend between neighbours only. An arc from the bone's own pose direction, as KawaiiPhysics takes, nears 180 degrees
+// when hair flies up over the head, and its axis, which is the bone's twist, flips from one frame to the next.
 // Rotation only: the lengths stay the pose's. Root first, because set_bone_global_pose works out the local pose from the parent's global pose.
 // The root is drawn at its pose location, as KawaiiPhysics writes only the bones below it.
 // A branch's root is its trunk's joint, written with the trunk, which comes first. A joint with branches keeps its pose rotation and is only
 // moved, as KawaiiPhysics leaves a bone with several children unturned; the bones below it are then placed where they are drawn.
 void BoneClothSimulator3D::_write_rotations(Skeleton3D *p_skeleton, const Chain &p_chain) {
+	// The turn of the bone above, from its pose rotation: none above the root, nor at a joint with branches.
+	Quaternion turn;
 	for (uint32_t i = p_chain.parent_chain >= 0 ? 2 : 1; i < p_chain.joints.size(); i++) {
 		const Joint &joint = p_chain.joints[i];
 		const Joint &parent = p_chain.joints[i - 1];
 		const Vector3 pose_vector = joint.current_pose_location - parent.current_pose_location;
 		const Vector3 display_vector = joint.display_location - parent.display_location;
-		const Basis basis = parent.branched ? parent.pose_basis : Basis(Quaternion(pose_vector, display_vector)) * parent.pose_basis;
-		p_skeleton->set_bone_global_pose(parent.bone, Transform3D(basis, parent.display_location));
+		turn = parent.branched ? Quaternion() : Quaternion(turn.xform(pose_vector), display_vector) * turn;
+		p_skeleton->set_bone_global_pose(parent.bone, Transform3D(Basis(turn) * parent.pose_basis, parent.display_location));
 	}
 }
 
@@ -440,10 +453,14 @@ void BoneClothSimulator3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_gravity"), &BoneClothSimulator3D::get_gravity);
 	ClassDB::bind_method(D_METHOD("set_inertia", "inertia"), &BoneClothSimulator3D::set_inertia);
 	ClassDB::bind_method(D_METHOD("get_inertia"), &BoneClothSimulator3D::get_inertia);
+	ClassDB::bind_method(D_METHOD("set_inertia_smoothing", "smoothing"), &BoneClothSimulator3D::set_inertia_smoothing);
+	ClassDB::bind_method(D_METHOD("get_inertia_smoothing"), &BoneClothSimulator3D::get_inertia_smoothing);
 	ClassDB::bind_method(D_METHOD("set_movement_speed_limit", "limit"), &BoneClothSimulator3D::set_movement_speed_limit);
 	ClassDB::bind_method(D_METHOD("get_movement_speed_limit"), &BoneClothSimulator3D::get_movement_speed_limit);
 	ClassDB::bind_method(D_METHOD("set_rotation_speed_limit", "limit"), &BoneClothSimulator3D::set_rotation_speed_limit);
 	ClassDB::bind_method(D_METHOD("get_rotation_speed_limit"), &BoneClothSimulator3D::get_rotation_speed_limit);
+	ClassDB::bind_method(D_METHOD("set_joint_speed_limit", "limit"), &BoneClothSimulator3D::set_joint_speed_limit);
+	ClassDB::bind_method(D_METHOD("get_joint_speed_limit"), &BoneClothSimulator3D::get_joint_speed_limit);
 	ClassDB::bind_method(D_METHOD("set_teleport_distance", "distance"), &BoneClothSimulator3D::set_teleport_distance);
 	ClassDB::bind_method(D_METHOD("get_teleport_distance"), &BoneClothSimulator3D::get_teleport_distance);
 	ClassDB::bind_method(D_METHOD("set_teleport_angle", "angle"), &BoneClothSimulator3D::set_teleport_angle);
@@ -469,8 +486,10 @@ void BoneClothSimulator3D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR3, "gravity", PROPERTY_HINT_NONE, "suffix:m/s^2"), "set_gravity", "get_gravity");
 	ADD_GROUP("Inertia", "");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "inertia", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_inertia", "get_inertia");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "inertia_smoothing", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_inertia_smoothing", "get_inertia_smoothing");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "movement_speed_limit", PROPERTY_HINT_RANGE, "0,20,0.01,or_greater,suffix:m/s"), "set_movement_speed_limit", "get_movement_speed_limit");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "rotation_speed_limit", PROPERTY_HINT_RANGE, "0,1440,0.1,radians_as_degrees,suffix:/s"), "set_rotation_speed_limit", "get_rotation_speed_limit");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "joint_speed_limit", PROPERTY_HINT_RANGE, "0,10,0.01,or_greater,suffix:m/s"), "set_joint_speed_limit", "get_joint_speed_limit");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "teleport_distance", PROPERTY_HINT_RANGE, "0,10,0.01,or_greater,suffix:m"), "set_teleport_distance", "get_teleport_distance");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "teleport_angle", PROPERTY_HINT_RANGE, "0,180,0.1,radians_as_degrees"), "set_teleport_angle", "get_teleport_angle");
 	ADD_GROUP("", "");
@@ -759,6 +778,22 @@ float BoneClothSimulator3D::get_inertia() const {
 	return inertia;
 }
 
+void BoneClothSimulator3D::set_inertia_smoothing(float p_smoothing) {
+	inertia_smoothing = p_smoothing;
+}
+
+float BoneClothSimulator3D::get_inertia_smoothing() const {
+	return inertia_smoothing;
+}
+
+void BoneClothSimulator3D::set_joint_speed_limit(float p_limit) {
+	joint_speed_limit = p_limit;
+}
+
+float BoneClothSimulator3D::get_joint_speed_limit() const {
+	return joint_speed_limit;
+}
+
 void BoneClothSimulator3D::set_movement_speed_limit(float p_limit) {
 	movement_speed_limit = p_limit;
 }
@@ -860,6 +895,7 @@ void BoneClothSimulator3D::_process_modification_with_delta(double p_delta) {
 		prev_skeleton_transform = skeleton_transform;
 		prev_step_move = Vector3();
 		prev_step_turn = Quaternion();
+		smoothing_velocity = Vector3();
 	}
 
 	// The collisions follow their bones before the steps, as SpringBoneSimulator3D syncs its collisions; also while paused, so the editor shows them in place.
@@ -902,9 +938,22 @@ void BoneClothSimulator3D::_process_modification_with_delta(double p_delta) {
 			step_turn = prev_step_turn;
 		}
 
-		const Vector3 skeleton_gravity = skeleton_transform.basis.inverse().xform(gravity);
+		// Magica Cloth 2's world inertia smoothing, for sudden starts and stops: the cloth feels the skeleton move at a speed that eases toward the real one,
+		// and the rest of the move carries it along. Magica eases once a frame with a frame's speed capped at the movement speed limit, by (1 - smoothing)^3 * 0.99 + 0.01;
+		// here once a step, so the easing takes the same time at any frame rate. Off at 0, the move as it is; a teleport leaves the eased speed as it was.
+		const bool smoothing = inertia_smoothing >= 1e-6f && !teleported;
+		const float smoothing_rate = CLAMP(Math::pow(1.0f - inertia_smoothing, 3.0f) * 0.99f + 0.01f, 0.0f, 1.0f);
+		const Vector3 frame_velocity = skeleton_transform.basis.xform((-move_location / float(elapsed)).limit_length(movement_speed_limit));
+		const Basis to_skeleton = skeleton_transform.basis.inverse();
+
+		const Vector3 skeleton_gravity = to_skeleton.xform(gravity);
 
 		for (int step = 0; step < step_count; step++) {
+			if (smoothing) {
+				smoothing_velocity = smoothing_velocity.lerp(frame_velocity, smoothing_rate);
+				step_move = (to_skeleton.xform(-smoothing_velocity) * float(STEP) * inertia).limit_length(movement_speed_limit * float(STEP));
+			}
+
 			// The pose targets move from last frame's to this frame's across the steps.
 			const float weight = float(step + 1) / float(step_count);
 			for (Chain &chain : chains) {

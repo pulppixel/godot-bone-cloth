@@ -84,8 +84,10 @@ private:
 	Ref<Curve> limit_angle_damping_curve;
 	Vector3 gravity;
 	float inertia = 1.0f;
+	float inertia_smoothing = 0.4f;
 	float movement_speed_limit = 5.0f;
 	float rotation_speed_limit = Math::deg_to_rad(720.0f);
+	float joint_speed_limit = 4.0f;
 	float teleport_distance = 0.5f;
 	float teleport_angle = Math::deg_to_rad(90.0f);
 
@@ -96,6 +98,8 @@ private:
 	Transform3D prev_skeleton_transform;
 	Vector3 prev_step_move;
 	Quaternion prev_step_turn;
+	// The skeleton's speed as the cloth feels it, eased toward its real speed step by step, in world space so a turn does not carry it round.
+	Vector3 smoothing_velocity;
 
 	// State
 	bool _build_joints(Skeleton3D *p_skeleton, Chain &p_chain);
@@ -159,10 +163,14 @@ public:
 	Vector3 get_gravity() const;
 	void set_inertia(float p_inertia);
 	float get_inertia() const;
+	void set_inertia_smoothing(float p_smoothing);
+	float get_inertia_smoothing() const;
 	void set_movement_speed_limit(float p_limit);
 	float get_movement_speed_limit() const;
 	void set_rotation_speed_limit(float p_limit);
 	float get_rotation_speed_limit() const;
+	void set_joint_speed_limit(float p_limit);
+	float get_joint_speed_limit() const;
 	void set_teleport_distance(float p_distance);
 	float get_teleport_distance() const;
 	void set_teleport_angle(float p_angle);
