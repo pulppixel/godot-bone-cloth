@@ -35,8 +35,11 @@ private:
 		Vector3 current_pose_location;
 		// Where the joint is drawn, which moves every frame even when no step runs.
 		Vector3 display_location;
-
 		Basis pose_basis;
+
+		// A later chain's root is this joint: it keeps its pose rotation, as KawaiiPhysics keeps a bone with several children.
+		bool branched = false;
+
 		// The joint's share of the chain's rest length from the root, where the curves are read, and its settings scaled by them.
 		float length_rate = 0.0f;
 		float drag = 0.0f;
@@ -53,6 +56,10 @@ private:
 		int end_bone = -1;
 		LocalVector<Joint> joints;
 		Vector3 end_axis;
+
+		// A branch: the root bone is a joint of an earlier chain, which the root follows instead of the pose (KawaiiPhysics' ParentIndex).
+		int parent_chain = -1;
+		uint32_t parent_joint = 0;
 	};
 
 	// Two joints at the same depth of neighbouring chains, kept at their rest distance.
@@ -92,10 +99,12 @@ private:
 
 	// State
 	bool _build_joints(Skeleton3D *p_skeleton, Chain &p_chain);
+	void _build_branches();
 	void _build_links(Skeleton3D *p_skeleton);
 	void _read_pose(Skeleton3D *p_skeleton, Chain &p_chain);
 	void _update_joint_settings(Chain &p_chain);
 	void _step(const Vector3 &p_gravity, const Vector3 &p_move, const Quaternion &p_turn, const LocalVector<BoneClothCollision3D *> &p_collisions);
+	void _follow_parent_chain(Chain &p_chain);
 	void _simulate(Chain &p_chain, const Vector3 &p_gravity, const Vector3 &p_move, const Quaternion &p_turn);
 	void _solve_links();
 	void _collide(Chain &p_chain, const LocalVector<BoneClothCollision3D *> &p_collisions);

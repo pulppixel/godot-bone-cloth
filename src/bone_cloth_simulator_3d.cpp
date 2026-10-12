@@ -13,7 +13,8 @@ static constexpr int MAX_STEPS = 4;
 // KawaiiPhysics' default link compliance, Leather.
 static constexpr float LINK_COMPLIANCE = 1e-9f;
 
-// The chain from the root bone down to the end bone, plus a tip past the end bone when end_bone_length is above 0.
+// The rest length from the root to each joint, the tip included; _build_branches turns it into a rate.
+// By length rather than by count, as bones in one chain differ.
 // Without the tip the end bone has no point below it and cannot turn.
 bool BoneClothSimulator3D::_build_joints(Skeleton3D *p_skeleton, Chain &p_chain) {
 	p_chain.joints.clear();
@@ -54,18 +55,87 @@ bool BoneClothSimulator3D::_build_joints(Skeleton3D *p_skeleton, Chain &p_chain)
 		joint.length_rate = length;
 	}
 
-	for (Joint &joint : p_chain.joints) {
-		joint.length_rate = length > 0.0f ? joint.length_rate / length : 0.0f;
+	return true;
+}
+
+// A chain whose root bone is a joint of an earlier chain is a branch of it, as wings fork. KawaiiPhysics collects a bone with several
+// children into one tree and Magica Cloth 2 every transform under its roots; here each branch is a chain listed after its trunk.
+// Then KawaiiPhysics' LengthRateFromRoot over each tree: the length from the tree's root over its longest path, so a branch carries on its trunk's curve.
+void BoneClothSimulator3D::_build_branches() {
+	LocalVector<uint32_t> tree;
+	tree.resize(chains.size());
+	for (uint32_t c = 0; c < chains.size(); c++) {
+		Chain &chain = chains[c];
+		chain.parent_chain = -1;
+		chain.parent_joint = 0;
+		tree[c] = c;
+		if (chain.joints.is_empty()) {
+			continue;
+		}
+
+		const int root = chain.joints[0].bone;
+		for (uint32_t other = 0; other < chains.size() && chain.parent_chain < 0; other++) {
+			if (other == c) {
+				continue;
+			}
+
+			for (uint32_t j = 0; j < chains[other].joints.size(); j++) {
+				if (chains[other].joints[j].bone != root) {
+					continue;
+				}
+
+				// A trunk listed after its branch would move after it, and the branch would follow last step's trunk.
+				ERR_CONTINUE_MSG(other > c, vformat("Chain %d's root bone '%s' is a joint of chain %d; list the trunk before its branches.", c, chain.root_bone_name, other));
+				chain.parent_chain = int(other);
+				chain.parent_joint = j;
+				chains[other].joints[j].branched = true;
+				tree[c] = tree[other];
+				break;
+			}
+		}
 	}
 
-	return true;
+	LocalVector<float> longest;
+	longest.resize(chains.size());
+	for (uint32_t c = 0; c < chains.size(); c++) {
+		longest[c] = 0.0f;
+	}
+
+	for (uint32_t c = 0; c < chains.size(); c++) {
+		Chain &chain = chains[c];
+		if (chain.joints.is_empty()) {
+			continue;
+		}
+
+		const float offset = chain.parent_chain >= 0 ? chains[chain.parent_chain].joints[chain.parent_joint].length_rate : 0.0f;
+		for (Joint &joint : chain.joints) {
+			joint.length_rate += offset;
+		}
+
+		longest[tree[c]] = MAX(longest[tree[c]], chain.joints[chain.joints.size() - 1].length_rate);
+	}
+
+	for (uint32_t c = 0; c < chains.size(); c++) {
+		const float length = longest[tree[c]];
+		for (Joint &joint : chains[c].joints) {
+			joint.length_rate = length > 0.0f ? joint.length_rate / length : 0.0f;
+		}
+	}
 }
 
 // Links between neighbouring chains in the order they are listed, at every depth below the roots, as KawaiiPhysics' ring helper pairs skirt columns.
 // A tip links only to a tip, as bAutoAddChildDummyBoneConstraint does. The length is the rest distance.
+// A branch off a trunk joint below the root is left out, its depths do not match its neighbours'. Chains sharing one root bone still link.
 void BoneClothSimulator3D::_build_links(Skeleton3D *p_skeleton) {
 	links.clear();
-	const uint32_t count = chains.size();
+	LocalVector<uint32_t> linked;
+	for (uint32_t c = 0; c < chains.size(); c++) {
+		if (chains[c].parent_chain < 0 || chains[c].parent_joint == 0) {
+			linked.push_back(c);
+		}
+	}
+
+	const uint32_t count = linked.size();
 	if (link_mode == LINK_MODE_NONE || count < 2) {
 		return;
 	}
@@ -82,8 +152,9 @@ void BoneClothSimulator3D::_build_links(Skeleton3D *p_skeleton) {
 
 	// The last chain links back to the first only with three or more, or the two would be linked twice.
 	const uint32_t pair_count = (link_mode == LINK_MODE_LOOP && count >= 3) ? count : count - 1;
-	for (uint32_t a = 0; a < pair_count; a++) {
-		const uint32_t b = (a + 1) % count;
+	for (uint32_t i = 0; i < pair_count; i++) {
+		const uint32_t a = linked[i];
+		const uint32_t b = linked[(i + 1) % count];
 		const Chain &chain_a = chains[a];
 		const Chain &chain_b = chains[b];
 		const uint32_t depth_count = MIN(chain_a.joints.size(), chain_b.joints.size());
@@ -138,9 +209,9 @@ void BoneClothSimulator3D::_update_joint_settings(Chain &p_chain) {
 
 // One step of KawaiiPhysics' SimulateOnce, in its order.
 void BoneClothSimulator3D::_step(const Vector3 &p_gravity, const Vector3 &p_move, const Quaternion &p_turn, const LocalVector<BoneClothCollision3D *> &p_collisions) {
-	// The roots are kinematic: they follow the pose.
+	// The roots are kinematic: they follow the pose, a branch's its trunk joint.
 	for (Chain &chain : chains) {
-		if (!chain.joints.is_empty()) {
+		if (!chain.joints.is_empty() && chain.parent_chain < 0) {
 			Joint &root = chain.joints[0];
 			root.prev_location = root.location;
 			root.location = root.pose_location;
@@ -148,6 +219,7 @@ void BoneClothSimulator3D::_step(const Vector3 &p_gravity, const Vector3 &p_move
 	}
 
 	for (Chain &chain : chains) {
+		_follow_parent_chain(chain);
 		_simulate(chain, p_gravity, p_move, p_turn);
 	}
 
@@ -161,8 +233,21 @@ void BoneClothSimulator3D::_step(const Vector3 &p_gravity, const Vector3 &p_move
 	_solve_links();
 
 	for (Chain &chain : chains) {
+		_follow_parent_chain(chain);
 		_restore_limits_and_lengths(chain);
 	}
+}
+
+// A branch's root takes its trunk joint's location as the trunk has it now, as KawaiiPhysics reads the parent bone's location.
+// The trunk is an earlier chain, so in each pass over the chains it has already moved.
+void BoneClothSimulator3D::_follow_parent_chain(Chain &p_chain) {
+	if (p_chain.parent_chain < 0 || p_chain.joints.is_empty()) {
+		return;
+	}
+
+	Joint &root = p_chain.joints[0];
+	root.prev_location = root.location;
+	root.location = chains[p_chain.parent_chain].joints[p_chain.parent_joint].location;
 }
 
 // KawaiiPhysics' Simulate for every joint below the root: Verlet with drag and gravity, the character's own motion, then a pull toward the pose.
@@ -280,7 +365,7 @@ void BoneClothSimulator3D::_restore_limits_and_lengths(Chain &p_chain) {
 // Magica clamps only the distance from the root, but its points are drawn as they are; here they become bone rotations.
 void BoneClothSimulator3D::_update_display(Chain &p_chain, float p_follow) {
 	Joint &root = p_chain.joints[0];
-	root.display_location = root.current_pose_location;
+	root.display_location = p_chain.parent_chain >= 0 ? chains[p_chain.parent_chain].joints[p_chain.parent_joint].display_location : root.current_pose_location;
 
 	for (uint32_t i = 1; i < p_chain.joints.size(); i++) {
 		Joint &joint = p_chain.joints[i];
@@ -301,13 +386,15 @@ void BoneClothSimulator3D::_update_display(Chain &p_chain, float p_follow) {
 // Each bone turns by the arc from its pose direction to its drawn direction.
 // Rotation only: the lengths stay the pose's. Root first, because set_bone_global_pose works out the local pose from the parent's global pose.
 // The root is drawn at its pose location, as KawaiiPhysics writes only the bones below it.
+// A branch's root is its trunk's joint, written with the trunk, which comes first. A joint with branches keeps its pose rotation and is only
+// moved, as KawaiiPhysics leaves a bone with several children unturned; the bones below it are then placed where they are drawn.
 void BoneClothSimulator3D::_write_rotations(Skeleton3D *p_skeleton, const Chain &p_chain) {
-	for (uint32_t i = 1; i < p_chain.joints.size(); i++) {
+	for (uint32_t i = p_chain.parent_chain >= 0 ? 2 : 1; i < p_chain.joints.size(); i++) {
 		const Joint &joint = p_chain.joints[i];
 		const Joint &parent = p_chain.joints[i - 1];
 		const Vector3 pose_vector = joint.current_pose_location - parent.current_pose_location;
 		const Vector3 display_vector = joint.display_location - parent.display_location;
-		const Basis basis = Basis(Quaternion(pose_vector, display_vector)) * parent.pose_basis;
+		const Basis basis = parent.branched ? parent.pose_basis : Basis(Quaternion(pose_vector, display_vector)) * parent.pose_basis;
 		p_skeleton->set_bone_global_pose(parent.bone, Transform3D(basis, parent.display_location));
 	}
 }
@@ -745,6 +832,7 @@ void BoneClothSimulator3D::_process_modification_with_delta(double p_delta) {
 				chain.joints.clear();
 			}
 		}
+		_build_branches();
 		_build_links(skeleton);
 	}
 
