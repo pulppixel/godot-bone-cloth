@@ -1,4 +1,4 @@
-#include "bone_cloth_collision_3d.h"
+#include "collision/bone_cloth_collision_3d.h"
 
 #include "bone_cloth_simulator_3d.h"
 

@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "bone_cloth_collision_3d.h"
+#include "collision/bone_cloth_collision_3d.h"
 
 using namespace godot;
 

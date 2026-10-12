@@ -1,4 +1,4 @@
-#include "bone_cloth_collision_sphere_3d.h"
+#include "collision/bone_cloth_collision_sphere_3d.h"
 
 #include <godot_cpp/classes/geometry3d.hpp>
 #include <godot_cpp/core/class_db.hpp>
