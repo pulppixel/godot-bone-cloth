@@ -5,35 +5,31 @@
 
 #include "bone_cloth_collision_3d.h"
 
+using namespace godot;
 
-namespace godot {
+class BoneClothCollisionCapsule3D;
+class BoneClothCollisionTaperedCapsule3D;
 
-	class BoneClothCollisionCapsule3D;
-	class BoneClothCollisionTaperedCapsule3D;
+class BoneClothCollisionSphere3D : public BoneClothCollision3D {
+	GDCLASS(BoneClothCollisionSphere3D, BoneClothCollision3D)
 
-	class BoneClothCollisionSphere3D : public BoneClothCollision3D {
-		GDCLASS(BoneClothCollisionSphere3D, BoneClothCollision3D)
+	friend class BoneClothCollisionCapsule3D;
+	friend class BoneClothCollisionTaperedCapsule3D;
 
-		friend class BoneClothCollisionCapsule3D;
-		friend class BoneClothCollisionTaperedCapsule3D;
+	float radius = 0.1f;
+	bool inside = false;
 
-		float radius = 0.1f;
-		bool inside = false;
+protected:
+	static void _bind_methods();
 
-	protected:
-		static void _bind_methods();
+	static Vector3 _collide_sphere(const Vector3 &p_center, float p_radius, bool p_inside, const Vector3 &p_fallback, const Vector3 &p_point, float p_point_radius);
 
-		static Vector3 _collide_sphere(const Vector3& p_center, float p_radius, bool p_inside, const Vector3& p_fallback, const Vector3& p_point, float p_point_radius);
+public:
+	void set_radius(float p_radius);
+	float get_radius() const;
+	void set_inside(bool p_enabled);
+	bool is_inside() const;
 
-	public:
-		void set_radius(float p_radius);
-		float get_radius() const;
-		void set_inside(bool p_enabled);
-		bool is_inside() const;
-
-		Vector3 collide(const Vector3& p_point, float p_radius) const override;
-		void collide_segment(Vector3& r_a, Vector3& r_b, float p_radius) const override;
-
-	};
-
-}
+	Vector3 collide(const Vector3 &p_point, float p_radius) const override;
+	void collide_segment(Vector3 &r_a, Vector3 &r_b, float p_radius) const override;
+};

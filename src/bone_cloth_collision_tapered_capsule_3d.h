@@ -7,33 +7,32 @@
 
 #include "bone_cloth_collision_3d.h"
 
-namespace godot {
+using namespace godot;
 
-	class BoneClothCollisionTaperedCapsule3D : public BoneClothCollision3D {
-		GDCLASS(BoneClothCollisionTaperedCapsule3D, BoneClothCollision3D)
+class BoneClothCollisionTaperedCapsule3D : public BoneClothCollision3D {
+	GDCLASS(BoneClothCollisionTaperedCapsule3D, BoneClothCollision3D)
 
-		float top_radius = 0.1f;
-		float bottom_radius = 0.05f;
-		float height = 0.5f;
-		bool inside = false;
+	float top_radius = 0.1f;
+	float bottom_radius = 0.05f;
+	float height = 0.5f;
+	bool inside = false;
 
-		void _get_head_and_tail(Vector3& r_head, Vector3& r_tail) const;
-		void _get_nearest_sphere(const Vector3& p_head, const Vector3& p_tail, const Vector3& p_point, Vector3& r_center, float& r_radius) const;
+	void _get_head_and_tail(Vector3 &r_head, Vector3 &r_tail) const;
+	void _get_nearest_sphere(const Vector3 &p_head, const Vector3 &p_tail, const Vector3 &p_point, Vector3 &r_center, float &r_radius) const;
 
-	protected:
-		static void _bind_methods();
+protected:
+	static void _bind_methods();
 
-	public:
-		void set_top_radius(float p_radius);
-		float get_top_radius() const;
-		void set_bottom_radius(float p_radius);
-		float get_bottom_radius() const;
-		void set_height(float p_height);
-		float get_height() const;
-		void set_inside(bool p_enabled);
-		bool is_inside() const;
+public:
+	void set_top_radius(float p_radius);
+	float get_top_radius() const;
+	void set_bottom_radius(float p_radius);
+	float get_bottom_radius() const;
+	void set_height(float p_height);
+	float get_height() const;
+	void set_inside(bool p_enabled);
+	bool is_inside() const;
 
-		Vector3 collide(const Vector3& p_point, float p_radius) const override;
-		void collide_segment(Vector3& r_a, Vector3& r_b, float p_radius) const override;
-	};
-}
+	Vector3 collide(const Vector3 &p_point, float p_radius) const override;
+	void collide_segment(Vector3 &r_a, Vector3 &r_b, float p_radius) const override;
+};

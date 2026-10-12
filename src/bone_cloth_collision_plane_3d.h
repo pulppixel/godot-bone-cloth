@@ -4,17 +4,15 @@
 
 #include "bone_cloth_collision_3d.h"
 
-namespace godot {
+using namespace godot;
 
-	class BoneClothCollisionPlane3D : public BoneClothCollision3D {
-		GDCLASS(BoneClothCollisionPlane3D, BoneClothCollision3D)
+class BoneClothCollisionPlane3D : public BoneClothCollision3D {
+	GDCLASS(BoneClothCollisionPlane3D, BoneClothCollision3D)
 
-	protected:
-		static void _bind_methods();
+protected:
+	static void _bind_methods();
 
-	public:
-		Vector3 collide(const Vector3& p_point, float p_radius) const override;
-		void collide_segment(Vector3& r_a, Vector3& r_b, float p_radius) const override;
-
-	};
-}
+public:
+	Vector3 collide(const Vector3 &p_point, float p_radius) const override;
+	void collide_segment(Vector3 &r_a, Vector3 &r_b, float p_radius) const override;
+};

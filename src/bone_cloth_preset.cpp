@@ -4,8 +4,7 @@
 
 using namespace godot;
 
-void BoneClothPreset::_bind_methods()
-{
+void BoneClothPreset::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_link_stiffness", "stiffness"), &BoneClothPreset::set_link_stiffness);
 	ClassDB::bind_method(D_METHOD("get_link_stiffness"), &BoneClothPreset::get_link_stiffness);
 	ClassDB::bind_method(D_METHOD("set_end_bone_length", "length"), &BoneClothPreset::set_end_bone_length);
@@ -60,184 +59,151 @@ void BoneClothPreset::_bind_methods()
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "teleport_angle", PROPERTY_HINT_RANGE, "0,180,0.1,radians_as_degrees"), "set_teleport_angle", "get_teleport_angle");
 }
 
-Variant BoneClothPreset::copy_value(const Variant& p_value)
-{
+Variant BoneClothPreset::copy_value(const Variant &p_value) {
 	const Ref<Curve> curve = p_value;
 	return curve.is_valid() ? Variant(curve->duplicate()) : p_value;
 }
 
-void BoneClothPreset::set_link_stiffness(float p_stiffness)
-{
+void BoneClothPreset::set_link_stiffness(float p_stiffness) {
 	link_stiffness = p_stiffness;
 	emit_changed();
 }
 
-float BoneClothPreset::get_link_stiffness() const
-{
+float BoneClothPreset::get_link_stiffness() const {
 	return link_stiffness;
 }
 
-void BoneClothPreset::set_end_bone_length(float p_length)
-{
+void BoneClothPreset::set_end_bone_length(float p_length) {
 	end_bone_length = p_length;
 	emit_changed();
 }
 
-float BoneClothPreset::get_end_bone_length() const
-{
+float BoneClothPreset::get_end_bone_length() const {
 	return end_bone_length;
 }
 
-void BoneClothPreset::set_drag(float p_drag)
-{
+void BoneClothPreset::set_drag(float p_drag) {
 	drag = p_drag;
 	emit_changed();
 }
 
-float BoneClothPreset::get_drag() const
-{
+float BoneClothPreset::get_drag() const {
 	return drag;
 }
 
-void BoneClothPreset::set_drag_damping_curve(const Ref<Curve>& p_curve)
-{
+void BoneClothPreset::set_drag_damping_curve(const Ref<Curve> &p_curve) {
 	drag_damping_curve = p_curve;
 	emit_changed();
 }
 
-Ref<Curve> BoneClothPreset::get_drag_damping_curve() const
-{
+Ref<Curve> BoneClothPreset::get_drag_damping_curve() const {
 	return drag_damping_curve;
 }
 
-void BoneClothPreset::set_stiffness(float p_stiffness)
-{
+void BoneClothPreset::set_stiffness(float p_stiffness) {
 	stiffness = p_stiffness;
 	emit_changed();
 }
 
-float BoneClothPreset::get_stiffness() const
-{
+float BoneClothPreset::get_stiffness() const {
 	return stiffness;
 }
 
-void BoneClothPreset::set_stiffness_damping_curve(const Ref<Curve>& p_curve)
-{
+void BoneClothPreset::set_stiffness_damping_curve(const Ref<Curve> &p_curve) {
 	stiffness_damping_curve = p_curve;
 	emit_changed();
 }
 
-Ref<Curve> BoneClothPreset::get_stiffness_damping_curve() const
-{
+Ref<Curve> BoneClothPreset::get_stiffness_damping_curve() const {
 	return stiffness_damping_curve;
 }
 
-void BoneClothPreset::set_radius(float p_radius)
-{
+void BoneClothPreset::set_radius(float p_radius) {
 	radius = p_radius;
 	emit_changed();
 }
 
-float BoneClothPreset::get_radius() const
-{
+float BoneClothPreset::get_radius() const {
 	return radius;
 }
 
-void BoneClothPreset::set_radius_damping_curve(const Ref<Curve>& p_curve)
-{
+void BoneClothPreset::set_radius_damping_curve(const Ref<Curve> &p_curve) {
 	radius_damping_curve = p_curve;
 	emit_changed();
 }
 
-Ref<Curve> BoneClothPreset::get_radius_damping_curve() const
-{
+Ref<Curve> BoneClothPreset::get_radius_damping_curve() const {
 	return radius_damping_curve;
 }
 
-void BoneClothPreset::set_limit_angle(float p_angle)
-{
+void BoneClothPreset::set_limit_angle(float p_angle) {
 	limit_angle = p_angle;
 	emit_changed();
 }
 
-float BoneClothPreset::get_limit_angle() const
-{
+float BoneClothPreset::get_limit_angle() const {
 	return limit_angle;
 }
 
-void BoneClothPreset::set_limit_angle_damping_curve(const Ref<Curve>& p_curve)
-{
+void BoneClothPreset::set_limit_angle_damping_curve(const Ref<Curve> &p_curve) {
 	limit_angle_damping_curve = p_curve;
 	emit_changed();
 }
 
-Ref<Curve> BoneClothPreset::get_limit_angle_damping_curve() const
-{
+Ref<Curve> BoneClothPreset::get_limit_angle_damping_curve() const {
 	return limit_angle_damping_curve;
 }
 
-void BoneClothPreset::set_gravity(const Vector3& p_gravity)
-{
+void BoneClothPreset::set_gravity(const Vector3 &p_gravity) {
 	gravity = p_gravity;
 	emit_changed();
 }
 
-Vector3 BoneClothPreset::get_gravity() const
-{
+Vector3 BoneClothPreset::get_gravity() const {
 	return gravity;
 }
 
-void BoneClothPreset::set_inertia(float p_inertia)
-{
+void BoneClothPreset::set_inertia(float p_inertia) {
 	inertia = p_inertia;
 	emit_changed();
 }
 
-float BoneClothPreset::get_inertia() const
-{
+float BoneClothPreset::get_inertia() const {
 	return inertia;
 }
 
-void BoneClothPreset::set_movement_speed_limit(float p_limit)
-{
+void BoneClothPreset::set_movement_speed_limit(float p_limit) {
 	movement_speed_limit = p_limit;
 	emit_changed();
 }
 
-float BoneClothPreset::get_movement_speed_limit() const
-{
+float BoneClothPreset::get_movement_speed_limit() const {
 	return movement_speed_limit;
 }
 
-void BoneClothPreset::set_rotation_speed_limit(float p_limit)
-{
+void BoneClothPreset::set_rotation_speed_limit(float p_limit) {
 	rotation_speed_limit = p_limit;
 	emit_changed();
 }
 
-float BoneClothPreset::get_rotation_speed_limit() const
-{
+float BoneClothPreset::get_rotation_speed_limit() const {
 	return rotation_speed_limit;
 }
 
-void BoneClothPreset::set_teleport_distance(float p_distance)
-{
+void BoneClothPreset::set_teleport_distance(float p_distance) {
 	teleport_distance = p_distance;
 	emit_changed();
 }
 
-float BoneClothPreset::get_teleport_distance() const
-{
+float BoneClothPreset::get_teleport_distance() const {
 	return teleport_distance;
 }
 
-void BoneClothPreset::set_teleport_angle(float p_angle)
-{
+void BoneClothPreset::set_teleport_angle(float p_angle) {
 	teleport_angle = p_angle;
 	emit_changed();
 }
 
-float BoneClothPreset::get_teleport_angle() const
-{
+float BoneClothPreset::get_teleport_angle() const {
 	return teleport_angle;
 }
