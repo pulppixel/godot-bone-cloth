@@ -1,12 +1,12 @@
 #include "register_types.h"
 
-#include "bone_cloth_collision_3d.h"
-#include "bone_cloth_collision_capsule_3d.h"
-#include "bone_cloth_collision_plane_3d.h"
-#include "bone_cloth_collision_sphere_3d.h"
-#include "bone_cloth_collision_tapered_capsule_3d.h"
 #include "bone_cloth_preset.h"
 #include "bone_cloth_simulator_3d.h"
+#include "collision/bone_cloth_collision_3d.h"
+#include "collision/bone_cloth_collision_capsule_3d.h"
+#include "collision/bone_cloth_collision_plane_3d.h"
+#include "collision/bone_cloth_collision_sphere_3d.h"
+#include "collision/bone_cloth_collision_tapered_capsule_3d.h"
 
 #include "editor/bone_cloth_simulator_3d_editor_plugin.h"
 

@@ -3,8 +3,8 @@
 
 #pragma once
 
-#include "bone_cloth_collision_3d.h"
 #include "bone_cloth_preset.h"
+#include "collision/bone_cloth_collision_3d.h"
 
 #include <godot_cpp/classes/curve.hpp>
 #include <godot_cpp/classes/skeleton3d.hpp>
