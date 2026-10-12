@@ -12,7 +12,7 @@
 #include <godot_cpp/classes/menu_button.hpp>
 #include <godot_cpp/classes/popup_menu.hpp>
 
-namespace godot {
+using namespace godot;
 
 // Presets, a submenu listing every BoneClothPreset file in the project, addons included, each time it opens; a pick
 // applies it as one undo step. Save Preset... writes the node's values to a new preset file.
@@ -54,5 +54,3 @@ public:
 	void _edit(Object *p_object) override;
 	void _make_visible(bool p_visible) override;
 };
-
-} //namespace godot
