@@ -123,6 +123,7 @@ void BoneClothCollision3D::set_position_offset(const Vector3 &p_offset) {
 	}
 	position_offset = p_offset;
 	sync_pose();
+	update_gizmos();
 }
 
 Vector3 BoneClothCollision3D::get_position_offset() const {
@@ -135,6 +136,7 @@ void BoneClothCollision3D::set_rotation_offset(const Quaternion &p_offset) {
 	}
 	rotation_offset = p_offset;
 	sync_pose();
+	update_gizmos();
 }
 
 Quaternion BoneClothCollision3D::get_rotation_offset() const {

@@ -987,4 +987,7 @@ void BoneClothSimulator3D::_process_modification_with_delta(double p_delta) {
 
 		_write_rotations(skeleton, chain);
 	}
+
+	// The joints move every frame, and the gizmo draws them where they are.
+	update_gizmos();
 }

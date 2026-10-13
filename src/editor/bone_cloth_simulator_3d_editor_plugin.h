@@ -1,10 +1,12 @@
 // The editor side of BoneClothSimulator3D: a menu named after the node in the 3D viewport's toolbar, shown while one is
 // selected, the place of the Skeleton3D and Mesh menus (editor/scene/3d/skeleton_3d_editor_plugin.cpp,
-// mesh_instance_3d_editor_plugin.cpp). Editor only, registered at the EDITOR level.
+// mesh_instance_3d_editor_plugin.cpp), and the gizmos of the bone cloth nodes. Editor only, registered at the EDITOR level.
 
 #pragma once
 
 #include "bone_cloth_simulator_3d.h"
+
+#include "editor/bone_cloth_3d_gizmo_plugin.h"
 
 #include <godot_cpp/classes/editor_file_dialog.hpp>
 #include <godot_cpp/classes/editor_file_system_directory.hpp>
@@ -43,6 +45,8 @@ class BoneClothSimulator3DEditorPlugin : public EditorPlugin {
 	GDCLASS(BoneClothSimulator3DEditorPlugin, EditorPlugin)
 
 	BoneClothSimulator3DMenu *menu = nullptr;
+	Ref<BoneClothCollision3DGizmoPlugin> collision_gizmo_plugin;
+	Ref<BoneClothSimulator3DGizmoPlugin> simulator_gizmo_plugin;
 
 protected:
 	static void _bind_methods();

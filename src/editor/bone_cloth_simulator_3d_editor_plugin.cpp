@@ -2,6 +2,7 @@
 
 #include <godot_cpp/classes/editor_file_system.hpp>
 #include <godot_cpp/classes/editor_interface.hpp>
+#include <godot_cpp/classes/editor_settings.hpp>
 #include <godot_cpp/classes/editor_undo_redo_manager.hpp>
 #include <godot_cpp/classes/resource_loader.hpp>
 #include <godot_cpp/classes/resource_saver.hpp>
@@ -12,6 +13,7 @@ using namespace godot;
 enum {
 	OPTION_PRESETS,
 	OPTION_SAVE_PRESET,
+	OPTION_SHOW_LIMIT_ANGLE,
 };
 
 void BoneClothSimulator3DMenu::_bind_methods() {
@@ -31,6 +33,9 @@ BoneClothSimulator3DMenu::BoneClothSimulator3DMenu() {
 	PopupMenu *options = get_popup();
 	options->add_submenu_node_item("Presets", presets_menu, OPTION_PRESETS);
 	options->add_item("Save Preset...", OPTION_SAVE_PRESET);
+	options->add_separator();
+	options->add_check_item("Show Limit Angle", OPTION_SHOW_LIMIT_ANGLE);
+	options->set_item_checked(options->get_item_index(OPTION_SHOW_LIMIT_ANGLE), EditorInterface::get_singleton()->get_editor_settings()->get_project_metadata("bone_cloth", "show_limit_angle", false));
 	options->connect("id_pressed", callable_mp(this, &BoneClothSimulator3DMenu::_on_option_pressed));
 
 	save_dialog = memnew(EditorFileDialog);
@@ -94,6 +99,17 @@ void BoneClothSimulator3DMenu::_on_preset_pressed(int p_id) {
 }
 
 void BoneClothSimulator3DMenu::_on_option_pressed(int p_id) {
+	// The gizmo's limit angle cones, for every simulator, kept per project as the editor keeps its own view choices.
+	// The selected simulator redraws every frame and shows the change at once.
+	if (p_id == OPTION_SHOW_LIMIT_ANGLE) {
+		PopupMenu *options = get_popup();
+		const int index = options->get_item_index(OPTION_SHOW_LIMIT_ANGLE);
+		const bool show = !options->is_item_checked(index);
+		options->set_item_checked(index, show);
+		EditorInterface::get_singleton()->get_editor_settings()->set_project_metadata("bone_cloth", "show_limit_angle", show);
+		return;
+	}
+
 	BoneClothSimulator3D *simulator = Object::cast_to<BoneClothSimulator3D>(ObjectDB::get_instance(simulator_id));
 	ERR_FAIL_NULL(simulator);
 
@@ -120,12 +136,22 @@ void BoneClothSimulator3DEditorPlugin::_enter_tree() {
 	menu = memnew(BoneClothSimulator3DMenu);
 	menu->hide();
 	add_control_to_container(CONTAINER_SPATIAL_EDITOR_MENU, menu);
+
+	collision_gizmo_plugin.instantiate();
+	add_node_3d_gizmo_plugin(collision_gizmo_plugin);
+	simulator_gizmo_plugin.instantiate();
+	add_node_3d_gizmo_plugin(simulator_gizmo_plugin);
 }
 
 void BoneClothSimulator3DEditorPlugin::_exit_tree() {
 	remove_control_from_container(CONTAINER_SPATIAL_EDITOR_MENU, menu);
 	menu->queue_free();
 	menu = nullptr;
+
+	remove_node_3d_gizmo_plugin(collision_gizmo_plugin);
+	collision_gizmo_plugin.unref();
+	remove_node_3d_gizmo_plugin(simulator_gizmo_plugin);
+	simulator_gizmo_plugin.unref();
 }
 
 bool BoneClothSimulator3DEditorPlugin::_handles(Object *p_object) const {

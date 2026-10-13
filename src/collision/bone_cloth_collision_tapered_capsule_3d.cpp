@@ -1,4 +1,5 @@
 #include "collision/bone_cloth_collision_tapered_capsule_3d.h"
+
 #include "collision/bone_cloth_collision_sphere_3d.h"
 
 #include <godot_cpp/classes/geometry3d.hpp>
@@ -29,6 +30,8 @@ void BoneClothCollisionTaperedCapsule3D::set_top_radius(float p_radius) {
 	if (top_radius > height * 0.5f) {
 		height = top_radius * 2.0f;
 	}
+
+	update_gizmos();
 }
 
 float BoneClothCollisionTaperedCapsule3D::get_top_radius() const {
@@ -40,6 +43,8 @@ void BoneClothCollisionTaperedCapsule3D::set_bottom_radius(float p_radius) {
 	if (bottom_radius > height * 0.5f) {
 		height = bottom_radius * 2.0f;
 	}
+
+	update_gizmos();
 }
 
 float BoneClothCollisionTaperedCapsule3D::get_bottom_radius() const {
@@ -54,6 +59,8 @@ void BoneClothCollisionTaperedCapsule3D::set_height(float p_height) {
 	if (bottom_radius > height * 0.5f) {
 		bottom_radius = height * 0.5f;
 	}
+
+	update_gizmos();
 }
 
 float BoneClothCollisionTaperedCapsule3D::get_height() const {
@@ -62,6 +69,7 @@ float BoneClothCollisionTaperedCapsule3D::get_height() const {
 
 void BoneClothCollisionTaperedCapsule3D::set_inside(bool p_enabled) {
 	inside = p_enabled;
+	update_gizmos();
 }
 
 bool BoneClothCollisionTaperedCapsule3D::is_inside() const {
