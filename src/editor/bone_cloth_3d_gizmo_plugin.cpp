@@ -219,8 +219,10 @@ static bool is_simulator_selected(BoneClothSimulator3D *p_simulator) {
 
 // Each joint where its bone is drawn this frame, a line to its parent and a sphere of the radius it collides with. The root follows
 // the pose and collides with nothing, so it has no sphere, as in the engine's. A line between the two joints of each link.
-// With a limit angle, a cone at each parent around the bone's pose direction, drawn as SpotLight3D's: a circle, lines out to it and the
-// axis. A joint whose bone lies along the cone's side is at its limit; a joint whose curve brings the limit to 0 is held on the axis.
+// With a limit angle and Show Limit Angle checked in the simulator's menu, a cone at each parent around the bone's pose direction, drawn
+// as SpotLight3D's: a circle, lines out to it and the axis. A joint whose bone lies along the cone's side is at its limit; a joint whose
+// curve brings the limit to 0 is held on the axis. Off by default, as Magica Cloth 2 draws no cone; KawaiiPhysics has a switch for its
+// cones alone (bEnableDebugDrawLimitAngle).
 // Half the bone long with four lines: as long as the bone with eight, the cones of a six-chain skirt at 75 degrees covered each other
 // and hid the skirt's shape.
 void BoneClothSimulator3DGizmoPlugin::_redraw(const Ref<EditorNode3DGizmo> &p_gizmo) {
@@ -236,7 +238,11 @@ void BoneClothSimulator3DGizmoPlugin::_redraw(const Ref<EditorNode3DGizmo> &p_gi
 		return;
 	}
 
+	// The menu's check, kept in the project's editor metadata (BoneClothSimulator3DMenu).
+	const bool show_limit_angle = EditorInterface::get_singleton()->get_editor_settings()->get_project_metadata("bone_cloth", "show_limit_angle", false);
+
 	PackedVector3Array lines;
+
 	for (const BoneClothSimulator3D::Chain &chain : simulator->chains) {
 		for (uint32_t i = 1; i < chain.joints.size(); i++) {
 			const BoneClothSimulator3D::Joint &joint = chain.joints[i];
@@ -247,7 +253,7 @@ void BoneClothSimulator3DGizmoPlugin::_redraw(const Ref<EditorNode3DGizmo> &p_gi
 
 			const Vector3 pose_vector = joint.current_pose_location - parent.current_pose_location;
 			const float length = pose_vector.length();
-			if (simulator->limit_angle <= 0.0f || length < CMP_EPSILON) {
+			if (!show_limit_angle || simulator->limit_angle <= 0.0f || length < CMP_EPSILON) {
 				continue;
 			}
 
