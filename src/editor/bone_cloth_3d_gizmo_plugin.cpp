@@ -8,6 +8,7 @@
 #include "collision/bone_cloth_collision_tapered_capsule_3d.h"
 
 #include <godot_cpp/classes/editor_interface.hpp>
+#include <godot_cpp/classes/editor_selection.hpp>
 #include <godot_cpp/classes/editor_settings.hpp>
 #include <godot_cpp/classes/standard_material3d.hpp>
 #include <godot_cpp/core/class_db.hpp>
@@ -203,20 +204,35 @@ int32_t BoneClothSimulator3DGizmoPlugin::_get_priority() const {
 	return -1;
 }
 
+// Drawn only while the simulator or one of its collisions is selected, as KawaiiPhysics draws only in the edit mode of its node selected
+// in the anim graph (FAnimNodeEditMode). Every simulator drawn at once buries the one being set up.
+static bool is_simulator_selected(BoneClothSimulator3D *p_simulator) {
+	const TypedArray<Node> nodes = EditorInterface::get_singleton()->get_selection()->get_selected_nodes();
+	for (int64_t i = 0; i < nodes.size(); i++) {
+		Node *node = Object::cast_to<Node>(nodes[i]);
+		if (node == p_simulator || (Object::cast_to<BoneClothCollision3D>(node) && node->get_parent() == p_simulator)) {
+			return true;
+		}
+	}
+	return false;
+}
+
 // Each joint where its bone is drawn this frame, a line to its parent and a sphere of the radius it collides with. The root follows
 // the pose and collides with nothing, so it has no sphere, as in the engine's. A line between the two joints of each link.
-// With a limit angle, a cone at each parent around the bone's pose direction, as long as the bone, drawn as SpotLight3D's: the circle
-// where it meets the sphere the joint stays on, eight lines out to it and the axis. A joint on the circle is at its limit; a joint
-// whose curve brings the limit to 0 is held on the axis.
+// With a limit angle, a cone at each parent around the bone's pose direction, drawn as SpotLight3D's: a circle, lines out to it and the
+// axis. A joint whose bone lies along the cone's side is at its limit; a joint whose curve brings the limit to 0 is held on the axis.
+// Half the bone long with four lines: as long as the bone with eight, the cones of a six-chain skirt at 75 degrees covered each other
+// and hid the skirt's shape.
 void BoneClothSimulator3DGizmoPlugin::_redraw(const Ref<EditorNode3DGizmo> &p_gizmo) {
-	static constexpr int CONE_LINE_COUNT = 8;
+	static constexpr float CONE_SCALE = 0.5f;
+	static constexpr int CONE_LINE_COUNT = 4;
 
 	p_gizmo->clear();
 	BoneClothSimulator3D *simulator = Object::cast_to<BoneClothSimulator3D>(p_gizmo->get_node_3d());
 	Skeleton3D *skeleton = simulator->get_skeleton();
 
 	// A changed setting leaves the joints and links stale, chain indices among them, until the next frame builds them again.
-	if (!skeleton || simulator->joints_dirty) {
+	if (!skeleton || simulator->joints_dirty || !is_simulator_selected(simulator)) {
 		return;
 	}
 
@@ -237,14 +253,16 @@ void BoneClothSimulator3DGizmoPlugin::_redraw(const Ref<EditorNode3DGizmo> &p_gi
 
 			const Vector3 apex = parent.display_location;
 			const Vector3 direction = pose_vector / length;
+			const float cone_length = length * CONE_SCALE;
 			lines.push_back(apex);
-			lines.push_back(apex + pose_vector);
+			lines.push_back(apex + direction * cone_length);
 
-			const float circle_radius = length * Math::sin(joint.limit_angle);
+			const float circle_radius = cone_length * Math::sin(joint.limit_angle);
 			if (circle_radius < CMP_EPSILON) {
 				continue;
 			}
-			const Vector3 circle_center = apex + direction * (length * Math::cos(joint.limit_angle));
+
+			const Vector3 circle_center = apex + direction * (cone_length * Math::cos(joint.limit_angle));
 			const Vector3 axis_x = direction.get_any_perpendicular();
 			const Vector3 axis_y = direction.cross(axis_x);
 			add_arc(lines, circle_center, axis_x, axis_y, circle_radius, 0.0f, Math::TAU);
