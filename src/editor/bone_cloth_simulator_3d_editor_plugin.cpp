@@ -123,6 +123,8 @@ void BoneClothSimulator3DEditorPlugin::_enter_tree() {
 
 	collision_gizmo_plugin.instantiate();
 	add_node_3d_gizmo_plugin(collision_gizmo_plugin);
+	simulator_gizmo_plugin.instantiate();
+	add_node_3d_gizmo_plugin(simulator_gizmo_plugin);
 }
 
 void BoneClothSimulator3DEditorPlugin::_exit_tree() {
@@ -132,6 +134,8 @@ void BoneClothSimulator3DEditorPlugin::_exit_tree() {
 
 	remove_node_3d_gizmo_plugin(collision_gizmo_plugin);
 	collision_gizmo_plugin.unref();
+	remove_node_3d_gizmo_plugin(simulator_gizmo_plugin);
+	simulator_gizmo_plugin.unref();
 }
 
 bool BoneClothSimulator3DEditorPlugin::_handles(Object *p_object) const {

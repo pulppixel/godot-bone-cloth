@@ -46,6 +46,7 @@ class BoneClothSimulator3DEditorPlugin : public EditorPlugin {
 
 	BoneClothSimulator3DMenu *menu = nullptr;
 	Ref<BoneClothCollision3DGizmoPlugin> collision_gizmo_plugin;
+	Ref<BoneClothSimulator3DGizmoPlugin> simulator_gizmo_plugin;
 
 protected:
 	static void _bind_methods();

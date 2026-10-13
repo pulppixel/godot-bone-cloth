@@ -32,6 +32,7 @@ void initialize_bone_cloth_module(ModuleInitializationLevel p_level) {
 	// The editor's classes are internal: the class reference, the Create dialog and code completion leave them out.
 	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
 		GDREGISTER_INTERNAL_CLASS(BoneClothCollision3DGizmoPlugin);
+		GDREGISTER_INTERNAL_CLASS(BoneClothSimulator3DGizmoPlugin);
 		GDREGISTER_INTERNAL_CLASS(BoneClothSimulator3DMenu);
 		GDREGISTER_INTERNAL_CLASS(BoneClothSimulator3DEditorPlugin);
 		EditorPlugins::add_by_type<BoneClothSimulator3DEditorPlugin>();

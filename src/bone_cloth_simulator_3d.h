@@ -16,6 +16,9 @@ using namespace godot;
 class BoneClothSimulator3D : public SkeletonModifier3D {
 	GDCLASS(BoneClothSimulator3D, SkeletonModifier3D)
 
+	// The gizmo draws the solver's state as it is.
+	friend class BoneClothSimulator3DGizmoPlugin;
+
 public:
 	enum LinkMode {
 		LINK_MODE_NONE,
