@@ -13,6 +13,8 @@
 
 using namespace godot;
 
+class BoneClothSimulator3DGizmoPlugin;
+
 class BoneClothSimulator3D : public SkeletonModifier3D {
 	GDCLASS(BoneClothSimulator3D, SkeletonModifier3D)
 
