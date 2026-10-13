@@ -297,61 +297,61 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0)
 script = ExtResource("2_16g40")
 
 [node name="GeneralSkeleton" parent="lilith/Armature" parent_id_path=PackedInt32Array(1126799021, 1458929827) index="0" unique_id=835554210]
-bones/10/position = Vector3(-0.0027559318, 1.1337441, -0.062488824)
-bones/10/rotation = Quaternion(0.008874582, 0.004838863, -0.016034182, 0.99982035)
-bones/41/rotation = Quaternion(0.034525733, 0.004100395, 0.0071567716, 0.9993698)
-bones/44/rotation = Quaternion(0.06824415, 0.0019027602, 0.011279744, 0.9976031)
-bones/47/rotation = Quaternion(0.10688446, -0.0040424913, 0.010477352, 0.99420804)
-bones/48/rotation = Quaternion(0.46640146, 0.5049919, 0.5006198, -0.526149)
-bones/49/rotation = Quaternion(-0.037903633, 0.8667239, -0.34211907, 0.36098152)
-bones/50/rotation = Quaternion(0.20856543, -0.6817193, 0.16437162, 0.6817194)
-bones/51/rotation = Quaternion(0.057707578, 0.490735, 0.057387806, 0.86749965)
-bones/53/rotation = Quaternion(0.20143643, 0.061812863, -0.19519655, 0.9578627)
-bones/54/rotation = Quaternion(0.1700043, 2.101064e-06, -0.115331665, 0.9786712)
-bones/55/rotation = Quaternion(0.06569064, 1.0281801e-06, -0.04456255, 0.99684453)
-bones/57/rotation = Quaternion(0.21842155, 0.068246745, -0.18119276, 0.9564537)
-bones/58/rotation = Quaternion(0.2779841, 3.6507845e-06, -0.137678, 0.950668)
-bones/59/rotation = Quaternion(0.16028473, 2.5331974e-06, -0.07937732, 0.9838741)
-bones/61/rotation = Quaternion(0.17866103, 0.12649862, -0.14005767, 0.96564084)
-bones/62/rotation = Quaternion(0.1935911, -2.8312206e-07, -0.032005012, 0.9805602)
-bones/63/rotation = Quaternion(0.09266865, -1.7881393e-07, -0.015322328, 0.9955791)
-bones/65/rotation = Quaternion(0.18283817, 0.11082992, -0.15873964, 0.9638925)
-bones/66/rotation = Quaternion(0.3066484, -1.3411046e-07, -0.094598815, 0.94711035)
-bones/67/rotation = Quaternion(0.14616905, 0, -0.045091625, 0.9882314)
-bones/68/rotation = Quaternion(0.08753768, 0.6714107, 0.36899987, 0.63669777)
-bones/69/rotation = Quaternion(0.09307891, 5.222022e-07, -0.04439476, 0.9946685)
-bones/70/rotation = Quaternion(0.19070536, 1.3098119e-05, -0.090969466, 0.97742313)
-bones/70/scale = Vector3(1.0000131, 0.9999873, 0.9999998)
-bones/78/rotation = Quaternion(0.47629762, -0.5006474, -0.4766376, -0.5434238)
-bones/79/rotation = Quaternion(0.13398379, 0.91502637, -0.33949316, -0.17181253)
-bones/80/rotation = Quaternion(0.39339793, 0.6120139, -0.3100312, 0.61201125)
-bones/81/rotation = Quaternion(-0.09320923, -0.50654656, -0.02221123, 0.85687184)
-bones/83/rotation = Quaternion(0.20142643, -0.061781712, 0.19522765, 0.9578605)
-bones/84/rotation = Quaternion(0.16999625, 4.4703484e-07, 0.11531016, 0.9786751)
-bones/85/rotation = Quaternion(0.06570419, 2.1010635e-06, 0.044576403, 0.996843)
-bones/87/rotation = Quaternion(0.21784852, -0.06784518, 0.18124676, 0.95660275)
-bones/88/rotation = Quaternion(0.27985987, -1.6391276e-07, 0.138604, 0.9499828)
-bones/89/rotation = Quaternion(0.15744463, 2.5331977e-07, 0.077982135, 0.9844441)
-bones/91/rotation = Quaternion(0.17865779, -0.12645657, 0.14003725, 0.9656499)
-bones/92/rotation = Quaternion(0.19356747, 4.5150514e-06, 0.031993177, 0.9805652)
-bones/93/rotation = Quaternion(0.09267493, 5.4538245e-06, 0.01532164, 0.9955785)
-bones/95/rotation = Quaternion(0.18250424, -0.108578086, 0.16050607, 0.9639195)
-bones/96/rotation = Quaternion(0.30434158, -2.4884937e-06, 0.09387566, 0.9479259)
-bones/97/rotation = Quaternion(0.14957534, 2.0861626e-06, 0.04614395, 0.98767304)
-bones/98/rotation = Quaternion(0.08710525, -0.66922975, -0.36974695, 0.6386169)
-bones/99/rotation = Quaternion(0.09533417, 1.7427583e-06, 0.045467585, 0.9944064)
-bones/100/rotation = Quaternion(0.18941438, 9.059907e-06, 0.09034089, 0.97773254)
-bones/100/scale = Vector3(1.0000123, 0.99999076, 0.9999968)
-bones/108/rotation = Quaternion(-0.084366724, -0.000974904, -0.0077137803, 0.9964045)
-bones/110/rotation = Quaternion(0.015265804, -0.0038748013, -0.004370792, 0.9998664)
-bones/149/rotation = Quaternion(0.0163698, 0.3835824, 0.92073953, -0.0695362)
-bones/150/rotation = Quaternion(-0.001061157, 0.6478041, -0.7613275, 0.027004711)
-bones/153/rotation = Quaternion(-0.020758826, 0.73551834, -0.67491674, -0.055401325)
-bones/154/rotation = Quaternion(7.835504e-05, 0.99999845, -0.0017370284, 0.00022520762)
-bones/157/rotation = Quaternion(-0.019340113, 0.21956755, 0.9753991, 0.0035872753)
-bones/158/rotation = Quaternion(0.00045781763, 0.9447696, -0.3275291, -0.011618657)
-bones/161/rotation = Quaternion(0.015080841, 0.7377331, -0.67273605, 0.0543012)
-bones/162/rotation = Quaternion(9.410493e-06, 1, 0.00021708012, 2.7739103e-05)
+bones/10/position = Vector3(0.006723075, 1.0003695, -0.064489625)
+bones/10/rotation = Quaternion(0.016588613, -0.10242009, -0.0012455301, 0.99460214)
+bones/41/rotation = Quaternion(0.026013251, 0.013826095, -0.0016561734, 0.9995646)
+bones/44/rotation = Quaternion(0.054684054, 0.012494009, -0.0045232675, 0.9984153)
+bones/47/rotation = Quaternion(0.09663501, -0.00073947804, -0.0020018672, 0.99531764)
+bones/48/rotation = Quaternion(0.4784463, 0.4947669, 0.5195107, -0.506363)
+bones/49/rotation = Quaternion(-0.011215597, 0.79617995, -0.5829521, 0.16167451)
+bones/50/rotation = Quaternion(0.3135848, -0.6483013, 0.2471317, 0.6483024)
+bones/51/rotation = Quaternion(-0.07123961, 0.57449853, 0.06672513, 0.8126648)
+bones/53/rotation = Quaternion(0.38995954, 0.020170256, -0.23525202, 0.89004564)
+bones/54/rotation = Quaternion(0.4082172, 3.427267e-07, -0.2769501, 0.8698606)
+bones/55/rotation = Quaternion(0.25736523, -8.791685e-07, -0.17459628, 0.95041007)
+bones/57/rotation = Quaternion(0.4283316, 0.023986187, -0.273019, 0.8610559)
+bones/58/rotation = Quaternion(0.41899028, -1.1026859e-06, -0.20750895, 0.8839611)
+bones/59/rotation = Quaternion(0.3199146, -2.0265581e-06, -0.1584381, 0.93410504)
+bones/61/rotation = Quaternion(0.2997997, 0.11631146, -0.29922673, 0.8983626)
+bones/62/rotation = Quaternion(0.4856959, -2.5331974e-06, -0.080286205, 0.87043303)
+bones/63/rotation = Quaternion(0.30185363, -7.748605e-07, -0.049901195, 0.95204747)
+bones/65/rotation = Quaternion(0.34816045, 0.05971401, -0.30217874, 0.88538504)
+bones/66/rotation = Quaternion(0.45165002, -7.8976143e-07, -0.13932402, 0.88124967)
+bones/67/rotation = Quaternion(0.32893917, -3.4272668e-07, -0.10147418, 0.93888336)
+bones/68/rotation = Quaternion(0.40224418, 0.7038659, 0.47513735, 0.34207764)
+bones/69/rotation = Quaternion(0.18468864, 2.5047077e-06, -0.08808294, 0.978842)
+bones/70/rotation = Quaternion(0.4052748, 1.9520521e-06, -0.19328791, 0.893528)
+bones/70/scale = Vector3(1.0000131, 0.9999873, 0.99999994)
+bones/78/rotation = Quaternion(0.4920776, -0.48529005, -0.5111352, -0.5109736)
+bones/79/rotation = Quaternion(0.052838683, 0.7866453, -0.60006416, -0.13535263)
+bones/80/rotation = Quaternion(0.27266735, 0.6631277, -0.21488528, 0.66312784)
+bones/81/rotation = Quaternion(-0.00043484755, -0.6001242, -0.025296858, 0.7995067)
+bones/83/rotation = Quaternion(0.32479, -0.023368629, 0.21689403, 0.9202839)
+bones/84/rotation = Quaternion(0.36554098, 1.4901163e-07, 0.24799576, 0.89715)
+bones/85/rotation = Quaternion(0.23783118, 2.2053719e-06, 0.16136122, 0.95780945)
+bones/87/rotation = Quaternion(0.36895296, -0.01931259, 0.25772116, 0.8927938)
+bones/88/rotation = Quaternion(0.37566218, -5.5134285e-07, 0.18606193, 0.907887)
+bones/89/rotation = Quaternion(0.29696202, 1.1771917e-06, 0.14708582, 0.9434932)
+bones/91/rotation = Quaternion(0.2380065, -0.0980743, 0.26750717, 0.9285334)
+bones/92/rotation = Quaternion(0.43034375, 2.503395e-06, 0.0711537, 0.8998564)
+bones/93/rotation = Quaternion(0.24930547, 1.7434361e-06, 0.041224096, 0.9675472)
+bones/95/rotation = Quaternion(0.29202846, -0.053185873, 0.27186903, 0.91541135)
+bones/96/rotation = Quaternion(0.41530025, -1.3262033e-06, 0.12811804, 0.90061736)
+bones/97/rotation = Quaternion(0.27170685, 8.493661e-07, 0.08382406, 0.9587226)
+bones/98/rotation = Quaternion(0.3676411, -0.71509755, -0.47890872, 0.35230947)
+bones/99/rotation = Quaternion(0.17611545, 3.0832887e-06, 0.0839991, 0.98077905)
+bones/100/rotation = Quaternion(0.2136608, 3.7550926e-06, 0.10190213, 0.97157866)
+bones/100/scale = Vector3(1.0000123, 0.9999909, 0.9999969)
+bones/108/rotation = Quaternion(-0.09826048, 0.026408203, -0.003780741, 0.9948032)
+bones/110/rotation = Quaternion(-0.008230693, 0.038087178, -0.0023621356, 0.9992378)
+bones/149/rotation = Quaternion(0.047017798, 0.22512303, 0.97182614, -0.051602993)
+bones/150/rotation = Quaternion(-0.00028989313, 0.9782587, -0.20725796, 0.0073523605)
+bones/153/rotation = Quaternion(-0.043842845, 0.71245366, -0.69999963, -0.022094725)
+bones/154/rotation = Quaternion(-0.00019253735, 0.9999908, 0.0042525833, -0.00055058015)
+bones/157/rotation = Quaternion(-0.039606415, 0.069315314, 0.99568385, 0.047333393)
+bones/158/rotation = Quaternion(0.00030319576, 0.9762546, -0.21649015, -0.0076799067)
+bones/161/rotation = Quaternion(0.04090504, 0.59021145, -0.80616724, 0.008473187)
+bones/162/rotation = Quaternion(0.00043413267, 0.9999527, 0.009639979, 0.0012470717)
 
 [node name="BoneClothSimulator3D" type="BoneClothSimulator3D" parent="lilith/Armature/GeneralSkeleton" index="17" unique_id=279156758]
 link_mode = 2
@@ -394,7 +394,7 @@ bone_name = "Hips"
 bone = 10
 position_offset = Vector3(0, -0.092, -0.026)
 rotation_offset = Quaternion(0, 0, -0.707107, 0.707107)
-transform = Transform3D(-0.03214849, 0.999439, 0.0093913935, -0.9993283, -0.03197672, -0.01790115, -0.0175908, -0.009960581, 0.9997957, -0.0059577823, 1.0422714, -0.09010187)
+transform = Transform3D(0.00092040095, 0.97901714, -0.20377581, -0.9994465, -0.0058756284, -0.032743007, -0.033253275, 0.20369317, 0.9784699, 0.012105942, 0.9092718, -0.09298915)
 
 [node name="LeftThigh" type="BoneClothCollisionTaperedCapsule3D" parent="lilith/Armature/GeneralSkeleton/BoneClothSimulator3D" unique_id=1189342597]
 top_radius = 0.075
@@ -404,7 +404,7 @@ bone_name = "LeftUpperLeg"
 bone = 149
 position_offset = Vector3(0, 0.219, 0)
 rotation_offset = Quaternion(0, 0, 0, 1)
-transform = Transform3D(-0.99216706, 0.124764, 0.006216241, -0.085257776, -0.712691, 0.6962777, 0.091300644, 0.6902937, 0.71774566, 0.114807844, 0.946318, 0.08744673)
+transform = Transform3D(-0.9927585, 0.031565823, -0.115905, -0.07701956, -0.9077009, 0.4124887, -0.09218652, 0.4184287, 0.90355915, 0.10291839, 0.77261096, 0.04494453)
 
 [node name="LeftCalf" type="BoneClothCollisionCapsule3D" parent="lilith/Armature/GeneralSkeleton/BoneClothSimulator3D" unique_id=251832674]
 radius = 0.05
@@ -413,7 +413,7 @@ bone_name = "LeftLowerLeg"
 bone = 150
 position_offset = Vector3(0, 0.237, 0)
 rotation_offset = Quaternion(0, 0, 0, 1)
-transform = Transform3D(0.9852085, -0.06543221, -0.15837546, 0.0921821, -0.57673436, 0.8117141, -0.14445283, -0.8143071, -0.56217176, 0.14329171, 0.6349359, 0.05122432)
+transform = Transform3D(0.99419034, 0.073391825, 0.07873479, 0.07440834, -0.9971771, -0.0100513995, 0.077774845, 0.015851557, -0.9968449, 0.14319134, 0.31752157, 0.14171514)
 
 [node name="RightThigh" type="BoneClothCollisionTaperedCapsule3D" parent="lilith/Armature/GeneralSkeleton/BoneClothSimulator3D" unique_id=1756593251]
 top_radius = 0.075
@@ -423,7 +423,7 @@ bone_name = "RightUpperLeg"
 bone = 157
 position_offset = Vector3(0, 0.219, 0)
 rotation_offset = Quaternion(0, 0, 0, 1)
-transform = Transform3D(-0.9990829, -0.040508866, -0.013879537, 0.031161698, -0.91011745, 0.4131772, -0.02936934, 0.4123657, 0.9105449, -0.10369384, 0.9089112, 0.028397288)
+transform = Transform3D(-0.95423126, -0.12411198, -0.2721007, 0.09734659, -0.98917484, 0.109802425, -0.28278297, 0.07828883, 0.9559836, -0.10975683, 0.7558366, -0.06670177)
 
 [node name="RightCalf" type="BoneClothCollisionCapsule3D" parent="lilith/Armature/GeneralSkeleton/BoneClothSimulator3D" unique_id=52069274]
 radius = 0.05
@@ -432,7 +432,7 @@ bone_name = "RightLowerLeg"
 bone = 158
 position_offset = Vector3(0, 0.237, 0)
 rotation_offset = Quaternion(0, 0, 0, 1)
-transform = Transform3D(0.99816895, -0.016488101, 0.058200978, -0.02992045, -0.9707721, 0.23813123, 0.05257354, -0.23943642, -0.96948767, -0.13155484, 0.45883846, 0.06140192)
+transform = Transform3D(0.94958776, 0.0051478967, 0.31345844, -0.09957784, -0.94313335, 0.31714904, 0.29726577, -0.33237445, -0.89507556, -0.14947343, 0.297121, -0.13936374)
 
 [node name="FrontHair" type="BoneClothSimulator3D" parent="lilith/Armature/GeneralSkeleton" index="18" unique_id=782347978]
 drag/value = 0.2
@@ -455,7 +455,7 @@ bone_name = "Head"
 bone = 110
 position_offset = Vector3(0, 0.06, 0.006)
 rotation_offset = Quaternion(0, 0, 0, 1)
-transform = Transform3D(0.9999943, 0.0032885007, 0.0008098511, -0.0029027965, 0.95541626, -0.29524794, -0.0017446689, 0.2952439, 0.9554204, -0.0012174249, 1.737986, 0.09584846)
+transform = Transform3D(0.99973464, -0.0039069797, -0.022700273, -0.00012637209, 0.98456466, -0.17502084, 0.023033679, 0.17497724, 0.9843032, -0.003812313, 1.6129284, 0.06932932)
 
 [node name="Chest" type="BoneClothCollisionCapsule3D" parent="lilith/Armature/GeneralSkeleton/FrontHair" unique_id=42027898]
 radius = 0.115
@@ -464,7 +464,7 @@ bone_name = "Chest"
 bone = 44
 position_offset = Vector3(0, 0.056, 0.012)
 rotation_offset = Quaternion(0, 0, -0.707107, 0.707107)
-transform = Transform3D(0.0015572694, 0.99982804, 0.018477816, -0.97505313, 0.0056196265, -0.2219007, -0.22196639, -0.017671293, 0.97489417, 0.0021070242, 1.3949144, -0.0050025396)
+transform = Transform3D(0.016522318, 0.9884883, -0.15039228, -0.98102754, -0.013031533, -0.19342993, -0.19316307, 0.15073489, 0.9695191, -0.00047886372, 1.2623078, -0.008703465)
 
 [node name="UpperChest" type="BoneClothCollisionCapsule3D" parent="lilith/Armature/GeneralSkeleton/FrontHair" unique_id=1350116983]
 radius = 0.065
@@ -473,7 +473,7 @@ bone_name = "UpperChest"
 bone = 47
 position_offset = Vector3(0, 0.06, 0)
 rotation_offset = Quaternion(0, 0, -0.707107, 0.707107)
-transform = Transform3D(0.01928957, 0.99973464, 0.012588694, -0.9052966, 0.022808548, -0.42416734, -0.4243419, -0.0032144971, 0.90549636, 0.0003849268, 1.5181524, 0.0104258405)
+transform = Transform3D(0.041346423, 0.9883843, -0.14624256, -0.9254375, -0.0172909, -0.37850535, -0.37663746, 0.1509882, 0.9139733, -0.00026071072, 1.3864282, 0.0021259934)
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="lilith" unique_id=1935651821]
 libraries/rpg_motions = ExtResource("2_gx6sy")

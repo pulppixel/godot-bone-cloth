@@ -17,6 +17,7 @@ void BoneClothCollisionSphere3D::_bind_methods() {
 
 void BoneClothCollisionSphere3D::set_radius(float p_radius) {
 	radius = p_radius;
+	update_gizmos();
 }
 
 float BoneClothCollisionSphere3D::get_radius() const {
@@ -25,6 +26,7 @@ float BoneClothCollisionSphere3D::get_radius() const {
 
 void BoneClothCollisionSphere3D::set_inside(bool p_enabled) {
 	inside = p_enabled;
+	update_gizmos();
 }
 
 bool BoneClothCollisionSphere3D::is_inside() const {

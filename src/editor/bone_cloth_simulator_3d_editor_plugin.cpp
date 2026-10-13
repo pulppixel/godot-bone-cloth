@@ -120,12 +120,18 @@ void BoneClothSimulator3DEditorPlugin::_enter_tree() {
 	menu = memnew(BoneClothSimulator3DMenu);
 	menu->hide();
 	add_control_to_container(CONTAINER_SPATIAL_EDITOR_MENU, menu);
+
+	collision_gizmo_plugin.instantiate();
+	add_node_3d_gizmo_plugin(collision_gizmo_plugin);
 }
 
 void BoneClothSimulator3DEditorPlugin::_exit_tree() {
 	remove_control_from_container(CONTAINER_SPATIAL_EDITOR_MENU, menu);
 	menu->queue_free();
 	menu = nullptr;
+
+	remove_node_3d_gizmo_plugin(collision_gizmo_plugin);
+	collision_gizmo_plugin.unref();
 }
 
 bool BoneClothSimulator3DEditorPlugin::_handles(Object *p_object) const {

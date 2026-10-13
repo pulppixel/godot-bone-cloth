@@ -8,6 +8,7 @@
 #include "collision/bone_cloth_collision_sphere_3d.h"
 #include "collision/bone_cloth_collision_tapered_capsule_3d.h"
 
+#include "editor/bone_cloth_3d_gizmo_plugin.h"
 #include "editor/bone_cloth_simulator_3d_editor_plugin.h"
 
 #include <gdextension_interface.h>
@@ -30,6 +31,7 @@ void initialize_bone_cloth_module(ModuleInitializationLevel p_level) {
 
 	// The editor's classes are internal: the class reference, the Create dialog and code completion leave them out.
 	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
+		GDREGISTER_INTERNAL_CLASS(BoneClothCollision3DGizmoPlugin);
 		GDREGISTER_INTERNAL_CLASS(BoneClothSimulator3DMenu);
 		GDREGISTER_INTERNAL_CLASS(BoneClothSimulator3DEditorPlugin);
 		EditorPlugins::add_by_type<BoneClothSimulator3DEditorPlugin>();

@@ -29,6 +29,8 @@ void BoneClothCollisionCapsule3D::set_radius(float p_radius) {
 	if (radius > height * 0.5f) {
 		height = radius * 2.0f;
 	}
+
+	update_gizmos();
 }
 
 float BoneClothCollisionCapsule3D::get_radius() const {
@@ -40,6 +42,8 @@ void BoneClothCollisionCapsule3D::set_height(float p_height) {
 	if (radius > height * 0.5f) {
 		radius = height * 0.5f;
 	}
+
+	update_gizmos();
 }
 
 float BoneClothCollisionCapsule3D::get_height() const {
@@ -49,6 +53,7 @@ float BoneClothCollisionCapsule3D::get_height() const {
 void BoneClothCollisionCapsule3D::set_mid_height(float p_mid_height) {
 	ERR_FAIL_COND_MSG(p_mid_height < 0.0f, "BoneClothCollisionCapsule3D mid-height cannot be negative.");
 	height = p_mid_height + radius * 2.0f;
+	update_gizmos();
 }
 
 float BoneClothCollisionCapsule3D::get_mid_height() const {
@@ -57,6 +62,7 @@ float BoneClothCollisionCapsule3D::get_mid_height() const {
 
 void BoneClothCollisionCapsule3D::set_inside(bool p_enabled) {
 	inside = p_enabled;
+	update_gizmos();
 }
 
 bool BoneClothCollisionCapsule3D::is_inside() const {
