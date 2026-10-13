@@ -108,7 +108,7 @@ void BoneClothCollision3DGizmoPlugin::_add_sphere(PackedVector3Array &r_lines, f
 // the shape its solver collides with rather than the engine's; ours collides with the hull itself.
 // Drawn as the engine's capsule is: the outline in the XY and ZY planes, a ring at each end and four side lines. On a taper the side
 // touches each sphere off its middle, by the side's slope toward the thin end, and the rings and outlines meet there. Equal radii
-// draw BoneClothCollisionCapsule3D. The engine's capsule turns the end arcs of its XY outline inward, into the capsule ours keeps them on the surface.
+// draw BoneClothCollisionCapsule3D. The engine's capsule turns the end arcs of its XY outline inward, into the capsule; ours keeps them on the surface.
 void BoneClothCollision3DGizmoPlugin::_add_tapered_capsule(PackedVector3Array &r_lines, float p_top_radius, float p_bottom_radius, float p_height) {
 	const Vector3 up(0, 1, 0);
 	const Vector3 top_center = up * (p_height * 0.5f - p_top_radius);
