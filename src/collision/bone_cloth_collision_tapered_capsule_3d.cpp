@@ -76,7 +76,7 @@ bool BoneClothCollisionTaperedCapsule3D::is_inside() const {
 	return inside;
 }
 
-// The centres of the two end spheres in skeleton space, head at +Y with top_radius.
+// The centers of the two end spheres in skeleton space, head at +Y with top_radius.
 void BoneClothCollisionTaperedCapsule3D::_get_head_and_tail(Vector3 &r_head, Vector3 &r_tail) const {
 	r_head = pose.origin + pose.basis.xform(Vector3(0.0f, height * 0.5f - top_radius, 0.0f));
 	r_tail = pose.origin - pose.basis.xform(Vector3(0.0f, height * 0.5f - bottom_radius, 0.0f));

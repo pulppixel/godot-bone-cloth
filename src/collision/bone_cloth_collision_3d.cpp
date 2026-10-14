@@ -197,9 +197,9 @@ void BoneClothCollision3D::collide_segment(Vector3 &r_a, Vector3 &r_b, float p_r
 }
 
 // The line from r_a to r_b out of a shape, so a leg cannot pass between two joints that it does not touch. p_on_segment is the line's point
-// nearest the shape and p_on_shape the shape's centre or axis point nearest it, which keep p_limit apart. The push at that point is split
+// nearest the shape and p_on_shape the shape's center or axis point nearest it, which keep p_limit apart. The push at that point is split
 // between the two ends by how near it is to each, scaled so the point moves by exactly the push: the usual position-based split,
-// as Magica Cloth 2's edge collision does. A line through the centre has no direction out and takes p_fallback.
+// as Magica Cloth 2's edge collision does. A line through the center has no direction out and takes p_fallback.
 void BoneClothCollision3D::_push_segment_out(Vector3 &r_a, Vector3 &r_b, const Vector3 &p_on_segment, const Vector3 &p_on_shape, float p_limit, const Vector3 &p_fallback) {
 	const Vector3 offset = p_on_segment - p_on_shape;
 	const float distance_squared = offset.length_squared();
