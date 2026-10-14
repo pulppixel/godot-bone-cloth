@@ -10,6 +10,9 @@
 #include <godot_cpp/classes/editor_interface.hpp>
 #include <godot_cpp/classes/editor_selection.hpp>
 #include <godot_cpp/classes/editor_settings.hpp>
+#include <godot_cpp/classes/editor_undo_redo_manager.hpp>
+#include <godot_cpp/classes/geometry3d.hpp>
+#include <godot_cpp/classes/input.hpp>
 #include <godot_cpp/classes/standard_material3d.hpp>
 #include <godot_cpp/core/class_db.hpp>
 
@@ -54,6 +57,7 @@ BoneClothCollision3DGizmoPlugin::BoneClothCollision3DGizmoPlugin() {
 	Ref<EditorSettings> settings = EditorInterface::get_singleton()->get_editor_settings();
 	create_material("collision", settings->get_setting("editors/3d_gizmos/gizmo_colors/spring_bone_collision"), false, true);
 	create_material("inside_collision", settings->get_setting("editors/3d_gizmos/gizmo_colors/spring_bone_inside_collision"), false, true);
+	create_handle_material("handles");
 }
 
 bool BoneClothCollision3DGizmoPlugin::_has_gizmo(Node3D *p_for_node_3d) const {
@@ -68,29 +72,206 @@ int32_t BoneClothCollision3DGizmoPlugin::_get_priority() const {
 	return -1;
 }
 
+// The handle names as CollisionShape3D's (Gizmo3DHelper::_cylinder_or_capsule_or_cone_frustum_get_handle_name); the tapered capsule's
+// two radii have one handle each, on their end spheres, where the engine's cone frustum moves both with one.
+String BoneClothCollision3DGizmoPlugin::_get_handle_name(const Ref<EditorNode3DGizmo> &p_gizmo, int32_t p_handle_id, bool p_secondary) const {
+	Node3D *node = p_gizmo->get_node_3d();
+	if (Object::cast_to<BoneClothCollisionSphere3D>(node)) {
+		return "Radius";
+	}
+	if (Object::cast_to<BoneClothCollisionCapsule3D>(node)) {
+		return p_handle_id < 2 ? "Height" : "Radius";
+	}
+	if (Object::cast_to<BoneClothCollisionTaperedCapsule3D>(node)) {
+		static const char *names[4] = { "Height", "Height", "Top Radius", "Bottom Radius" };
+		return names[p_handle_id];
+	}
+	return "";
+}
+
+// The size the drag starts from, as the engine's: the sphere's radius, the capsule's (radius, height), the tapered capsule's
+// (top radius, bottom radius, height) as Gizmo3DHelper's cone frustum.
+Variant BoneClothCollision3DGizmoPlugin::_get_handle_value(const Ref<EditorNode3DGizmo> &p_gizmo, int32_t p_handle_id, bool p_secondary) const {
+	Node3D *node = p_gizmo->get_node_3d();
+	BoneClothCollisionSphere3D *sphere = Object::cast_to<BoneClothCollisionSphere3D>(node);
+	if (sphere) {
+		return sphere->get_radius();
+	}
+	BoneClothCollisionCapsule3D *capsule = Object::cast_to<BoneClothCollisionCapsule3D>(node);
+	if (capsule) {
+		return Vector2(capsule->get_radius(), capsule->get_height());
+	}
+	BoneClothCollisionTaperedCapsule3D *tapered_capsule = Object::cast_to<BoneClothCollisionTaperedCapsule3D>(node);
+	if (tapered_capsule) {
+		return Vector3(tapered_capsule->get_top_radius(), tapered_capsule->get_bottom_radius(), tapered_capsule->get_height());
+	}
+	return Variant();
+}
+
+void BoneClothCollision3DGizmoPlugin::_begin_handle_action(const Ref<EditorNode3DGizmo> &p_gizmo, int32_t p_handle_id, bool p_secondary) {
+	initial_value = _get_handle_value(p_gizmo, p_handle_id, p_secondary);
+	initial_transform = p_gizmo->get_node_3d()->get_global_transform();
+}
+
+// How far along the line from p_from in p_direction, in the node's space when the drag began, the mouse ray passes nearest:
+// Gizmo3DHelper::get_segment and the closest points it takes on the handle's axis.
+float BoneClothCollision3DGizmoPlugin::_get_distance_along(const Vector3 &p_from, const Vector3 &p_direction, Camera3D *p_camera, const Vector2 &p_screen_pos) const {
+	const Transform3D to_node = initial_transform.affine_inverse();
+	const Vector3 ray_from = to_node.xform(p_camera->project_ray_origin(p_screen_pos));
+	const Vector3 ray_to = to_node.xform(p_camera->project_ray_origin(p_screen_pos) + p_camera->project_ray_normal(p_screen_pos) * 4096.0f);
+	const PackedVector3Array closest = Geometry3D::get_singleton()->get_closest_points_between_segments(p_from - p_direction * 4096.0f, p_from + p_direction * 4096.0f, ray_from, ray_to);
+	return p_direction.dot(closest[0] - p_from);
+}
+
+// The engine's handles, Gizmo3DHelper::_cylinder_or_capsule_or_cone_frustum_set_handle: a height handle moves its own end and keeps the
+// other where it was, moving the node by half the change; with Alt held both ends move and the node stays. A radius handle grows the
+// height when the end spheres would not fit, and a shorter height brings the radii down; both measured from the drag's start, so a
+// drag back gives the old size back. Never below 1 mm, as the engine's. The node on a bone takes its move into position_offset
+// (BoneClothCollision3D::_take_offsets_from_transform). The engine's grid snap is Node3DEditor's, which an extension cannot read.
+void BoneClothCollision3DGizmoPlugin::_set_handle(const Ref<EditorNode3DGizmo> &p_gizmo, int32_t p_handle_id, bool p_secondary, Camera3D *p_camera, const Vector2 &p_screen_pos) {
+	static constexpr float MIN_SIZE = 0.001f;
+
+	Node3D *node = p_gizmo->get_node_3d();
+	const Vector3 up(0, 1, 0);
+	const Vector3 side(1, 0, 0);
+
+	BoneClothCollisionSphere3D *sphere = Object::cast_to<BoneClothCollisionSphere3D>(node);
+	if (sphere) {
+		sphere->set_radius(MAX(_get_distance_along(Vector3(), side, p_camera, p_screen_pos), MIN_SIZE));
+		return;
+	}
+
+	BoneClothCollisionCapsule3D *capsule = Object::cast_to<BoneClothCollisionCapsule3D>(node);
+	BoneClothCollisionTaperedCapsule3D *tapered_capsule = Object::cast_to<BoneClothCollisionTaperedCapsule3D>(node);
+	if (!capsule && !tapered_capsule) {
+		return;
+	}
+
+	float top_radius;
+	float bottom_radius;
+	float height;
+	if (capsule) {
+		const Vector2 initial = initial_value;
+		top_radius = initial.x;
+		bottom_radius = initial.x;
+		height = initial.y;
+	} else {
+		const Vector3 initial = initial_value;
+		top_radius = initial.x;
+		bottom_radius = initial.y;
+		height = initial.z;
+	}
+
+	if (p_handle_id < 2) {
+		const float sign = p_handle_id == 0 ? 1.0f : -1.0f;
+		const float distance = _get_distance_along(Vector3(), up * sign, p_camera, p_screen_pos);
+		const bool keep_center = Input::get_singleton()->is_key_pressed(KEY_ALT);
+		const float initial_height = height;
+		height = MAX(keep_center ? distance * 2.0f : initial_height * 0.5f + distance, MIN_SIZE);
+		top_radius = MIN(top_radius, height * 0.5f);
+		bottom_radius = MIN(bottom_radius, height * 0.5f);
+		node->set_global_position(keep_center ? initial_transform.origin : initial_transform.xform(up * ((height - initial_height) * 0.5f * sign)));
+	} else if (capsule) {
+		top_radius = MAX(_get_distance_along(Vector3(), side, p_camera, p_screen_pos), MIN_SIZE);
+		height = MAX(height, top_radius * 2.0f);
+	} else if (p_handle_id == 2) {
+		const float distance = _get_distance_along(up * (height * 0.5f - top_radius), side, p_camera, p_screen_pos);
+		top_radius = MAX(distance, MIN_SIZE);
+		height = MAX(height, top_radius * 2.0f);
+	} else {
+		const float distance = _get_distance_along(up * (bottom_radius - height * 0.5f), side, p_camera, p_screen_pos);
+		bottom_radius = MAX(distance, MIN_SIZE);
+		height = MAX(height, bottom_radius * 2.0f);
+	}
+
+	// The height first: a radius set after it is never more than half of it, so the setters change nothing else.
+	if (capsule) {
+		capsule->set_height(height);
+		capsule->set_radius(top_radius);
+	} else {
+		tapered_capsule->set_height(height);
+		tapered_capsule->set_top_radius(top_radius);
+		tapered_capsule->set_bottom_radius(bottom_radius);
+	}
+}
+
+// One undo step for the size and the node's place, as Gizmo3DHelper::cylinder_commit_handle; Esc puts back the drag's start.
+// Each setter keeps the radii within half the height, so any order of the three gives the recorded size.
+void BoneClothCollision3DGizmoPlugin::_commit_handle(const Ref<EditorNode3DGizmo> &p_gizmo, int32_t p_handle_id, bool p_secondary, const Variant &p_restore, bool p_cancel) {
+	Node3D *node = p_gizmo->get_node_3d();
+
+	PackedStringArray properties;
+	Array initial_values;
+	if (Object::cast_to<BoneClothCollisionSphere3D>(node)) {
+		properties = { "radius" };
+		initial_values = { initial_value };
+	} else if (Object::cast_to<BoneClothCollisionCapsule3D>(node)) {
+		const Vector2 initial = initial_value;
+		properties = { "radius", "height", "global_position" };
+		initial_values = { initial.x, initial.y, initial_transform.origin };
+	} else if (Object::cast_to<BoneClothCollisionTaperedCapsule3D>(node)) {
+		const Vector3 initial = initial_value;
+		properties = { "top_radius", "bottom_radius", "height", "global_position" };
+		initial_values = { initial.x, initial.y, initial.z, initial_transform.origin };
+	} else {
+		return;
+	}
+
+	if (p_cancel) {
+		for (int64_t i = 0; i < properties.size(); i++) {
+			node->set(properties[i], initial_values[i]);
+		}
+
+		return;
+	}
+
+	EditorUndoRedoManager *undo_redo = EditorInterface::get_singleton()->get_editor_undo_redo();
+	undo_redo->create_action("Change Collision " + _get_handle_name(p_gizmo, p_handle_id, p_secondary));
+	for (int64_t i = 0; i < properties.size(); i++) {
+		undo_redo->add_do_property(node, properties[i], node->get(properties[i]));
+		undo_redo->add_undo_property(node, properties[i], initial_values[i]);
+	}
+
+	undo_redo->commit_action();
+}
+
 // The lines are also the gizmo's collision segments, so a click on them selects the shape, as CollisionShape3D's.
+// The handles, shown by the engine only on the selected node: the sphere's radius on its X, as the engine's sphere; the capsule's
+// ends and radius as the engine's capsule; the tapered capsule's ends and each end sphere's radius on its X.
 void BoneClothCollision3DGizmoPlugin::_redraw(const Ref<EditorNode3DGizmo> &p_gizmo) {
 	p_gizmo->clear();
 	Node3D *node = p_gizmo->get_node_3d();
 
 	PackedVector3Array lines;
+	PackedVector3Array handles;
 	bool inside = false;
 
 	BoneClothCollisionSphere3D *sphere = Object::cast_to<BoneClothCollisionSphere3D>(node);
 	if (sphere) {
 		add_sphere(lines, Vector3(), sphere->get_radius());
+		handles.push_back(Vector3(sphere->get_radius(), 0, 0));
 		inside = sphere->is_inside();
 	}
 
 	BoneClothCollisionCapsule3D *capsule = Object::cast_to<BoneClothCollisionCapsule3D>(node);
 	if (capsule) {
 		_add_tapered_capsule(lines, capsule->get_radius(), capsule->get_radius(), capsule->get_height());
+		handles.push_back(Vector3(0, capsule->get_height() * 0.5f, 0));
+		handles.push_back(Vector3(0, capsule->get_height() * -0.5f, 0));
+		handles.push_back(Vector3(capsule->get_radius(), 0, 0));
 		inside = capsule->is_inside();
 	}
 
 	BoneClothCollisionTaperedCapsule3D *tapered_capsule = Object::cast_to<BoneClothCollisionTaperedCapsule3D>(node);
 	if (tapered_capsule) {
-		_add_tapered_capsule(lines, tapered_capsule->get_top_radius(), tapered_capsule->get_bottom_radius(), tapered_capsule->get_height());
+		const float top_radius = tapered_capsule->get_top_radius();
+		const float bottom_radius = tapered_capsule->get_bottom_radius();
+		const float half_height = tapered_capsule->get_height() * 0.5f;
+		_add_tapered_capsule(lines, top_radius, bottom_radius, tapered_capsule->get_height());
+		handles.push_back(Vector3(0, half_height, 0));
+		handles.push_back(Vector3(0, -half_height, 0));
+		handles.push_back(Vector3(top_radius, half_height - top_radius, 0));
+		handles.push_back(Vector3(bottom_radius, bottom_radius - half_height, 0));
 		inside = tapered_capsule->is_inside();
 	}
 
@@ -104,6 +285,9 @@ void BoneClothCollision3DGizmoPlugin::_redraw(const Ref<EditorNode3DGizmo> &p_gi
 	}
 	p_gizmo->add_lines(lines, get_material(inside ? "inside_collision" : "collision", p_gizmo));
 	p_gizmo->add_collision_segments(lines);
+	if (!handles.is_empty()) {
+		p_gizmo->add_handles(handles, get_material("handles"), PackedInt32Array());
+	}
 }
 
 // The convex hull of the two end spheres along Y, top_radius at +Y: the shape the tapered capsule collides with. KawaiiPhysics draws
