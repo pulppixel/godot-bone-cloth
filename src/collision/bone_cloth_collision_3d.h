@@ -17,7 +17,11 @@ class BoneClothCollision3D : public Node3D {
 	Vector3 position_offset;
 	Quaternion rotation_offset;
 
+	// Set while sync_pose moves the node, so the move is not read back as the user's.
+	bool syncing = false;
+
 	void _validate_bone_name();
+	void _take_offsets_from_transform();
 
 protected:
 	// The node's transform in skeleton space from the last sync_pose, where the shapes collide.
@@ -47,4 +51,6 @@ public:
 	void sync_pose();
 	virtual Vector3 collide(const Vector3 &p_point, float p_radius) const;
 	virtual void collide_segment(Vector3 &r_a, Vector3 &r_b, float p_radius) const;
+
+	BoneClothCollision3D();
 };
