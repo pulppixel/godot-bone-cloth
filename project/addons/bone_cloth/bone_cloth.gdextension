@@ -8,3 +8,12 @@ reloadable = true
 
 windows.debug.x86_64 = "bin/libbonecloth.windows.template_debug.x86_64.dll"
 windows.release.x86_64 = "bin/libbonecloth.windows.template_release.x86_64.dll"
+
+[icons]
+
+BoneClothSimulator3D = "icons/BoneClothSimulator3D.svg"
+BoneClothCollision3D = "icons/BoneClothCollision3D.svg"
+BoneClothCollisionSphere3D = "icons/BoneClothCollisionSphere3D.svg"
+BoneClothCollisionCapsule3D = "icons/BoneClothCollisionCapsule3D.svg"
+BoneClothCollisionPlane3D = "icons/BoneClothCollisionPlane3D.svg"
+BoneClothCollisionTaperedCapsule3D = "icons/BoneClothCollisionTaperedCapsule3D.svg"
