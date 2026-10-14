@@ -4,8 +4,8 @@
 		The values of a [BoneClothSimulator3D] saved as a resource.
 	</brief_description>
 	<description>
-		A preset holds the values of a [BoneClothSimulator3D], to start a skirt or hair from known numbers. [method BoneClothSimulator3D.apply_preset] copies them onto a node, and [method BoneClothSimulator3D.make_preset] makes one from a node. The chains, [member BoneClothSimulator3D.link_mode] and the collisions are not in a preset; they belong to the character.
-		In the 3D editor, the node's menu in the toolbar lists every preset file in the project under [b]Presets[/b] and applies the one picked as one undo step; [b]Save Preset...[/b] saves the node's values to a new file. The plugin ships six presets in [code]addons/bone_cloth/presets/[/code]: accessory, breast, hair_soft, hair_stiff, skirt and tail.
+		A preset holds the values of a [BoneClothSimulator3D]. Apply one with [method BoneClothSimulator3D.apply_preset] and create one with [method BoneClothSimulator3D.make_preset]. The chains, [member BoneClothSimulator3D.link_mode] and the collisions are not included.
+		In the 3D editor, the node's toolbar menu lists the project's presets under [b]Presets[/b], and [b]Save Preset...[/b] saves a new one. The plugin includes six presets in [code]addons/bone_cloth/presets/[/code].
 	</description>
 	<tutorials>
 	</tutorials>

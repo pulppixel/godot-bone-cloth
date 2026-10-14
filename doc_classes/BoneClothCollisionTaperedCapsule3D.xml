@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <class name="BoneClothCollisionTaperedCapsule3D" inherits="BoneClothCollision3D" api_type="extension" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
 	<brief_description>
-		A capsule shape collision with a radius at each end that interacts with [BoneClothSimulator3D].
+		A capsule shape collision with a different radius at each end that interacts with [BoneClothSimulator3D].
 	</brief_description>
 	<description>
-		A capsule shape collision with a radius at each end that interacts with [BoneClothSimulator3D], for a limb thicker at one end, such as a thigh. Its axis is the node's Y axis, with [member top_radius] at the +Y end. The shape is the convex hull of the two end spheres. The joints stay out of it, at their radius from its surface.
-		With equal radii it is the same shape as [BoneClothCollisionCapsule3D].
+		A capsule shape collision with a different radius at each end that interacts with [BoneClothSimulator3D], such as for a thigh. Its axis is the node's Y axis, with [member top_radius] at the +Y end.
 	</description>
 	<tutorials>
 	</tutorials>

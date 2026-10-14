@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <class name="BoneClothSimulator3D" inherits="SkeletonModifier3D" api_type="extension" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
 	<brief_description>
-		A [SkeletonModifier3D] that sways bone chains linked to their neighbours, so a skirt of several chains moves as one surface.
+		A [SkeletonModifier3D] that sways bone chains and links them to each other.
 	</brief_description>
 	<description>
-		This [SkeletonModifier3D] sways skirts, capes, hair and tails, and returns them toward the animated pose as [SpringBoneSimulator3D] does. Its solver is ported from KawaiiPhysics: each joint keeps its speed, is pulled toward its pose, is pushed out of the collisions, then is held inside its angle limit and at its bone's length.
-		If you set up [method set_root_bone_name] and [method set_end_bone_name], the bones from the root down to the end are one chain. The root follows the pose and the bones below it are simulated. A chain whose root bone is a joint of an earlier chain is a branch of it and follows that joint, so wings and forked hair can be built from several chains. List the trunk before its branches.
-		With [member link_mode] set, each chain is linked to its neighbour in the list at every depth below the root. The links keep the joints at their rest distance and collide with the collisions as lines, so a leg cannot pass between two chains.
-		The values apply to every chain of the node. Each is scaled along the chains by its damping curve, read at the joint's share of the length from the root: [code]0.0[/code] at the root, [code]1.0[/code] at the farthest tip of its tree. Use one node for each part that needs other values, such as one for the skirt and one for the hair.
-		Each [BoneClothCollision3D] child of this node is a collision for every joint of the node, in the order of the scene tree.
-		The simulation runs in fixed steps of 1/60 s, at most 4 a frame; time beyond that is dropped. [member drag/value], [member stiffness/value] and [member link_stiffness] are amounts per step. Between steps the joints are drawn where the last step's motion carries them, so the cloth moves every frame on a display faster than 60 Hz.
+		This [SkeletonModifier3D] sways hair, skirts, capes and tails, and returns them toward the animated pose.
+		Each chain runs from [method set_root_bone_name] down to [method set_end_bone_name]. The root bone follows the pose and the bones below it are simulated. A chain whose root bone is in an earlier chain branches from it; list the trunk before its branches.
+		With [member link_mode] set, neighboring chains are linked at every depth. The links keep the joints at their rest distance and collide as lines, so a collision cannot pass between two chains.
+		The values apply to every chain. Each damping curve scales its value along the chains, from [code]0.0[/code] at the root to [code]1.0[/code] at the farthest tip. Use a separate node for parts that need other values.
+		[BoneClothCollision3D] children of this node collide with all of its joints.
+		The simulation runs in fixed steps of 1/60 s, at most 4 per frame.
 		[b]Note:[/b] Most methods in this class take an [code]index[/code] parameter. This parameter specifies which chain to use (e.g. [code]chains/&lt;index&gt;/root_bone_name[/code]).
 	</description>
 	<tutorials>
@@ -19,7 +19,7 @@
 			<return type="void" />
 			<param index="0" name="preset" type="BoneClothPreset" />
 			<description>
-				Copies the values of [param preset] onto this node. The chains, [member link_mode] and the collisions are not in a preset and stay as they are. The curves are copied, so editing them afterwards leaves the preset's file as it was.
+				Copies the values of [param preset] to this node. The chains, [member link_mode] and the collisions are not changed. Curves are copied, not shared.
 			</description>
 		</method>
 		<method name="get_end_bone" qualifiers="const">
@@ -53,14 +53,14 @@
 		<method name="make_preset" qualifiers="const">
 			<return type="BoneClothPreset" />
 			<description>
-				Returns a new [BoneClothPreset] holding this node's values, with copies of its curves. Save it with [method ResourceSaver.save] to apply it to other nodes; [b]Save Preset...[/b] in the node's menu in the 3D editor's toolbar does the same.
+				Returns a new [BoneClothPreset] with this node's values. Curves are copied, not shared.
 			</description>
 		</method>
 		<method name="reset">
 			<return type="void" />
 			<description>
-				Puts every joint back on the current bone pose at the next modification, at rest.
-				It is useful when the pose jumps, for example right after a call to [method AnimationPlayer.play] without a blend, where the cloth would otherwise swing hard toward the new pose.
+				Resets the joints to the current bone pose, at rest.
+				It is useful when the pose jumps, for example right after a call to [method AnimationPlayer.play] without blending.
 			</description>
 		</method>
 		<method name="set_end_bone">
@@ -68,7 +68,7 @@
 			<param index="0" name="index" type="int" />
 			<param index="1" name="bone" type="int" />
 			<description>
-				Sets the end bone index of the chain, and its name from the skeleton. [code]-1[/code] is no bone. An index past the skeleton's bones prints a warning and sets [code]-1[/code].
+				Sets the end bone index of the chain. [code]-1[/code] is no bone.
 			</description>
 		</method>
 		<method name="set_end_bone_name">
@@ -76,8 +76,7 @@
 			<param index="0" name="index" type="int" />
 			<param index="1" name="bone_name" type="String" />
 			<description>
-				Sets the end bone name of the chain, and its index from the skeleton. The end bone must be the root bone or a bone below it.
-				The name is kept when the skeleton has no such bone; the chain then prints an error when it is built and is not simulated, while the other chains run.
+				Sets the end bone name of the chain. The end bone must be the root bone or a descendant of it.
 			</description>
 		</method>
 		<method name="set_root_bone">
@@ -85,7 +84,7 @@
 			<param index="0" name="index" type="int" />
 			<param index="1" name="bone" type="int" />
 			<description>
-				Sets the root bone index of the chain, and its name from the skeleton. [code]-1[/code] is no bone. An index past the skeleton's bones prints a warning and sets [code]-1[/code].
+				Sets the root bone index of the chain. [code]-1[/code] is no bone.
 			</description>
 		</method>
 		<method name="set_root_bone_name">
@@ -93,8 +92,7 @@
 			<param index="0" name="index" type="int" />
 			<param index="1" name="bone_name" type="String" />
 			<description>
-				Sets the root bone name of the chain, and its index from the skeleton. The root bone follows the pose and is not simulated.
-				The name is kept when the skeleton has no such bone; the chain then prints an error when it is built and is not simulated, while the other chains run.
+				Sets the root bone name of the chain. The root bone follows the pose and is not simulated.
 			</description>
 		</method>
 	</methods>
@@ -103,64 +101,64 @@
 			The number of chains.
 		</member>
 		<member name="drag/damping_curve" type="Curve" setter="set_drag_damping_curve" getter="get_drag_damping_curve">
-			The curve that scales [member drag/value] along the chains. Without a curve, or with a curve that has no points, the scale is [code]1.0[/code].
+			The curve that scales [member drag/value] along the chains. If not set, the scale is [code]1.0[/code].
 		</member>
 		<member name="drag/value" type="float" setter="set_drag" getter="get_drag" default="0.1">
-			The share of each joint's speed lost in a step, from [code]0.0[/code] to [code]1.0[/code]. The greater the value, the more suppressed the swaying.
+			How much of each joint's speed is lost per step, from [code]0.0[/code] to [code]1.0[/code]. Higher values reduce swaying.
 		</member>
 		<member name="end_bone_length" type="float" setter="set_end_bone_length" getter="get_end_bone_length" default="0.1">
-			The length of a virtual joint added after the end bone of every chain, in the end bone's direction from its parent. A bone turns toward the joint below it, so without this joint the end bone cannot turn. [code]0.0[/code] adds none.
+			The length of a virtual joint added past the end bone of every chain, so that the end bone can rotate. [code]0.0[/code] adds none.
 		</member>
 		<member name="gravity" type="Vector3" setter="set_gravity" getter="get_gravity" default="Vector3(0, 0, 0)">
-			The acceleration applied to every joint, in world space.
-			[b]Note:[/b] Unlike [SpringBoneSimulator3D]'s gravity, which is a constant velocity, this is an acceleration, in m/s^2. [member stiffness/value] pulls the joints back toward the pose, so gravity bends the chains only part of the way.
+			The acceleration applied to every joint, in world space, in m/s^2.
+			[b]Note:[/b] Unlike [SpringBoneSimulator3D]'s gravity, this is an acceleration, not a velocity.
 		</member>
 		<member name="inertia" type="float" setter="set_inertia" getter="get_inertia" default="1.0">
-			The share of the skeleton's movement and turning the cloth feels, from [code]0.0[/code] to [code]1.0[/code]. The rest carries the cloth along with the skeleton. Only a change in the motion moves the cloth against it: at a steady speed or turning rate, the cloth is carried along.
+			How much of the skeleton's movement and rotation the cloth reacts to, from [code]0.0[/code] to [code]1.0[/code]. The rest moves the cloth along with the skeleton.
 		</member>
 		<member name="inertia_smoothing" type="float" setter="set_inertia_smoothing" getter="get_inertia_smoothing" default="0.4">
-			Softens sudden starts and stops. The cloth feels the skeleton move at a speed that eases toward its real speed, faster at lower values. [code]0.0[/code] turns it off. Taken from Magica Cloth 2's World Inertia Smoothing.
+			Softens the cloth's reaction to sudden starts and stops of the skeleton. Higher values smooth more. [code]0.0[/code] disables it.
 		</member>
 		<member name="joint_speed_limit" type="float" setter="set_joint_speed_limit" getter="get_joint_speed_limit" default="4.0">
-			The highest speed of each joint, not counting the part the skeleton's motion carries. A capped speed swings better, hair in a turn above all, but a low cap weakens the push out of the collisions. [code]0.0[/code] turns it off. Taken from Magica Cloth 2's particle speed limit.
+			The maximum speed of each joint relative to the skeleton. A low limit weakens the push out of collisions. [code]0.0[/code] disables it.
 		</member>
 		<member name="limit_angle/damping_curve" type="Curve" setter="set_limit_angle_damping_curve" getter="get_limit_angle_damping_curve">
-			The curve that scales [member limit_angle/value] along the chains. Without a curve, or with a curve that has no points, the scale is [code]1.0[/code].
+			The curve that scales [member limit_angle/value] along the chains. If not set, the scale is [code]1.0[/code].
 		</member>
 		<member name="limit_angle/value" type="float" setter="set_limit_angle" getter="get_limit_angle" default="0.0">
-			The widest angle each bone can lean away from its animated direction, in radians. The bone is held inside a cone around that direction. [code]0.0[/code] turns the limit off; with it on, a joint whose curve brings the angle to [code]0.0[/code] is held to its animated direction.
-			Check [b]Show Limit Angle[/b] in the node's menu in the 3D editor's toolbar to draw the cones.
+			The maximum angle each bone can tilt from its animated direction, in radians. [code]0.0[/code] disables the limit.
+			To draw the limits, check [b]Show Limit Angle[/b] in the node's toolbar menu.
 		</member>
 		<member name="link_mode" type="int" setter="set_link_mode" getter="get_link_mode" enum="BoneClothSimulator3D.LinkMode" default="0">
-			How the chains are linked to each other, in the order they are listed. A branch that starts below its trunk's root is not linked.
+			How the chains are linked, in list order. A branch that starts below its trunk's root is not linked.
 		</member>
 		<member name="link_stiffness" type="float" setter="set_link_stiffness" getter="get_link_stiffness" default="0.0">
-			How strongly the links hold neighbouring joints at their rest distance, from [code]0.0[/code] to [code]1.0[/code]. At [code]1.0[/code] each step restores the distance, as KawaiiPhysics' links do. At [code]0.0[/code] the distance is free, but the links still collide with the collisions as lines.
+			How strongly the links keep neighboring joints at their rest distance, from [code]0.0[/code] to [code]1.0[/code]. At [code]0.0[/code], the links only collide.
 		</member>
 		<member name="movement_speed_limit" type="float" setter="set_movement_speed_limit" getter="get_movement_speed_limit" default="5.0">
-			The skeleton's speed above which the cloth feels no more of its movement. A fast character then does not throw its cloth further.
+			The skeleton speed above which the cloth stops reacting to more movement.
 		</member>
 		<member name="radius/damping_curve" type="Curve" setter="set_radius_damping_curve" getter="get_radius_damping_curve">
-			The curve that scales [member radius/value] along the chains. Without a curve, or with a curve that has no points, the scale is [code]1.0[/code].
+			The curve that scales [member radius/value] along the chains. If not set, the scale is [code]1.0[/code].
 		</member>
 		<member name="radius/value" type="float" setter="set_radius" getter="get_radius" default="0.03">
-			The joint radius, which the collisions keep out. A link takes the mean of its two joints' radii.
+			The radius of each joint against the collisions. A link uses the average radius of its two joints.
 		</member>
 		<member name="rotation_speed_limit" type="float" setter="set_rotation_speed_limit" getter="get_rotation_speed_limit" default="12.566371">
-			The skeleton's turning speed above which the cloth feels no more of its turning, in radians per second.
+			The skeleton rotation speed above which the cloth stops reacting to more rotation, in radians per second.
 		</member>
 		<member name="stiffness/damping_curve" type="Curve" setter="set_stiffness_damping_curve" getter="get_stiffness_damping_curve">
-			The curve that scales [member stiffness/value] along the chains. Without a curve, or with a curve that has no points, the scale is [code]1.0[/code].
+			The curve that scales [member stiffness/value] along the chains. If not set, the scale is [code]1.0[/code].
 		</member>
 		<member name="stiffness/value" type="float" setter="set_stiffness" getter="get_stiffness" default="0.05">
-			The share of the way to its animated place each joint is pulled in a step, from [code]0.0[/code] to [code]1.0[/code]. The greater the value, the faster it returns to the pose. At [code]0.0[/code] the chain does not return to the pose.
-			[b]Note:[/b] This is KawaiiPhysics' stiffness. [SpringBoneSimulator3D]'s stiffness runs from [code]0.0[/code] to [code]4.0[/code] in another formula, so its values do not carry over.
+			How far each joint is pulled toward its animated position per step, from [code]0.0[/code] to [code]1.0[/code]. At [code]0.0[/code], the chain does not return to the pose.
+			[b]Note:[/b] [SpringBoneSimulator3D]'s stiffness uses a different formula, so its values do not carry over.
 		</member>
 		<member name="teleport_angle" type="float" setter="set_teleport_angle" getter="get_teleport_angle" default="1.5707964">
-			A turn of the skeleton larger than this in one frame, in radians, is taken as a teleport: the cloth goes on as if the skeleton had kept its last motion. Taken from Magica Cloth 2's teleport in its Keep mode.
+			A skeleton rotation larger than this in one frame, in radians, counts as a teleport. The cloth then continues as if the skeleton had kept its last motion.
 		</member>
 		<member name="teleport_distance" type="float" setter="set_teleport_distance" getter="get_teleport_distance" default="0.5">
-			A move of the skeleton farther than this in one frame is taken as a teleport: the cloth goes on as if the skeleton had kept its last motion. Taken from Magica Cloth 2's teleport in its Keep mode.
+			A skeleton movement farther than this in one frame counts as a teleport. The cloth then continues as if the skeleton had kept its last motion.
 		</member>
 	</members>
 	<constants>
@@ -168,10 +166,10 @@
 			The chains are not linked.
 		</constant>
 		<constant name="LINK_MODE_SEQUENTIAL" value="1" enum="LinkMode">
-			Each chain is linked to the next one in the list, as for a cape or a skirt open at the front.
+			Each chain is linked to the next one in the list, for a cape or a skirt open at the front.
 		</constant>
 		<constant name="LINK_MODE_LOOP" value="2" enum="LinkMode">
-			Each chain is linked to the next one in the list and the last to the first, as for a skirt all around. With two chains it is the same as [constant LINK_MODE_SEQUENTIAL].
+			Each chain is linked to the next one in the list, and the last to the first, for a skirt all around.
 		</constant>
 	</constants>
 </class>

@@ -4,8 +4,8 @@
 		A capsule shape collision that interacts with [BoneClothSimulator3D].
 	</brief_description>
 	<description>
-		A capsule shape collision that interacts with [BoneClothSimulator3D]. Its axis is the node's Y axis. The joints stay out of it, at their radius from its surface.
-		For a limb thicker at one end, such as a thigh, see [BoneClothCollisionTaperedCapsule3D].
+		A capsule shape collision that interacts with [BoneClothSimulator3D]. Its axis is the node's Y axis.
+		For a capsule with a different radius at each end, see [BoneClothCollisionTaperedCapsule3D].
 	</description>
 	<tutorials>
 	</tutorials>
