@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <class name="BoneClothCollisionPlane3D" inherits="BoneClothCollision3D" api_type="extension" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
 	<brief_description>
+		An infinite plane collision that interacts with [BoneClothSimulator3D].
 	</brief_description>
 	<description>
+		An infinite plane collision that interacts with [BoneClothSimulator3D]. It is an infinite size XZ plane, and the +Y direction is treated as normal. The joints stay on the +Y side, at their radius from the plane, and a joint that went through it in one step comes back.
 	</description>
 	<tutorials>
 	</tutorials>
