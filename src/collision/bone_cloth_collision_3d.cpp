@@ -53,6 +53,9 @@ void BoneClothCollision3D::_notification(int p_what) {
 		case NOTIFICATION_PARENTED: {
 			_validate_bone_name();
 		} break;
+		case NOTIFICATION_LOCAL_TRANSFORM_CHANGED: {
+			_take_offsets_from_transform();
+		} break;
 	}
 }
 
@@ -156,10 +159,33 @@ void BoneClothCollision3D::sync_pose() {
 		pose = skeleton->get_bone_global_pose(bone);
 		pose.origin += pose.basis.get_rotation_quaternion().xform(position_offset);
 		pose.basis *= Basis(rotation_offset);
+		syncing = true;
 		set_global_transform(skeleton_global * pose);
+		syncing = false;
 	} else {
 		pose = skeleton_global.affine_inverse() * get_global_transform();
 	}
+}
+
+// A node on a bone moved by anything but sync_pose, the editor's move and rotate tools and their undo among them, keeps its new place
+// as the offsets from the bone, as BoneAttachment3D's override_pose writes a moved attachment back into its bone and KawaiiPhysics
+// writes its widget's drags into a collision's offsets (DoTranslation, DoRotation). SpringBoneCollision3D does not, and the next
+// sync puts the node back. A scale is dropped: the shape's size is its own properties.
+// Before the node is in the tree, a scene being loaded sets its saved transform, and the saved offsets win.
+void BoneClothCollision3D::_take_offsets_from_transform() {
+	if (syncing || bone < 0 || !is_inside_tree()) {
+		return;
+	}
+	Skeleton3D *skeleton = get_skeleton();
+	if (!skeleton) {
+		return;
+	}
+
+	const Transform3D bone_pose = skeleton->get_bone_global_pose(bone);
+	const Transform3D moved = skeleton->get_global_transform().affine_inverse() * get_global_transform();
+	position_offset = bone_pose.basis.get_rotation_quaternion().inverse().xform(moved.origin - bone_pose.origin);
+	rotation_offset = (bone_pose.basis.inverse() * moved.basis).get_rotation_quaternion();
+	sync_pose();
 }
 
 // The base collides with nothing. It is registered as a virtual class, as the engine's, so the editor offers only the three shapes.
@@ -191,4 +217,8 @@ void BoneClothCollision3D::_push_segment_out(Vector3 &r_a, Vector3 &r_b, const V
 	const float scale = 1.0f / ((1.0f - s) * (1.0f - s) + s * s);
 	r_a += push * ((1.0f - s) * scale);
 	r_b += push * (s * scale);
+}
+
+BoneClothCollision3D::BoneClothCollision3D() {
+	set_notify_local_transform(true);
 }
