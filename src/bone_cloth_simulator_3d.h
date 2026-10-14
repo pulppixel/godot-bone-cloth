@@ -51,6 +51,7 @@ private:
 		float stiffness = 0.0f;
 		float radius = 0.0f;
 		float limit_angle = 0.0f;
+		float gravity = 0.0f;
 	};
 
 	struct Chain {
@@ -87,7 +88,9 @@ private:
 	Ref<Curve> radius_damping_curve;
 	float limit_angle = 0.0f;
 	Ref<Curve> limit_angle_damping_curve;
-	Vector3 gravity;
+	float gravity = 0.0f;
+	Ref<Curve> gravity_damping_curve;
+	Vector3 gravity_direction = Vector3(0, -1, 0);
 	float inertia = 1.0f;
 	float inertia_smoothing = 0.4f;
 	float movement_speed_limit = 5.0f;
@@ -112,9 +115,9 @@ private:
 	void _build_links(Skeleton3D *p_skeleton);
 	void _read_pose(Skeleton3D *p_skeleton, Chain &p_chain);
 	void _update_joint_settings(Chain &p_chain);
-	void _step(const Vector3 &p_gravity, const Vector3 &p_move, const Quaternion &p_turn, const LocalVector<BoneClothCollision3D *> &p_collisions);
+	void _step(const Vector3 &p_gravity_direction, const Vector3 &p_move, const Quaternion &p_turn, const LocalVector<BoneClothCollision3D *> &p_collisions);
 	void _follow_parent_chain(Chain &p_chain);
-	void _simulate(Chain &p_chain, const Vector3 &p_gravity, const Vector3 &p_move, const Quaternion &p_turn);
+	void _simulate(Chain &p_chain, const Vector3 &p_gravity_direction, const Vector3 &p_move, const Quaternion &p_turn);
 	void _solve_links();
 	void _collide(Chain &p_chain, const LocalVector<BoneClothCollision3D *> &p_collisions);
 	void _collide_links(const LocalVector<BoneClothCollision3D *> &p_collisions);
@@ -164,8 +167,12 @@ public:
 	float get_limit_angle() const;
 	void set_limit_angle_damping_curve(const Ref<Curve> &p_curve);
 	Ref<Curve> get_limit_angle_damping_curve() const;
-	void set_gravity(const Vector3 &p_gravity);
-	Vector3 get_gravity() const;
+	void set_gravity(float p_gravity);
+	float get_gravity() const;
+	void set_gravity_damping_curve(const Ref<Curve> &p_curve);
+	Ref<Curve> get_gravity_damping_curve() const;
+	void set_gravity_direction(const Vector3 &p_direction);
+	Vector3 get_gravity_direction() const;
 	void set_inertia(float p_inertia);
 	float get_inertia() const;
 	void set_inertia_smoothing(float p_smoothing);

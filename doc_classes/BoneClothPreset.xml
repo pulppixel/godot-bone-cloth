@@ -19,8 +19,14 @@
 		<member name="end_bone_length" type="float" setter="set_end_bone_length" getter="get_end_bone_length" default="0.1">
 			See [member BoneClothSimulator3D.end_bone_length].
 		</member>
-		<member name="gravity" type="Vector3" setter="set_gravity" getter="get_gravity" default="Vector3(0, 0, 0)">
-			See [member BoneClothSimulator3D.gravity].
+		<member name="gravity/damping_curve" type="Curve" setter="set_gravity_damping_curve" getter="get_gravity_damping_curve">
+			See [member BoneClothSimulator3D.gravity/damping_curve].
+		</member>
+		<member name="gravity/direction" type="Vector3" setter="set_gravity_direction" getter="get_gravity_direction" default="Vector3(0, -1, 0)">
+			See [member BoneClothSimulator3D.gravity/direction].
+		</member>
+		<member name="gravity/value" type="float" setter="set_gravity" getter="get_gravity" default="0.0">
+			See [member BoneClothSimulator3D.gravity/value].
 		</member>
 		<member name="inertia" type="float" setter="set_inertia" getter="get_inertia" default="1.0">
 			See [member BoneClothSimulator3D.inertia].

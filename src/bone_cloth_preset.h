@@ -23,7 +23,9 @@ class BoneClothPreset : public Resource {
 	Ref<Curve> radius_damping_curve;
 	float limit_angle = 0.0f;
 	Ref<Curve> limit_angle_damping_curve;
-	Vector3 gravity;
+	float gravity = 0.0f;
+	Ref<Curve> gravity_damping_curve;
+	Vector3 gravity_direction = Vector3(0, -1, 0);
 	float inertia = 1.0f;
 	float inertia_smoothing = 0.4f;
 	float movement_speed_limit = 5.0f;
@@ -48,7 +50,9 @@ public:
 		"radius/damping_curve",
 		"limit_angle/value",
 		"limit_angle/damping_curve",
-		"gravity",
+		"gravity/value",
+		"gravity/damping_curve",
+		"gravity/direction",
 		"inertia",
 		"inertia_smoothing",
 		"movement_speed_limit",
@@ -80,8 +84,12 @@ public:
 	float get_limit_angle() const;
 	void set_limit_angle_damping_curve(const Ref<Curve> &p_curve);
 	Ref<Curve> get_limit_angle_damping_curve() const;
-	void set_gravity(const Vector3 &p_gravity);
-	Vector3 get_gravity() const;
+	void set_gravity(float p_gravity);
+	float get_gravity() const;
+	void set_gravity_damping_curve(const Ref<Curve> &p_curve);
+	Ref<Curve> get_gravity_damping_curve() const;
+	void set_gravity_direction(const Vector3 &p_direction);
+	Vector3 get_gravity_direction() const;
 	void set_inertia(float p_inertia);
 	float get_inertia() const;
 	void set_inertia_smoothing(float p_smoothing);
