@@ -69,7 +69,7 @@ bool BoneClothCollisionCapsule3D::is_inside() const {
 	return inside;
 }
 
-// The two ends of the axis, the hemispheres' centres, in skeleton space.
+// The two ends of the axis, the hemispheres' centers, in skeleton space.
 void BoneClothCollisionCapsule3D::_get_head_and_tail(Vector3 &r_head, Vector3 &r_tail) const {
 	const Vector3 half_axis = pose.basis.xform(Vector3(0.0f, height * 0.5f - radius, 0.0f));
 	r_head = pose.origin + half_axis;

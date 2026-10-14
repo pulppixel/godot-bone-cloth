@@ -6,6 +6,7 @@
 #include <godot_cpp/classes/editor_undo_redo_manager.hpp>
 #include <godot_cpp/classes/resource_loader.hpp>
 #include <godot_cpp/classes/resource_saver.hpp>
+#include <godot_cpp/classes/texture2d.hpp>
 #include <godot_cpp/core/class_db.hpp>
 
 using namespace godot;
@@ -17,6 +18,22 @@ enum {
 };
 
 void BoneClothSimulator3DMenu::_bind_methods() {
+}
+
+// The node's icon on the button, as the Mesh menu sets its own when the theme changes.
+// An extension's icon is not in the editor theme: it is loaded from the path in bone_cloth.gdextension, and only once the file is imported,
+// as the editor loads it for the scene tree.
+// The plugin starts before the editor's first import, so the icon is also looked for each time the menu shows.
+void BoneClothSimulator3DMenu::_notification(int p_what) {
+	switch (p_what) {
+		case NOTIFICATION_THEME_CHANGED:
+		case NOTIFICATION_VISIBILITY_CHANGED: {
+			const String icon_path = "res://addons/bone_cloth/icons/BoneClothSimulator3D.svg";
+			if (is_visible() && ResourceLoader::get_singleton()->exists(icon_path)) {
+				set_button_icon(ResourceLoader::get_singleton()->load(icon_path));
+			}
+		} break;
+	}
 }
 
 // The Mesh and Skeleton3D menus' button: text, opens on hover, flat look without the icon tint

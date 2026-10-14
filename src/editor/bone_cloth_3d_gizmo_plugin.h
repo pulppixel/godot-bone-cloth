@@ -9,7 +9,7 @@
 
 using namespace godot;
 
-// Each collision shape as wire lines in the node's space, in the editor's spring bone collision colours, with handles for its size as CollisionShape3D's.
+// Each collision shape as wire lines in the node's space, in the editor's spring bone collision colors, with handles for its size as CollisionShape3D's.
 class BoneClothCollision3DGizmoPlugin : public EditorNode3DGizmoPlugin {
 	GDCLASS(BoneClothCollision3DGizmoPlugin, EditorNode3DGizmoPlugin)
 

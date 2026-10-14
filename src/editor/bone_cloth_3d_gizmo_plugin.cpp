@@ -20,7 +20,7 @@ using namespace godot;
 
 // An arc around p_center from angle p_from to p_to, angle 0 along p_axis_x and a quarter turn along p_axis_y, in steps of a
 // sixteenth of a turn as the engine's spheres and capsules (spring_bone_3d_gizmo_plugin.cpp draw_sphere, draw_capsule). The count
-// is even, so the arc's middle is a vertex: a capsule's end arcs are centred on its poles, and the drawing reaches them.
+// is even, so the arc's middle is a vertex: a capsule's end arcs are centered on its poles, and the drawing reaches them.
 static void add_arc(PackedVector3Array &r_lines, const Vector3 &p_center, const Vector3 &p_axis_x, const Vector3 &p_axis_y, float p_radius, float p_from, float p_to) {
 	static constexpr float STEP_ANGLE = (float)Math::TAU / 16.0f;
 
@@ -50,7 +50,7 @@ static void add_sphere(PackedVector3Array &r_lines, const Vector3 &p_center, flo
 void BoneClothCollision3DGizmoPlugin::_bind_methods() {
 }
 
-// The engine's colours, read from the editor settings so a change there reaches ours too. The engine
+// The engine's colors, read from the editor settings so a change there reaches ours too. The engine
 // switches its material on is_selected(), which an extension cannot reach; get_material() gives the same switch, the selected
 // lines on top of the mesh as the engine's selected shader puts them, the others faded and behind it.
 BoneClothCollision3DGizmoPlugin::BoneClothCollision3DGizmoPlugin() {
@@ -370,7 +370,7 @@ void BoneClothCollision3DGizmoPlugin::_add_plane(PackedVector3Array &r_lines) {
 void BoneClothSimulator3DGizmoPlugin::_bind_methods() {
 }
 
-// The engine's joint colour, read from the editor settings, selected and faded as the collisions are.
+// The engine's joint color, read from the editor settings, selected and faded as the collisions are.
 BoneClothSimulator3DGizmoPlugin::BoneClothSimulator3DGizmoPlugin() {
 	Ref<EditorSettings> settings = EditorInterface::get_singleton()->get_editor_settings();
 	create_material("joint", settings->get_setting("editors/3d_gizmos/gizmo_colors/spring_bone_joint"), false, true);

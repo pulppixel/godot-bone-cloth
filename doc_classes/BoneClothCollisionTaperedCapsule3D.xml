@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="BoneClothCollisionTaperedCapsule3D" inherits="BoneClothCollision3D" api_type="extension" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+		A capsule shape collision with a different radius at each end that interacts with [BoneClothSimulator3D].
+	</brief_description>
+	<description>
+		A capsule shape collision with a different radius at each end that interacts with [BoneClothSimulator3D], such as for a thigh. Its axis is the node's Y axis, with [member top_radius] at the +Y end.
+	</description>
+	<tutorials>
+	</tutorials>
+	<members>
+		<member name="bottom_radius" type="float" setter="set_bottom_radius" getter="get_bottom_radius" default="0.05">
+			The radius of the -Y end.
+			[b]Note:[/b] A radius greater than half of [member height] raises the [member height] to twice the radius.
+		</member>
+		<member name="height" type="float" setter="set_height" getter="get_height" default="0.5">
+			The full height, including the end spheres.
+			[b]Note:[/b] A [member height] less than twice a radius lowers that radius to half of the [member height].
+		</member>
+		<member name="inside" type="bool" setter="set_inside" getter="is_inside" default="false">
+			If [code]true[/code], the collision acts to trap the joints within the collision.
+		</member>
+		<member name="top_radius" type="float" setter="set_top_radius" getter="get_top_radius" default="0.1">
+			The radius of the +Y end.
+			[b]Note:[/b] A radius greater than half of [member height] raises the [member height] to twice the radius.
+		</member>
+	</members>
+</class>

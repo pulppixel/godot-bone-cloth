@@ -121,9 +121,9 @@ void BoneClothSimulator3D::_build_branches() {
 	}
 }
 
-// Links between neighbouring chains in the order they are listed, at every depth below the roots, as KawaiiPhysics' ring helper pairs skirt columns.
+// Links between neighboring chains in the order they are listed, at every depth below the roots, as KawaiiPhysics' ring helper pairs skirt columns.
 // A tip links only to a tip, as bAutoAddChildDummyBoneConstraint does. The length is the rest distance.
-// A branch off a trunk joint below the root is left out, its depths do not match its neighbours'. Chains sharing one root bone still link.
+// A branch off a trunk joint below the root is left out, its depths do not match its neighbors'. Chains sharing one root bone still link.
 void BoneClothSimulator3D::_build_links(Skeleton3D *p_skeleton) {
 	links.clear();
 	LocalVector<uint32_t> linked;
@@ -391,7 +391,7 @@ void BoneClothSimulator3D::_update_display(Chain &p_chain, float p_follow) {
 
 // Each bone first turns as the bone above it turned, then by the arc from where that leaves it pointing to its drawn direction,
 // as Magica Cloth 2 (VirtualMeshManager.cs, the child's rotation from its parent's) and the engine's SpringBoneSimulator3D do.
-// The arc is then the bend between neighbours only. An arc from the bone's own pose direction, as KawaiiPhysics takes, nears 180 degrees
+// The arc is then the bend between neighbors only. An arc from the bone's own pose direction, as KawaiiPhysics takes, nears 180 degrees
 // when hair flies up over the head, and its axis, which is the bone's twist, flips from one frame to the next.
 // Rotation only: the lengths stay the pose's. Root first, because set_bone_global_pose works out the local pose from the parent's global pose.
 // The root is drawn at its pose location, as KawaiiPhysics writes only the bones below it.

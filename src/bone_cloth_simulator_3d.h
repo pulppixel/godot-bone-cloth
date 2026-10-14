@@ -1,4 +1,4 @@
-// Bone cloth: spring chains linked to their neighbours so a skirt of several chains moves as one surface and stays out of the legs.
+// Bone cloth: spring chains linked to their neighbors so a skirt of several chains moves as one surface and stays out of the legs.
 // The solver is ported from KawaiiPhysics (MIT, Copyright (c) 2019-2026 pafuhana1213), see THIRD_PARTY_NOTICES.md.
 
 #pragma once
@@ -67,7 +67,7 @@ private:
 		uint32_t parent_joint = 0;
 	};
 
-	// Two joints at the same depth of neighbouring chains, kept at their rest distance.
+	// Two joints at the same depth of neighboring chains, kept at their rest distance.
 	struct Link {
 		uint32_t chain_a = 0;
 		uint32_t chain_b = 0;

@@ -33,9 +33,9 @@ bool BoneClothCollisionSphere3D::is_inside() const {
 	return inside;
 }
 
-// A point p_point_radius thick against a sphere. Outside, it goes out to the two radii from the centre, as KawaiiPhysics' and the engine's do;
-// a point at the centre has no direction out and takes p_fallback. Inside, it comes in to the sphere's radius less its own, never below zero,
-// so a joint thicker than the sphere stays at the centre: KawaiiPhysics' guard, where the engine's limit goes negative and throws it to the far side.
+// A point p_point_radius thick against a sphere. Outside, it goes out to the two radii from the center, as KawaiiPhysics' and the engine's do;
+// a point at the center has no direction out and takes p_fallback. Inside, it comes in to the sphere's radius less its own, never below zero,
+// so a joint thicker than the sphere stays at the center: KawaiiPhysics' guard, where the engine's limit goes negative and throws it to the far side.
 Vector3 BoneClothCollisionSphere3D::_collide_sphere(const Vector3 &p_center, float p_radius, bool p_inside, const Vector3 &p_fallback, const Vector3 &p_point, float p_point_radius) {
 	const Vector3 offset = p_point - p_center;
 	const float distance_squared = offset.length_squared();

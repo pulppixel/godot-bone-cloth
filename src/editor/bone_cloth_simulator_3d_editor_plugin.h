@@ -34,6 +34,7 @@ class BoneClothSimulator3DMenu : public MenuButton {
 
 protected:
 	static void _bind_methods();
+	void _notification(int p_what);
 
 public:
 	void set_simulator(BoneClothSimulator3D *p_simulator);
