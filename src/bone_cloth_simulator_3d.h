@@ -60,7 +60,13 @@ private:
 		int root_bone = -1;
 		String end_bone_name;
 		int end_bone = -1;
+		// SpringBoneSimulator3D's extended end bone: a joint past the end bone, without which the end bone has no point below it and cannot turn.
+		// On by default, unlike the engine's, as skirt and hair rigs seldom carry a tail bone.
+		bool extend_end_bone = true;
+		BoneDirection end_bone_direction = BONE_DIRECTION_FROM_PARENT;
+		float end_bone_length = 0.1f;
 		LocalVector<Joint> joints;
+
 		Vector3 end_axis;
 
 		// A branch: the root bone is a joint of an earlier chain, which the root follows instead of the pose (KawaiiPhysics' ParentIndex).
@@ -79,7 +85,6 @@ private:
 	LocalVector<Chain> chains;
 	LinkMode link_mode = LINK_MODE_NONE;
 	float link_stiffness = 0.0f;
-	float end_bone_length = 0.1f;
 	float drag = 0.1f;
 	Ref<Curve> drag_damping_curve;
 	float stiffness = 0.05f;
@@ -145,12 +150,16 @@ public:
 	String get_end_bone_name(int p_index) const;
 	void set_end_bone(int p_index, int p_bone);
 	int get_end_bone(int p_index) const;
+	void set_extend_end_bone(int p_index, bool p_enabled);
+	bool is_end_bone_extended(int p_index) const;
+	void set_end_bone_direction(int p_index, BoneDirection p_bone_direction);
+	BoneDirection get_end_bone_direction(int p_index) const;
+	void set_end_bone_length(int p_index, float p_length);
+	float get_end_bone_length(int p_index) const;
 	void set_link_mode(LinkMode p_mode);
 	LinkMode get_link_mode() const;
 	void set_link_stiffness(float p_stiffness);
 	float get_link_stiffness() const;
-	void set_end_bone_length(float p_length);
-	float get_end_bone_length() const;
 	void set_drag(float p_drag);
 	float get_drag() const;
 	void set_drag_damping_curve(const Ref<Curve> &p_curve);

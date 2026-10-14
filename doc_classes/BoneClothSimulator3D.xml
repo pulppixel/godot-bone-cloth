@@ -29,6 +29,20 @@
 				Returns the end bone index of the chain.
 			</description>
 		</method>
+		<method name="get_end_bone_direction" qualifiers="const">
+			<return type="int" enum="SkeletonModifier3D.BoneDirection" />
+			<param index="0" name="index" type="int" />
+			<description>
+				Returns the tail direction of the chain's end bone.
+			</description>
+		</method>
+		<method name="get_end_bone_length" qualifiers="const">
+			<return type="float" />
+			<param index="0" name="index" type="int" />
+			<description>
+				Returns the tail length of the chain's end bone.
+			</description>
+		</method>
 		<method name="get_end_bone_name" qualifiers="const">
 			<return type="String" />
 			<param index="0" name="index" type="int" />
@@ -48,6 +62,13 @@
 			<param index="0" name="index" type="int" />
 			<description>
 				Returns the root bone name of the chain.
+			</description>
+		</method>
+		<method name="is_end_bone_extended" qualifiers="const">
+			<return type="bool" />
+			<param index="0" name="index" type="int" />
+			<description>
+				Returns [code]true[/code] if the chain's end bone is extended to have a tail.
 			</description>
 		</method>
 		<method name="make_preset" qualifiers="const">
@@ -71,12 +92,37 @@
 				Sets the end bone index of the chain. [code]-1[/code] is no bone.
 			</description>
 		</method>
+		<method name="set_end_bone_direction">
+			<return type="void" />
+			<param index="0" name="index" type="int" />
+			<param index="1" name="bone_direction" type="int" enum="SkeletonModifier3D.BoneDirection" />
+			<description>
+				Sets the tail direction of the chain's end bone, in the end bone's own axes, when [method is_end_bone_extended] is [code]true[/code]. [constant SkeletonModifier3D.BONE_DIRECTION_FROM_PARENT] points the tail the way the end bone lies from its parent at rest.
+			</description>
+		</method>
+		<method name="set_end_bone_length">
+			<return type="void" />
+			<param index="0" name="index" type="int" />
+			<param index="1" name="length" type="float" />
+			<description>
+				Sets the tail length of the chain's end bone when [method is_end_bone_extended] is [code]true[/code]. [code]0.0[/code] adds no tail.
+			</description>
+		</method>
 		<method name="set_end_bone_name">
 			<return type="void" />
 			<param index="0" name="index" type="int" />
 			<param index="1" name="bone_name" type="String" />
 			<description>
 				Sets the end bone name of the chain. The end bone must be the root bone or a descendant of it.
+			</description>
+		</method>
+		<method name="set_extend_end_bone">
+			<return type="void" />
+			<param index="0" name="index" type="int" />
+			<param index="1" name="enabled" type="bool" />
+			<description>
+				If [param enabled] is [code]true[/code], the chain's end bone is extended to have a tail, a joint past it, so that the end bone can rotate.
+				[b]Note:[/b] Unlike [SpringBoneSimulator3D], the end bone is extended by default, with a length of [code]0.1[/code].
 			</description>
 		</method>
 		<method name="set_root_bone">
@@ -105,9 +151,6 @@
 		</member>
 		<member name="drag/value" type="float" setter="set_drag" getter="get_drag" default="0.1">
 			How much of each joint's speed is lost per step, from [code]0.0[/code] to [code]1.0[/code]. Higher values reduce swaying.
-		</member>
-		<member name="end_bone_length" type="float" setter="set_end_bone_length" getter="get_end_bone_length" default="0.1">
-			The length of a virtual joint added past the end bone of every chain, so that the end bone can rotate. [code]0.0[/code] adds none.
 		</member>
 		<member name="gravity/damping_curve" type="Curve" setter="set_gravity_damping_curve" getter="get_gravity_damping_curve">
 			The curve that scales [member gravity/value] along the chains. If not set, the scale is [code]1.0[/code].
