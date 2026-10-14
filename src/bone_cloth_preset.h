@@ -14,7 +14,6 @@ class BoneClothPreset : public Resource {
 
 	// The same defaults as BoneClothSimulator3D.
 	float link_stiffness = 0.0f;
-	float end_bone_length = 0.1f;
 	float drag = 0.1f;
 	Ref<Curve> drag_damping_curve;
 	float stiffness = 0.05f;
@@ -41,7 +40,6 @@ public:
 	// The property paths a preset carries, the same on the preset and on the simulator, so the copy goes name by name.
 	static constexpr const char *VALUES[] = {
 		"link_stiffness",
-		"end_bone_length",
 		"drag/value",
 		"drag/damping_curve",
 		"stiffness/value",
@@ -66,8 +64,6 @@ public:
 	static Variant copy_value(const Variant &p_value);
 	void set_link_stiffness(float p_stiffness);
 	float get_link_stiffness() const;
-	void set_end_bone_length(float p_length);
-	float get_end_bone_length() const;
 	void set_drag(float p_drag);
 	float get_drag() const;
 	void set_drag_damping_curve(const Ref<Curve> &p_curve);

@@ -13,6 +13,17 @@ static constexpr int MAX_STEPS = 4;
 // KawaiiPhysics' default link compliance, Leather.
 static constexpr float LINK_COMPLIANCE = 1e-9f;
 
+// SpringBoneSimulator3D::get_end_bone_axis, in the end bone's own axes: FromParent is the end bone's offset from its parent at rest, the others that bone axis.
+static Vector3 end_bone_axis(Skeleton3D *p_skeleton, int p_end_bone, SkeletonModifier3D::BoneDirection p_direction) {
+	if (p_direction != SkeletonModifier3D::BONE_DIRECTION_FROM_PARENT) {
+		static const Vector3 axes[] = { Vector3(1, 0, 0), Vector3(-1, 0, 0), Vector3(0, 1, 0), Vector3(0, -1, 0), Vector3(0, 0, 1), Vector3(0, 0, -1) };
+		return axes[p_direction];
+	}
+
+	const Transform3D rest = p_skeleton->get_bone_rest(p_end_bone);
+	return rest.basis.xform_inv(rest.origin).normalized();
+}
+
 // The rest length from the root to each joint, the tip included; _build_branches turns it into a rate.
 // By length rather than by count, as bones in one chain differ.
 // Without the tip the end bone has no point below it and cannot turn.
@@ -38,18 +49,17 @@ bool BoneClothSimulator3D::_build_joints(Skeleton3D *p_skeleton, Chain &p_chain)
 		p_chain.joints.push_back(joint);
 	}
 
-	if (end_bone_length > 0.0f) {
+	// An end bone resting on its parent's origin has no FromParent axis and gets no tip, as in the engine.
+	p_chain.end_axis = end_bone_axis(p_skeleton, end, p_chain.end_bone_direction);
+	if (p_chain.extend_end_bone && p_chain.end_bone_length > 0.0f && !p_chain.end_axis.is_zero_approx()) {
 		p_chain.joints.push_back(Joint());
 	}
-
-	const Transform3D rest = p_skeleton->get_bone_rest(end);
-	p_chain.end_axis = rest.basis.xform_inv(rest.origin).normalized();
 
 	float length = 0.0f;
 	for (uint32_t i = 1; i < p_chain.joints.size(); i++) {
 		Joint &joint = p_chain.joints[i];
 		const Vector3 parent_rest = p_skeleton->get_bone_global_rest(p_chain.joints[i - 1].bone).origin;
-		length += joint.bone >= 0 ? (p_skeleton->get_bone_global_rest(joint.bone).origin - parent_rest).length() : end_bone_length;
+		length += joint.bone >= 0 ? (p_skeleton->get_bone_global_rest(joint.bone).origin - parent_rest).length() : p_chain.end_bone_length;
 		joint.length_rate = length;
 	}
 
@@ -145,7 +155,7 @@ void BoneClothSimulator3D::_build_links(Skeleton3D *p_skeleton) {
 		}
 
 		const Transform3D end = p_skeleton->get_bone_global_rest(p_chain.joints[p_depth - 1].bone);
-		return end.origin + end.basis.orthonormalized().xform(p_chain.end_axis) * end_bone_length;
+		return end.origin + end.basis.orthonormalized().xform(p_chain.end_axis) * p_chain.end_bone_length;
 	};
 
 	// The last chain links back to the first only with three or more, or the two would be linked twice.
@@ -184,7 +194,7 @@ void BoneClothSimulator3D::_read_pose(Skeleton3D *p_skeleton, Chain &p_chain) {
 	Joint &tip = p_chain.joints[p_chain.joints.size() - 1];
 	if (tip.bone < 0) {
 		const Joint &end = p_chain.joints[p_chain.joints.size() - 2];
-		tip.current_pose_location = end.current_pose_location + end.pose_basis.orthonormalized().xform(p_chain.end_axis) * end_bone_length;
+		tip.current_pose_location = end.current_pose_location + end.pose_basis.orthonormalized().xform(p_chain.end_axis) * p_chain.end_bone_length;
 	}
 }
 
@@ -425,14 +435,18 @@ void BoneClothSimulator3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_end_bone_name", "index"), &BoneClothSimulator3D::get_end_bone_name);
 	ClassDB::bind_method(D_METHOD("set_end_bone", "index", "bone"), &BoneClothSimulator3D::set_end_bone);
 	ClassDB::bind_method(D_METHOD("get_end_bone", "index"), &BoneClothSimulator3D::get_end_bone);
+	ClassDB::bind_method(D_METHOD("set_extend_end_bone", "index", "enabled"), &BoneClothSimulator3D::set_extend_end_bone);
+	ClassDB::bind_method(D_METHOD("is_end_bone_extended", "index"), &BoneClothSimulator3D::is_end_bone_extended);
+	ClassDB::bind_method(D_METHOD("set_end_bone_direction", "index", "bone_direction"), &BoneClothSimulator3D::set_end_bone_direction);
+	ClassDB::bind_method(D_METHOD("get_end_bone_direction", "index"), &BoneClothSimulator3D::get_end_bone_direction);
+	ClassDB::bind_method(D_METHOD("set_end_bone_length", "index", "length"), &BoneClothSimulator3D::set_end_bone_length);
+	ClassDB::bind_method(D_METHOD("get_end_bone_length", "index"), &BoneClothSimulator3D::get_end_bone_length);
 
 	ClassDB::bind_method(D_METHOD("set_link_mode", "mode"), &BoneClothSimulator3D::set_link_mode);
 	ClassDB::bind_method(D_METHOD("get_link_mode"), &BoneClothSimulator3D::get_link_mode);
 	ClassDB::bind_method(D_METHOD("set_link_stiffness", "stiffness"), &BoneClothSimulator3D::set_link_stiffness);
 	ClassDB::bind_method(D_METHOD("get_link_stiffness"), &BoneClothSimulator3D::get_link_stiffness);
 
-	ClassDB::bind_method(D_METHOD("set_end_bone_length", "length"), &BoneClothSimulator3D::set_end_bone_length);
-	ClassDB::bind_method(D_METHOD("get_end_bone_length"), &BoneClothSimulator3D::get_end_bone_length);
 	ClassDB::bind_method(D_METHOD("set_drag", "drag"), &BoneClothSimulator3D::set_drag);
 	ClassDB::bind_method(D_METHOD("get_drag"), &BoneClothSimulator3D::get_drag);
 	ClassDB::bind_method(D_METHOD("set_drag_damping_curve", "curve"), &BoneClothSimulator3D::set_drag_damping_curve);
@@ -476,7 +490,6 @@ void BoneClothSimulator3D::_bind_methods() {
 
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "link_mode", PROPERTY_HINT_ENUM, "None,Sequential,Loop"), "set_link_mode", "get_link_mode");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "link_stiffness", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_link_stiffness", "get_link_stiffness");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "end_bone_length", PROPERTY_HINT_RANGE, "0,1,0.001,or_greater,suffix:m"), "set_end_bone_length", "get_end_bone_length");
 
 	// Each value folds with its curve as in SpringBoneSimulator3D's settings: <name>/value and <name>/damping_curve, the curve scaling the value along the chain.
 	// stiffness keeps KawaiiPhysics' meaning, a per step pull toward the pose from 0 to 1; the engine's stiffness runs 0 to 4 in another formula.
@@ -531,7 +544,18 @@ bool BoneClothSimulator3D::_set(const StringName &p_name, const Variant &p_value
 	} else if (what == "end_bone_name") {
 		set_end_bone_name(which, p_value);
 	} else if (what == "end_bone") {
-		set_end_bone(which, p_value);
+		const String option = path.get_slice("/", 3);
+		if (option.is_empty()) {
+			set_end_bone(which, p_value);
+		} else if (option == "direction") {
+			set_end_bone_direction(which, BoneDirection(int(p_value)));
+		} else if (option == "length") {
+			set_end_bone_length(which, p_value);
+		} else {
+			return false;
+		}
+	} else if (what == "extend_end_bone") {
+		set_extend_end_bone(which, p_value);
 	} else {
 		return false;
 	}
@@ -556,7 +580,18 @@ bool BoneClothSimulator3D::_get(const StringName &p_name, Variant &r_ret) const 
 	} else if (what == "end_bone_name") {
 		r_ret = get_end_bone_name(which);
 	} else if (what == "end_bone") {
-		r_ret = get_end_bone(which);
+		const String option = path.get_slice("/", 3);
+		if (option.is_empty()) {
+			r_ret = get_end_bone(which);
+		} else if (option == "direction") {
+			r_ret = int(get_end_bone_direction(which));
+		} else if (option == "length") {
+			r_ret = get_end_bone_length(which);
+		} else {
+			return false;
+		}
+	} else if (what == "extend_end_bone") {
+		r_ret = is_end_bone_extended(which);
 	} else {
 		return false;
 	}
@@ -576,6 +611,14 @@ void BoneClothSimulator3D::_get_property_list(List<PropertyInfo> *p_list) const 
 		p_list->push_back(PropertyInfo(Variant::INT, path + String("root_bone"), PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR));
 		p_list->push_back(PropertyInfo(Variant::STRING, path + String("end_bone_name"), hint, bone_names));
 		p_list->push_back(PropertyInfo(Variant::INT, path + String("end_bone"), PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR));
+
+		// As the engine's _validate_dynamic_prop: the extension is hidden, and not saved, without an end bone, and its direction and length while it is off.
+		const bool has_end_bone = chains[i].end_bone != -1;
+		const uint32_t extend_usage = has_end_bone ? PROPERTY_USAGE_DEFAULT : PROPERTY_USAGE_NONE;
+		const uint32_t tip_usage = has_end_bone && chains[i].extend_end_bone ? PROPERTY_USAGE_DEFAULT : PROPERTY_USAGE_NONE;
+		p_list->push_back(PropertyInfo(Variant::BOOL, path + String("extend_end_bone"), PROPERTY_HINT_NONE, "", extend_usage));
+		p_list->push_back(PropertyInfo(Variant::INT, path + String("end_bone/direction"), PROPERTY_HINT_ENUM, "+X,-X,+Y,-Y,+Z,-Z,FromParent", tip_usage));
+		p_list->push_back(PropertyInfo(Variant::FLOAT, path + String("end_bone/length"), PROPERTY_HINT_RANGE, "0,1,0.001,or_greater,suffix:m", tip_usage));
 	}
 }
 
@@ -674,12 +717,49 @@ void BoneClothSimulator3D::set_end_bone(int p_index, int p_bone) {
 			chain.end_bone_name = skeleton->get_bone_name(p_bone);
 		}
 	}
+
 	joints_dirty = true;
+	notify_property_list_changed();
 }
 
 int BoneClothSimulator3D::get_end_bone(int p_index) const {
 	ERR_FAIL_INDEX_V(p_index, int(chains.size()), -1);
 	return chains[p_index].end_bone;
+}
+
+void BoneClothSimulator3D::set_extend_end_bone(int p_index, bool p_enabled) {
+	ERR_FAIL_INDEX(p_index, int(chains.size()));
+	chains[p_index].extend_end_bone = p_enabled;
+	joints_dirty = true;
+	notify_property_list_changed();
+}
+
+bool BoneClothSimulator3D::is_end_bone_extended(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, int(chains.size()), false);
+	return chains[p_index].extend_end_bone;
+}
+
+void BoneClothSimulator3D::set_end_bone_direction(int p_index, BoneDirection p_bone_direction) {
+	ERR_FAIL_INDEX(p_index, int(chains.size()));
+	ERR_FAIL_INDEX(int(p_bone_direction), int(BONE_DIRECTION_FROM_PARENT) + 1);
+	chains[p_index].end_bone_direction = p_bone_direction;
+	joints_dirty = true;
+}
+
+SkeletonModifier3D::BoneDirection BoneClothSimulator3D::get_end_bone_direction(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, int(chains.size()), BONE_DIRECTION_FROM_PARENT);
+	return chains[p_index].end_bone_direction;
+}
+
+void BoneClothSimulator3D::set_end_bone_length(int p_index, float p_length) {
+	ERR_FAIL_INDEX(p_index, int(chains.size()));
+	chains[p_index].end_bone_length = p_length;
+	joints_dirty = true;
+}
+
+float BoneClothSimulator3D::get_end_bone_length(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, int(chains.size()), 0.0f);
+	return chains[p_index].end_bone_length;
 }
 
 void BoneClothSimulator3D::set_link_mode(LinkMode p_mode) {
@@ -697,15 +777,6 @@ void BoneClothSimulator3D::set_link_stiffness(float p_stiffness) {
 
 float BoneClothSimulator3D::get_link_stiffness() const {
 	return link_stiffness;
-}
-
-void BoneClothSimulator3D::set_end_bone_length(float p_length) {
-	end_bone_length = p_length;
-	joints_dirty = true;
-}
-
-float BoneClothSimulator3D::get_end_bone_length() const {
-	return end_bone_length;
 }
 
 void BoneClothSimulator3D::set_drag(float p_drag) {

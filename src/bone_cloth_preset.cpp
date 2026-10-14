@@ -7,8 +7,6 @@ using namespace godot;
 void BoneClothPreset::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_link_stiffness", "stiffness"), &BoneClothPreset::set_link_stiffness);
 	ClassDB::bind_method(D_METHOD("get_link_stiffness"), &BoneClothPreset::get_link_stiffness);
-	ClassDB::bind_method(D_METHOD("set_end_bone_length", "length"), &BoneClothPreset::set_end_bone_length);
-	ClassDB::bind_method(D_METHOD("get_end_bone_length"), &BoneClothPreset::get_end_bone_length);
 	ClassDB::bind_method(D_METHOD("set_drag", "drag"), &BoneClothPreset::set_drag);
 	ClassDB::bind_method(D_METHOD("get_drag"), &BoneClothPreset::get_drag);
 	ClassDB::bind_method(D_METHOD("set_drag_damping_curve", "curve"), &BoneClothPreset::set_drag_damping_curve);
@@ -48,7 +46,6 @@ void BoneClothPreset::_bind_methods() {
 
 	// The simulator's names and hints, so a preset reads as the node's values do.
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "link_stiffness", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_link_stiffness", "get_link_stiffness");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "end_bone_length", PROPERTY_HINT_RANGE, "0,1,0.001,or_greater,suffix:m"), "set_end_bone_length", "get_end_bone_length");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "drag/value", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_drag", "get_drag");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "drag/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_drag_damping_curve", "get_drag_damping_curve");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "stiffness/value", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_stiffness", "get_stiffness");
@@ -83,15 +80,6 @@ void BoneClothPreset::set_link_stiffness(float p_stiffness) {
 
 float BoneClothPreset::get_link_stiffness() const {
 	return link_stiffness;
-}
-
-void BoneClothPreset::set_end_bone_length(float p_length) {
-	end_bone_length = p_length;
-	emit_changed();
-}
-
-float BoneClothPreset::get_end_bone_length() const {
-	return end_bone_length;
 }
 
 void BoneClothPreset::set_drag(float p_drag) {
