@@ -202,11 +202,12 @@ void BoneClothSimulator3D::_update_joint_settings(Chain &p_chain) {
 		joint.stiffness = CLAMP(stiffness * sample_curve(stiffness_damping_curve, joint.length_rate), 0.0f, 1.0f);
 		joint.radius = MAX(radius * sample_curve(radius_damping_curve, joint.length_rate), 0.0f);
 		joint.limit_angle = MAX(limit_angle * sample_curve(limit_angle_damping_curve, joint.length_rate), 0.0f);
+		joint.gravity = gravity * sample_curve(gravity_damping_curve, joint.length_rate);
 	}
 }
 
 // One step of KawaiiPhysics' SimulateOnce, in its order.
-void BoneClothSimulator3D::_step(const Vector3 &p_gravity, const Vector3 &p_move, const Quaternion &p_turn, const LocalVector<BoneClothCollision3D *> &p_collisions) {
+void BoneClothSimulator3D::_step(const Vector3 &p_gravity_direction, const Vector3 &p_move, const Quaternion &p_turn, const LocalVector<BoneClothCollision3D *> &p_collisions) {
 	// The roots are kinematic: they follow the pose, a branch's its trunk joint.
 	for (Chain &chain : chains) {
 		if (!chain.joints.is_empty() && chain.parent_chain < 0) {
@@ -218,7 +219,7 @@ void BoneClothSimulator3D::_step(const Vector3 &p_gravity, const Vector3 &p_move
 
 	for (Chain &chain : chains) {
 		_follow_parent_chain(chain);
-		_simulate(chain, p_gravity, p_move, p_turn);
+		_simulate(chain, p_gravity_direction, p_move, p_turn);
 	}
 
 	// KawaiiPhysics solves the links once before the collision and once after it.
@@ -250,7 +251,7 @@ void BoneClothSimulator3D::_follow_parent_chain(Chain &p_chain) {
 
 // KawaiiPhysics' Simulate for every joint below the root: Verlet with drag and gravity, the character's own motion, then a pull toward the pose.
 // p_move and p_turn are the skeleton's motion this step as the cloth feels it, seen from where the skeleton is now.
-void BoneClothSimulator3D::_simulate(Chain &p_chain, const Vector3 &p_gravity, const Vector3 &p_move, const Quaternion &p_turn) {
+void BoneClothSimulator3D::_simulate(Chain &p_chain, const Vector3 &p_gravity_direction, const Vector3 &p_move, const Quaternion &p_turn) {
 	const float dt = float(STEP);
 
 	for (uint32_t i = 1; i < p_chain.joints.size(); i++) {
@@ -268,7 +269,7 @@ void BoneClothSimulator3D::_simulate(Chain &p_chain, const Vector3 &p_gravity, c
 
 		joint.prev_location = joint.location;
 		velocity *= 1.0f - joint.drag;
-		velocity += p_gravity * dt;
+		velocity += p_gravity_direction * joint.gravity * dt;
 		joint.location += velocity * dt;
 
 		// Only a change in the skeleton's motion moves the cloth against it: keeping a speed or a turn rate carries the cloth along, as Magica Cloth 2's world inertia does.
@@ -451,6 +452,11 @@ void BoneClothSimulator3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_limit_angle_damping_curve"), &BoneClothSimulator3D::get_limit_angle_damping_curve);
 	ClassDB::bind_method(D_METHOD("set_gravity", "gravity"), &BoneClothSimulator3D::set_gravity);
 	ClassDB::bind_method(D_METHOD("get_gravity"), &BoneClothSimulator3D::get_gravity);
+	ClassDB::bind_method(D_METHOD("set_gravity_damping_curve", "curve"), &BoneClothSimulator3D::set_gravity_damping_curve);
+	ClassDB::bind_method(D_METHOD("get_gravity_damping_curve"), &BoneClothSimulator3D::get_gravity_damping_curve);
+	ClassDB::bind_method(D_METHOD("set_gravity_direction", "direction"), &BoneClothSimulator3D::set_gravity_direction);
+	ClassDB::bind_method(D_METHOD("get_gravity_direction"), &BoneClothSimulator3D::get_gravity_direction);
+
 	ClassDB::bind_method(D_METHOD("set_inertia", "inertia"), &BoneClothSimulator3D::set_inertia);
 	ClassDB::bind_method(D_METHOD("get_inertia"), &BoneClothSimulator3D::get_inertia);
 	ClassDB::bind_method(D_METHOD("set_inertia_smoothing", "smoothing"), &BoneClothSimulator3D::set_inertia_smoothing);
@@ -483,7 +489,11 @@ void BoneClothSimulator3D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "limit_angle/value", PROPERTY_HINT_RANGE, "0,180,0.1,radians_as_degrees"), "set_limit_angle", "get_limit_angle");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "limit_angle/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_limit_angle_damping_curve", "get_limit_angle_damping_curve");
 
-	ADD_PROPERTY(PropertyInfo(Variant::VECTOR3, "gravity", PROPERTY_HINT_NONE, "suffix:m/s^2"), "set_gravity", "get_gravity");
+	// gravity/value is an acceleration ( velocity += force * dt )
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "gravity/value", PROPERTY_HINT_RANGE, "0,20,0.01,or_greater,or_less,suffix:m/s^2"), "set_gravity", "get_gravity");
+	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "gravity/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_gravity_damping_curve", "get_gravity_damping_curve");
+	ADD_PROPERTY(PropertyInfo(Variant::VECTOR3, "gravity/direction"), "set_gravity_direction", "get_gravity_direction");
+
 	ADD_GROUP("Inertia", "");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "inertia", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_inertia", "get_inertia");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "inertia_smoothing", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_inertia_smoothing", "get_inertia_smoothing");
@@ -762,12 +772,30 @@ Ref<Curve> BoneClothSimulator3D::get_limit_angle_damping_curve() const {
 	return limit_angle_damping_curve;
 }
 
-void BoneClothSimulator3D::set_gravity(const Vector3 &p_gravity) {
+void BoneClothSimulator3D::set_gravity(float p_gravity) {
 	gravity = p_gravity;
 }
 
-Vector3 BoneClothSimulator3D::get_gravity() const {
+float BoneClothSimulator3D::get_gravity() const {
 	return gravity;
+}
+
+void BoneClothSimulator3D::set_gravity_damping_curve(const Ref<Curve> &p_curve) {
+	gravity_damping_curve = p_curve;
+}
+
+Ref<Curve> BoneClothSimulator3D::get_gravity_damping_curve() const {
+	return gravity_damping_curve;
+}
+
+// A zero direction is refused, as SpringBoneSimulator3D refuses it; the length is dropped where the direction is used.
+void BoneClothSimulator3D::set_gravity_direction(const Vector3 &p_direction) {
+	ERR_FAIL_COND(p_direction.is_zero_approx());
+	gravity_direction = p_direction;
+}
+
+Vector3 BoneClothSimulator3D::get_gravity_direction() const {
+	return gravity_direction;
 }
 
 void BoneClothSimulator3D::set_inertia(float p_inertia) {
@@ -945,8 +973,7 @@ void BoneClothSimulator3D::_process_modification_with_delta(double p_delta) {
 		const float smoothing_rate = CLAMP(Math::pow(1.0f - inertia_smoothing, 3.0f) * 0.99f + 0.01f, 0.0f, 1.0f);
 		const Vector3 frame_velocity = skeleton_transform.basis.xform((-move_location / float(elapsed)).limit_length(movement_speed_limit));
 		const Basis to_skeleton = skeleton_transform.basis.inverse();
-
-		const Vector3 skeleton_gravity = to_skeleton.xform(gravity);
+		const Vector3 skeleton_gravity_direction = to_skeleton.xform(gravity_direction.normalized());
 
 		for (int step = 0; step < step_count; step++) {
 			if (smoothing) {
@@ -962,7 +989,8 @@ void BoneClothSimulator3D::_process_modification_with_delta(double p_delta) {
 				}
 			}
 
-			_step(skeleton_gravity, step_move, step_turn, collisions);
+			_step(skeleton_gravity_direction, step_move, step_turn, collisions);
+
 			prev_step_move = step_move;
 			prev_step_turn = step_turn;
 		}

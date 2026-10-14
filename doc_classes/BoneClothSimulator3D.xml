@@ -109,8 +109,14 @@
 		<member name="end_bone_length" type="float" setter="set_end_bone_length" getter="get_end_bone_length" default="0.1">
 			The length of a virtual joint added past the end bone of every chain, so that the end bone can rotate. [code]0.0[/code] adds none.
 		</member>
-		<member name="gravity" type="Vector3" setter="set_gravity" getter="get_gravity" default="Vector3(0, 0, 0)">
-			The acceleration applied to every joint, in world space, in m/s^2.
+		<member name="gravity/damping_curve" type="Curve" setter="set_gravity_damping_curve" getter="get_gravity_damping_curve">
+			The curve that scales [member gravity/value] along the chains. If not set, the scale is [code]1.0[/code].
+		</member>
+		<member name="gravity/direction" type="Vector3" setter="set_gravity_direction" getter="get_gravity_direction" default="Vector3(0, -1, 0)">
+			The direction of the gravity, in world space. Only the direction is used, not the length. It cannot be zero.
+		</member>
+		<member name="gravity/value" type="float" setter="set_gravity" getter="get_gravity" default="0.0">
+			The acceleration applied to every joint in [member gravity/direction], in m/s^2. [code]9.8[/code] is the earth's gravity. [code]0.0[/code] disables it.
 			[b]Note:[/b] Unlike [SpringBoneSimulator3D]'s gravity, this is an acceleration, not a velocity.
 		</member>
 		<member name="inertia" type="float" setter="set_inertia" getter="get_inertia" default="1.0">

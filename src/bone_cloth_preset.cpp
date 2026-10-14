@@ -27,6 +27,10 @@ void BoneClothPreset::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_limit_angle_damping_curve"), &BoneClothPreset::get_limit_angle_damping_curve);
 	ClassDB::bind_method(D_METHOD("set_gravity", "gravity"), &BoneClothPreset::set_gravity);
 	ClassDB::bind_method(D_METHOD("get_gravity"), &BoneClothPreset::get_gravity);
+	ClassDB::bind_method(D_METHOD("set_gravity_damping_curve", "curve"), &BoneClothPreset::set_gravity_damping_curve);
+	ClassDB::bind_method(D_METHOD("get_gravity_damping_curve"), &BoneClothPreset::get_gravity_damping_curve);
+	ClassDB::bind_method(D_METHOD("set_gravity_direction", "direction"), &BoneClothPreset::set_gravity_direction);
+	ClassDB::bind_method(D_METHOD("get_gravity_direction"), &BoneClothPreset::get_gravity_direction);
 	ClassDB::bind_method(D_METHOD("set_inertia", "inertia"), &BoneClothPreset::set_inertia);
 	ClassDB::bind_method(D_METHOD("get_inertia"), &BoneClothPreset::get_inertia);
 	ClassDB::bind_method(D_METHOD("set_inertia_smoothing", "smoothing"), &BoneClothPreset::set_inertia_smoothing);
@@ -54,7 +58,9 @@ void BoneClothPreset::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "limit_angle/value", PROPERTY_HINT_RANGE, "0,180,0.1,radians_as_degrees"), "set_limit_angle", "get_limit_angle");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "limit_angle/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_limit_angle_damping_curve", "get_limit_angle_damping_curve");
 
-	ADD_PROPERTY(PropertyInfo(Variant::VECTOR3, "gravity", PROPERTY_HINT_NONE, "suffix:m/s^2"), "set_gravity", "get_gravity");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "gravity/value", PROPERTY_HINT_RANGE, "0,20,0.01,or_greater,or_less,suffix:m/s^2"), "set_gravity", "get_gravity");
+	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "gravity/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_gravity_damping_curve", "get_gravity_damping_curve");
+	ADD_PROPERTY(PropertyInfo(Variant::VECTOR3, "gravity/direction"), "set_gravity_direction", "get_gravity_direction");
 	ADD_GROUP("Inertia", "");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "inertia", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_inertia", "get_inertia");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "inertia_smoothing", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_inertia_smoothing", "get_inertia_smoothing");
@@ -160,13 +166,32 @@ Ref<Curve> BoneClothPreset::get_limit_angle_damping_curve() const {
 	return limit_angle_damping_curve;
 }
 
-void BoneClothPreset::set_gravity(const Vector3 &p_gravity) {
+void BoneClothPreset::set_gravity(float p_gravity) {
 	gravity = p_gravity;
 	emit_changed();
 }
 
-Vector3 BoneClothPreset::get_gravity() const {
+float BoneClothPreset::get_gravity() const {
 	return gravity;
+}
+
+void BoneClothPreset::set_gravity_damping_curve(const Ref<Curve> &p_curve) {
+	gravity_damping_curve = p_curve;
+	emit_changed();
+}
+
+Ref<Curve> BoneClothPreset::get_gravity_damping_curve() const {
+	return gravity_damping_curve;
+}
+
+void BoneClothPreset::set_gravity_direction(const Vector3 &p_direction) {
+	ERR_FAIL_COND(p_direction.is_zero_approx());
+	gravity_direction = p_direction;
+	emit_changed();
+}
+
+Vector3 BoneClothPreset::get_gravity_direction() const {
+	return gravity_direction;
 }
 
 void BoneClothPreset::set_inertia(float p_inertia) {
