@@ -1,7 +1,5 @@
 // A shape on a bone that the cloth joints collide with, the base of BoneClothSimulator3D's sphere, capsule and plane children,
 // as SpringBoneCollision3D is of SpringBoneSimulator3D: a bone name with its hidden index and two offsets from the bone.
-// A shape on a bone that the cloth joints collide with, the base of BoneClothSimulator3D's sphere, capsule and plane children,
-// as SpringBoneCollision3D is of SpringBoneSimulator3D: a bone name with its hidden index and two offsets from the bone.
 // A mirror bone makes the same shape collide a second time on that bone, mirrored, as Magica Cloth 2's Symmetry Mode and KawaiiPhysics'
 // MirrorDataTable do, so one node covers both legs.
 
