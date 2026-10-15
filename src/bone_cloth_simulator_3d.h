@@ -69,9 +69,16 @@ private:
 
 		Vector3 end_axis;
 
-		// A branch: the root bone is a joint of an earlier chain, which the root follows instead of the pose (KawaiiPhysics' ParentIndex).
+		// A branch: the root bone is a joint of an earlier chain, which the root follows instead of the pose.
 		int parent_chain = -1;
 		uint32_t parent_joint = 0;
+
+		// SpringBoneSimulator3D's collision lists: every child collision but the excluded ones, or only the listed ones.
+		bool enable_all_child_collisions = true;
+		LocalVector<NodePath> exclude_collisions;
+		LocalVector<NodePath> collisions;
+		// Which of this frame's posed collisions push the chain, by their index there.
+		LocalVector<bool> collides;
 	};
 
 	// Two joints at the same depth of neighboring chains, kept at their rest distance.
@@ -124,6 +131,8 @@ private:
 	bool _build_joints(Skeleton3D *p_skeleton, Chain &p_chain);
 	void _build_branches();
 	void _build_links(Skeleton3D *p_skeleton);
+	bool _is_child_collision(const NodePath &p_node_path) const;
+	void _find_chain_collisions(const LocalVector<PosedCollision> &p_collisions);
 	void _read_pose(Skeleton3D *p_skeleton, Chain &p_chain);
 	void _update_joint_settings(Chain &p_chain);
 	void _step(const Vector3 &p_gravity_direction, const Vector3 &p_move, const Quaternion &p_turn, const LocalVector<PosedCollision> &p_collisions);
@@ -163,6 +172,18 @@ public:
 	BoneDirection get_end_bone_direction(int p_index) const;
 	void set_end_bone_length(int p_index, float p_length);
 	float get_end_bone_length(int p_index) const;
+	void set_enable_all_child_collisions(int p_index, bool p_enabled);
+	bool are_all_child_collisions_enabled(int p_index) const;
+	void set_exclude_collision_count(int p_index, int p_count);
+	int get_exclude_collision_count(int p_index) const;
+	void set_exclude_collision_path(int p_index, int p_collision, const NodePath &p_node_path);
+	NodePath get_exclude_collision_path(int p_index, int p_collision) const;
+	void clear_exclude_collisions(int p_index);
+	void set_collision_count(int p_index, int p_count);
+	int get_collision_count(int p_index) const;
+	void set_collision_path(int p_index, int p_collision, const NodePath &p_node_path);
+	NodePath get_collision_path(int p_index, int p_collision) const;
+	void clear_collisions(int p_index);
 	void set_link_mode(LinkMode p_mode);
 	LinkMode get_link_mode() const;
 	void set_link_stiffness(float p_stiffness);
