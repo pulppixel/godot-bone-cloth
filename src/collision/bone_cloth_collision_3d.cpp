@@ -257,6 +257,8 @@ void BoneClothCollision3D::sync_pose() {
 // writes its widget's drags into a collision's offsets (DoTranslation, DoRotation). SpringBoneCollision3D does not, and the next
 // sync puts the node back. A scale is dropped: the shape's size is its own properties.
 // Before the node is in the tree, a scene being loaded sets its saved transform, and the saved offsets win.
+// A transform set to where the node already is keeps the offsets, since the editor commits its move tool without checking that
+// anything moved: taking them again would put float error into the saved values.
 void BoneClothCollision3D::_take_offsets_from_transform() {
 	if (syncing || bone < 0 || !is_inside_tree()) {
 		return;
@@ -268,6 +270,10 @@ void BoneClothCollision3D::_take_offsets_from_transform() {
 
 	const Transform3D bone_pose = skeleton->get_bone_global_pose(bone);
 	const Transform3D moved = skeleton->get_global_transform().affine_inverse() * get_global_transform();
+	if (moved.is_equal_approx(pose)) {
+		return;
+	}
+
 	position_offset = bone_pose.basis.get_rotation_quaternion().inverse().xform(moved.origin - bone_pose.origin);
 	rotation_offset = (bone_pose.basis.inverse() * moved.basis).get_rotation_quaternion();
 	sync_pose();

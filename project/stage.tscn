@@ -188,11 +188,11 @@ bone_name = "LeftUpperLeg"
 bone = 149
 mirror_bone_name = "RightUpperLeg"
 mirror_bone = 157
-position_offset = Vector3(-3.5390258e-08, 0.21900001, 1.4901161e-08)
-rotation_offset = Quaternion(-8.940697e-08, 8.568168e-08, 3.1664975e-08, 1)
-transform = Transform3D(-0.9927585, 0.03156591, -0.115905166, -0.077019684, -0.90770096, 0.41248852, -0.092186645, 0.41842854, 0.9035592, 0.10291839, 0.77261096, 0.04494455)
+position_offset = Vector3(-3.1664968e-08, 0.21900001, 0)
+rotation_offset = Quaternion(-2.9802322e-08, 3.3527613e-08, 1.3038517e-08, 1)
+transform = Transform3D(-0.9927585, 0.031565856, -0.11590507, -0.07701961, -0.9077009, 0.41248864, -0.09218657, 0.41842863, 0.90355915, 0.10291839, 0.77261096, 0.044944536)
 
-[node name="Calfs" type="BoneClothCollisionCapsule3D" parent="lilith/Armature/GeneralSkeleton/BoneClothSimulator3D" unique_id=251832674]
+[node name="Calves" type="BoneClothCollisionCapsule3D" parent="lilith/Armature/GeneralSkeleton/BoneClothSimulator3D" unique_id=251832674]
 radius = 0.05
 height = 0.573
 bone_name = "LeftLowerLeg"
@@ -387,7 +387,7 @@ position_offset = Vector3(0, 0.211, 0)
 rotation_offset = Quaternion(0, 0, 0, 1)
 transform = Transform3D(-0.9968178, -0.017482549, 0.07777229, 0.06012703, -0.8054568, 0.5895964, 0.052334577, 0.59239644, 0.803945, 0.073506385, 0.7748453, 0.094638765)
 
-[node name="Calfs" type="BoneClothCollisionCapsule3D" parent="lucia/root/GeneralSkeleton/BoneClothSimulator3D" unique_id=2028555361]
+[node name="Calves" type="BoneClothCollisionCapsule3D" parent="lucia/root/GeneralSkeleton/BoneClothSimulator3D" unique_id=2028555361]
 radius = 0.05
 height = 0.598
 bone_name = "LeftLowerLeg"
@@ -763,7 +763,7 @@ position_offset = Vector3(0, 0.219, 0)
 rotation_offset = Quaternion(0, 0, 0, 1)
 transform = Transform3D(-1, 0, 0, 0, -1, 0, 0, 0, 1, 0.099690914, 0.71643394, 0.025500208)
 
-[node name="Calfs" type="BoneClothCollisionCapsule3D" parent="death_knight/Armature/GeneralSkeleton/Cloak" unique_id=1002023393]
+[node name="Calves" type="BoneClothCollisionCapsule3D" parent="death_knight/Armature/GeneralSkeleton/Cloak" unique_id=1002023393]
 radius = 0.09
 height = 0.573
 bone_name = "LeftLowerLeg"
@@ -843,7 +843,7 @@ position_offset = Vector3(0, 0.219, 0)
 rotation_offset = Quaternion(0, 0, 0, 1)
 transform = Transform3D(-1, 0, 0, 0, -1, 0, 0, 0, 1, 0.099690914, 0.71643394, 0.025500208)
 
-[node name="Calfs" type="BoneClothCollisionCapsule3D" parent="death_knight/Armature/GeneralSkeleton/Tabard" unique_id=119147451]
+[node name="Calves" type="BoneClothCollisionCapsule3D" parent="death_knight/Armature/GeneralSkeleton/Tabard" unique_id=119147451]
 radius = 0.05
 height = 0.573
 bone_name = "LeftLowerLeg"

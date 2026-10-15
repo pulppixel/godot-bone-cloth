@@ -53,13 +53,13 @@ void BoneClothCollision3DGizmoPlugin::_bind_methods() {
 // The engine's colors, read from the editor settings so a change there reaches ours too. The engine
 // switches its material on is_selected(), which an extension cannot reach; get_material() gives the same switch, the selected
 // lines on top of the mesh as the engine's selected shader puts them, the others faded and behind it.
-// The mirror's color is ours and fixed, as plugins fix their gizmo colors (Phantom Camera, Magica Cloth 2's GizmoUtility): orange,
-// the hue opposite the collision's light blue.
+// The mirror's color is ours and fixed, as plugins fix their gizmo colors (Phantom Camera, Magica Cloth 2's GizmoUtility): green,
+// clear of the skeleton's and the selection's orange, the collision's light blue and the inside pink.
 BoneClothCollision3DGizmoPlugin::BoneClothCollision3DGizmoPlugin() {
 	Ref<EditorSettings> settings = EditorInterface::get_singleton()->get_editor_settings();
 	create_material("collision", settings->get_setting("editors/3d_gizmos/gizmo_colors/spring_bone_collision"), false, true);
 	create_material("inside_collision", settings->get_setting("editors/3d_gizmos/gizmo_colors/spring_bone_inside_collision"), false, true);
-	create_material("mirror_collision", Color(1.0, 0.7, 0.4), false, true);
+	create_material("mirror_collision", Color(0.5, 1.0, 0.5), false, true);
 	create_handle_material("handles");
 }
 
