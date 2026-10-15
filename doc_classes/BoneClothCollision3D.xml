@@ -6,6 +6,7 @@
 	<description>
 		A collision has an effect only as a child of [BoneClothSimulator3D]. It pushes out the simulator's joints and links, in scene tree order.
 		If [member bone] is set, the collision follows the bone's pose with [member position_offset] and [member rotation_offset]. Moving or rotating the collision updates the offsets. Scale is ignored; use the shape's size properties instead.
+		If [member mirror_bone_name] is also set, the same shape collides a second time on that bone, mirrored from left to right. The mirrored shapes push after all the collisions, in the same order.
 	</description>
 	<tutorials>
 	</tutorials>
@@ -23,6 +24,12 @@
 		</member>
 		<member name="bone_name" type="String" setter="set_bone_name" getter="get_bone_name" default="&quot;&quot;">
 			The name of the attached bone.
+		</member>
+		<member name="mirror_bone" type="int" setter="set_mirror_bone" getter="get_mirror_bone" default="-1">
+			The index of the mirror bone. [code]-1[/code] is no mirror.
+		</member>
+		<member name="mirror_bone_name" type="String" setter="set_mirror_bone_name" getter="get_mirror_bone_name" default="&quot;&quot;">
+			The name of the bone on the other side, such as the right thigh for a collision on the left thigh. The collision also collides on this bone, with [member position_offset] and [member rotation_offset] mirrored across the skeleton's YZ plane in the rest pose. It can be [member bone] itself, which mirrors a shape on one side of a center bone such as the hips. Has no effect when [member bone] is not set.
 		</member>
 		<member name="position_offset" type="Vector3" setter="set_position_offset" getter="get_position_offset">
 			The position offset from the [member bone] pose, along the bone's axes.
