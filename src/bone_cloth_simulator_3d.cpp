@@ -622,6 +622,14 @@ void BoneClothSimulator3D::_get_property_list(List<PropertyInfo> *p_list) const 
 	}
 }
 
+// As Camera3D's fov outside perspective: link_stiffness leaves the inspector without a link mode, since no links are built, and is still saved, so a mode
+// picked again finds the value it had. The engine and KawaiiPhysics both hide a value whose condition is a mode.
+void BoneClothSimulator3D::_validate_property(PropertyInfo &p_property) const {
+	if (link_mode == LINK_MODE_NONE && p_property.name == StringName("link_stiffness")) {
+		p_property.usage = PROPERTY_USAGE_NO_EDITOR;
+	}
+}
+
 // The preset's values onto this node, name by name. The chains, the link mode and the collisions are not in a preset.
 // The editor's Presets menu sets the same values through its undo history (editor/bone_cloth_simulator_3d_editor_plugin.cpp).
 void BoneClothSimulator3D::apply_preset(const Ref<BoneClothPreset> &p_preset) {
@@ -765,6 +773,7 @@ float BoneClothSimulator3D::get_end_bone_length(int p_index) const {
 void BoneClothSimulator3D::set_link_mode(LinkMode p_mode) {
 	link_mode = p_mode;
 	joints_dirty = true;
+	notify_property_list_changed();
 }
 
 BoneClothSimulator3D::LinkMode BoneClothSimulator3D::get_link_mode() const {
