@@ -10,15 +10,15 @@
 [ext_resource type="PackedScene" uid="uid://bty38kckba1b4" path="res://characters/lucia/lucia.gltf" id="4_1edn8"]
 [ext_resource type="Script" uid="uid://0igg748dx7du" path="res://orbit_camera.gd" id="6_vpggq"]
 
-[sub_resource type="Curve" id="Curve_jx6rg"]
-_data = [Vector2(0, 0.5), 0.0, 0.5, 0, 1, Vector2(1, 1), 0.5, 0.0, 1, 0]
-point_count = 2
-
 [sub_resource type="Curve" id="Curve_jk7y1"]
 _data = [Vector2(0, 0), 0.0, 1.0, 0, 1, Vector2(1, 1), 1.0, 0.0, 1, 0]
 point_count = 2
 
 [sub_resource type="Curve" id="Curve_8qwj8"]
+_data = [Vector2(0, 0.5), 0.0, 0.5, 0, 1, Vector2(1, 1), 0.5, 0.0, 1, 0]
+point_count = 2
+
+[sub_resource type="Curve" id="Curve_jx6rg"]
 _data = [Vector2(0, 0.5), 0.0, 0.5, 0, 1, Vector2(1, 1), 0.5, 0.0, 1, 0]
 point_count = 2
 
@@ -57,258 +57,6 @@ albedo_color = Color(0.6627451, 0.8901961, 0.49019608, 1)
 script = ExtResource("1_vsjsl")
 characters = [NodePath("lilith"), NodePath("lucia"), NodePath("death_knight")]
 camera = NodePath("Camera3D")
-
-[node name="death_knight" parent="." unique_id=1933797549 instance=ExtResource("2_jx6rg")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 0, 0)
-script = ExtResource("2_16g40")
-
-[node name="PlateDrive" type="ConvertTransformModifier3D" parent="death_knight/Armature/GeneralSkeleton" parent_id_path=PackedInt32Array(1933797549, 1573244763) index="13" unique_id=48194151]
-setting_count = 4
-settings/0/amount = 1.0
-settings/0/apply_bone_name = "dk_thigh_plate_01_l"
-settings/0/apply_bone = 34
-settings/0/reference_type = 0
-settings/0/reference_bone_name = "LeftUpperLeg"
-settings/0/reference_bone = 129
-settings/1/amount = 1.0
-settings/1/apply_bone_name = "dk_thigh_plate_01_r"
-settings/1/apply_bone = 36
-settings/1/reference_type = 0
-settings/1/reference_bone_name = "RightUpperLeg"
-settings/1/reference_bone = 137
-settings/2/amount = 1.0
-settings/2/apply_bone_name = "dk_beltplate_01"
-settings/2/apply_bone = 11
-settings/2/reference_type = 0
-settings/2/reference_bone_name = "LeftUpperLeg"
-settings/2/reference_bone = 129
-settings/3/amount = 1.0
-settings/3/apply_bone_name = "dk_beltplate_01"
-settings/3/apply_bone = 11
-settings/3/reference_type = 0
-settings/3/reference_bone_name = "RightUpperLeg"
-settings/3/reference_bone = 137
-settings/0/apply/transform_mode = 1
-settings/0/apply/axis = 1
-settings/0/apply/range_min = 1.0471976
-settings/0/apply/range_max = -1.0471976
-settings/0/reference/transform_mode = 1
-settings/0/reference/axis = 0
-settings/0/reference/range_min = -1.5707964
-settings/0/reference/range_max = 1.5707964
-settings/0/relative = true
-settings/0/additive = true
-settings/1/apply/transform_mode = 1
-settings/1/apply/axis = 1
-settings/1/apply/range_min = 1.0471976
-settings/1/apply/range_max = -1.0471976
-settings/1/reference/transform_mode = 1
-settings/1/reference/axis = 0
-settings/1/reference/range_min = -1.5707964
-settings/1/reference/range_max = 1.5707964
-settings/1/relative = true
-settings/1/additive = true
-settings/2/apply/transform_mode = 1
-settings/2/apply/axis = 2
-settings/2/apply/range_min = 0.0
-settings/2/apply/range_max = 0.7853982
-settings/2/reference/transform_mode = 1
-settings/2/reference/axis = 0
-settings/2/reference/range_min = 0.0
-settings/2/reference/range_max = 1.5707964
-settings/2/relative = true
-settings/2/additive = true
-settings/3/apply/transform_mode = 1
-settings/3/apply/axis = 2
-settings/3/apply/range_min = 0.0
-settings/3/apply/range_max = 0.7853982
-settings/3/reference/transform_mode = 1
-settings/3/reference/axis = 0
-settings/3/reference/range_min = 0.0
-settings/3/reference/range_max = 1.5707964
-settings/3/relative = true
-settings/3/additive = true
-
-[node name="Cloak" type="BoneClothSimulator3D" parent="death_knight/Armature/GeneralSkeleton" parent_id_path=PackedInt32Array(1933797549, 1573244763) index="14" unique_id=702461655]
-link_mode = 1
-drag/value = 0.15
-stiffness/value = 0.1
-limit_angle/value = 1.3089969
-limit_angle/damping_curve = SubResource("Curve_jx6rg")
-movement_speed_limit = 4.0
-chain_count = 3
-chains/0/root_bone_name = "dk_cloak_01_l"
-chains/0/root_bone = 96
-chains/0/end_bone_name = "dk_cloak_09_l"
-chains/0/end_bone = 104
-chains/0/extend_end_bone = true
-chains/0/end_bone/direction = 6
-chains/0/end_bone/length = 0.1
-chains/1/root_bone_name = "dk_cloak_01_mid"
-chains/1/root_bone = 105
-chains/1/end_bone_name = "dk_cloak_09_mid"
-chains/1/end_bone = 113
-chains/1/extend_end_bone = true
-chains/1/end_bone/direction = 6
-chains/1/end_bone/length = 0.1
-chains/2/root_bone_name = "dk_cloak_01_r"
-chains/2/root_bone = 114
-chains/2/end_bone_name = "dk_cloak_09_r"
-chains/2/end_bone = 122
-chains/2/extend_end_bone = true
-chains/2/end_bone/direction = 6
-chains/2/end_bone/length = 0.1
-
-[node name="Hips" type="BoneClothCollisionCapsule3D" parent="death_knight/Armature/GeneralSkeleton/Cloak" unique_id=712881086]
-radius = 0.12
-height = 0.36
-bone_name = "Hips"
-bone = 9
-position_offset = Vector3(0, -0.009, -0.011)
-rotation_offset = Quaternion(0, 0, -0.707107, 0.707107)
-transform = Transform3D(0, 1, 0, -1, 0, 0, 0, 0, 1, 0, 0.9499678, 0.011808662)
-
-[node name="LeftThigh" type="BoneClothCollisionTaperedCapsule3D" parent="death_knight/Armature/GeneralSkeleton/Cloak" unique_id=364201970]
-top_radius = 0.06
-bottom_radius = 0.095
-height = 0.628
-bone_name = "LeftUpperLeg"
-bone = 129
-position_offset = Vector3(0, 0.219, 0)
-rotation_offset = Quaternion(0, 0, 0, 1)
-transform = Transform3D(-1, 0, 0, 0, -1, 0, 0, 0, 1, 0.099690914, 0.71643394, 0.025500208)
-
-[node name="LeftCalf" type="BoneClothCollisionCapsule3D" parent="death_knight/Armature/GeneralSkeleton/Cloak" unique_id=1002023393]
-radius = 0.09
-height = 0.573
-bone_name = "LeftLowerLeg"
-bone = 130
-position_offset = Vector3(0, 0.237, 0.015)
-rotation_offset = Quaternion(0, 0, 0, 1)
-transform = Transform3D(1, 0, 0, 0, -1, 0, 0, 0, -1, 0.122254014, 0.2912358, 0.013235607)
-
-[node name="RightThigh" type="BoneClothCollisionTaperedCapsule3D" parent="death_knight/Armature/GeneralSkeleton/Cloak" unique_id=2011482931]
-top_radius = 0.06
-bottom_radius = 0.095
-height = 0.628
-bone_name = "RightUpperLeg"
-bone = 137
-position_offset = Vector3(0, 0.219, 0)
-rotation_offset = Quaternion(0, 0, 0, 1)
-transform = Transform3D(-1, 0, 0, 0, -1, 0, 0, 0, 1, -0.099690914, 0.7164337, 0.025500217)
-
-[node name="RightCalf" type="BoneClothCollisionCapsule3D" parent="death_knight/Armature/GeneralSkeleton/Cloak" unique_id=1915340536]
-radius = 0.09
-height = 0.573
-bone_name = "RightLowerLeg"
-bone = 138
-position_offset = Vector3(0, 0.237, 0.015)
-rotation_offset = Quaternion(0, 0, 0, 1)
-transform = Transform3D(1, 0, 0, 0, -1, 0, 0, 0, -1, -0.12225437, 0.29123604, 0.013235499)
-
-[node name="Chest" type="BoneClothCollisionCapsule3D" parent="death_knight/Armature/GeneralSkeleton/Cloak" unique_id=226264261]
-radius = 0.115
-height = 0.25
-bone_name = "Chest"
-bone = 40
-position_offset = Vector3(0, 0.081, -0.046)
-rotation_offset = Quaternion(0, 0, -0.707107, 0.707107)
-transform = Transform3D(0, 1, 0, -1, 0, 0, 0, 0, 1, 0, 1.2997217, -0.0048657283)
-
-[node name="UpperChest" type="BoneClothCollisionCapsule3D" parent="death_knight/Armature/GeneralSkeleton/Cloak" unique_id=911744274]
-radius = 0.065
-height = 0.24
-bone_name = "UpperChest"
-bone = 41
-position_offset = Vector3(0, 0.04, -0.064)
-rotation_offset = Quaternion(0, 0, -0.707107, 0.707107)
-transform = Transform3D(0, 1, 0, -1, 0, 0, 0, 0, 1, 0, 1.45048, -0.05479446)
-
-[node name="Tabard" type="BoneClothSimulator3D" parent="death_knight/Armature/GeneralSkeleton" parent_id_path=PackedInt32Array(1933797549, 1573244763) index="15" unique_id=1950090649]
-link_mode = 1
-drag/value = 0.15
-stiffness/value = 0.1
-limit_angle/value = 1.3089969
-limit_angle/damping_curve = SubResource("Curve_jx6rg")
-movement_speed_limit = 4.0
-chain_count = 3
-chains/0/root_bone_name = "dk_cloth_01_l"
-chains/0/root_bone = 13
-chains/0/end_bone_name = "dk_cloth_08_l"
-chains/0/end_bone = 20
-chains/0/extend_end_bone = true
-chains/0/end_bone/direction = 6
-chains/0/end_bone/length = 0.1
-chains/1/root_bone_name = "dk_cloth_01_mid"
-chains/1/root_bone = 21
-chains/1/end_bone_name = "dk_cloth_05_mid"
-chains/1/end_bone = 25
-chains/1/extend_end_bone = true
-chains/1/end_bone/direction = 6
-chains/1/end_bone/length = 0.1
-chains/2/root_bone_name = "dk_cloth_01_r"
-chains/2/root_bone = 26
-chains/2/end_bone_name = "dk_cloth_08_r"
-chains/2/end_bone = 33
-chains/2/extend_end_bone = true
-chains/2/end_bone/direction = 6
-chains/2/end_bone/length = 0.1
-
-[node name="Hips" type="BoneClothCollisionCapsule3D" parent="death_knight/Armature/GeneralSkeleton/Tabard" unique_id=802441087]
-radius = 0.07
-height = 0.32
-bone_name = "Hips"
-bone = 9
-position_offset = Vector3(0, -0.092, -0.026)
-rotation_offset = Quaternion(0, 0, -0.707107, 0.707107)
-transform = Transform3D(0, 1, 0, -1, 0, 0, 0, 0, 1, 0, 0.8669678, -0.0031913389)
-
-[node name="LeftThigh" type="BoneClothCollisionTaperedCapsule3D" parent="death_knight/Armature/GeneralSkeleton/Tabard" unique_id=2114364257]
-top_radius = 0.06
-bottom_radius = 0.095
-height = 0.628
-bone_name = "LeftUpperLeg"
-bone = 129
-position_offset = Vector3(0, 0.219, 0)
-rotation_offset = Quaternion(0, 0, 0, 1)
-transform = Transform3D(-1, 0, 0, 0, -1, 0, 0, 0, 1, 0.099690914, 0.71643394, 0.025500208)
-
-[node name="LeftCalf" type="BoneClothCollisionCapsule3D" parent="death_knight/Armature/GeneralSkeleton/Tabard" unique_id=119147451]
-radius = 0.05
-height = 0.573
-bone_name = "LeftLowerLeg"
-bone = 130
-position_offset = Vector3(0, 0.237, 0)
-rotation_offset = Quaternion(0, 0, 0, 1)
-transform = Transform3D(1, 0, 0, 0, -1, 0, 0, 0, -1, 0.122254014, 0.2912358, 0.028235607)
-
-[node name="RightThigh" type="BoneClothCollisionTaperedCapsule3D" parent="death_knight/Armature/GeneralSkeleton/Tabard" unique_id=1706185881]
-top_radius = 0.06
-bottom_radius = 0.095
-height = 0.628
-bone_name = "RightUpperLeg"
-bone = 137
-position_offset = Vector3(0, 0.219, 0)
-rotation_offset = Quaternion(0, 0, 0, 1)
-transform = Transform3D(-1, 0, 0, 0, -1, 0, 0, 0, 1, -0.099690914, 0.7164337, 0.025500217)
-
-[node name="RightCalf" type="BoneClothCollisionCapsule3D" parent="death_knight/Armature/GeneralSkeleton/Tabard" unique_id=1912249511]
-radius = 0.05
-height = 0.573
-bone_name = "RightLowerLeg"
-bone = 138
-position_offset = Vector3(0, 0.237, 0)
-rotation_offset = Quaternion(0, 0, 0, 1)
-transform = Transform3D(1, 0, 0, 0, -1, 0, 0, 0, -1, -0.12225437, 0.29123604, 0.028235499)
-
-[node name="Armor" parent="death_knight" index="1" unique_id=208287633]
-visible = false
-
-[node name="Head" parent="death_knight" index="2" unique_id=1218174968]
-visible = false
-
-[node name="AnimationPlayer" type="AnimationPlayer" parent="death_knight" unique_id=1111876923]
-libraries/rpg_motions = ExtResource("2_gx6sy")
 
 [node name="lilith" parent="." unique_id=1126799021 instance=ExtResource("1_6eo5e")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0)
@@ -432,43 +180,28 @@ position_offset = Vector3(0, -0.092, -0.026)
 rotation_offset = Quaternion(0, 0, -0.707107, 0.707107)
 transform = Transform3D(0.00092040095, 0.97901714, -0.20377581, -0.9994465, -0.0058756284, -0.032743007, -0.033253275, 0.20369317, 0.9784699, 0.012105942, 0.9092718, -0.09298915)
 
-[node name="LeftThigh" type="BoneClothCollisionTaperedCapsule3D" parent="lilith/Armature/GeneralSkeleton/BoneClothSimulator3D" unique_id=1189342597]
+[node name="Thighs" type="BoneClothCollisionTaperedCapsule3D" parent="lilith/Armature/GeneralSkeleton/BoneClothSimulator3D" unique_id=1189342597]
 top_radius = 0.075
 bottom_radius = 0.095
 height = 0.628
 bone_name = "LeftUpperLeg"
 bone = 149
-position_offset = Vector3(0, 0.219, 0)
-rotation_offset = Quaternion(0, 0, 0, 1)
-transform = Transform3D(-0.9927585, 0.031565823, -0.115905, -0.07701956, -0.9077009, 0.4124887, -0.09218652, 0.4184287, 0.90355915, 0.10291839, 0.77261096, 0.04494453)
+mirror_bone_name = "RightUpperLeg"
+mirror_bone = 157
+position_offset = Vector3(-3.5390258e-08, 0.21900001, 1.4901161e-08)
+rotation_offset = Quaternion(-8.940697e-08, 8.568168e-08, 3.1664975e-08, 1)
+transform = Transform3D(-0.9927585, 0.03156591, -0.115905166, -0.077019684, -0.90770096, 0.41248852, -0.092186645, 0.41842854, 0.9035592, 0.10291839, 0.77261096, 0.04494455)
 
-[node name="LeftCalf" type="BoneClothCollisionCapsule3D" parent="lilith/Armature/GeneralSkeleton/BoneClothSimulator3D" unique_id=251832674]
+[node name="Calfs" type="BoneClothCollisionCapsule3D" parent="lilith/Armature/GeneralSkeleton/BoneClothSimulator3D" unique_id=251832674]
 radius = 0.05
 height = 0.573
 bone_name = "LeftLowerLeg"
 bone = 150
+mirror_bone_name = "RightLowerLeg"
+mirror_bone = 158
 position_offset = Vector3(0, 0.237, 0)
 rotation_offset = Quaternion(0, 0, 0, 1)
 transform = Transform3D(0.99419034, 0.073391825, 0.07873479, 0.07440834, -0.9971771, -0.0100513995, 0.077774845, 0.015851557, -0.9968449, 0.14319134, 0.31752157, 0.14171514)
-
-[node name="RightThigh" type="BoneClothCollisionTaperedCapsule3D" parent="lilith/Armature/GeneralSkeleton/BoneClothSimulator3D" unique_id=1756593251]
-top_radius = 0.075
-bottom_radius = 0.095
-height = 0.628
-bone_name = "RightUpperLeg"
-bone = 157
-position_offset = Vector3(0, 0.219, 0)
-rotation_offset = Quaternion(0, 0, 0, 1)
-transform = Transform3D(-0.95423126, -0.12411198, -0.2721007, 0.09734659, -0.98917484, 0.109802425, -0.28278297, 0.07828883, 0.9559836, -0.10975683, 0.7558366, -0.06670177)
-
-[node name="RightCalf" type="BoneClothCollisionCapsule3D" parent="lilith/Armature/GeneralSkeleton/BoneClothSimulator3D" unique_id=52069274]
-radius = 0.05
-height = 0.573
-bone_name = "RightLowerLeg"
-bone = 158
-position_offset = Vector3(0, 0.237, 0)
-rotation_offset = Quaternion(0, 0, 0, 1)
-transform = Transform3D(0.94958776, 0.0051478967, 0.31345844, -0.09957784, -0.94313335, 0.31714904, 0.29726577, -0.33237445, -0.89507556, -0.14947343, 0.297121, -0.13936374)
 
 [node name="FrontHair" type="BoneClothSimulator3D" parent="lilith/Armature/GeneralSkeleton" index="18" unique_id=782347978]
 drag/value = 0.2
@@ -642,79 +375,50 @@ position_offset = Vector3(0, -0.092, -0.026)
 rotation_offset = Quaternion(0, 0, -0.707107, 0.707107)
 transform = Transform3D(0.0016187683, 0.98986155, -0.14202645, -0.9998132, 0.004337427, 0.01883442, 0.019259498, 0.14196944, 0.9896837, -0.0073844804, 0.86633945, -0.07258866)
 
-[node name="LeftThigh" type="BoneClothCollisionTaperedCapsule3D" parent="lucia/root/GeneralSkeleton/BoneClothSimulator3D" unique_id=1913947902]
+[node name="Thighs" type="BoneClothCollisionTaperedCapsule3D" parent="lucia/root/GeneralSkeleton/BoneClothSimulator3D" unique_id=1913947902]
 top_radius = 0.08
 bottom_radius = 0.1
 height = 0.606
 bone_name = "LeftUpperLeg"
 bone = 188
+mirror_bone_name = "RightUpperLeg"
+mirror_bone = 201
 position_offset = Vector3(0, 0.211, 0)
 rotation_offset = Quaternion(0, 0, 0, 1)
 transform = Transform3D(-0.9968178, -0.017482549, 0.07777229, 0.06012703, -0.8054568, 0.5895964, 0.052334577, 0.59239644, 0.803945, 0.073506385, 0.7748453, 0.094638765)
 
-[node name="LeftCalf" type="BoneClothCollisionCapsule3D" parent="lucia/root/GeneralSkeleton/BoneClothSimulator3D" unique_id=2028555361]
+[node name="Calfs" type="BoneClothCollisionCapsule3D" parent="lucia/root/GeneralSkeleton/BoneClothSimulator3D" unique_id=2028555361]
 radius = 0.05
 height = 0.598
 bone_name = "LeftLowerLeg"
 bone = 189
+mirror_bone_name = "RightLowerLeg"
+mirror_bone = 202
 position_offset = Vector3(0, 0.247, 0)
 rotation_offset = Quaternion(0, 0, 0, 1)
 transform = Transform3D(0.9961466, -0.036321297, -0.079829276, -0.064012386, -0.92331064, -0.3786817, -0.05995301, 0.3823325, -0.9220779, 0.07767877, 0.3525039, 0.314468)
 
-[node name="RightThigh" type="BoneClothCollisionTaperedCapsule3D" parent="lucia/root/GeneralSkeleton/BoneClothSimulator3D" unique_id=705981842]
-top_radius = 0.08
-bottom_radius = 0.1
-height = 0.606
-bone_name = "RightUpperLeg"
-bone = 201
-position_offset = Vector3(0, 0.211, 0)
-rotation_offset = Quaternion(0, 0, 0, 1)
-transform = Transform3D(-0.9842886, 0.06548925, -0.16397318, -0.046185512, -0.9918329, -0.1188884, -0.17041993, -0.1094473, 0.97927445, -0.08727665, 0.73473597, -0.079021215)
-
-[node name="RightCalf" type="BoneClothCollisionCapsule3D" parent="lucia/root/GeneralSkeleton/BoneClothSimulator3D" unique_id=2108333336]
-radius = 0.05
-height = 0.598
-bone_name = "RightLowerLeg"
-bone = 202
-position_offset = Vector3(0, 0.247, 0)
-rotation_offset = Quaternion(0, 0, 0, 1)
-transform = Transform3D(0.9814792, 0.14627388, 0.123703964, 0.038024567, -0.7816438, 0.6225651, 0.18775746, -0.6063309, -0.7727292, -0.051898703, 0.313686, -0.26957583)
-
-[node name="LeftForearm" type="BoneClothCollisionCapsule3D" parent="lucia/root/GeneralSkeleton/BoneClothSimulator3D" unique_id=1349519977]
+[node name="Forearms" type="BoneClothCollisionCapsule3D" parent="lucia/root/GeneralSkeleton/BoneClothSimulator3D" unique_id=1349519977]
 radius = 0.06
 height = 0.346
 bone_name = "LeftLowerArm"
 bone = 39
+mirror_bone_name = "RightLowerArm"
+mirror_bone = 65
 position_offset = Vector3(0, 0.113, 0)
 rotation_offset = Quaternion(0, 0, 0, 1)
 transform = Transform3D(-0.96645564, 0.23147981, 0.11126857, -0.20542952, -0.9567359, 0.20604639, 0.15415035, 0.17627673, 0.9721955, 0.20027755, 1.0780385, -0.17762351)
 
-[node name="LeftHand" type="BoneClothCollisionCapsule3D" parent="lucia/root/GeneralSkeleton/BoneClothSimulator3D" unique_id=1344850152]
+[node name="Hands" type="BoneClothCollisionCapsule3D" parent="lucia/root/GeneralSkeleton/BoneClothSimulator3D" unique_id=1344850152]
 radius = 0.07
 height = 0.313
 bone_name = "LeftHand"
 bone = 45
+mirror_bone_name = "RightHand"
+mirror_bone = 71
 position_offset = Vector3(0, 0.087, 0)
 rotation_offset = Quaternion(0, 0, 0, 1)
 transform = Transform3D(-0.2890066, 0.3334567, -0.8973751, -0.15297596, -0.94141656, -0.300555, -0.9450257, 0.05041428, 0.32308653, 0.25543895, 0.8880513, -0.1533232)
-
-[node name="RightForearm" type="BoneClothCollisionCapsule3D" parent="lucia/root/GeneralSkeleton/BoneClothSimulator3D" unique_id=1772877157]
-radius = 0.06
-height = 0.346
-bone_name = "RightLowerArm"
-bone = 65
-position_offset = Vector3(0, 0.113, 0)
-rotation_offset = Quaternion(0, 0, 0, 1)
-transform = Transform3D(-0.8593507, 0.08719951, 0.50389767, 0.39091292, -0.5232681, 0.75721717, 0.32970256, 0.847695, 0.41558352, -0.22230917, 1.1211926, 0.15605186)
-
-[node name="RightHand" type="BoneClothCollisionCapsule3D" parent="lucia/root/GeneralSkeleton/BoneClothSimulator3D" unique_id=469797504]
-radius = 0.07
-height = 0.313
-bone_name = "RightHand"
-bone = 71
-position_offset = Vector3(0, 0.087, 0)
-rotation_offset = Quaternion(0, 0, 0, 1)
-transform = Transform3D(0.29574555, 0.22414613, 0.9285976, 0.8263886, -0.54765046, -0.13100085, 0.47918367, 0.80612504, -0.34719694, -0.19295725, 1.0144315, 0.32195204)
 
 [node name="Twintails" type="BoneClothSimulator3D" parent="lucia/root/GeneralSkeleton" index="21" unique_id=625231802]
 stiffness/value = 0.02
@@ -937,6 +641,228 @@ chains/5/end_bone/length = 0.1
 libraries/rpg_motions = ExtResource("2_gx6sy")
 autoplay = &"rpg_motions/Walk_A_F"
 
+[node name="death_knight" parent="." unique_id=1933797549 instance=ExtResource("2_jx6rg")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 0, 0)
+script = ExtResource("2_16g40")
+
+[node name="PlateDrive" type="ConvertTransformModifier3D" parent="death_knight/Armature/GeneralSkeleton" parent_id_path=PackedInt32Array(1933797549, 1573244763) index="13" unique_id=48194151]
+setting_count = 4
+settings/0/amount = 1.0
+settings/0/apply_bone_name = "dk_thigh_plate_01_l"
+settings/0/apply_bone = 34
+settings/0/reference_type = 0
+settings/0/reference_bone_name = "LeftUpperLeg"
+settings/0/reference_bone = 129
+settings/1/amount = 1.0
+settings/1/apply_bone_name = "dk_thigh_plate_01_r"
+settings/1/apply_bone = 36
+settings/1/reference_type = 0
+settings/1/reference_bone_name = "RightUpperLeg"
+settings/1/reference_bone = 137
+settings/2/amount = 1.0
+settings/2/apply_bone_name = "dk_beltplate_01"
+settings/2/apply_bone = 11
+settings/2/reference_type = 0
+settings/2/reference_bone_name = "LeftUpperLeg"
+settings/2/reference_bone = 129
+settings/3/amount = 1.0
+settings/3/apply_bone_name = "dk_beltplate_01"
+settings/3/apply_bone = 11
+settings/3/reference_type = 0
+settings/3/reference_bone_name = "RightUpperLeg"
+settings/3/reference_bone = 137
+settings/0/apply/transform_mode = 1
+settings/0/apply/axis = 1
+settings/0/apply/range_min = 1.0471976
+settings/0/apply/range_max = -1.0471976
+settings/0/reference/transform_mode = 1
+settings/0/reference/axis = 0
+settings/0/reference/range_min = -1.5707964
+settings/0/reference/range_max = 1.5707964
+settings/0/relative = true
+settings/0/additive = true
+settings/1/apply/transform_mode = 1
+settings/1/apply/axis = 1
+settings/1/apply/range_min = 1.0471976
+settings/1/apply/range_max = -1.0471976
+settings/1/reference/transform_mode = 1
+settings/1/reference/axis = 0
+settings/1/reference/range_min = -1.5707964
+settings/1/reference/range_max = 1.5707964
+settings/1/relative = true
+settings/1/additive = true
+settings/2/apply/transform_mode = 1
+settings/2/apply/axis = 2
+settings/2/apply/range_min = 0.0
+settings/2/apply/range_max = 0.7853982
+settings/2/reference/transform_mode = 1
+settings/2/reference/axis = 0
+settings/2/reference/range_min = 0.0
+settings/2/reference/range_max = 1.5707964
+settings/2/relative = true
+settings/2/additive = true
+settings/3/apply/transform_mode = 1
+settings/3/apply/axis = 2
+settings/3/apply/range_min = 0.0
+settings/3/apply/range_max = 0.7853982
+settings/3/reference/transform_mode = 1
+settings/3/reference/axis = 0
+settings/3/reference/range_min = 0.0
+settings/3/reference/range_max = 1.5707964
+settings/3/relative = true
+settings/3/additive = true
+
+[node name="Cloak" type="BoneClothSimulator3D" parent="death_knight/Armature/GeneralSkeleton" parent_id_path=PackedInt32Array(1933797549, 1573244763) index="14" unique_id=702461655]
+link_mode = 1
+drag/value = 0.15
+stiffness/value = 0.1
+limit_angle/value = 1.3089969
+limit_angle/damping_curve = SubResource("Curve_jx6rg")
+movement_speed_limit = 4.0
+chain_count = 3
+chains/0/root_bone_name = "dk_cloak_01_l"
+chains/0/root_bone = 96
+chains/0/end_bone_name = "dk_cloak_09_l"
+chains/0/end_bone = 104
+chains/0/extend_end_bone = true
+chains/0/end_bone/direction = 6
+chains/0/end_bone/length = 0.1
+chains/1/root_bone_name = "dk_cloak_01_mid"
+chains/1/root_bone = 105
+chains/1/end_bone_name = "dk_cloak_09_mid"
+chains/1/end_bone = 113
+chains/1/extend_end_bone = true
+chains/1/end_bone/direction = 6
+chains/1/end_bone/length = 0.1
+chains/2/root_bone_name = "dk_cloak_01_r"
+chains/2/root_bone = 114
+chains/2/end_bone_name = "dk_cloak_09_r"
+chains/2/end_bone = 122
+chains/2/extend_end_bone = true
+chains/2/end_bone/direction = 6
+chains/2/end_bone/length = 0.1
+
+[node name="Hips" type="BoneClothCollisionCapsule3D" parent="death_knight/Armature/GeneralSkeleton/Cloak" unique_id=712881086]
+radius = 0.12
+height = 0.36
+bone_name = "Hips"
+bone = 9
+position_offset = Vector3(0, -0.009, -0.011)
+rotation_offset = Quaternion(0, 0, -0.707107, 0.707107)
+transform = Transform3D(0, 1, 0, -1, 0, 0, 0, 0, 1, 0, 0.9499678, 0.011808662)
+
+[node name="Thighs" type="BoneClothCollisionTaperedCapsule3D" parent="death_knight/Armature/GeneralSkeleton/Cloak" unique_id=364201970]
+top_radius = 0.06
+bottom_radius = 0.095
+height = 0.628
+bone_name = "LeftUpperLeg"
+bone = 129
+mirror_bone_name = "RightUpperLeg"
+mirror_bone = 137
+position_offset = Vector3(0, 0.219, 0)
+rotation_offset = Quaternion(0, 0, 0, 1)
+transform = Transform3D(-1, 0, 0, 0, -1, 0, 0, 0, 1, 0.099690914, 0.71643394, 0.025500208)
+
+[node name="Calfs" type="BoneClothCollisionCapsule3D" parent="death_knight/Armature/GeneralSkeleton/Cloak" unique_id=1002023393]
+radius = 0.09
+height = 0.573
+bone_name = "LeftLowerLeg"
+bone = 130
+mirror_bone_name = "RightLowerLeg"
+mirror_bone = 138
+position_offset = Vector3(0, 0.237, 0.015)
+rotation_offset = Quaternion(0, 0, 0, 1)
+transform = Transform3D(1, 0, 0, 0, -1, 0, 0, 0, -1, 0.122254014, 0.2912358, 0.013235607)
+
+[node name="Chest" type="BoneClothCollisionCapsule3D" parent="death_knight/Armature/GeneralSkeleton/Cloak" unique_id=226264261]
+radius = 0.115
+height = 0.25
+bone_name = "Chest"
+bone = 40
+position_offset = Vector3(0, 0.081, -0.046)
+rotation_offset = Quaternion(0, 0, -0.707107, 0.707107)
+transform = Transform3D(0, 1, 0, -1, 0, 0, 0, 0, 1, 0, 1.2997217, -0.0048657283)
+
+[node name="UpperChest" type="BoneClothCollisionCapsule3D" parent="death_knight/Armature/GeneralSkeleton/Cloak" unique_id=911744274]
+radius = 0.065
+height = 0.24
+bone_name = "UpperChest"
+bone = 41
+position_offset = Vector3(0, 0.04, -0.064)
+rotation_offset = Quaternion(0, 0, -0.707107, 0.707107)
+transform = Transform3D(0, 1, 0, -1, 0, 0, 0, 0, 1, 0, 1.45048, -0.05479446)
+
+[node name="Tabard" type="BoneClothSimulator3D" parent="death_knight/Armature/GeneralSkeleton" parent_id_path=PackedInt32Array(1933797549, 1573244763) index="15" unique_id=1950090649]
+link_mode = 1
+drag/value = 0.15
+stiffness/value = 0.1
+limit_angle/value = 1.3089969
+limit_angle/damping_curve = SubResource("Curve_jx6rg")
+movement_speed_limit = 4.0
+chain_count = 3
+chains/0/root_bone_name = "dk_cloth_01_l"
+chains/0/root_bone = 13
+chains/0/end_bone_name = "dk_cloth_08_l"
+chains/0/end_bone = 20
+chains/0/extend_end_bone = true
+chains/0/end_bone/direction = 6
+chains/0/end_bone/length = 0.1
+chains/1/root_bone_name = "dk_cloth_01_mid"
+chains/1/root_bone = 21
+chains/1/end_bone_name = "dk_cloth_05_mid"
+chains/1/end_bone = 25
+chains/1/extend_end_bone = true
+chains/1/end_bone/direction = 6
+chains/1/end_bone/length = 0.1
+chains/2/root_bone_name = "dk_cloth_01_r"
+chains/2/root_bone = 26
+chains/2/end_bone_name = "dk_cloth_08_r"
+chains/2/end_bone = 33
+chains/2/extend_end_bone = true
+chains/2/end_bone/direction = 6
+chains/2/end_bone/length = 0.1
+
+[node name="Hips" type="BoneClothCollisionCapsule3D" parent="death_knight/Armature/GeneralSkeleton/Tabard" unique_id=802441087]
+radius = 0.07
+height = 0.32
+bone_name = "Hips"
+bone = 9
+position_offset = Vector3(0, -0.092, -0.026)
+rotation_offset = Quaternion(0, 0, -0.707107, 0.707107)
+transform = Transform3D(0, 1, 0, -1, 0, 0, 0, 0, 1, 0, 0.8669678, -0.0031913389)
+
+[node name="Thighs" type="BoneClothCollisionTaperedCapsule3D" parent="death_knight/Armature/GeneralSkeleton/Tabard" unique_id=2114364257]
+top_radius = 0.06
+bottom_radius = 0.095
+height = 0.628
+bone_name = "LeftUpperLeg"
+bone = 129
+mirror_bone_name = "RightUpperLeg"
+mirror_bone = 137
+position_offset = Vector3(0, 0.219, 0)
+rotation_offset = Quaternion(0, 0, 0, 1)
+transform = Transform3D(-1, 0, 0, 0, -1, 0, 0, 0, 1, 0.099690914, 0.71643394, 0.025500208)
+
+[node name="Calfs" type="BoneClothCollisionCapsule3D" parent="death_knight/Armature/GeneralSkeleton/Tabard" unique_id=119147451]
+radius = 0.05
+height = 0.573
+bone_name = "LeftLowerLeg"
+bone = 130
+mirror_bone_name = "RightLowerLeg"
+mirror_bone = 138
+position_offset = Vector3(0, 0.237, 0)
+rotation_offset = Quaternion(0, 0, 0, 1)
+transform = Transform3D(1, 0, 0, 0, -1, 0, 0, 0, -1, 0.122254014, 0.2912358, 0.028235607)
+
+[node name="Armor" parent="death_knight" index="1" unique_id=208287633]
+visible = false
+
+[node name="Head" parent="death_knight" index="2" unique_id=1218174968]
+visible = false
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="death_knight" unique_id=1111876923]
+libraries/rpg_motions = ExtResource("2_gx6sy")
+
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1150259320]
 environment = SubResource("Environment_6eo5e")
 camera_attributes = SubResource("CameraAttributesPractical_aees8")
@@ -971,7 +897,7 @@ transform = Transform3D(0.9396926, 0.14454395, -0.3099755, 0, 0.90630776, 0.4226
 light_intensity_lux = 40000.0
 light_temperature = 6000.0
 
-[editable path="death_knight"]
 [editable path="lilith"]
 [editable path="lucia"]
+[editable path="death_knight"]
 [editable path="cyclorama"]
