@@ -77,9 +77,9 @@ bool BoneClothCollisionTaperedCapsule3D::is_inside() const {
 }
 
 // The centers of the two end spheres in skeleton space, head at +Y with top_radius.
-void BoneClothCollisionTaperedCapsule3D::_get_head_and_tail(Vector3 &r_head, Vector3 &r_tail) const {
-	r_head = pose.origin + pose.basis.xform(Vector3(0.0f, height * 0.5f - top_radius, 0.0f));
-	r_tail = pose.origin - pose.basis.xform(Vector3(0.0f, height * 0.5f - bottom_radius, 0.0f));
+void BoneClothCollisionTaperedCapsule3D::_get_head_and_tail(const Transform3D &p_pose, Vector3 &r_head, Vector3 &r_tail) const {
+	r_head = p_pose.origin + p_pose.basis.xform(Vector3(0.0f, height * 0.5f - top_radius, 0.0f));
+	r_tail = p_pose.origin - p_pose.basis.xform(Vector3(0.0f, height * 0.5f - bottom_radius, 0.0f));
 }
 
 // The hull is the union of spheres along the axis whose radius goes linearly from one end to the other; the one whose surface is
@@ -111,31 +111,31 @@ void BoneClothCollisionTaperedCapsule3D::_get_nearest_sphere(const Vector3 &p_he
 
 // The sphere collision against the nearest sphere. A point on the axis has no direction out and takes the node's X.
 // Inside, the room is the hull of the end spheres less the joint's radius, each never below zero, as the sphere's.
-Vector3 BoneClothCollisionTaperedCapsule3D::collide(const Vector3 &p_point, float p_radius) const {
+Vector3 BoneClothCollisionTaperedCapsule3D::_collide(const Transform3D &p_pose, const Vector3 &p_point, float p_radius) const {
 	Vector3 head;
 	Vector3 tail;
-	_get_head_and_tail(head, tail);
+	_get_head_and_tail(p_pose, head, tail);
 	Vector3 center;
 	float radius;
 	_get_nearest_sphere(head, tail, p_point, center, radius);
-	return BoneClothCollisionSphere3D::_collide_sphere(center, radius, inside, pose.basis.get_column(0).normalized(), p_point, p_radius);
+	return BoneClothCollisionSphere3D::_collide_sphere(center, radius, inside, p_pose.basis.get_column(0).normalized(), p_point, p_radius);
 }
 
 // Outside, the line's point nearest the axis against the sphere nearest that point, as the capsule's. Inside, the room is convex,
 // so the line stays in when both of its ends do.
-void BoneClothCollisionTaperedCapsule3D::collide_segment(Vector3 &r_a, Vector3 &r_b, float p_radius) const {
+void BoneClothCollisionTaperedCapsule3D::_collide_segment(const Transform3D &p_pose, Vector3 &r_a, Vector3 &r_b, float p_radius) const {
 	if (inside) {
-		r_a = collide(r_a, p_radius);
-		r_b = collide(r_b, p_radius);
+		r_a = _collide(p_pose, r_a, p_radius);
+		r_b = _collide(p_pose, r_b, p_radius);
 		return;
 	}
 
 	Vector3 head;
 	Vector3 tail;
-	_get_head_and_tail(head, tail);
+	_get_head_and_tail(p_pose, head, tail);
 	const PackedVector3Array closest = Geometry3D::get_singleton()->get_closest_points_between_segments(r_a, r_b, head, tail);
 	Vector3 center;
 	float radius;
 	_get_nearest_sphere(head, tail, closest[0], center, radius);
-	_push_segment_out(r_a, r_b, closest[0], center, radius + p_radius, pose.basis.get_column(0).normalized());
+	_push_segment_out(r_a, r_b, closest[0], center, radius + p_radius, p_pose.basis.get_column(0).normalized());
 }

@@ -14,7 +14,7 @@ class BoneClothCollisionCapsule3D : public BoneClothCollision3D {
 	float height = 0.5f;
 	bool inside = false;
 
-	void _get_head_and_tail(Vector3 &r_head, Vector3 &r_tail) const;
+	void _get_head_and_tail(const Transform3D &p_pose, Vector3 &r_head, Vector3 &r_tail) const;
 
 protected:
 	static void _bind_methods();
@@ -29,6 +29,6 @@ public:
 	void set_inside(bool p_enabled);
 	bool is_inside() const;
 
-	Vector3 collide(const Vector3 &p_point, float p_radius) const override;
-	void collide_segment(Vector3 &r_a, Vector3 &r_b, float p_radius) const override;
+	Vector3 _collide(const Transform3D &p_pose, const Vector3 &p_point, float p_radius) const override;
+	void _collide_segment(const Transform3D &p_pose, Vector3 &r_a, Vector3 &r_b, float p_radius) const override;
 };

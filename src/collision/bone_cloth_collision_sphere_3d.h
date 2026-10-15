@@ -22,6 +22,9 @@ class BoneClothCollisionSphere3D : public BoneClothCollision3D {
 protected:
 	static void _bind_methods();
 
+	Vector3 _collide(const Transform3D &p_pose, const Vector3 &p_point, float p_radius) const override;
+	void _collide_segment(const Transform3D &p_pose, Vector3 &r_a, Vector3 &r_b, float p_radius) const override;
+
 	static Vector3 _collide_sphere(const Vector3 &p_center, float p_radius, bool p_inside, const Vector3 &p_fallback, const Vector3 &p_point, float p_point_radius);
 
 public:
@@ -29,7 +32,4 @@ public:
 	float get_radius() const;
 	void set_inside(bool p_enabled);
 	bool is_inside() const;
-
-	Vector3 collide(const Vector3 &p_point, float p_radius) const override;
-	void collide_segment(Vector3 &r_a, Vector3 &r_b, float p_radius) const override;
 };

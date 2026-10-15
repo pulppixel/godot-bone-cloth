@@ -57,18 +57,18 @@ Vector3 BoneClothCollisionSphere3D::_collide_sphere(const Vector3 &p_center, flo
 }
 
 // The fallback direction is the node's X.
-Vector3 BoneClothCollisionSphere3D::collide(const Vector3 &p_point, float p_radius) const {
-	return _collide_sphere(pose.origin, radius, inside, pose.basis.get_column(0).normalized(), p_point, p_radius);
+Vector3 BoneClothCollisionSphere3D::_collide(const Transform3D &p_pose, const Vector3 &p_point, float p_radius) const {
+	return _collide_sphere(p_pose.origin, radius, inside, p_pose.basis.get_column(0).normalized(), p_point, p_radius);
 }
 
 // Inside, the room left for the line is a smaller sphere and convex, so the line stays in when both of its ends do.
-void BoneClothCollisionSphere3D::collide_segment(Vector3 &r_a, Vector3 &r_b, float p_radius) const {
+void BoneClothCollisionSphere3D::_collide_segment(const Transform3D &p_pose, Vector3 &r_a, Vector3 &r_b, float p_radius) const {
 	if (inside) {
-		r_a = collide(r_a, p_radius);
-		r_b = collide(r_b, p_radius);
+		r_a = _collide(p_pose, r_a, p_radius);
+		r_b = _collide(p_pose, r_b, p_radius);
 		return;
 	}
 
-	const Vector3 on_segment = Geometry3D::get_singleton()->get_closest_point_to_segment(pose.origin, r_a, r_b);
-	_push_segment_out(r_a, r_b, on_segment, pose.origin, radius + p_radius, pose.basis.get_column(0).normalized());
+	const Vector3 on_segment = Geometry3D::get_singleton()->get_closest_point_to_segment(p_pose.origin, r_a, r_b);
+	_push_segment_out(r_a, r_b, on_segment, p_pose.origin, radius + p_radius, p_pose.basis.get_column(0).normalized());
 }

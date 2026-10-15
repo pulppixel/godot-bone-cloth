@@ -1,4 +1,5 @@
 #include "collision/bone_cloth_collision_capsule_3d.h"
+
 #include "collision/bone_cloth_collision_sphere_3d.h"
 
 #include <godot_cpp/classes/geometry3d.hpp>
@@ -70,35 +71,35 @@ bool BoneClothCollisionCapsule3D::is_inside() const {
 }
 
 // The two ends of the axis, the hemispheres' centers, in skeleton space.
-void BoneClothCollisionCapsule3D::_get_head_and_tail(Vector3 &r_head, Vector3 &r_tail) const {
-	const Vector3 half_axis = pose.basis.xform(Vector3(0.0f, height * 0.5f - radius, 0.0f));
-	r_head = pose.origin + half_axis;
-	r_tail = pose.origin - half_axis;
+void BoneClothCollisionCapsule3D::_get_head_and_tail(const Transform3D &p_pose, Vector3 &r_head, Vector3 &r_tail) const {
+	const Vector3 half_axis = p_pose.basis.xform(Vector3(0.0f, height * 0.5f - radius, 0.0f));
+	r_head = p_pose.origin + half_axis;
+	r_tail = p_pose.origin - half_axis;
 }
 
 // KawaiiPhysics' AdjustByCapsuleCollision: the sphere collision at the point of the axis nearest the joint.
 // A point on the axis has no direction out and takes the capsule's X.
-Vector3 BoneClothCollisionCapsule3D::collide(const Vector3 &p_point, float p_radius) const {
+Vector3 BoneClothCollisionCapsule3D::_collide(const Transform3D &p_pose, const Vector3 &p_point, float p_radius) const {
 	Vector3 head;
 	Vector3 tail;
-	_get_head_and_tail(head, tail);
+	_get_head_and_tail(p_pose, head, tail);
 	const Vector3 axis = tail - head;
 	const float axis_length_squared = axis.length_squared();
 	const float t = axis_length_squared > 0.0f ? CLAMP((p_point - head).dot(axis) / axis_length_squared, 0.0f, 1.0f) : 0.0f;
-	return BoneClothCollisionSphere3D::_collide_sphere(head + axis * t, radius, inside, pose.basis.get_column(0).normalized(), p_point, p_radius);
+	return BoneClothCollisionSphere3D::_collide_sphere(head + axis * t, radius, inside, p_pose.basis.get_column(0).normalized(), p_point, p_radius);
 }
 
 // Inside, the room left for the line is a thinner capsule and convex, so the line stays in when both of its ends do.
-void BoneClothCollisionCapsule3D::collide_segment(Vector3 &r_a, Vector3 &r_b, float p_radius) const {
+void BoneClothCollisionCapsule3D::_collide_segment(const Transform3D &p_pose, Vector3 &r_a, Vector3 &r_b, float p_radius) const {
 	if (inside) {
-		r_a = collide(r_a, p_radius);
-		r_b = collide(r_b, p_radius);
+		r_a = _collide(p_pose, r_a, p_radius);
+		r_b = _collide(p_pose, r_b, p_radius);
 		return;
 	}
 
 	Vector3 head;
 	Vector3 tail;
-	_get_head_and_tail(head, tail);
+	_get_head_and_tail(p_pose, head, tail);
 	const PackedVector3Array closest = Geometry3D::get_singleton()->get_closest_points_between_segments(r_a, r_b, head, tail);
-	_push_segment_out(r_a, r_b, closest[0], closest[1], radius + p_radius, pose.basis.get_column(0).normalized());
+	_push_segment_out(r_a, r_b, closest[0], closest[1], radius + p_radius, p_pose.basis.get_column(0).normalized());
 }
