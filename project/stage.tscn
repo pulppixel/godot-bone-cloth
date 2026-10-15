@@ -59,7 +59,7 @@ characters = [NodePath("lilith"), NodePath("lucia"), NodePath("death_knight")]
 camera = NodePath("Camera3D")
 
 [node name="lilith" parent="." unique_id=1126799021 instance=ExtResource("1_6eo5e")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.9873812, 0, 0.14180493)
 script = ExtResource("2_16g40")
 
 [node name="GeneralSkeleton" parent="lilith/Armature" parent_id_path=PackedInt32Array(1126799021, 1458929827) index="0" unique_id=835554210]
@@ -202,7 +202,7 @@ mirror_bone_name = "RightUpperLeg"
 mirror_bone = 157
 position_offset = Vector3(-3.1664968e-08, 0.21900001, 0)
 rotation_offset = Quaternion(-2.9802322e-08, 3.3527613e-08, 1.3038517e-08, 1)
-transform = Transform3D(-0.9927585, 0.031565856, -0.11590507, -0.07701961, -0.9077009, 0.41248864, -0.09218657, 0.41842863, 0.90355915, 0.10291839, 0.77261096, 0.044944536)
+transform = Transform3D(-0.9927585, 0.031565856, -0.11590507, -0.07701961, -0.9077009, 0.41248864, -0.09218657, 0.41842863, 0.90355915, 0.10291839, 0.77261096, 0.04494454)
 
 [node name="Calves" type="BoneClothCollisionCapsule3D" parent="lilith/Armature/GeneralSkeleton/BoneClothSimulator3D" unique_id=251832674]
 radius = 0.05
@@ -218,7 +218,6 @@ transform = Transform3D(0.99419034, 0.073391825, 0.07873479, 0.07440834, -0.9971
 [node name="FrontHair" type="BoneClothSimulator3D" parent="lilith/Armature/GeneralSkeleton" index="18" unique_id=782347978]
 drag/value = 0.2
 stiffness/value = 0.1
-radius/value = 0.02
 limit_angle/value = 1.0471976
 chain_count = 2
 chains/0/root_bone_name = "hair_front_01_l"
@@ -229,8 +228,7 @@ chains/0/extend_end_bone = true
 chains/0/end_bone/direction = 6
 chains/0/end_bone/length = 0.1
 chains/0/enable_all_child_collisions = true
-chains/0/exclude_collision_count = 1
-chains/0/exclude_collisions/0 = NodePath("")
+chains/0/exclude_collision_count = 0
 chains/1/root_bone_name = "hair_front_01_r"
 chains/1/root_bone = 138
 chains/1/end_bone_name = "hair_front_06_r"
@@ -256,7 +254,7 @@ bone_name = "Chest"
 bone = 44
 position_offset = Vector3(0, 0.056, 0.012)
 rotation_offset = Quaternion(0, 0, -0.707107, 0.707107)
-transform = Transform3D(0.016522318, 0.9884883, -0.15039228, -0.98102754, -0.013031533, -0.19342993, -0.19316307, 0.15073489, 0.9695191, -0.00047886372, 1.2623078, -0.008703465)
+transform = Transform3D(0.016522318, 0.9884883, -0.15039228, -0.98102754, -0.013031533, -0.19342993, -0.19316307, 0.15073489, 0.9695191, -0.00047886372, 1.2623078, -0.00870347)
 
 [node name="UpperChest" type="BoneClothCollisionCapsule3D" parent="lilith/Armature/GeneralSkeleton/FrontHair" unique_id=1350116983]
 radius = 0.065
@@ -266,6 +264,24 @@ bone = 47
 position_offset = Vector3(0, 0.06, 0)
 rotation_offset = Quaternion(0, 0, -0.707107, 0.707107)
 transform = Transform3D(0.041346423, 0.9883843, -0.14624256, -0.9254375, -0.0172909, -0.37850535, -0.37663746, 0.1509882, 0.9139733, -0.00026071072, 1.3864282, 0.0021259934)
+
+[node name="FrontPlane" type="BoneClothCollisionPlane3D" parent="lilith/Armature/GeneralSkeleton/FrontHair" unique_id=467863369]
+bone_name = "UpperChest"
+bone = 47
+position_offset = Vector3(0, 0, -0.02)
+rotation_offset = Quaternion(0.707107, 0, 0, 0.707107)
+transform = Transform3D(0.9883843, -0.14624256, 0.041346423, -0.0172909, -0.37850535, -0.9254375, 0.1509882, 0.9139733, -0.37663746, 0.005144894, 1.3384721, -0.03875172)
+
+[node name="UpperArm" type="BoneClothCollisionCapsule3D" parent="lilith/Armature/GeneralSkeleton/FrontHair" unique_id=1469685477]
+radius = 0.055
+height = 0.3
+bone_name = "LeftUpperArm"
+bone = 49
+mirror_bone_name = "RightUpperArm"
+mirror_bone = 79
+position_offset = Vector3(0, 0.1, 0)
+rotation_offset = Quaternion(0, 0, 0, 1)
+transform = Transform3D(-0.026285708, 0.33459958, -0.94199365, 0.1881142, -0.9238287, -0.33339667, -0.98179567, -0.18596596, -0.038659476, 0.15788579, 1.3196068, -0.027139679)
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="lilith" unique_id=1935651821]
 libraries/rpg_motions = ExtResource("2_gx6sy")
