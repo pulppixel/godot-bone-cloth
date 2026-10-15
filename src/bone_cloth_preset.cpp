@@ -44,7 +44,7 @@ void BoneClothPreset::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_teleport_angle", "angle"), &BoneClothPreset::set_teleport_angle);
 	ClassDB::bind_method(D_METHOD("get_teleport_angle"), &BoneClothPreset::get_teleport_angle);
 
-	// 인스펙터에서 프리셋 값이 노드 값과 같게 보일 수 있도록, 내용을 BoneClothSimulator3D와 맞춘다.
+	// 해당 노드의 값을 프리셋 값과 동일하게 맞추기 위해, 이름들을 BoneClothSimulator3D와 맞춘다 (툴팁도).
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "link_stiffness", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_link_stiffness", "get_link_stiffness");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "drag/value", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_drag", "get_drag");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "drag/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_drag_damping_curve", "get_drag_damping_curve");

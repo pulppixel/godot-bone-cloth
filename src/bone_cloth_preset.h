@@ -1,6 +1,5 @@
-
 // 프리셋을 통해 치마나 머리카락 등의 값을 설정할 수 있다.
-// 이 작업을 위해 BoneClothSimulator3D의 물리 값을 Godot Resource로 저장한다.
+// 이 작업을 위해 BoneClothSimulator3D의 설정 값을 Godot Resource로 저장한다.
 // 동작은 참조 복사가 아닌, 값 복사로 이루어진다.
 
 #pragma once
@@ -39,7 +38,7 @@ protected:
 	static void _bind_methods();
 
 public:
-	// 이 배열로 simulator 측에 값을 복사한다.
+	// 이 배열로 simulator 측에 값을 복사한다 (이름으로).
 	static constexpr const char *VALUES[] = {
 		"link_stiffness",
 		"drag/value",

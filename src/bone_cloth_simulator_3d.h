@@ -1,4 +1,4 @@
-// Bone cloth: 이웃한 spring chain을 연결해서, 여러 chain으로 된 치마가 하나의 면처럼 움직이고 다리에 뚫리지 못하게 한다.
+// Bone cloth: 이웃한 spring chain을 연결해서, 여러 chain으로 된 치마가 하나의 면처럼 움직이고 다리에 뚫리지 않게 한다.
 
 #pragma once
 
@@ -17,7 +17,7 @@ class BoneClothSimulator3DGizmoPlugin;
 class BoneClothSimulator3D : public SkeletonModifier3D {
 	GDCLASS(BoneClothSimulator3D, SkeletonModifier3D)
 
-	// Gizmo는 simulator의 계산을 직접 읽고 화면에 그린다.
+	// Gizmo는 simulator의 계산을 읽고 화면에 그린다.
 	friend class BoneClothSimulator3DGizmoPlugin;
 
 public:
@@ -87,11 +87,40 @@ private:
 		bool enable_all_child_collisions = true;
 		LocalVector<NodePath> exclude_collisions;
 		LocalVector<NodePath> collisions;
-		// 위 내용으로 계산한 결과, 자식 collision마다 이 chain과 충돌하는지 하지 않는지 분류한 벡터
+
+		/*
+			BoneClothSimulator3D
+			├ Thighs
+			├ Chest
+			└ Calves
+
+			만약, exclude_collisions에 Thights를 넣었다면 아래와 같이 된다.
+
+			칸 번호:   0       1       2
+			list:     Thighs  Chest  Calves
+			collides: false   true   true
+
+			여기서 true인 collision만 충돌시킨다는 뜻이다.
+		*/
 		LocalVector<bool> collides;
 	};
 
-	// Two joints at the same depth of neighboring chains, kept at their rest distance.
+	/*
+				  chain 0    chain 1    chain 2
+		depth 0     R0         R1         R2       <- root끼리는 연결하지 않는다.
+					|          |          |
+		depth 1     a1 ------- b1 ------- c1
+					|          |          |
+		depth 2     a2 ------- b2 ------- c2
+					|          |          |
+		depth 3     a3 ------- b3 ------- c3
+
+		위 그림에서 |는 bone(chain으로 연결되는 부모-자식 관계)
+		----가 바로 Link이다.
+
+		Link는 chain끼리 연결하는 역할을 한다 (이게 없다면 천이 벌어지고, 그 틈으로 body가 뚫고 나오게 된다).
+		즉, 여러 chain이 한 면처럼 움직일 수 있도록, 이웃한 두 chain의 "동일한 depth를 가진 joint를 연결한 선 하나"
+	*/
 	struct Link {
 		uint32_t chain_a = 0;
 		uint32_t chain_b = 0;
@@ -99,10 +128,10 @@ private:
 		float length = 0.0f;
 	};
 
-	// A collision at one of its two poses, its own or its mirror's.
+	// 충돌에 쓸 collision. mirror가 존재하는 collision일 경우, 2개가 들어간다.
 	struct PosedCollision {
-		const BoneClothCollision3D *collision = nullptr;
-		bool mirror = false;
+		const BoneClothCollision3D *collision = nullptr; // 어느 collision 노드인지.
+		bool mirror = false;							 // true: mirror bone, false: 본인의 bone
 	};
 
 	LocalVector<Chain> chains;
@@ -134,7 +163,7 @@ private:
 	Transform3D prev_skeleton_transform;
 	Vector3 prev_step_move;
 	Quaternion prev_step_turn;
-	// The skeleton's speed as the cloth feels it, eased toward its real speed step by step, in world space so a turn does not carry it round.
+	// joint가 받을 skeleton의 속도. step이 흐를 수록 실제 속도에 가까워진다 (캐릭터가 회전할 때 같이 돌지 않도록 world 공간에 둔다).
 	Vector3 smoothing_velocity;
 
 	// State
