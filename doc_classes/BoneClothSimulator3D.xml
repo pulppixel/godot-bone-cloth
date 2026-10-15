@@ -166,7 +166,7 @@
 			How much of the skeleton's movement and rotation the cloth reacts to, from [code]0.0[/code] to [code]1.0[/code]. The rest moves the cloth along with the skeleton.
 		</member>
 		<member name="inertia_smoothing" type="float" setter="set_inertia_smoothing" getter="get_inertia_smoothing" default="0.4">
-			Softens the cloth's reaction to sudden starts and stops of the skeleton. Higher values smooth more. [code]0.0[/code] disables it.
+			Softens the cloth's reaction to sudden starts and stops of the skeleton. Higher values smooth more. [code]0.0[/code] disables it. Has no effect when [member inertia] is [code]0.0[/code].
 		</member>
 		<member name="joint_speed_limit" type="float" setter="set_joint_speed_limit" getter="get_joint_speed_limit" default="4.0">
 			The maximum speed of each joint relative to the skeleton. A low limit weakens the push out of collisions. [code]0.0[/code] disables it.
@@ -182,10 +182,10 @@
 			How the chains are linked, in list order. A branch that starts below its trunk's root is not linked.
 		</member>
 		<member name="link_stiffness" type="float" setter="set_link_stiffness" getter="get_link_stiffness" default="0.0">
-			How strongly the links keep neighboring joints at their rest distance, from [code]0.0[/code] to [code]1.0[/code]. At [code]0.0[/code], the links only collide.
+			How strongly the links keep neighboring joints at their rest distance, from [code]0.0[/code] to [code]1.0[/code]. At [code]0.0[/code], the links only collide. Has no effect when [member link_mode] is [constant LINK_MODE_NONE].
 		</member>
 		<member name="movement_speed_limit" type="float" setter="set_movement_speed_limit" getter="get_movement_speed_limit" default="5.0">
-			The skeleton speed above which the cloth stops reacting to more movement.
+			The skeleton speed above which the cloth stops reacting to more movement. Has no effect when [member inertia] is [code]0.0[/code].
 		</member>
 		<member name="radius/damping_curve" type="Curve" setter="set_radius_damping_curve" getter="get_radius_damping_curve">
 			The curve that scales [member radius/value] along the chains. If not set, the scale is [code]1.0[/code].
@@ -194,7 +194,7 @@
 			The radius of each joint against the collisions. A link uses the average radius of its two joints.
 		</member>
 		<member name="rotation_speed_limit" type="float" setter="set_rotation_speed_limit" getter="get_rotation_speed_limit" default="12.566371">
-			The skeleton rotation speed above which the cloth stops reacting to more rotation, in radians per second.
+			The skeleton rotation speed above which the cloth stops reacting to more rotation, in radians per second. Has no effect when [member inertia] is [code]0.0[/code].
 		</member>
 		<member name="stiffness/damping_curve" type="Curve" setter="set_stiffness_damping_curve" getter="get_stiffness_damping_curve">
 			The curve that scales [member stiffness/value] along the chains. If not set, the scale is [code]1.0[/code].
@@ -204,10 +204,10 @@
 			[b]Note:[/b] [SpringBoneSimulator3D]'s stiffness uses a different formula, so its values do not carry over.
 		</member>
 		<member name="teleport_angle" type="float" setter="set_teleport_angle" getter="get_teleport_angle" default="1.5707964">
-			A skeleton rotation larger than this in one frame, in radians, counts as a teleport. The cloth then continues as if the skeleton had kept its last motion.
+			A skeleton rotation larger than this in one frame, in radians, counts as a teleport. The cloth then continues as if the skeleton had kept its last motion. Has no effect when [member inertia] is [code]0.0[/code].
 		</member>
 		<member name="teleport_distance" type="float" setter="set_teleport_distance" getter="get_teleport_distance" default="0.5">
-			A skeleton movement farther than this in one frame counts as a teleport. The cloth then continues as if the skeleton had kept its last motion.
+			A skeleton movement farther than this in one frame counts as a teleport. The cloth then continues as if the skeleton had kept its last motion. Has no effect when [member inertia] is [code]0.0[/code].
 		</member>
 	</members>
 	<constants>
