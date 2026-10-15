@@ -5,15 +5,17 @@
 
 using namespace godot;
 
-// KawaiiPhysics' fixed substeps: 60 a second, at most 4 a frame, time beyond that dropped.
-// Every per step value (drag, stiffness, link_stiffness) is per 1/60 s.
+// frame rate가 달라도 천이 같게 움직이도록, 천은 1/60초짜리 step으로 계산한다.
+// 한 frame에 step은 4번까지만 돈다. 느린 frame에서 계산이 계속 쌓이지 않게 하려는 것이고, 넘는 시간은 버린다.
+// drag, stiffness, link_stiffness는 step 1번 기준 값이다.
 static constexpr double STEP = 1.0 / 60.0;
 static constexpr int MAX_STEPS = 4;
 
-// KawaiiPhysics' default link compliance, Leather.
+// LINK가 늘어나는 정도 (사실상 거의 늘어나지 않는다. 세기는 link_stiffness로 정할 수 있다).
 static constexpr float LINK_COMPLIANCE = 1e-9f;
 
-// SpringBoneSimulator3D::get_end_bone_axis, in the end bone's own axes: FromParent is the end bone's offset from its parent at rest, the others that bone axis.
+// tip joint를 end bone에서 어느 방향으로 붙일지 구한다. 결과는 end bone 자신의 축 기준이라, end bone이 돌면 tip도 같이 돈다.
+// +X 같은 축을 고르면 그 축을 쓰고, FromParent를 고르면 rest 자세에서 부모 bone이 end bone으로 향하는 방향을 그대로 이어 간다.
 static Vector3 end_bone_axis(Skeleton3D *p_skeleton, int p_end_bone, SkeletonModifier3D::BoneDirection p_direction) {
 	if (p_direction != SkeletonModifier3D::BONE_DIRECTION_FROM_PARENT) {
 		static const Vector3 axes[] = { Vector3(1, 0, 0), Vector3(-1, 0, 0), Vector3(0, 1, 0), Vector3(0, -1, 0), Vector3(0, 0, 1), Vector3(0, 0, -1) };

@@ -58,6 +58,7 @@ private:
 	};
 
 	struct Chain {
+		// inspector에서 bone 이름을 고르면 내부적으로 index도 같이 저장한다. skeleton의 bone 순서가 바뀌어도 같은 bone을 찾도록 이름을 키 값으로 사용한다.
 		String root_bone_name;
 		int root_bone = -1;
 		String end_bone_name;
@@ -73,17 +74,17 @@ private:
 
 		/*
 			Hair1 - Hair2 - Hair3 - Hair4   (chain 0)
-						\				    
-						HairB1 - HairB2     (chain 1, root bone: Hair2)
+					  |				    
+					  +-- HairB1 - HairB2     (chain 1, root bone: Hair2)
 
 			위처럼 Chain 중간에서 파생된 Chain이면, 파생된 Chain과 joint의 값을 저장, 아니면 -1
-			파생된 joint는 흔들려야 하기 때문에 이 chain의 root는 해당 joint의 위치를 따라간다.
+			parent joint(Hair2)는 흔들리기 때문에, 이 chain의 root는 해당 joint(Hair2)의 위치를 따라간다.
 		*/
 		int parent_chain = -1;
 		uint32_t parent_joint = 0;
 
-		// true: exclude_collisions 벡터에 포함되지 않은 콜리전 전부,
-		// false: collisions 벡터에 포함되어 있는 콜리전만.
+		// true: 자식 collision 중 exclude_collisions에 없는 것 전부와 충돌한다.
+		// false: collisions에 있는 collision하고만 충돌한다.
 		bool enable_all_child_collisions = true;
 		LocalVector<NodePath> exclude_collisions;
 		LocalVector<NodePath> collisions;
@@ -128,7 +129,7 @@ private:
 		float length = 0.0f;
 	};
 
-	// 충돌에 쓸 collision. mirror가 존재하는 collision일 경우, 2개가 들어간다.
+	// 충돌에 쓸 collision. mirror가 존재하는 collision일 경우, 2개가 들어간다. (mirror는 좌우대칭 콜리전, 자동으로 값 따라감)
 	struct PosedCollision {
 		const BoneClothCollision3D *collision = nullptr; // 어느 collision 노드인지.
 		bool mirror = false;							 // true: mirror bone, false: 본인의 bone
@@ -163,7 +164,8 @@ private:
 	Transform3D prev_skeleton_transform;
 	Vector3 prev_step_move;
 	Quaternion prev_step_turn;
-	// joint가 받을 skeleton의 속도. step이 흐를 수록 실제 속도에 가까워진다 (캐릭터가 회전할 때 같이 돌지 않도록 world 공간에 둔다).
+	// 급출발, 급정지 때 천이 튀지 않도록, 천이 감지하는 캐릭터 속도를 실제 속도 쪽으로 천천히 바꿔 간다.
+	// 캐릭터가 돌아도 이 속도의 방향이 같이 돌지 않도록 world 공간으로 저장한다.
 	Vector3 smoothing_velocity;
 
 	// State
