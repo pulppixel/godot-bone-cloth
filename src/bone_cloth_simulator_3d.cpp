@@ -217,7 +217,7 @@ void BoneClothSimulator3D::_update_joint_settings(Chain &p_chain) {
 }
 
 // One step of KawaiiPhysics' SimulateOnce, in its order.
-void BoneClothSimulator3D::_step(const Vector3 &p_gravity_direction, const Vector3 &p_move, const Quaternion &p_turn, const LocalVector<BoneClothCollision3D *> &p_collisions) {
+void BoneClothSimulator3D::_step(const Vector3 &p_gravity_direction, const Vector3 &p_move, const Quaternion &p_turn, const LocalVector<PosedCollision> &p_collisions) {
 	// The roots are kinematic: they follow the pose, a branch's its trunk joint.
 	for (Chain &chain : chains) {
 		if (!chain.joints.is_empty() && chain.parent_chain < 0) {
@@ -320,23 +320,23 @@ void BoneClothSimulator3D::_solve_links() {
 
 // Every joint below the root against every collision, as KawaiiPhysics' collision pass.
 // The roots follow the pose and are never pushed.
-void BoneClothSimulator3D::_collide(Chain &p_chain, const LocalVector<BoneClothCollision3D *> &p_collisions) {
+void BoneClothSimulator3D::_collide(Chain &p_chain, const LocalVector<PosedCollision> &p_collisions) {
 	for (uint32_t i = 1; i < p_chain.joints.size(); i++) {
 		Joint &joint = p_chain.joints[i];
-		for (const BoneClothCollision3D *collision : p_collisions) {
-			joint.location = collision->collide(joint.location, joint.radius);
+		for (const PosedCollision &posed : p_collisions) {
+			joint.location = posed.collision->collide(joint.location, joint.radius, posed.mirror);
 		}
 	}
 }
 
 // Every link against every collision as a line, where KawaiiPhysics feeds its bridge points' collision back to the two ends.
-void BoneClothSimulator3D::_collide_links(const LocalVector<BoneClothCollision3D *> &p_collisions) {
+void BoneClothSimulator3D::_collide_links(const LocalVector<PosedCollision> &p_collisions) {
 	for (const Link &link : links) {
 		Joint &joint_a = chains[link.chain_a].joints[link.depth];
 		Joint &joint_b = chains[link.chain_b].joints[link.depth];
 		const float link_radius = (joint_a.radius + joint_b.radius) * 0.5f;
-		for (const BoneClothCollision3D *collision : p_collisions) {
-			collision->collide_segment(joint_a.location, joint_b.location, link_radius);
+		for (const PosedCollision &posed : p_collisions) {
+			posed.collision->collide_segment(joint_a.location, joint_b.location, link_radius, posed.mirror);
 		}
 	}
 }
@@ -1007,12 +1007,19 @@ void BoneClothSimulator3D::_process_modification_with_delta(double p_delta) {
 	}
 
 	// The collisions follow their bones before the steps, as SpringBoneSimulator3D syncs its collisions; also while paused, so the editor shows them in place.
-	LocalVector<BoneClothCollision3D *> collisions;
+	// The mirrors collide after every collision, in the same order, as KawaiiPhysics appends its mirrored collisions (ApplyMirrorLimits).
+	LocalVector<PosedCollision> collisions;
 	for (int i = 0; i < get_child_count(); i++) {
 		BoneClothCollision3D *collision = Object::cast_to<BoneClothCollision3D>(get_child(i));
 		if (collision) {
 			collision->sync_pose();
-			collisions.push_back(collision);
+			collisions.push_back({ collision, false });
+		}
+	}
+	const uint32_t collision_count = collisions.size();
+	for (uint32_t i = 0; i < collision_count; i++) {
+		if (collisions[i].collision->has_mirror()) {
+			collisions.push_back({ collisions[i].collision, true });
 		}
 	}
 

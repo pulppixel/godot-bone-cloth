@@ -53,10 +53,13 @@ void BoneClothCollision3DGizmoPlugin::_bind_methods() {
 // The engine's colors, read from the editor settings so a change there reaches ours too. The engine
 // switches its material on is_selected(), which an extension cannot reach; get_material() gives the same switch, the selected
 // lines on top of the mesh as the engine's selected shader puts them, the others faded and behind it.
+// The mirror's color is ours and fixed, as plugins fix their gizmo colors (Phantom Camera, Magica Cloth 2's GizmoUtility): orange,
+// the hue opposite the collision's light blue.
 BoneClothCollision3DGizmoPlugin::BoneClothCollision3DGizmoPlugin() {
 	Ref<EditorSettings> settings = EditorInterface::get_singleton()->get_editor_settings();
 	create_material("collision", settings->get_setting("editors/3d_gizmos/gizmo_colors/spring_bone_collision"), false, true);
 	create_material("inside_collision", settings->get_setting("editors/3d_gizmos/gizmo_colors/spring_bone_inside_collision"), false, true);
+	create_material("mirror_collision", Color(1.0, 0.7, 0.4), false, true);
 	create_handle_material("handles");
 }
 
@@ -283,8 +286,26 @@ void BoneClothCollision3DGizmoPlugin::_redraw(const Ref<EditorNode3DGizmo> &p_gi
 	if (lines.is_empty()) {
 		return;
 	}
+
 	p_gizmo->add_lines(lines, get_material(inside ? "inside_collision" : "collision", p_gizmo));
 	p_gizmo->add_collision_segments(lines);
+
+	// A mirrored node draws its shape on the mirror bone too, in the mirror's color, and a click there selects it; the handles stay on
+	// the node. KawaiiPhysics draws its mirrors in a material of their own too, but leaves them out of the click.
+	BoneClothCollision3D *collision = Object::cast_to<BoneClothCollision3D>(node);
+	Skeleton3D *skeleton = collision->get_skeleton();
+	if (skeleton && collision->has_mirror()) {
+		const Transform3D to_mirror = node->get_global_transform().affine_inverse() * skeleton->get_global_transform() * collision->mirror_pose;
+		PackedVector3Array mirror_lines;
+		mirror_lines.resize(lines.size());
+		for (int64_t i = 0; i < lines.size(); i++) {
+			mirror_lines[i] = to_mirror.xform(lines[i]);
+		}
+
+		p_gizmo->add_lines(mirror_lines, get_material("mirror_collision", p_gizmo));
+		p_gizmo->add_collision_segments(mirror_lines);
+	}
+
 	if (!handles.is_empty()) {
 		p_gizmo->add_handles(handles, get_material("handles"), PackedInt32Array());
 	}

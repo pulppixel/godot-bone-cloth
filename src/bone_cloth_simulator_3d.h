@@ -82,6 +82,12 @@ private:
 		float length = 0.0f;
 	};
 
+	// A collision at one of its two poses, its own or its mirror's.
+	struct PosedCollision {
+		const BoneClothCollision3D *collision = nullptr;
+		bool mirror = false;
+	};
+
 	LocalVector<Chain> chains;
 	LinkMode link_mode = LINK_MODE_NONE;
 	float link_stiffness = 0.0f;
@@ -120,12 +126,12 @@ private:
 	void _build_links(Skeleton3D *p_skeleton);
 	void _read_pose(Skeleton3D *p_skeleton, Chain &p_chain);
 	void _update_joint_settings(Chain &p_chain);
-	void _step(const Vector3 &p_gravity_direction, const Vector3 &p_move, const Quaternion &p_turn, const LocalVector<BoneClothCollision3D *> &p_collisions);
+	void _step(const Vector3 &p_gravity_direction, const Vector3 &p_move, const Quaternion &p_turn, const LocalVector<PosedCollision> &p_collisions);
 	void _follow_parent_chain(Chain &p_chain);
 	void _simulate(Chain &p_chain, const Vector3 &p_gravity_direction, const Vector3 &p_move, const Quaternion &p_turn);
 	void _solve_links();
-	void _collide(Chain &p_chain, const LocalVector<BoneClothCollision3D *> &p_collisions);
-	void _collide_links(const LocalVector<BoneClothCollision3D *> &p_collisions);
+	void _collide(Chain &p_chain, const LocalVector<PosedCollision> &p_collisions);
+	void _collide_links(const LocalVector<PosedCollision> &p_collisions);
 	void _restore_limits_and_lengths(Chain &p_chain);
 	void _update_display(Chain &p_chain, float p_follow);
 	void _write_rotations(Skeleton3D *p_skeleton, const Chain &p_chain);
