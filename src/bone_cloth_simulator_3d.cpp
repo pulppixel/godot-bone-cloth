@@ -181,6 +181,38 @@ void BoneClothSimulator3D::_build_links(Skeleton3D *p_skeleton) {
 	}
 }
 
+// As SpringBoneSimulator3D's setters: in the tree a path must lead to a child collision; while a scene loads the children are not there yet and it is only stored.
+bool BoneClothSimulator3D::_is_child_collision(const NodePath &p_node_path) const {
+	if (!is_inside_tree() || p_node_path.is_empty()) {
+		return true;
+	}
+
+	const Node *node = get_node_or_null(p_node_path);
+	return node && node->get_parent() == this && Object::cast_to<BoneClothCollision3D>(node);
+}
+
+// Which posed collisions push each chain, as SpringBoneSimulator3D's _find_collisions: every child collision but the excluded ones, or only the listed ones.
+// They keep the child order with the mirrors after, whatever order a list names them in, since the order changes the result. A mirror goes with its node.
+// Every frame, as the collisions are gathered, so a child added, removed or moved counts at once. A path that leads to no child collision is passed over.
+void BoneClothSimulator3D::_find_chain_collisions(const LocalVector<PosedCollision> &p_collisions) {
+	for (Chain &chain : chains) {
+		const bool all = chain.enable_all_child_collisions;
+		chain.collides.resize(p_collisions.size());
+		for (uint32_t c = 0; c < p_collisions.size(); c++) {
+			chain.collides[c] = all;
+		}
+
+		for (const NodePath &node_path : all ? chain.exclude_collisions : chain.collisions) {
+			const Node *node = get_node_or_null(node_path);
+			for (uint32_t c = 0; c < p_collisions.size(); c++) {
+				if (p_collisions[c].collision == node) {
+					chain.collides[c] = !all;
+				}
+			}
+		}
+	}
+}
+
 // Where the animation, and any modifier before this one, put the chain this frame.
 void BoneClothSimulator3D::_read_pose(Skeleton3D *p_skeleton, Chain &p_chain) {
 	for (Joint &joint : p_chain.joints) {
@@ -318,25 +350,32 @@ void BoneClothSimulator3D::_solve_links() {
 	}
 }
 
-// Every joint below the root against every collision, as KawaiiPhysics' collision pass.
+// Every joint below the root against the chain's collisions, as KawaiiPhysics' collision pass.
 // The roots follow the pose and are never pushed.
 void BoneClothSimulator3D::_collide(Chain &p_chain, const LocalVector<PosedCollision> &p_collisions) {
 	for (uint32_t i = 1; i < p_chain.joints.size(); i++) {
 		Joint &joint = p_chain.joints[i];
-		for (const PosedCollision &posed : p_collisions) {
-			joint.location = posed.collision->collide(joint.location, joint.radius, posed.mirror);
+		for (uint32_t c = 0; c < p_collisions.size(); c++) {
+			if (p_chain.collides[c]) {
+				joint.location = p_collisions[c].collision->collide(joint.location, joint.radius, p_collisions[c].mirror);
+			}
 		}
 	}
 }
 
-// Every link against every collision as a line, where KawaiiPhysics feeds its bridge points' collision back to the two ends.
+// Every link against the collisions as a line, where KawaiiPhysics feeds its bridge points' collision back to the two ends.
+// A link takes only the collisions both of its chains take: it moves both ends, and a collision left out of a chain never pushes that chain.
 void BoneClothSimulator3D::_collide_links(const LocalVector<PosedCollision> &p_collisions) {
 	for (const Link &link : links) {
-		Joint &joint_a = chains[link.chain_a].joints[link.depth];
-		Joint &joint_b = chains[link.chain_b].joints[link.depth];
+		Chain &chain_a = chains[link.chain_a];
+		Chain &chain_b = chains[link.chain_b];
+		Joint &joint_a = chain_a.joints[link.depth];
+		Joint &joint_b = chain_b.joints[link.depth];
 		const float link_radius = (joint_a.radius + joint_b.radius) * 0.5f;
-		for (const PosedCollision &posed : p_collisions) {
-			posed.collision->collide_segment(joint_a.location, joint_b.location, link_radius, posed.mirror);
+		for (uint32_t c = 0; c < p_collisions.size(); c++) {
+			if (chain_a.collides[c] && chain_b.collides[c]) {
+				p_collisions[c].collision->collide_segment(joint_a.location, joint_b.location, link_radius, p_collisions[c].mirror);
+			}
 		}
 	}
 }
@@ -441,6 +480,19 @@ void BoneClothSimulator3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_end_bone_direction", "index"), &BoneClothSimulator3D::get_end_bone_direction);
 	ClassDB::bind_method(D_METHOD("set_end_bone_length", "index", "length"), &BoneClothSimulator3D::set_end_bone_length);
 	ClassDB::bind_method(D_METHOD("get_end_bone_length", "index"), &BoneClothSimulator3D::get_end_bone_length);
+
+	ClassDB::bind_method(D_METHOD("set_enable_all_child_collisions", "index", "enabled"), &BoneClothSimulator3D::set_enable_all_child_collisions);
+	ClassDB::bind_method(D_METHOD("are_all_child_collisions_enabled", "index"), &BoneClothSimulator3D::are_all_child_collisions_enabled);
+	ClassDB::bind_method(D_METHOD("set_exclude_collision_path", "index", "collision", "node_path"), &BoneClothSimulator3D::set_exclude_collision_path);
+	ClassDB::bind_method(D_METHOD("get_exclude_collision_path", "index", "collision"), &BoneClothSimulator3D::get_exclude_collision_path);
+	ClassDB::bind_method(D_METHOD("set_exclude_collision_count", "index", "count"), &BoneClothSimulator3D::set_exclude_collision_count);
+	ClassDB::bind_method(D_METHOD("get_exclude_collision_count", "index"), &BoneClothSimulator3D::get_exclude_collision_count);
+	ClassDB::bind_method(D_METHOD("clear_exclude_collisions", "index"), &BoneClothSimulator3D::clear_exclude_collisions);
+	ClassDB::bind_method(D_METHOD("set_collision_path", "index", "collision", "node_path"), &BoneClothSimulator3D::set_collision_path);
+	ClassDB::bind_method(D_METHOD("get_collision_path", "index", "collision"), &BoneClothSimulator3D::get_collision_path);
+	ClassDB::bind_method(D_METHOD("set_collision_count", "index", "count"), &BoneClothSimulator3D::set_collision_count);
+	ClassDB::bind_method(D_METHOD("get_collision_count", "index"), &BoneClothSimulator3D::get_collision_count);
+	ClassDB::bind_method(D_METHOD("clear_collisions", "index"), &BoneClothSimulator3D::clear_collisions);
 
 	ClassDB::bind_method(D_METHOD("set_link_mode", "mode"), &BoneClothSimulator3D::set_link_mode);
 	ClassDB::bind_method(D_METHOD("get_link_mode"), &BoneClothSimulator3D::get_link_mode);
@@ -556,6 +608,16 @@ bool BoneClothSimulator3D::_set(const StringName &p_name, const Variant &p_value
 		}
 	} else if (what == "extend_end_bone") {
 		set_extend_end_bone(which, p_value);
+	} else if (what == "enable_all_child_collisions") {
+		set_enable_all_child_collisions(which, p_value);
+	} else if (what == "exclude_collision_count") {
+		set_exclude_collision_count(which, p_value);
+	} else if (what == "exclude_collisions") {
+		set_exclude_collision_path(which, path.get_slice("/", 3).to_int(), p_value);
+	} else if (what == "collision_count") {
+		set_collision_count(which, p_value);
+	} else if (what == "collisions") {
+		set_collision_path(which, path.get_slice("/", 3).to_int(), p_value);
 	} else {
 		return false;
 	}
@@ -592,6 +654,16 @@ bool BoneClothSimulator3D::_get(const StringName &p_name, Variant &r_ret) const 
 		}
 	} else if (what == "extend_end_bone") {
 		r_ret = is_end_bone_extended(which);
+	} else if (what == "enable_all_child_collisions") {
+		r_ret = are_all_child_collisions_enabled(which);
+	} else if (what == "exclude_collision_count") {
+		r_ret = get_exclude_collision_count(which);
+	} else if (what == "exclude_collisions") {
+		r_ret = get_exclude_collision_path(which, path.get_slice("/", 3).to_int());
+	} else if (what == "collision_count") {
+		r_ret = get_collision_count(which);
+	} else if (what == "collisions") {
+		r_ret = get_collision_path(which, path.get_slice("/", 3).to_int());
 	} else {
 		return false;
 	}
@@ -619,6 +691,21 @@ void BoneClothSimulator3D::_get_property_list(List<PropertyInfo> *p_list) const 
 		p_list->push_back(PropertyInfo(Variant::BOOL, path + String("extend_end_bone"), PROPERTY_HINT_NONE, "", extend_usage));
 		p_list->push_back(PropertyInfo(Variant::INT, path + String("end_bone/direction"), PROPERTY_HINT_ENUM, "+X,-X,+Y,-Y,+Z,-Z,FromParent", tip_usage));
 		p_list->push_back(PropertyInfo(Variant::FLOAT, path + String("end_bone/length"), PROPERTY_HINT_RANGE, "0,1,0.001,or_greater,suffix:m", tip_usage));
+
+		// SpringBoneSimulator3D's two lists, the one not in use hidden and not saved, as its _validate_dynamic_prop.
+		const Chain &chain = chains[i];
+		const bool all = chain.enable_all_child_collisions;
+		const uint32_t exclude_usage = all ? PROPERTY_USAGE_DEFAULT : PROPERTY_USAGE_NONE;
+		const uint32_t collision_usage = all ? PROPERTY_USAGE_NONE : PROPERTY_USAGE_DEFAULT;
+		p_list->push_back(PropertyInfo(Variant::BOOL, path + String("enable_all_child_collisions")));
+		p_list->push_back(PropertyInfo(Variant::INT, path + String("exclude_collision_count"), PROPERTY_HINT_NONE, "", all ? PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_ARRAY : PROPERTY_USAGE_NONE, String("Exclude Collisions,") + path + String("exclude_collisions/")));
+		for (uint32_t j = 0; j < chain.exclude_collisions.size(); j++) {
+			p_list->push_back(PropertyInfo(Variant::NODE_PATH, path + String("exclude_collisions/") + itos(j), PROPERTY_HINT_NODE_PATH_VALID_TYPES, "BoneClothCollision3D", exclude_usage));
+		}
+		p_list->push_back(PropertyInfo(Variant::INT, path + String("collision_count"), PROPERTY_HINT_NONE, "", all ? PROPERTY_USAGE_NONE : PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_ARRAY, String("Collisions,") + path + String("collisions/")));
+		for (uint32_t j = 0; j < chain.collisions.size(); j++) {
+			p_list->push_back(PropertyInfo(Variant::NODE_PATH, path + String("collisions/") + itos(j), PROPERTY_HINT_NODE_PATH_VALID_TYPES, "BoneClothCollision3D", collision_usage));
+		}
 	}
 }
 
@@ -768,6 +855,80 @@ void BoneClothSimulator3D::set_end_bone_length(int p_index, float p_length) {
 float BoneClothSimulator3D::get_end_bone_length(int p_index) const {
 	ERR_FAIL_INDEX_V(p_index, int(chains.size()), 0.0f);
 	return chains[p_index].end_bone_length;
+}
+
+void BoneClothSimulator3D::set_enable_all_child_collisions(int p_index, bool p_enabled) {
+	ERR_FAIL_INDEX(p_index, int(chains.size()));
+	chains[p_index].enable_all_child_collisions = p_enabled;
+	notify_property_list_changed();
+}
+
+bool BoneClothSimulator3D::are_all_child_collisions_enabled(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, int(chains.size()), false);
+	return chains[p_index].enable_all_child_collisions;
+}
+
+// Each list works only while it is the one in use, as the engine's; a call to the other prints why, where the engine passes over it silently.
+void BoneClothSimulator3D::set_exclude_collision_count(int p_index, int p_count) {
+	ERR_FAIL_INDEX(p_index, int(chains.size()));
+	ERR_FAIL_COND_MSG(!chains[p_index].enable_all_child_collisions, "Chain " + itos(p_index) + ": the exclude collision list is used only while enable_all_child_collisions is on.");
+	ERR_FAIL_COND(p_count < 0);
+	chains[p_index].exclude_collisions.resize(p_count);
+	notify_property_list_changed();
+}
+
+int BoneClothSimulator3D::get_exclude_collision_count(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, int(chains.size()), 0);
+	return chains[p_index].exclude_collisions.size();
+}
+
+void BoneClothSimulator3D::set_exclude_collision_path(int p_index, int p_collision, const NodePath &p_node_path) {
+	ERR_FAIL_INDEX(p_index, int(chains.size()));
+	ERR_FAIL_COND_MSG(!chains[p_index].enable_all_child_collisions, "Chain " + itos(p_index) + ": the exclude collision list is used only while enable_all_child_collisions is on.");
+	ERR_FAIL_INDEX(p_collision, int(chains[p_index].exclude_collisions.size()));
+	ERR_FAIL_COND_EDMSG(!_is_child_collision(p_node_path), "Collision must be a BoneClothCollision3D child of this BoneClothSimulator3D.");
+	chains[p_index].exclude_collisions[p_collision] = p_node_path;
+}
+
+NodePath BoneClothSimulator3D::get_exclude_collision_path(int p_index, int p_collision) const {
+	ERR_FAIL_INDEX_V(p_index, int(chains.size()), NodePath());
+	ERR_FAIL_INDEX_V(p_collision, int(chains[p_index].exclude_collisions.size()), NodePath());
+	return chains[p_index].exclude_collisions[p_collision];
+}
+
+void BoneClothSimulator3D::clear_exclude_collisions(int p_index) {
+	set_exclude_collision_count(p_index, 0);
+}
+
+void BoneClothSimulator3D::set_collision_count(int p_index, int p_count) {
+	ERR_FAIL_INDEX(p_index, int(chains.size()));
+	ERR_FAIL_COND_MSG(chains[p_index].enable_all_child_collisions, "Chain " + itos(p_index) + ": the collision list is used only while enable_all_child_collisions is off.");
+	ERR_FAIL_COND(p_count < 0);
+	chains[p_index].collisions.resize(p_count);
+	notify_property_list_changed();
+}
+
+int BoneClothSimulator3D::get_collision_count(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, int(chains.size()), 0);
+	return chains[p_index].collisions.size();
+}
+
+void BoneClothSimulator3D::set_collision_path(int p_index, int p_collision, const NodePath &p_node_path) {
+	ERR_FAIL_INDEX(p_index, int(chains.size()));
+	ERR_FAIL_COND_MSG(chains[p_index].enable_all_child_collisions, "Chain " + itos(p_index) + ": the collision list is used only while enable_all_child_collisions is off.");
+	ERR_FAIL_INDEX(p_collision, int(chains[p_index].collisions.size()));
+	ERR_FAIL_COND_EDMSG(!_is_child_collision(p_node_path), "Collision must be a BoneClothCollision3D child of this BoneClothSimulator3D.");
+	chains[p_index].collisions[p_collision] = p_node_path;
+}
+
+NodePath BoneClothSimulator3D::get_collision_path(int p_index, int p_collision) const {
+	ERR_FAIL_INDEX_V(p_index, int(chains.size()), NodePath());
+	ERR_FAIL_INDEX_V(p_collision, int(chains[p_index].collisions.size()), NodePath());
+	return chains[p_index].collisions[p_collision];
+}
+
+void BoneClothSimulator3D::clear_collisions(int p_index) {
+	set_collision_count(p_index, 0);
 }
 
 void BoneClothSimulator3D::set_link_mode(LinkMode p_mode) {
@@ -1016,12 +1177,15 @@ void BoneClothSimulator3D::_process_modification_with_delta(double p_delta) {
 			collisions.push_back({ collision, false });
 		}
 	}
+
 	const uint32_t collision_count = collisions.size();
 	for (uint32_t i = 0; i < collision_count; i++) {
 		if (collisions[i].collision->has_mirror()) {
 			collisions.push_back({ collisions[i].collision, true });
 		}
 	}
+
+	_find_chain_collisions(collisions);
 
 	if (p_delta > 0.0) {
 		// The skeleton's move since the last step, seen from where it is now (KawaiiPhysics' UpdateSkelCompMove).

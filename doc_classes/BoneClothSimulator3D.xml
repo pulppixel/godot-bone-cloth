@@ -8,7 +8,7 @@
 		Each chain runs from [method set_root_bone_name] down to [method set_end_bone_name]. The root bone follows the pose and the bones below it are simulated. A chain whose root bone is in an earlier chain branches from it; list the trunk before its branches.
 		With [member link_mode] set, neighboring chains are linked at every depth. The links keep the joints at their rest distance and collide as lines, so a collision cannot pass between two chains.
 		The values apply to every chain. Each damping curve scales its value along the chains, from [code]0.0[/code] at the root to [code]1.0[/code] at the farthest tip. Use a separate node for parts that need other values.
-		[BoneClothCollision3D] children of this node collide with all of its joints.
+		[BoneClothCollision3D] children of this node collide with every chain. A chain can leave some out or take only some, with [method set_enable_all_child_collisions]. A link collides only with the collisions both of its chains take, so a collision left out of a chain never pushes that chain.
 		The simulation runs in fixed steps of 1/60 s, at most 4 per frame.
 		[b]Note:[/b] Most methods in this class take an [code]index[/code] parameter. This parameter specifies which chain to use (e.g. [code]chains/&lt;index&gt;/root_bone_name[/code]).
 	</description>
@@ -20,6 +20,42 @@
 			<param index="0" name="preset" type="BoneClothPreset" />
 			<description>
 				Copies the values of [param preset] to this node. The chains, [member link_mode] and the collisions are not changed. Curves are copied, not shared.
+			</description>
+		</method>
+		<method name="are_all_child_collisions_enabled" qualifiers="const">
+			<return type="bool" />
+			<param index="0" name="index" type="int" />
+			<description>
+				Returns [code]true[/code] if all child [BoneClothCollision3D]s collide with the chain, except those in its exclude collision list.
+			</description>
+		</method>
+		<method name="clear_collisions">
+			<return type="void" />
+			<param index="0" name="index" type="int" />
+			<description>
+				Clears the chain's collision list when [method are_all_child_collisions_enabled] is [code]false[/code].
+			</description>
+		</method>
+		<method name="clear_exclude_collisions">
+			<return type="void" />
+			<param index="0" name="index" type="int" />
+			<description>
+				Clears the chain's exclude collision list when [method are_all_child_collisions_enabled] is [code]true[/code].
+			</description>
+		</method>
+		<method name="get_collision_count" qualifiers="const">
+			<return type="int" />
+			<param index="0" name="index" type="int" />
+			<description>
+				Returns the number of collisions in the chain's collision list.
+			</description>
+		</method>
+		<method name="get_collision_path" qualifiers="const">
+			<return type="NodePath" />
+			<param index="0" name="index" type="int" />
+			<param index="1" name="collision" type="int" />
+			<description>
+				Returns the node path of the [BoneClothCollision3D] at [param collision] in the chain's collision list.
 			</description>
 		</method>
 		<method name="get_end_bone" qualifiers="const">
@@ -48,6 +84,21 @@
 			<param index="0" name="index" type="int" />
 			<description>
 				Returns the end bone name of the chain.
+			</description>
+		</method>
+		<method name="get_exclude_collision_count" qualifiers="const">
+			<return type="int" />
+			<param index="0" name="index" type="int" />
+			<description>
+				Returns the number of collisions in the chain's exclude collision list.
+			</description>
+		</method>
+		<method name="get_exclude_collision_path" qualifiers="const">
+			<return type="NodePath" />
+			<param index="0" name="index" type="int" />
+			<param index="1" name="collision" type="int" />
+			<description>
+				Returns the node path of the [BoneClothCollision3D] at [param collision] in the chain's exclude collision list.
 			</description>
 		</method>
 		<method name="get_root_bone" qualifiers="const">
@@ -84,6 +135,33 @@
 				It is useful when the pose jumps, for example right after a call to [method AnimationPlayer.play] without blending.
 			</description>
 		</method>
+		<method name="set_collision_count">
+			<return type="void" />
+			<param index="0" name="index" type="int" />
+			<param index="1" name="count" type="int" />
+			<description>
+				Sets the number of collisions in the chain's collision list when [method are_all_child_collisions_enabled] is [code]false[/code].
+			</description>
+		</method>
+		<method name="set_collision_path">
+			<return type="void" />
+			<param index="0" name="index" type="int" />
+			<param index="1" name="collision" type="int" />
+			<param index="2" name="node_path" type="NodePath" />
+			<description>
+				Sets the node path of the [BoneClothCollision3D] at [param collision] in the chain's collision list when [method are_all_child_collisions_enabled] is [code]false[/code]. The node must be a child of this node.
+			</description>
+		</method>
+		<method name="set_enable_all_child_collisions">
+			<return type="void" />
+			<param index="0" name="index" type="int" />
+			<param index="1" name="enabled" type="bool" />
+			<description>
+				If [param enabled] is [code]true[/code], all child [BoneClothCollision3D]s collide with the chain, and the collisions in its exclude collision list ([method set_exclude_collision_path]) are left out.
+				If [param enabled] is [code]false[/code], only the collisions in its collision list ([method set_collision_path]) collide with the chain.
+				Either way the collisions run in the order of the children, not the order of a list. A collision's mirror ([member BoneClothCollision3D.mirror_bone_name]) goes with it.
+			</description>
+		</method>
 		<method name="set_end_bone">
 			<return type="void" />
 			<param index="0" name="index" type="int" />
@@ -114,6 +192,23 @@
 			<param index="1" name="bone_name" type="String" />
 			<description>
 				Sets the end bone name of the chain. The end bone must be the root bone or a descendant of it.
+			</description>
+		</method>
+		<method name="set_exclude_collision_count">
+			<return type="void" />
+			<param index="0" name="index" type="int" />
+			<param index="1" name="count" type="int" />
+			<description>
+				Sets the number of collisions in the chain's exclude collision list when [method are_all_child_collisions_enabled] is [code]true[/code].
+			</description>
+		</method>
+		<method name="set_exclude_collision_path">
+			<return type="void" />
+			<param index="0" name="index" type="int" />
+			<param index="1" name="collision" type="int" />
+			<param index="2" name="node_path" type="NodePath" />
+			<description>
+				Sets the node path of the [BoneClothCollision3D] at [param collision] in the chain's exclude collision list when [method are_all_child_collisions_enabled] is [code]true[/code]. The node must be a child of this node.
 			</description>
 		</method>
 		<method name="set_extend_end_bone">
