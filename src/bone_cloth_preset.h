@@ -1,6 +1,6 @@
-// 프리셋을 통해 치마나 머리카락 등의 값을 설정할 수 있다.
+// preset을 통해 치마나 머리카락 등의 값을 설정할 수 있다.
 // 이 작업을 위해 BoneClothSimulator3D의 설정 값을 Godot Resource로 저장한다.
-// 동작은 참조 복사가 아닌, 값 복사로 이루어진다.
+// 동작은 참조 복사가 아닌, 값 복사로 이루어진다. (chain, link mode, collision은 rig마다 다르기 때문에 preset에 넣지 않는다)
 
 #pragma once
 
@@ -13,7 +13,7 @@ using namespace godot;
 class BoneClothPreset : public Resource {
 	GDCLASS(BoneClothPreset, Resource)
 
-	// 프리셋의 기본 값은 BoneClothSimulator3D와 같다.
+	// 기본값은 BoneClothSimulator3D와 같다.
 	float link_stiffness = 0.0f;
 	float drag = 0.1f;
 	Ref<Curve> drag_damping_curve;
@@ -61,7 +61,7 @@ public:
 		"teleport_angle",
 	};
 
-	// curve는 복사본을 넘긴다. 해당 노드의 값을 바꿔도, 이 프리셋의 값이 바뀌지 않게 할 수 있다.
+	// curve는 복사본을 넘긴다. 대상 노드의 값을 바꿔도, 이 preset의 값이 바뀌지 않게 할 수 있다.
 	static Variant copy_value(const Variant &p_value);
 	void set_link_stiffness(float p_stiffness);
 	float get_link_stiffness() const;
