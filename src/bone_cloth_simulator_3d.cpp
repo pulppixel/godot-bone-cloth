@@ -5,7 +5,7 @@
 
 using namespace godot;
 
-// frame rate가 달라도 천이 자연스럽게 움직이도록, 1/60초짜리 `step`으로 계산한다.
+// frame rate가 달라도 천이 자연스럽게 움직이도록, 1/60초짜리 step으로 계산한다.
 // step은 한 frame에 4번까지 돈다. 느린 frame에서 연산이 계속 돌지 않게 하려는 것이다 (초과한 시간은 버린다).
 // drag, stiffness, link_stiffness는 step 1번 기준 값이다.
 static constexpr double STEP = 1.0 / 60.0;
@@ -14,7 +14,8 @@ static constexpr int MAX_STEPS = 4;
 // link의 부드러움 정도 (사실상 거의 늘어나지 않는다. 세기는 link_stiffness로 정할 수 있다).
 static constexpr float LINK_COMPLIANCE = 1e-9f;
 
-// *tip: end-bone의 바로 다음에 위치한 가상의 본, 시뮬레이션을 훨씬 더 자연스럽게 유지할 수 있다.
+// tip: end bone 뒤에 붙이는 가상의 joint.
+// bone은 아래 joint를 향해 회전하므로, 이 joint가 있어야 end bone도 회전한다.
 // tip joint를 end bone에서 어느 방향으로 붙일지 구한다. 결과는 end bone 자신의 축 기준이라, end bone이 돌면 tip도 같이 돈다.
 // +X 같은 축을 고르면 그 축을 쓰고, FromParent를 고르면 rest 자세에서 부모 bone이 end bone으로 향하는 방향을 그대로 이어 간다.
 static Vector3 end_bone_axis(Skeleton3D *p_skeleton, int p_end_bone, SkeletonModifier3D::BoneDirection p_direction) {
@@ -27,8 +28,8 @@ static Vector3 end_bone_axis(Skeleton3D *p_skeleton, int p_end_bone, SkeletonMod
 	return rest.basis.xform_inv(rest.origin).normalized();
 }
 
-// chain의 bone마다 joint를 만들고(tip 포함), 각 joint에 root부터의 rest 길이를 length_rate로 넣는다.
-// bone마다 길이가 다르기 때문에, bone 개수가 아니라 길이를 잰다.
+// chain의 bone마다 joint를 만들고(tip 포함), 각 joint에 root부터의 rest 길이를 length_rate에 넣는다.
+// bone마다 길이가 다르기 때문에, bone 개수가 아니라 길이를 잰다(아직 m 단위다. 아래 _build_branches가 0 ~ 1로 바꾼다).
 bool BoneClothSimulator3D::_build_joints(Skeleton3D *p_skeleton, Chain &p_chain) {
 	p_chain.joints.clear();
 	const int root = p_chain.root_bone;
@@ -68,7 +69,9 @@ bool BoneClothSimulator3D::_build_joints(Skeleton3D *p_skeleton, Chain &p_chain)
 	return true;
 }
 
-// 머리카락처럼 중간에서 갈라지는 bone을 쓰기 위해, 이웃한 chain을 찾아 연결한다.
+// 머리카락처럼 중간에서 갈라지는 bone을 쓰기 위해, 파생 chain(root bone이 다른 chain의 joint인 chain)을 찾아 parent chain에 연결한다.
+// 그다음 length_rate를 0 ~ 1로 바꾼다. 파생 chain은 parent joint의 길이에서 이어 재고, parent chain과 함께 가장 긴 끝으로 나눈다.
+// 그래야 갈라진 곳에서 curve 값이 끊기지 않는다(예: Hair2에서 갈라진 HairB1은 Hair3과 비슷한 값).
 void BoneClothSimulator3D::_build_branches() {
 	LocalVector<uint32_t> tree;
 	tree.resize(chains.size());
@@ -228,8 +231,8 @@ void BoneClothSimulator3D::_read_pose(Skeleton3D *p_skeleton, Chain &p_chain) {
 	}
 }
 
-// inspector에서 갓 만든 curve는 point가 없어 0으로 읽힌다.
-// 이는 오류가 발생할 수 있으니, 기본값인 1.0f로 반환한다.
+// curve에서 p_rate 위치의 값을 읽는다. curve가 없으면 1.0f를 반환한다.
+// inspector에서 갓 만든 curve는 point가 없어 0으로 읽힌다. 그대로 곱하면 inspector 값과 상관없이 0이 되므로, 이때도 1.0f를 반환한다.
 static float sample_curve(const Ref<Curve> &p_curve, float p_rate) {
 	return p_curve.is_valid() && p_curve->get_point_count() > 0 ? p_curve->sample_baked(p_rate) : 1.0f;
 }
@@ -246,7 +249,7 @@ void BoneClothSimulator3D::_update_joint_settings(Chain &p_chain) {
 	}
 }
 
-// step 1번의 처리 순서. 
+// step 1번의 처리 순서.
 void BoneClothSimulator3D::_step(const Vector3 &p_gravity_direction, const Vector3 &p_move, const Quaternion &p_turn, const LocalVector<PosedCollision> &p_collisions) {
 	// root는 몸에 붙은 joint라 물리 계산 없이 pose를 따라간다. 파생된 chain의 root는 _follow_parent_chain에서 옮긴다.
 	for (Chain &chain : chains) {
@@ -344,7 +347,7 @@ void BoneClothSimulator3D::_solve_links() {
 	}
 }
 
-// joint마다 `collides`가 true인 것만 `collide()`로 밀어낸다 (root 제외).
+// joint마다, 이 chain의 collides가 true인 collision으로만 밀어낸다 (root 제외).
 void BoneClothSimulator3D::_collide(Chain &p_chain, const LocalVector<PosedCollision> &p_collisions) {
 	for (uint32_t i = 1; i < p_chain.joints.size(); i++) {
 		Joint &joint = p_chain.joints[i];
@@ -356,8 +359,9 @@ void BoneClothSimulator3D::_collide(Chain &p_chain, const LocalVector<PosedColli
 	}
 }
 
-// 치마의 joint 두 개가 벌어져있을 떄, 두 포인트가 닿지 않는 사이의 천에서는 다리가 뚫고 나올 수 있다.
-// 그래서 두 joint를 잇는 선을 다리 밖으로 밀어준다 (두 chain의 collides가 모두 true인 경우만 해당)
+// 치마의 joint 두 개가 벌어져 있을 때, 두 joint가 닿지 않는 사이의 천에서는 다리가 뚫고 나올 수 있다.
+// 그래서 두 joint를 잇는 선을 다리 밖으로 밀어 준다.
+// 두 chain의 collides가 모두 true인 collision만 쓴다(한쪽 chain에서 뺀 collision이 link를 거쳐 그 chain을 밀지 않게).
 void BoneClothSimulator3D::_collide_links(const LocalVector<PosedCollision> &p_collisions) {
 	for (const Link &link : links) {
 		Chain &chain_a = chains[link.chain_a];
@@ -398,6 +402,7 @@ void BoneClothSimulator3D::_restore_limits_and_lengths(Chain &p_chain) {
 		const Vector3 pose_vector = joint.pose_location - parent.pose_location;
 
 		// inspector의 limit_angle이 0이면 각도 제한을 비활성화한다.
+		// curve 때문에 0이 된 joint는 비활성화하지 않고 pose 방향에 고정한다.
 		Vector3 offset = joint.location - parent.location;
 		if (limit_angle > 0.0f) {
 			offset = limit_to_cone(offset, pose_vector, joint.limit_angle);
@@ -407,7 +412,7 @@ void BoneClothSimulator3D::_restore_limits_and_lengths(Chain &p_chain) {
 	}
 }
 
-// step이 frame보다 드물 때(슬로 모션, 60Hz보다 빠른 모니터) joint가 멈췄다 튀지 않고!! 대신 매 frame 움직이게 한다.
+// step이 frame보다 드물 때(슬로 모션, 60Hz보다 빠른 모니터) joint가 멈췄다 튀지 않고 매 frame 움직이게 한다.
 // 지난 step의 이동으로 다음 step 위치를 예측하고, 이번 frame 시간 비율만큼 그쪽으로 옮긴다.
 // 예측은 실제와 다를 수 있으므로, 화면 위치에도 root부터 각도 제한과 bone 길이를 다시 맞춘다.
 void BoneClothSimulator3D::_update_display(Chain &p_chain, float p_follow) {
@@ -430,10 +435,12 @@ void BoneClothSimulator3D::_update_display(Chain &p_chain, float p_follow) {
 	}
 }
 
-// 지금까지 계산한 점(joint)의 위치를 바탕으로 본격 계산하는 곳이다.
-// mesh는 bone 회전으로 움직이므로, joint 위치를 bone 회전으로 바꿔 skeleton에 넣는다.
+// frame의 마지막 단계. joint 위치를 bone 회전으로 바꿔 skeleton에 넣는다(mesh는 bone 회전으로 움직인다).
+// bone마다 위 bone이 돈 만큼 먼저 돌고, 남은 각만큼 더 돌아서 아래 joint를 향한다.
+// pose 방향에서 바로 돌리면, 머리카락이 머리 위로 넘어갈 때(180도 근처) bone이 frame마다 비틀린다.
+// root부터 차례로 넣어야 한다(set_bone_global_pose가 부모 bone의 pose를 쓴다).
 void BoneClothSimulator3D::_write_rotations(Skeleton3D *p_skeleton, const Chain &p_chain) {
-	Quaternion turn; // root에서부터 내려오며 누적된 회전. 기본 0.
+	Quaternion turn; // 위 bone들이 pose보다 더 회전한 양. 처음은 회전 없음.
 	for (uint32_t i = p_chain.parent_chain >= 0 ? 2 : 1; i < p_chain.joints.size(); i++) {
 		const Joint &joint = p_chain.joints[i];
 		const Joint &parent = p_chain.joints[i - 1];
@@ -1183,7 +1190,7 @@ void BoneClothSimulator3D::_process_modification_with_delta(double p_delta) {
 		step_time -= step_count * STEP;
 
 		// 캐릭터가 움직일 때 천을 얼마나 뒤로 휘날릴지 정한다.
-		// inertia가 1이면 이동을 모두 반영하여 뒤로 휘날리고,, 0이면 skeleton과 동일하게 움직인다.
+		// inertia가 1이면 이동을 모두 반영하여 뒤로 휘날리고, 0이면 skeleton과 동일하게 움직인다.
 		const float share = float(STEP / elapsed);
 		Vector3 step_move = (move_location * share * inertia).limit_length(movement_speed_limit * float(STEP));
 		Quaternion step_turn = Quaternion().slerp(move_rotation, share * inertia);

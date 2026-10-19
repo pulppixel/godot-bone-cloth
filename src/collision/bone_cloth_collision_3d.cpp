@@ -34,7 +34,8 @@ void BoneClothCollision3D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::QUATERNION, "rotation_offset"), "set_rotation_offset", "get_rotation_offset");
 }
 
-// skeleton의 bone 목록에서 고른다 (연필 버튼으로 직접 입력도 된다).
+// 인스펙터 표시 형식을 정한다. bone 이름 두 개는 skeleton의 bone 목록에서 고른다(연필 버튼으로 직접 입력도 된다).
+// bone이 없으면 mirror_bone_name을 숨기되 저장은 한다(저장까지 막으면 모든 collision에 빈 이름이 저장된다).
 void BoneClothCollision3D::_validate_property(PropertyInfo &p_property) const {
 	if (Engine::get_singleton()->is_editor_hint() && (p_property.name == StringName("bone_name") || p_property.name == StringName("mirror_bone_name"))) {
 		Skeleton3D *skeleton = get_skeleton();
@@ -66,6 +67,8 @@ void BoneClothCollision3D::_notification(int p_what) {
 	}
 }
 
+// 이름을 먼저 복사해 둔다. set_bone_name(bone_name)처럼 자기 값을 넘기면 이름이 지워진다.
+// (godot-cpp의 String 대입이 자기 자신을 검사하지 않는다)
 void BoneClothCollision3D::_validate_bone_name() {
 	const String name = bone_name;
 	if (!name.is_empty()) {

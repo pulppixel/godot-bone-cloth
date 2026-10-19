@@ -77,10 +77,11 @@ private:
 
 		/*
 			Hair1 - Hair2 - Hair3 - Hair4   (chain 0)
-					  |				    
-					  +-- HairB1 - HairB2     (chain 1, root bone: Hair2)
+					  |
+					  +-- HairB1 - HairB2   (chain 1, root bone: Hair2)
 
-			위처럼 Chain 중간에서 파생된 Chain이면, 파생된 Chain과 joint의 번호를 저장, 아니면 -1
+			파생 chain(다른 chain 중간에서 갈라진 chain)이면, 갈라진 곳의 chain 번호와 joint 번호를 저장한다. 아니면 parent_chain은 -1.
+			위 그림이면 chain 1의 parent_chain = 0, parent_joint = 1(Hair2).
 			parent joint(Hair2)는 흔들리기 때문에, 파생된 chain의 root는 그 joint(Hair2)의 위치를 따라간다.
 		*/
 		int parent_chain = -1;
@@ -94,17 +95,18 @@ private:
 
 		/*
 			BoneClothSimulator3D
-			├ Thighs
-			├ Chest
-			└ Calves
+			 +-- Thighs
+			 +-- Chest
+			 +-- Calves
 
-			만약, exclude_collisions에 Thights를 넣었다면 아래와 같이 된다.
+			만약 exclude_collisions에 Thighs를 넣었다면 아래와 같이 된다.
 
-			칸 번호:   0       1       2
-			list:     Thighs  Chest  Calves
-			collides: false   true   true
+			0       1       2        <- 칸 번호
+			Thighs  Chest   Calves   <- 자식 collision
+			false   true    true     <- collides
 
 			여기서 true인 collision만 충돌시킨다는 뜻이다.
+			자식 칸 뒤에는 mirror가 있는 collision마다 칸이 하나씩 더 붙는다.
 		*/
 		LocalVector<bool> collides;
 	};
@@ -119,11 +121,11 @@ private:
 					|          |          |
 		depth 3     a3 ------- b3 ------- c3
 
-		위 그림에서 |는 bone(chain으로 연결되는 부모-자식 관계)
-		----가 바로 Link이다.
+		위 그림에서 |는 bone(chain으로 연결되는 부모-자식 관계),
+		----가 바로 Link이다. Loop면 c1과 a1도 잇는다.
 
 		Link는 chain끼리 연결하는 역할을 한다 (이게 없다면 천이 벌어지고, 그 틈으로 body가 뚫고 나오게 된다).
-		즉, 여러 chain이 한 면처럼 움직일 수 있도록, 이웃한 두 chain의 "동일한 depth를 가진 joint를 연결한 선 하나"
+		즉, 여러 chain이 한 면처럼 움직일 수 있도록, 이웃한 두 chain의 "동일한 depth를 가진 joint를 연결한 선 하나"다.
 	*/
 	struct Link {
 		uint32_t chain_a = 0;

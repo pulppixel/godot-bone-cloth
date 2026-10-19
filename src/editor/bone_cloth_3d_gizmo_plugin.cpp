@@ -19,7 +19,7 @@
 using namespace godot;
 
 // 호 그리기. p_center 중심, p_from ~ p_to 각도(0: p_axis_x 쪽, 1/4바퀴: p_axis_y 쪽).
-// 1/16바퀴마다 점을 찍고, 점 개수를 짝수로 맞춘다.
+// 1/16바퀴마다 점을 찍고, 점 개수를 짝수로 맞춘다(호 가운데에 점이 와야 캡슐 끝이 꼭대기까지 그려진다).
 static void add_arc(PackedVector3Array &r_lines, const Vector3 &p_center, const Vector3 &p_axis_x, const Vector3 &p_axis_y, float p_radius, float p_from, float p_to) {
 	static constexpr float STEP_ANGLE = (float)Math::TAU / 16.0f;
 
@@ -122,7 +122,7 @@ float BoneClothCollision3DGizmoPlugin::_get_distance_along(const Vector3 &p_from
 }
 
 // handle을 끌고 드래그하는 동안, 크기를 바꿔준다.
-// height handle: 한쪽을 끄는 동안, 반대쪽 끝은 가만히 둔다. ALt를 누르면 양쪽 끝이 같이 움직인다.
+// height handle: 한쪽을 끄는 동안, 반대쪽 끝은 가만히 둔다. Alt를 누르면 양쪽 끝이 같이 움직인다.
 // 그리드 스냅은 하지 않는다 (GDExtension은 스냅 설정을 읽지 못하기 때문).
 void BoneClothCollision3DGizmoPlugin::_set_handle(const Ref<EditorNode3DGizmo> &p_gizmo, int32_t p_handle_id, bool p_secondary, Camera3D *p_camera, const Vector2 &p_screen_pos) {
 	static constexpr float MIN_SIZE = 0.001f;
@@ -408,6 +408,7 @@ static bool is_simulator_selected(BoneClothSimulator3D *p_simulator) {
 }
 
 // simulator gizmo 그리기.
+// 각도 제한 원뿔은 길이가 bone의 절반, 선이 4개다(길면 치마의 원뿔끼리 겹쳐서 치마 모양이 안 보인다).
 void BoneClothSimulator3DGizmoPlugin::_redraw(const Ref<EditorNode3DGizmo> &p_gizmo) {
 	static constexpr float CONE_SCALE = 0.5f;
 	static constexpr int CONE_LINE_COUNT = 4;

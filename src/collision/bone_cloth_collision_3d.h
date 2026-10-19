@@ -21,7 +21,7 @@ class BoneClothCollision3D : public Node3D {
 	Vector3 position_offset;
 	Quaternion rotation_offset;
 
-	// sync_pose가 노드를 옮기는 중이면 true.
+	// sync_pose가 노드를 옮기는 중이면 true. 이 이동은 사용자가 옮긴 것이 아니므로 offset에 저장하지 않는다.
 	bool syncing = false;
 
 	void _validate_bone_name();
