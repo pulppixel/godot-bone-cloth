@@ -1156,23 +1156,31 @@ PackedStringArray BoneClothSimulator3D::_get_configuration_warnings() const {
 	if (skeleton) {
 		const Vector3 scale = skeleton->get_global_transform().basis.get_scale();
 		if (!(Math::is_zero_approx(scale.x - scale.y) && Math::is_zero_approx(scale.y - scale.z))) {
-			warnings.push_back(vformat("The Skeleton3D has a non-uniform scale %s. The cloth is simulated in the skeleton's space and moves differently when its axes are scaled unequally. Make the scale of the Skeleton3D and its parents uniform (the same on all axes).", scale));
+			warnings.push_back(vformat("The Skeleton3D has a non-uniform scale %s, so the cloth moves differently. Make the scale of the Skeleton3D and its parents uniform (the same on all axes).", scale));
 		}
 	}
 
 	for (uint32_t c = 0; c < chains.size(); c++) {
 		const Chain &chain = chains[c];
+		// 한 chain의 문제는 모아서 한 줄로 알린다.
+		PackedStringArray problems;
 		if (skeleton) {
-			if (chain.root_bone < 0) {
-				warnings.push_back(chain.root_bone_name.is_empty() ? vformat("Chain %d: no root bone.", c) : vformat("Chain %d: root bone '%s' is not in the skeleton.", c, chain.root_bone_name));
+			// 막 더한 chain처럼 둘 다 비어 있으면 한 줄로 알린다.
+			const bool no_root = chain.root_bone_name.is_empty();
+			const bool no_end = chain.end_bone_name.is_empty();
+			if (no_root || no_end) {
+				problems.push_back(vformat("pick %s", no_root && no_end ? "a root bone and an end bone" : (no_root ? "a root bone" : "an end bone")));
 			}
-			if (chain.end_bone < 0) {
-				warnings.push_back(chain.end_bone_name.is_empty() ? vformat("Chain %d: no end bone.", c) : vformat("Chain %d: end bone '%s' is not in the skeleton.", c, chain.end_bone_name));
+			if (!no_root && chain.root_bone < 0) {
+				problems.push_back(vformat("root bone '%s' is not in the skeleton", chain.root_bone_name));
+			}
+			if (!no_end && chain.end_bone < 0) {
+				problems.push_back(vformat("end bone '%s' is not in the skeleton", chain.end_bone_name));
 			}
 
 			const bool has_path = is_on_bone_path(skeleton, chain.root_bone, chain.end_bone, chain.root_bone);
 			if (chain.root_bone >= 0 && chain.end_bone >= 0 && !has_path) {
-				warnings.push_back(vformat("Chain %d: end bone '%s' is neither root bone '%s' nor under it.", c, chain.end_bone_name, chain.root_bone_name));
+				problems.push_back(vformat("end bone '%s' is neither root bone '%s' nor under it", chain.end_bone_name, chain.root_bone_name));
 			}
 
 			// root bone이 뒤 chain의 중간에 있고 앞 chain 어디에도 없으면 경고한다(_build_branches는 앞 chain에서만 찾는다).
@@ -1185,7 +1193,7 @@ PackedStringArray BoneClothSimulator3D::_get_configuration_warnings() const {
 			for (uint32_t other = c + 1; other < chains.size() && has_path && !has_trunk; other++) {
 				const Chain &later = chains[other];
 				if (later.root_bone != chain.root_bone && is_on_bone_path(skeleton, later.root_bone, later.end_bone, chain.root_bone)) {
-					warnings.push_back(vformat("Chain %d: root bone '%s' is on chain %d. Move chain %d above chain %d so that it branches from it.", c, chain.root_bone_name, other, other, c));
+					problems.push_back(vformat("root bone '%s' is on chain %d, so move chain %d above this chain", chain.root_bone_name, other, other));
 					break;
 				}
 			}
@@ -1196,8 +1204,12 @@ PackedStringArray BoneClothSimulator3D::_get_configuration_warnings() const {
 		const LocalVector<NodePath> &node_paths = all ? chain.exclude_collisions : chain.collisions;
 		for (const NodePath &node_path : node_paths) {
 			if (!_is_child_collision(node_path)) {
-				warnings.push_back(vformat("Chain %d: %s '%s' is not a BoneClothCollision3D child of this node.", c, all ? "exclude collision" : "collision", node_path));
+				problems.push_back(vformat("%s '%s' is not a BoneClothCollision3D child of this node", all ? "exclude collision" : "collision", node_path));
 			}
+		}
+
+		if (!problems.is_empty()) {
+			warnings.push_back(vformat("Chain %d: %s.", c, String("; ").join(problems)));
 		}
 	}
 
