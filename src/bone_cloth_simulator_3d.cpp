@@ -764,7 +764,7 @@ void BoneClothSimulator3D::set_root_bone_name(int p_index, const String &p_bone_
 	chains[p_index].root_bone_name = p_bone_name;
 	Skeleton3D *skeleton = get_skeleton();
 	if (skeleton) {
-		// 스크립트에서 이름을 잘못 넣어도, 에러임을 알 수 있게 한 번 출력한다
+		// 스크립트에서 이름을 잘못 넣어도, 에러임을 알 수 있게 한 번 출력한다.
 		// 에디터에서는 configuration warning도 뜬다.
 		const int found = skeleton->find_bone(p_bone_name);
 		if (found < 0 && !p_bone_name.is_empty()) {
