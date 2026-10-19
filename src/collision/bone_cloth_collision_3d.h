@@ -32,7 +32,7 @@ class BoneClothCollision3D : public Node3D {
 
 protected:
 	// 충돌에 쓰는 위치와 회전(skeleton 공간).
-	// 모양의 크기(m)가 skeleton 단위가 되도록 한다.
+	// units_per_meter만큼 scale도 들어 있어서, 모양의 크기(m)가 skeleton 단위가 된다.
 	Transform3D pose;
 	// mirror bone 쪽 모양의 위치와 회전.
 	Transform3D mirror_pose;

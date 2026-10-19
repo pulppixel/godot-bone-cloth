@@ -209,8 +209,8 @@ Quaternion BoneClothCollision3D::get_rotation_offset() const {
 // p_units로 offset을 skeleton 단위로 바꾸고, 모양의 크기도 같은 배율로 커지도록 scale을 넣는다(예: cm rig는 100배).
 static Transform3D get_pose_on_bone(const Skeleton3D *p_skeleton, int p_bone, const Vector3 &p_position_offset, const Quaternion &p_rotation_offset, float p_units) {
 	Transform3D result = p_skeleton->get_bone_global_pose(p_bone);
-	result.origin += result.basis.get_rotation_quaternion().xform(p_position_offset);
-	result.basis *= Basis(p_rotation_offset);
+	result.origin += result.basis.get_rotation_quaternion().xform(p_position_offset * p_units);
+	result.basis *= Basis(p_rotation_offset) * p_units;
 	return result;
 }
 
