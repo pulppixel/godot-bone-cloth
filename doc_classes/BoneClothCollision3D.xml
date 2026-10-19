@@ -5,7 +5,7 @@
 	</brief_description>
 	<description>
 		A collision has an effect only as a child of [BoneClothSimulator3D]. It pushes out the simulator's joints and links, in scene tree order.
-		If [member bone] is set, the collision follows the bone's pose with [member position_offset] and [member rotation_offset]. Moving or rotating the collision updates the offsets. Scale is ignored; use the shape's size properties instead.
+		If [member bone] is set, the collision follows the bone's pose with [member position_offset] and [member rotation_offset]. Moving or rotating the collision updates the offsets. The sizes and [member position_offset] are in meters, as the values of [BoneClothSimulator3D] are, and the collision's scale is set to match; a scale set by hand is ignored. Without [member bone], the shape uses the node's own transform, scale included.
 		If [member mirror_bone_name] is also set, the same shape collides a second time on that bone, mirrored from left to right. The mirrored shapes push after all the collisions, in the same order.
 	</description>
 	<tutorials>

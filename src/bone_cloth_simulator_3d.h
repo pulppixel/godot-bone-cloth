@@ -162,6 +162,10 @@ private:
 	float teleport_distance = 0.5f;
 	float teleport_angle = Math::deg_to_rad(90.0f);
 
+	// inspector의 길이 값(m)에 곱해서 skeleton 단위로 바꾸는 배율. 매 frame _get_units_per_meter로 구한다.
+	// 예: Armature의 scale이 0.01인 cm rig는 100이다(radius 0.03 m -> skeleton 단위 3).
+	float units_per_meter = 1.0f;
+
 	LocalVector<Link> links;
 	bool joints_dirty = true;
 	bool needs_reset = true;
@@ -169,11 +173,13 @@ private:
 	Transform3D prev_skeleton_transform;
 	Vector3 prev_step_move;
 	Quaternion prev_step_turn;
+
 	// 급출발, 급정지 때 천이 튀지 않도록, 천이 감지하는 캐릭터 속도를 실제 속도 쪽으로 자연스럽게 한다.
 	// 캐릭터가 회전해도, 천의 방향이 같이 돌지 않도록 world 공간으로 저장한다.
 	Vector3 smoothing_velocity;
 
 	// State
+	float _get_units_per_meter(const Skeleton3D *p_skeleton) const;
 	bool _build_joints(Skeleton3D *p_skeleton, Chain &p_chain);
 	void _build_branches();
 	void _build_links(Skeleton3D *p_skeleton);
@@ -273,6 +279,7 @@ public:
 	float get_teleport_angle() const;
 
 	void reset();
+	float get_units_per_meter() const;
 	PackedStringArray _get_configuration_warnings() const override;
 	void _validate_bone_names() override;
 	void _process_modification_with_delta(double p_delta) override;

@@ -205,8 +205,9 @@ Quaternion BoneClothCollision3D::get_rotation_offset() const {
 	return rotation_offset;
 }
 
-// bone의 이번 프레임 pose에 offset을 더한 위치와 회전(skeleton 공간). offset은 bone 방향 기준.
-static Transform3D get_pose_on_bone(const Skeleton3D *p_skeleton, int p_bone, const Vector3 &p_position_offset, const Quaternion &p_rotation_offset) {
+// bone의 이번 프레임 pose에 offset을 더한 위치와 회전(skeleton 공간). offset은 bone 방향 기준, m 단위다.
+// p_units로 offset을 skeleton 단위로 바꾸고, 모양의 크기도 같은 배율로 커지도록 scale을 넣는다(예: cm rig는 100배).
+static Transform3D get_pose_on_bone(const Skeleton3D *p_skeleton, int p_bone, const Vector3 &p_position_offset, const Quaternion &p_rotation_offset, float p_units) {
 	Transform3D result = p_skeleton->get_bone_global_pose(p_bone);
 	result.origin += result.basis.get_rotation_quaternion().xform(p_position_offset);
 	result.basis *= Basis(p_rotation_offset);
@@ -224,11 +225,13 @@ void BoneClothCollision3D::sync_pose() {
 
 	const Transform3D skeleton_global = skeleton->get_global_transform();
 	if (bone >= 0) {
-		pose = get_pose_on_bone(skeleton, bone, position_offset, rotation_offset);
+		units_per_meter = Object::cast_to<BoneClothSimulator3D>(get_parent())->get_units_per_meter();
+		pose = get_pose_on_bone(skeleton, bone, position_offset, rotation_offset, units_per_meter);
 		syncing = true;
 		set_global_transform(skeleton_global * pose);
 		syncing = false;
 	} else {
+		units_per_meter = 1.0f;
 		pose = skeleton_global.affine_inverse() * get_global_transform();
 	}
 
@@ -241,7 +244,7 @@ void BoneClothCollision3D::sync_pose() {
 	const Quaternion rotation = rest * rotation_offset;
 	const Vector3 mirrored_position(-position.x, position.y, position.z);
 	const Quaternion mirrored_rotation(rotation.x, -rotation.y, -rotation.z, rotation.w);
-	mirror_pose = get_pose_on_bone(skeleton, mirror_bone, mirror_rest.inverse().xform(mirrored_position), mirror_rest.inverse() * mirrored_rotation);
+	mirror_pose = get_pose_on_bone(skeleton, mirror_bone, mirror_rest.inverse().xform(mirrored_position), mirror_rest.inverse() * mirrored_rotation, units_per_meter);
 	update_gizmos();
 }
 
@@ -263,18 +266,27 @@ void BoneClothCollision3D::_take_offsets_from_transform() {
 		return;
 	}
 
-	position_offset = bone_pose.basis.get_rotation_quaternion().inverse().xform(moved.origin - bone_pose.origin);
+	position_offset = bone_pose.basis.get_rotation_quaternion().inverse().xform(moved.origin - bone_pose.origin) / units_per_meter;
 	rotation_offset = (bone_pose.basis.inverse() * moved.basis).get_rotation_quaternion();
 	sync_pose();
 }
 
-// simulator가 호출할 충돌 함수. p_mirror면 mirror 쪽으로 충돌한다.
+// 모양 함수는 크기 값(m)을 그대로 쓴다.
+// 그래서 공간 전체를 m 단위로 줄여서(1 / units_per_meter배) 계산하고, 결과를 되돌린다.
 Vector3 BoneClothCollision3D::collide(const Vector3 &p_point, float p_radius, bool p_mirror) const {
-	return _collide(p_mirror ? mirror_pose : pose, p_point, p_radius);
+	const float meters = 1.0f / units_per_meter;
+	const Transform3D &shape = p_mirror ? mirror_pose : pose;
+	return _collide(Transform3D(shape.basis * meters, shape.origin * meters), p_point * meters, p_radius * meters) * units_per_meter;
 }
 
 void BoneClothCollision3D::collide_segment(Vector3 &r_a, Vector3 &r_b, float p_radius, bool p_mirror) const {
-	_collide_segment(p_mirror ? mirror_pose : pose, r_a, r_b, p_radius);
+	const float meters = 1.0f / units_per_meter;
+	const Transform3D &shape = p_mirror ? mirror_pose : pose;
+	r_a *= meters;
+	r_b *= meters;
+	_collide_segment(Transform3D(shape.basis * meters, shape.origin * meters), r_a, r_b, p_radius * meters);
+	r_a *= units_per_meter;
+	r_b *= units_per_meter;
 }
 
 // base class는 모양이 없어서 아무것도 밀지 않는다(구, 캡슐, 평면이 이 함수를 다시 쓴다).

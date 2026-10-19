@@ -30,7 +30,7 @@ static Vector3 end_bone_axis(Skeleton3D *p_skeleton, int p_end_bone, SkeletonMod
 }
 
 // chain의 bone마다 joint를 만들고(tip 포함), 각 joint에 root부터의 rest 길이를 length_rate에 넣는다.
-// bone마다 길이가 다르기 때문에, bone 개수가 아니라 길이를 잰다(아직 m 단위다. 아래 _build_branches가 0 ~ 1로 바꾼다).
+// bone마다 길이가 다르기 때문에, bone 개수가 아니라 길이를 잰다(아직 skeleton 단위 길이다. 아래 _build_branches가 0 ~ 1로 바꾼다).
 bool BoneClothSimulator3D::_build_joints(Skeleton3D *p_skeleton, Chain &p_chain) {
 	p_chain.joints.clear();
 	const int root = p_chain.root_bone;
@@ -70,7 +70,7 @@ bool BoneClothSimulator3D::_build_joints(Skeleton3D *p_skeleton, Chain &p_chain)
 	for (uint32_t i = 1; i < p_chain.joints.size(); i++) {
 		Joint &joint = p_chain.joints[i];
 		const Vector3 parent_rest = p_skeleton->get_bone_global_rest(p_chain.joints[i - 1].bone).origin;
-		length += joint.bone >= 0 ? (p_skeleton->get_bone_global_rest(joint.bone).origin - parent_rest).length() : p_chain.end_bone_length;
+		length += joint.bone >= 0 ? (p_skeleton->get_bone_global_rest(joint.bone).origin - parent_rest).length() : p_chain.end_bone_length * units_per_meter;
 		joint.length_rate = length;
 	}
 
@@ -161,7 +161,7 @@ void BoneClothSimulator3D::_build_links(Skeleton3D *p_skeleton) {
 		}
 
 		const Transform3D end = p_skeleton->get_bone_global_rest(p_chain.joints[p_depth - 1].bone);
-		return end.origin + end.basis.orthonormalized().xform(p_chain.end_axis) * p_chain.end_bone_length;
+		return end.origin + end.basis.orthonormalized().xform(p_chain.end_axis) * (p_chain.end_bone_length * units_per_meter);
 	};
 
 	// Loop라도 chain이 2개면 마지막과 처음은 이미 이어져있다. 그래서 3개 이상일 때만 마지막과 처음을 잇는다.
@@ -231,7 +231,7 @@ void BoneClothSimulator3D::_read_pose(Skeleton3D *p_skeleton, Chain &p_chain) {
 	Joint &tip = p_chain.joints[p_chain.joints.size() - 1];
 	if (tip.bone < 0) {
 		const Joint &end = p_chain.joints[p_chain.joints.size() - 2];
-		tip.current_pose_location = end.current_pose_location + end.pose_basis.orthonormalized().xform(p_chain.end_axis) * p_chain.end_bone_length;
+		tip.current_pose_location = end.current_pose_location + end.pose_basis.orthonormalized().xform(p_chain.end_axis) * (p_chain.end_bone_length * units_per_meter);
 	}
 }
 
@@ -243,13 +243,14 @@ static float sample_curve(const Ref<Curve> &p_curve, float p_rate) {
 
 // chain 위치마다 값을 다르게 주기 위해, joint의 length_rate 위치에서 읽은 curve 값을 곱한다.
 // 실행 중에 값이나 curve를 바꾸면 바로 반영되도록 매 frame 다시 계산한다.
+// radius와 gravity는 m 단위 값이라 units_per_meter를 곱해 skeleton 단위로 바꾼다.
 void BoneClothSimulator3D::_update_joint_settings(Chain &p_chain) {
 	for (Joint &joint : p_chain.joints) {
 		joint.drag = CLAMP(drag * sample_curve(drag_damping_curve, joint.length_rate), 0.0f, 1.0f);
 		joint.stiffness = CLAMP(stiffness * sample_curve(stiffness_damping_curve, joint.length_rate), 0.0f, 1.0f);
-		joint.radius = MAX(radius * sample_curve(radius_damping_curve, joint.length_rate), 0.0f);
+		joint.radius = MAX(radius * sample_curve(radius_damping_curve, joint.length_rate), 0.0f) * units_per_meter;
 		joint.limit_angle = MAX(limit_angle * sample_curve(limit_angle_damping_curve, joint.length_rate), 0.0f);
-		joint.gravity = gravity * sample_curve(gravity_damping_curve, joint.length_rate);
+		joint.gravity = gravity * sample_curve(gravity_damping_curve, joint.length_rate) * units_per_meter;
 	}
 }
 
@@ -308,7 +309,7 @@ void BoneClothSimulator3D::_simulate(Chain &p_chain, const Vector3 &p_gravity_di
 		// 캐릭터가 움직이는 속도는 그대로 두고, 몸을 기준으로 천이 흔들리는 속도만 joint_speed_limit으로 제한한다.
 		if (joint_speed_limit > 0.0f) {
 			const Vector3 carried = (prev_step_move + prev_step_turn.xform(joint.prev_location) - joint.prev_location) / dt;
-			velocity = (velocity - carried).limit_length(joint_speed_limit) + carried;
+			velocity = (velocity - carried).limit_length(joint_speed_limit * units_per_meter) + carried;
 		}
 
 		joint.prev_location = joint.location;
@@ -1128,6 +1129,11 @@ void BoneClothSimulator3D::reset() {
 	needs_reset = true;
 }
 
+// 자식 collision도 크기 값(m)을 같은 배율로 skeleton 단위로 바꾼다.
+float BoneClothSimulator3D::get_units_per_meter() const {
+	return units_per_meter;
+}
+
 // p_bone이 p_root에서 p_end까지의 bone 경로 위에 있는지 확인한다(p_root, p_end 포함).
 // p_end가 p_root 아래에 없으면 경로가 없으므로 false다.
 static bool is_on_bone_path(const Skeleton3D *p_skeleton, int p_root, int p_end, int p_bone) {
@@ -1151,7 +1157,7 @@ PackedStringArray BoneClothSimulator3D::_get_configuration_warnings() const {
 	}
 
 	// 천은 skeleton 공간에서 계산한다. 축마다 scale이 다르면 같은 캐릭터를 scale 1로 둘 때와 다르게 움직인다.
-	// 균일한 scale은 경고하지 않는다(radius, bone 길이, 속도 제한은 skeleton 단위라 캐릭터와 같이 커진다).
+	// 균일한 scale은 경고하지 않는다(_get_units_per_meter가 길이 값을 맞춘다).
 	const Skeleton3D *skeleton = get_skeleton();
 	if (skeleton) {
 		const Vector3 scale = skeleton->get_global_transform().basis.get_scale();
@@ -1236,10 +1242,43 @@ void BoneClothSimulator3D::_validate_bone_names() {
 	}
 }
 
+// 길이 값(m)을 skeleton 단위로 바꾸는 배율을 구한다.
+// 기준은 skeleton이 들어 있는 씬(skeleton의 owner, 보통 import한 모델) 안에서 skeleton이 가진 scale이다.
+// 모델 안의 scale은 단위를 맞추려고 있는 것이고, 모델에 준 scale은 캐릭터의 크기를 바꾸려고 준 것이기 때문이다.
+/*
+	Stage
+	 +-- Model (skeleton의 owner, Stage에서 scale 2)
+		  +-- Armature (scale 0.01, cm rig)
+			   +-- Skeleton3D
+					+-- BoneClothSimulator3D
+
+	위 그림이면 모델 안의 scale이 0.01이므로 배율은 100이다(radius 0.03 m -> skeleton 단위 3).
+	Model의 scale 2는 넣지 않는다. 그래서 천도 같이 2배가 되어, 크기를 키운 복사본처럼 움직인다(gravity 포함).
+	simulator를 모델 씬에 넣든, Stage에서 모델 아래에 넣든 같다.
+*/
+// owner가 없으면(스크립트로 만든 skeleton) world scale을 쓴다.
+float BoneClothSimulator3D::_get_units_per_meter(const Skeleton3D *p_skeleton) const {
+	const Node *owner = p_skeleton->get_owner();
+	Basis basis;
+	for (const Node3D *node = p_skeleton; node && node != owner; node = Object::cast_to<Node3D>(node->get_parent())) {
+		basis = node->get_basis() * basis;
+	}
+
+	return 1.0f / MAX(basis.get_uniform_scale(), 1e-6f);
+}
+
 void BoneClothSimulator3D::_process_modification_with_delta(double p_delta) {
 	Skeleton3D *skeleton = get_skeleton();
 	if (!skeleton) {
 		return;
+	}
+
+	// 씬 안의 scale이 바뀌면 길이 값을 다시 바꿔야 하므로 chain을 다시 만든다.
+	// owner가 없으면 캐릭터가 돌 때 float 오차가 생기므로, 근사값으로 비교한다.
+	const float units = _get_units_per_meter(skeleton);
+	if (!Math::is_equal_approx(units, units_per_meter)) {
+		units_per_meter = units;
+		joints_dirty = true;
 	}
 
 	// 설정이 바뀌면 chain을 다시 만든다.
@@ -1311,7 +1350,7 @@ void BoneClothSimulator3D::_process_modification_with_delta(double p_delta) {
 		// 순간이동 때 천이 크게 튀지 않게 한다.
 		// 한 frame에 teleport_distance보다 멀리 가거나 teleport_angle보다 많이 돌면,
 		// skeleton이 지난 step과 같은 양만큼 움직인 것으로 계산한다.
-		const bool teleported = skeleton_transform.origin.distance_to(prev_skeleton_transform.origin) > teleport_distance || move_rotation.get_angle() > teleport_angle;
+		const bool teleported = move_location.length() > teleport_distance * units_per_meter || move_rotation.get_angle() > teleport_angle;
 
 		const double elapsed = step_time + p_delta;
 		step_time = MIN(elapsed, MAX_STEPS * STEP);
@@ -1322,7 +1361,8 @@ void BoneClothSimulator3D::_process_modification_with_delta(double p_delta) {
 		// 캐릭터가 움직일 때 천을 얼마나 뒤로 휘날릴지 정한다.
 		// inertia가 1이면 이동을 모두 반영하여 뒤로 휘날리고, 0이면 skeleton과 동일하게 움직인다.
 		const float share = float(STEP / elapsed);
-		Vector3 step_move = (move_location * share * inertia).limit_length(movement_speed_limit * float(STEP));
+		const float speed_limit = movement_speed_limit * units_per_meter;
+		Vector3 step_move = (move_location * share * inertia).limit_length(speed_limit * float(STEP));
 		Quaternion step_turn = Quaternion().slerp(move_rotation, share * inertia);
 		const float max_turn = rotation_speed_limit * float(STEP);
 		if (step_turn.get_angle() > max_turn) {
@@ -1338,14 +1378,15 @@ void BoneClothSimulator3D::_process_modification_with_delta(double p_delta) {
 		// frame rate와 상관없이 같은 시간이 걸리도록 step마다 바꾼다.
 		const bool smoothing = inertia_smoothing >= 1e-6f && !teleported;
 		const float smoothing_rate = CLAMP(Math::pow(1.0f - inertia_smoothing, 3.0f) * 0.99f + 0.01f, 0.0f, 1.0f);
-		const Vector3 frame_velocity = skeleton_transform.basis.xform((-move_location / float(elapsed)).limit_length(movement_speed_limit));
+		const Vector3 frame_velocity = skeleton_transform.basis.xform((-move_location / float(elapsed)).limit_length(speed_limit));
 		const Basis to_skeleton = skeleton_transform.basis.inverse();
-		const Vector3 skeleton_gravity_direction = to_skeleton.xform(gravity_direction.normalized());
+		// 방향만 skeleton 공간으로 바꾼다. 크기는 joint.gravity에 이미 skeleton 단위로 들어 있다.
+		const Vector3 skeleton_gravity_direction = to_skeleton.xform(gravity_direction).normalized();
 
 		for (int step = 0; step < step_count; step++) {
 			if (smoothing) {
 				smoothing_velocity = smoothing_velocity.lerp(frame_velocity, smoothing_rate);
-				step_move = (to_skeleton.xform(-smoothing_velocity) * float(STEP) * inertia).limit_length(movement_speed_limit * float(STEP));
+				step_move = (to_skeleton.xform(-smoothing_velocity) * float(STEP) * inertia).limit_length(speed_limit * float(STEP));
 			}
 
 			const float weight = float(step + 1) / float(step_count);
