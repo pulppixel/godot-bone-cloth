@@ -20,10 +20,9 @@ enum {
 void BoneClothSimulator3DMenu::_bind_methods() {
 }
 
-// The node's icon on the button, as the Mesh menu sets its own when the theme changes.
-// An extension's icon is not in the editor theme: it is loaded from the path in bone_cloth.gdextension, and only once the file is imported,
-// as the editor loads it for the scene tree.
-// The plugin starts before the editor's first import, so the icon is also looked for each time the menu shows.
+// 메뉴 버튼에 노드 아이콘을 넣는다(theme가 바뀌면 다시).
+// GDExtension 아이콘은 에디터 theme에 없어서 파일(bone_cloth.gdextension에 적힌 경로)에서 읽는다.
+// 플러그인이 첫 import보다 먼저 시작하므로, 메뉴가 보일 때마다 다시 찾는다.
 void BoneClothSimulator3DMenu::_notification(int p_what) {
 	switch (p_what) {
 		case NOTIFICATION_THEME_CHANGED:
@@ -36,8 +35,7 @@ void BoneClothSimulator3DMenu::_notification(int p_what) {
 	}
 }
 
-// The Mesh and Skeleton3D menus' button: text, opens on hover, flat look without the icon tint
-// (mesh_instance_3d_editor_plugin.cpp:797-802).
+// 메뉴 버튼 모양. Mesh, Skeleton3D 메뉴와 같게 한다(글자, 마우스를 올리면 열림, 아이콘 색 그대로).
 BoneClothSimulator3DMenu::BoneClothSimulator3DMenu() {
 	set_text("BoneClothSimulator3D");
 	set_switch_on_hover(true);
@@ -64,12 +62,12 @@ BoneClothSimulator3DMenu::BoneClothSimulator3DMenu() {
 	add_child(save_dialog);
 }
 
-// 0 when no simulator is being edited.
+// 메뉴가 다룰 simulator(노드 번호). 없으면 0.
 void BoneClothSimulator3DMenu::set_simulator(BoneClothSimulator3D *p_simulator) {
 	simulator_id = p_simulator ? p_simulator->get_instance_id() : 0;
 }
 
-// By the type the editor's file system recorded for each file, as Quick Load reads it, but into the addons folder too.
+// 폴더를 모두 돌며 프리셋 파일을 찾는다(addons 포함). 에디터가 기록한 파일 타입으로 구분한다.
 void BoneClothSimulator3DMenu::_find_presets(EditorFileSystemDirectory *p_directory) {
 	for (int i = 0; i < p_directory->get_subdir_count(); i++) {
 		_find_presets(p_directory->get_subdir(i));
@@ -81,7 +79,7 @@ void BoneClothSimulator3DMenu::_find_presets(EditorFileSystemDirectory *p_direct
 	}
 }
 
-// Built each time the submenu opens, so a preset saved or copied in a moment ago is there.
+// Presets 메뉴가 열리기 직전에 목록을 새로 만든다(방금 저장하거나 복사한 프리셋도 보이게).
 void BoneClothSimulator3DMenu::_on_presets_about_to_popup() {
 	presets_menu->clear();
 	preset_paths.clear();
@@ -105,7 +103,7 @@ void BoneClothSimulator3DMenu::_on_preset_pressed(int p_id) {
 	const Ref<BoneClothPreset> preset = ResourceLoader::get_singleton()->load(preset_paths[p_id]);
 	ERR_FAIL_COND_MSG(preset.is_null(), "Not a BoneClothPreset: '" + preset_paths[p_id] + "'.");
 
-	// The values one by one, so undo puts back each value and curve the node had (apply_preset sets the same).
+	// 프리셋 값을 하나씩 넣는다(undo하면 값과 curve가 하나하나 원래대로 돌아간다). apply_preset과 같은 값이다.
 	EditorUndoRedoManager *undo_redo = EditorInterface::get_singleton()->get_editor_undo_redo();
 	undo_redo->create_action("Apply Bone Cloth Preset", UndoRedo::MERGE_DISABLE, simulator);
 	for (const char *name : BoneClothPreset::VALUES) {
@@ -116,8 +114,8 @@ void BoneClothSimulator3DMenu::_on_preset_pressed(int p_id) {
 }
 
 void BoneClothSimulator3DMenu::_on_option_pressed(int p_id) {
-	// The gizmo's limit angle cones, for every simulator, kept per project as the editor keeps its own view choices.
-	// The selected simulator redraws every frame and shows the change at once.
+	// Show Limit Angle 켜고 끄기. 모든 simulator에 적용하고 프로젝트마다 저장한다.
+	// 선택된 simulator는 매 프레임 다시 그리므로 바로 보인다.
 	if (p_id == OPTION_SHOW_LIMIT_ANGLE) {
 		PopupMenu *options = get_popup();
 		const int index = options->get_item_index(OPTION_SHOW_LIMIT_ANGLE);
@@ -136,7 +134,7 @@ void BoneClothSimulator3DMenu::_on_option_pressed(int p_id) {
 	}
 }
 
-// Always a new file, as KawaiiPhysics' Export Preset and Magica Cloth's Save: the node never writes into a preset it came from.
+// 항상 새 파일로 저장한다(노드가 불러온 프리셋 파일을 덮어쓰지 않게).
 void BoneClothSimulator3DMenu::_on_save_path_selected(const String &p_path) {
 	BoneClothSimulator3D *simulator = Object::cast_to<BoneClothSimulator3D>(ObjectDB::get_instance(simulator_id));
 	ERR_FAIL_NULL(simulator);
@@ -179,7 +177,7 @@ void BoneClothSimulator3DEditorPlugin::_edit(Object *p_object) {
 	menu->set_simulator(Object::cast_to<BoneClothSimulator3D>(p_object));
 }
 
-// Shown while a simulator is selected, as MeshInstance3DEditorPlugin::make_visible does with its Mesh menu.
+// simulator를 선택했을 때만 메뉴를 보인다.
 void BoneClothSimulator3DEditorPlugin::_make_visible(bool p_visible) {
 	menu->set_visible(p_visible);
 	if (!p_visible) {

@@ -1,7 +1,6 @@
-// A capsule with a radius at each end on a bone, named after CylinderMesh: the joints stay out of it, or in it with inside on.
-// The axis is the node's Y, top_radius at +Y. The shape is the convex hull of the two end spheres, as Jolt's TaperedCapsuleShape.
+// 양쪽의 굵기가 다른 캡슐(예: 허벅지).
 // The push is KawaiiPhysics' tapered capsule collision (MIT, Copyright (c) 2019-2026 pafuhana1213), see THIRD_PARTY_NOTICES.md,
-// with the axis point moved so it collides with the hull rather than KawaiiPhysics' approximation of it.
+// with the axis point moved so it collides with the hull itself.
 
 #pragma once
 

@@ -5,15 +5,19 @@
 
 using namespace godot;
 
-// KawaiiPhysics' fixed substeps: 60 a second, at most 4 a frame, time beyond that dropped.
-// Every per step value (drag, stiffness, link_stiffness) is per 1/60 s.
+// frame rate가 달라도 천이 자연스럽게 움직이도록, 1/60초짜리 step으로 계산한다.
+// step은 한 frame에 4번까지 돈다. 느린 frame에서 연산이 계속 돌지 않게 하려는 것이다 (초과한 시간은 버린다).
+// drag, stiffness, link_stiffness는 step 1번 기준 값이다.
 static constexpr double STEP = 1.0 / 60.0;
 static constexpr int MAX_STEPS = 4;
 
-// KawaiiPhysics' default link compliance, Leather.
+// link의 부드러움 정도 (사실상 거의 늘어나지 않는다. 세기는 link_stiffness로 정할 수 있다).
 static constexpr float LINK_COMPLIANCE = 1e-9f;
 
-// SpringBoneSimulator3D::get_end_bone_axis, in the end bone's own axes: FromParent is the end bone's offset from its parent at rest, the others that bone axis.
+// tip: end bone 뒤에 붙이는 가상의 joint.
+// bone은 아래 joint를 향해 회전하므로, 이 joint가 있어야 end bone도 회전한다.
+// tip joint를 end bone에서 어느 방향으로 붙일지 구한다. 결과는 end bone 자신의 축 기준이라, end bone이 돌면 tip도 같이 돈다.
+// +X 같은 축을 고르면 그 축을 쓰고, FromParent를 고르면 rest 자세에서 부모 bone이 end bone으로 향하는 방향을 그대로 이어 간다.
 static Vector3 end_bone_axis(Skeleton3D *p_skeleton, int p_end_bone, SkeletonModifier3D::BoneDirection p_direction) {
 	if (p_direction != SkeletonModifier3D::BONE_DIRECTION_FROM_PARENT) {
 		static const Vector3 axes[] = { Vector3(1, 0, 0), Vector3(-1, 0, 0), Vector3(0, 1, 0), Vector3(0, -1, 0), Vector3(0, 0, 1), Vector3(0, 0, -1) };
@@ -24,9 +28,8 @@ static Vector3 end_bone_axis(Skeleton3D *p_skeleton, int p_end_bone, SkeletonMod
 	return rest.basis.xform_inv(rest.origin).normalized();
 }
 
-// The rest length from the root to each joint, the tip included; _build_branches turns it into a rate.
-// By length rather than by count, as bones in one chain differ.
-// Without the tip the end bone has no point below it and cannot turn.
+// chain의 bone마다 joint를 만들고(tip 포함), 각 joint에 root부터의 rest 길이를 length_rate에 넣는다.
+// bone마다 길이가 다르기 때문에, bone 개수가 아니라 길이를 잰다(아직 m 단위다. 아래 _build_branches가 0 ~ 1로 바꾼다).
 bool BoneClothSimulator3D::_build_joints(Skeleton3D *p_skeleton, Chain &p_chain) {
 	p_chain.joints.clear();
 	const int root = p_chain.root_bone;
@@ -49,7 +52,7 @@ bool BoneClothSimulator3D::_build_joints(Skeleton3D *p_skeleton, Chain &p_chain)
 		p_chain.joints.push_back(joint);
 	}
 
-	// An end bone resting on its parent's origin has no FromParent axis and gets no tip, as in the engine.
+	// end bone이 부모 bone과 같은 위치에 있으면 tip을 만들지 않는다.
 	p_chain.end_axis = end_bone_axis(p_skeleton, end, p_chain.end_bone_direction);
 	if (p_chain.extend_end_bone && p_chain.end_bone_length > 0.0f && !p_chain.end_axis.is_zero_approx()) {
 		p_chain.joints.push_back(Joint());
@@ -66,9 +69,9 @@ bool BoneClothSimulator3D::_build_joints(Skeleton3D *p_skeleton, Chain &p_chain)
 	return true;
 }
 
-// A chain whose root bone is a joint of an earlier chain is a branch of it, as wings fork. KawaiiPhysics collects a bone with several
-// children into one tree and Magica Cloth 2 every transform under its roots; here each branch is a chain listed after its trunk.
-// Then KawaiiPhysics' LengthRateFromRoot over each tree: the length from the tree's root over its longest path, so a branch carries on its trunk's curve.
+// 머리카락처럼 중간에서 갈라지는 bone을 쓰기 위해, 파생 chain(root bone이 다른 chain의 joint인 chain)을 찾아 parent chain에 연결한다.
+// 그다음 length_rate를 0 ~ 1로 바꾼다. 파생 chain은 parent joint의 길이에서 이어 재고, parent chain과 함께 가장 긴 끝으로 나눈다.
+// 그래야 갈라진 곳에서 curve 값이 끊기지 않는다(예: Hair2에서 갈라진 HairB1은 Hair3과 비슷한 값).
 void BoneClothSimulator3D::_build_branches() {
 	LocalVector<uint32_t> tree;
 	tree.resize(chains.size());
@@ -92,7 +95,7 @@ void BoneClothSimulator3D::_build_branches() {
 					continue;
 				}
 
-				// A trunk listed after its branch would move after it, and the branch would follow last step's trunk.
+				// 파생 chain은 이번 step에 움직인 parent joint를 따라가야 한다.
 				ERR_CONTINUE_MSG(other > c, vformat("Chain %d's root bone '%s' is a joint of chain %d; list the trunk before its branches.", c, chain.root_bone_name, other));
 				chain.parent_chain = int(other);
 				chain.parent_joint = j;
@@ -131,9 +134,8 @@ void BoneClothSimulator3D::_build_branches() {
 	}
 }
 
-// Links between neighboring chains in the order they are listed, at every depth below the roots, as KawaiiPhysics' ring helper pairs skirt columns.
-// A tip links only to a tip, as bAutoAddChildDummyBoneConstraint does. The length is the rest distance.
-// A branch off a trunk joint below the root is left out, its depths do not match its neighbors'. Chains sharing one root bone still link.
+// 여러 chain이 한 면처럼 움직이도록 같은 depth의 joint를 link로 연결한다 (root 제외)
+// tip은 tip끼리만 연결한다.
 void BoneClothSimulator3D::_build_links(Skeleton3D *p_skeleton) {
 	links.clear();
 	LocalVector<uint32_t> linked;
@@ -158,7 +160,7 @@ void BoneClothSimulator3D::_build_links(Skeleton3D *p_skeleton) {
 		return end.origin + end.basis.orthonormalized().xform(p_chain.end_axis) * p_chain.end_bone_length;
 	};
 
-	// The last chain links back to the first only with three or more, or the two would be linked twice.
+	// Loop라도 chain이 2개면 마지막과 처음은 이미 이어져있다. 그래서 3개 이상일 때만 마지막과 처음을 잇는다.
 	const uint32_t pair_count = (link_mode == LINK_MODE_LOOP && count >= 3) ? count : count - 1;
 	for (uint32_t i = 0; i < pair_count; i++) {
 		const uint32_t a = linked[i];
@@ -181,7 +183,7 @@ void BoneClothSimulator3D::_build_links(Skeleton3D *p_skeleton) {
 	}
 }
 
-// As SpringBoneSimulator3D's setters: in the tree a path must lead to a child collision; while a scene loads the children are not there yet and it is only stored.
+// collision 목록에는 이 simulator의 자식 collision만 넣을 수 있다.
 bool BoneClothSimulator3D::_is_child_collision(const NodePath &p_node_path) const {
 	if (!is_inside_tree() || p_node_path.is_empty()) {
 		return true;
@@ -191,9 +193,8 @@ bool BoneClothSimulator3D::_is_child_collision(const NodePath &p_node_path) cons
 	return node && node->get_parent() == this && Object::cast_to<BoneClothCollision3D>(node);
 }
 
-// Which posed collisions push each chain, as SpringBoneSimulator3D's _find_collisions: every child collision but the excluded ones, or only the listed ones.
-// They keep the child order with the mirrors after, whatever order a list names them in, since the order changes the result. A mirror goes with its node.
-// Every frame, as the collisions are gathered, so a child added, removed or moved counts at once. A path that leads to no child collision is passed over.
+// chain마다 collides를 채운다.
+// 자식을 더하거나 빼면 바로 반영되도록 매 frame 다시 계산한다.
 void BoneClothSimulator3D::_find_chain_collisions(const LocalVector<PosedCollision> &p_collisions) {
 	for (Chain &chain : chains) {
 		const bool all = chain.enable_all_child_collisions;
@@ -213,7 +214,7 @@ void BoneClothSimulator3D::_find_chain_collisions(const LocalVector<PosedCollisi
 	}
 }
 
-// Where the animation, and any modifier before this one, put the chain this frame.
+// 이번 frame에 애니메이션(과 앞선 modifier)이 만든 bone 위치와 회전을 읽는다. tip은 end bone에서 계산한다.
 void BoneClothSimulator3D::_read_pose(Skeleton3D *p_skeleton, Chain &p_chain) {
 	for (Joint &joint : p_chain.joints) {
 		if (joint.bone >= 0) {
@@ -230,14 +231,14 @@ void BoneClothSimulator3D::_read_pose(Skeleton3D *p_skeleton, Chain &p_chain) {
 	}
 }
 
-// A curve's value at the rate, or 1 without a curve or with one that has no points yet.
-// Curve gives 0 with no points, and a curve just made in the inspector has none: the skirt would freeze to its pose. KawaiiPhysics reads an empty curve as 1 too.
+// curve에서 p_rate 위치의 값을 읽는다. curve가 없으면 1.0f를 반환한다.
+// inspector에서 갓 만든 curve는 point가 없어 0으로 읽힌다. 그대로 곱하면 inspector 값과 상관없이 0이 되므로, 이때도 1.0f를 반환한다.
 static float sample_curve(const Ref<Curve> &p_curve, float p_rate) {
 	return p_curve.is_valid() && p_curve->get_point_count() > 0 ? p_curve->sample_baked(p_rate) : 1.0f;
 }
 
-// KawaiiPhysics' UpdatePhysicsSettingsOfModifyBones: each joint takes the node's settings scaled by the curves at its length rate.
-// Every frame, so a value or a curve changed while running shows at once.
+// chain 위치마다 값을 다르게 주기 위해, joint의 length_rate 위치에서 읽은 curve 값을 곱한다.
+// 실행 중에 값이나 curve를 바꾸면 바로 반영되도록 매 frame 다시 계산한다.
 void BoneClothSimulator3D::_update_joint_settings(Chain &p_chain) {
 	for (Joint &joint : p_chain.joints) {
 		joint.drag = CLAMP(drag * sample_curve(drag_damping_curve, joint.length_rate), 0.0f, 1.0f);
@@ -248,9 +249,9 @@ void BoneClothSimulator3D::_update_joint_settings(Chain &p_chain) {
 	}
 }
 
-// One step of KawaiiPhysics' SimulateOnce, in its order.
+// step 1번의 처리 순서.
 void BoneClothSimulator3D::_step(const Vector3 &p_gravity_direction, const Vector3 &p_move, const Quaternion &p_turn, const LocalVector<PosedCollision> &p_collisions) {
-	// The roots are kinematic: they follow the pose, a branch's its trunk joint.
+	// root는 몸에 붙은 joint라 물리 계산 없이 pose를 따라간다. 파생된 chain의 root는 _follow_parent_chain에서 옮긴다.
 	for (Chain &chain : chains) {
 		if (!chain.joints.is_empty() && chain.parent_chain < 0) {
 			Joint &root = chain.joints[0];
@@ -264,7 +265,6 @@ void BoneClothSimulator3D::_step(const Vector3 &p_gravity_direction, const Vecto
 		_simulate(chain, p_gravity_direction, p_move, p_turn);
 	}
 
-	// KawaiiPhysics solves the links once before the collision and once after it.
 	_solve_links();
 	for (Chain &chain : chains) {
 		_collide(chain, p_collisions);
@@ -279,8 +279,7 @@ void BoneClothSimulator3D::_step(const Vector3 &p_gravity_direction, const Vecto
 	}
 }
 
-// A branch's root takes its trunk joint's location as the trunk has it now, as KawaiiPhysics reads the parent bone's location.
-// The trunk is an earlier chain, so in each pass over the chains it has already moved.
+// 파생 chain의 root를 parent joint의 현재 위치로 옮긴다.
 void BoneClothSimulator3D::_follow_parent_chain(Chain &p_chain) {
 	if (p_chain.parent_chain < 0 || p_chain.joints.is_empty()) {
 		return;
@@ -291,8 +290,8 @@ void BoneClothSimulator3D::_follow_parent_chain(Chain &p_chain) {
 	root.location = chains[p_chain.parent_chain].joints[p_chain.parent_joint].location;
 }
 
-// KawaiiPhysics' Simulate for every joint below the root: Verlet with drag and gravity, the character's own motion, then a pull toward the pose.
-// p_move and p_turn are the skeleton's motion this step as the cloth feels it, seen from where the skeleton is now.
+// root 아래 joint를 움직인다.
+// 이전 움직임을 이어 가고(drag로 줄이고 gravity를 더한다), 캐릭터 움직임을 반영하고, stiffness만큼 pose 쪽으로 당긴다.
 void BoneClothSimulator3D::_simulate(Chain &p_chain, const Vector3 &p_gravity_direction, const Vector3 &p_move, const Quaternion &p_turn) {
 	const float dt = float(STEP);
 
@@ -302,8 +301,7 @@ void BoneClothSimulator3D::_simulate(Chain &p_chain, const Vector3 &p_gravity_di
 
 		Vector3 velocity = (joint.location - joint.prev_location) / dt;
 
-		// Magica Cloth 2's particle speed limit, on the joint's speed over the ground: the part the skeleton carried in the last step is taken off first and put back after.
-		// Magica's own comment: a capped speed moves better, hair in a turn above all, but a low cap weakens the push out of the colliders.
+		// 캐릭터가 움직이는 속도는 그대로 두고, 몸을 기준으로 천이 흔들리는 속도만 joint_speed_limit으로 제한한다.
 		if (joint_speed_limit > 0.0f) {
 			const Vector3 carried = (prev_step_move + prev_step_turn.xform(joint.prev_location) - joint.prev_location) / dt;
 			velocity = (velocity - carried).limit_length(joint_speed_limit) + carried;
@@ -314,8 +312,8 @@ void BoneClothSimulator3D::_simulate(Chain &p_chain, const Vector3 &p_gravity_di
 		velocity += p_gravity_direction * joint.gravity * dt;
 		joint.location += velocity * dt;
 
-		// Only a change in the skeleton's motion moves the cloth against it: keeping a speed or a turn rate carries the cloth along, as Magica Cloth 2's world inertia does.
-		// KawaiiPhysics' world damping adds a share of the motion itself every step, which lifts a skirt while she runs at a steady speed.
+		// 캐릭터가 등속도로 달리는 동안에는 천이 뒤로 밀리지 않게 한다.
+		// 출발, 정지, 방향 전환처럼 skeleton 움직임이 지난 step과 달라진 만큼만 joint 위치에 더한다.
 		joint.location += p_move - prev_step_move;
 		joint.location += p_turn.xform(joint.prev_location) - prev_step_turn.xform(joint.prev_location);
 
@@ -324,9 +322,8 @@ void BoneClothSimulator3D::_simulate(Chain &p_chain, const Vector3 &p_gravity_di
 	}
 }
 
-// One XPBD pass over the links with equal masses.
-// KawaiiPhysics resets lambda before each pass and runs one iteration, so its lambda term is always zero and left out here.
-// link_stiffness scales the correction: 1 is KawaiiPhysics' link, 0 keeps no distance and leaves the links to the collision.
+// XPBD: 위치를 직접 업데이트하여 거리를 맞추는 계산법
+// link와 rest의 거리의 차이를 구하고, 그 차이의 절반씩 두 joint를 서로 밀고 당긴다.
 void BoneClothSimulator3D::_solve_links() {
 	if (link_stiffness <= 0.0f) {
 		return;
@@ -350,8 +347,7 @@ void BoneClothSimulator3D::_solve_links() {
 	}
 }
 
-// Every joint below the root against the chain's collisions, as KawaiiPhysics' collision pass.
-// The roots follow the pose and are never pushed.
+// joint마다, 이 chain의 collides가 true인 collision으로만 밀어낸다 (root 제외).
 void BoneClothSimulator3D::_collide(Chain &p_chain, const LocalVector<PosedCollision> &p_collisions) {
 	for (uint32_t i = 1; i < p_chain.joints.size(); i++) {
 		Joint &joint = p_chain.joints[i];
@@ -363,8 +359,9 @@ void BoneClothSimulator3D::_collide(Chain &p_chain, const LocalVector<PosedColli
 	}
 }
 
-// Every link against the collisions as a line, where KawaiiPhysics feeds its bridge points' collision back to the two ends.
-// A link takes only the collisions both of its chains take: it moves both ends, and a collision left out of a chain never pushes that chain.
+// 치마의 joint 두 개가 벌어져 있을 때, 두 joint가 닿지 않는 사이의 천에서는 다리가 뚫고 나올 수 있다.
+// 그래서 두 joint를 잇는 선을 다리 밖으로 밀어 준다.
+// 두 chain의 collides가 모두 true인 collision만 쓴다(한쪽 chain에서 뺀 collision이 link를 거쳐 그 chain을 밀지 않게).
 void BoneClothSimulator3D::_collide_links(const LocalVector<PosedCollision> &p_collisions) {
 	for (const Link &link : links) {
 		Chain &chain_a = chains[link.chain_a];
@@ -380,7 +377,7 @@ void BoneClothSimulator3D::_collide_links(const LocalVector<PosedCollision> &p_c
 	}
 }
 
-// KawaiiPhysics' AdjustByAngleLimit: an offset from the parent leaning more than p_limit from the pose direction is turned back onto that cone.
+// joint가 pose 방향에서 p_limit 각도보다 많이 기울면, 딱 p_limit까지만 기울도록 한다.
 static Vector3 limit_to_cone(const Vector3 &p_offset, const Vector3 &p_pose_vector, float p_limit) {
 	const Vector3 pose_direction = p_pose_vector.normalized();
 	const Vector3 direction = p_offset.normalized();
@@ -390,21 +387,22 @@ static Vector3 limit_to_cone(const Vector3 &p_offset, const Vector3 &p_pose_vect
 		return p_offset;
 	}
 
-	// Pointing straight back the cross product vanishes and any axis across the pose direction turns it back.
-	// KawaiiPhysics takes the parent's X axis there, but which bone axis lies across the bone differs between rigs.
+	// offset이 pose 방향과 정반대면 외적이 0이 되어 회전축을 구할 수 없다. 이때는 pose 방향에 수직인 아무 축으로 돌린다.
+	// rig마다 bone 축 방향이 달라서 특정 bone을 축으로 쓰지 않는다.
 	const Vector3 turn_axis = axis.is_zero_approx() ? pose_direction.get_any_perpendicular() : axis.normalized();
 	return p_offset.rotated(turn_axis, p_limit - angle);
 }
 
-// KawaiiPhysics' RestoreBoneLengthsAndLimits, last in the step so the limit and the length win over the links and the collision.
-// Each joint is held inside the cone of its limit angle around the bone's pose direction, then goes back to its pose distance from the parent.
+// link와 collision이 joint를 밀면 bone이 늘어나거나 각도 제한(limit_to_cone)을 넘을 수 있다.
+// 그래서 step 마지막에 bone 길이와 각도를 다시 맞춘다.
 void BoneClothSimulator3D::_restore_limits_and_lengths(Chain &p_chain) {
 	for (uint32_t i = 1; i < p_chain.joints.size(); i++) {
 		Joint &joint = p_chain.joints[i];
 		const Joint &parent = p_chain.joints[i - 1];
 		const Vector3 pose_vector = joint.pose_location - parent.pose_location;
 
-		// limit_angle 0 turns the limit off; a joint whose curve brings it to 0 is held to its pose direction instead, as KawaiiPhysics does.
+		// inspector의 limit_angle이 0이면 각도 제한을 비활성화한다.
+		// curve 때문에 0이 된 joint는 비활성화하지 않고 pose 방향에 고정한다.
 		Vector3 offset = joint.location - parent.location;
 		if (limit_angle > 0.0f) {
 			offset = limit_to_cone(offset, pose_vector, joint.limit_angle);
@@ -414,11 +412,9 @@ void BoneClothSimulator3D::_restore_limits_and_lengths(Chain &p_chain) {
 	}
 }
 
-// Magica Cloth 2's future prediction (SimulationCalcDisplayPosition): the last step's motion says where the next step will put each joint,
-// and the drawn joint moves toward that point by the share of the time left to it that this frame took.
-// A step every frame keeps it on the steps' results; with steps further apart (slow motion, a display over 60 Hz) it moves every frame instead of standing still and jumping at each step.
-// A guess runs past where a joint turns back, so each drawn joint is then held to the limit and the length as the step holds it, around this frame's pose from the root down.
-// Magica clamps only the distance from the root, but its points are drawn as they are; here they become bone rotations.
+// step이 frame보다 드물 때(슬로 모션, 60Hz보다 빠른 모니터) joint가 멈췄다 튀지 않고 매 frame 움직이게 한다.
+// 지난 step의 이동으로 다음 step 위치를 예측하고, 이번 frame 시간 비율만큼 그쪽으로 옮긴다.
+// 예측은 실제와 다를 수 있으므로, 화면 위치에도 root부터 각도 제한과 bone 길이를 다시 맞춘다.
 void BoneClothSimulator3D::_update_display(Chain &p_chain, float p_follow) {
 	Joint &root = p_chain.joints[0];
 	root.display_location = p_chain.parent_chain >= 0 ? chains[p_chain.parent_chain].joints[p_chain.parent_joint].display_location : root.current_pose_location;
@@ -439,17 +435,12 @@ void BoneClothSimulator3D::_update_display(Chain &p_chain, float p_follow) {
 	}
 }
 
-// Each bone first turns as the bone above it turned, then by the arc from where that leaves it pointing to its drawn direction,
-// as Magica Cloth 2 (VirtualMeshManager.cs, the child's rotation from its parent's) and the engine's SpringBoneSimulator3D do.
-// The arc is then the bend between neighbors only. An arc from the bone's own pose direction, as KawaiiPhysics takes, nears 180 degrees
-// when hair flies up over the head, and its axis, which is the bone's twist, flips from one frame to the next.
-// Rotation only: the lengths stay the pose's. Root first, because set_bone_global_pose works out the local pose from the parent's global pose.
-// The root is drawn at its pose location, as KawaiiPhysics writes only the bones below it.
-// A branch's root is its trunk's joint, written with the trunk, which comes first. A joint with branches keeps its pose rotation and is only
-// moved, as KawaiiPhysics leaves a bone with several children unturned; the bones below it are then placed where they are drawn.
+// frame의 마지막 단계. joint 위치를 bone 회전으로 바꿔 skeleton에 넣는다(mesh는 bone 회전으로 움직인다).
+// bone마다 위 bone이 돈 만큼 먼저 돌고, 남은 각만큼 더 돌아서 아래 joint를 향한다.
+// pose 방향에서 바로 돌리면, 머리카락이 머리 위로 넘어갈 때(180도 근처) bone이 frame마다 비틀린다.
+// root부터 차례로 넣어야 한다(set_bone_global_pose가 부모 bone의 pose를 쓴다).
 void BoneClothSimulator3D::_write_rotations(Skeleton3D *p_skeleton, const Chain &p_chain) {
-	// The turn of the bone above, from its pose rotation: none above the root, nor at a joint with branches.
-	Quaternion turn;
+	Quaternion turn; // 위 bone들이 pose보다 더 회전한 양. 처음은 회전 없음.
 	for (uint32_t i = p_chain.parent_chain >= 0 ? 2 : 1; i < p_chain.joints.size(); i++) {
 		const Joint &joint = p_chain.joints[i];
 		const Joint &parent = p_chain.joints[i - 1];
@@ -543,8 +534,8 @@ void BoneClothSimulator3D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "link_mode", PROPERTY_HINT_ENUM, "None,Sequential,Loop"), "set_link_mode", "get_link_mode");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "link_stiffness", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_link_stiffness", "get_link_stiffness");
 
-	// Each value folds with its curve as in SpringBoneSimulator3D's settings: <name>/value and <name>/damping_curve, the curve scaling the value along the chain.
-	// stiffness keeps KawaiiPhysics' meaning, a per step pull toward the pose from 0 to 1; the engine's stiffness runs 0 to 4 in another formula.
+	// chain 위치마다 값을 다르게 주기 위해 값마다 curve가 있다(<name>/value, <name>/damping_curve).
+	// stiffness는 step마다 joint를 pose 쪽으로 당기는 비율이다(0에서 1).
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "drag/value", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_drag", "get_drag");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "drag/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_drag_damping_curve", "get_drag_damping_curve");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "stiffness/value", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_stiffness", "get_stiffness");
@@ -554,7 +545,7 @@ void BoneClothSimulator3D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "limit_angle/value", PROPERTY_HINT_RANGE, "0,180,0.1,radians_as_degrees"), "set_limit_angle", "get_limit_angle");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "limit_angle/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_limit_angle_damping_curve", "get_limit_angle_damping_curve");
 
-	// gravity/value is an acceleration ( velocity += force * dt )
+	// gravity/value는 가속도(m/s^2)다. step마다 속도에 value * dt를 더한다.
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "gravity/value", PROPERTY_HINT_RANGE, "0,20,0.01,or_greater,or_less,suffix:m/s^2"), "set_gravity", "get_gravity");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "gravity/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_gravity_damping_curve", "get_gravity_damping_curve");
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR3, "gravity/direction"), "set_gravity_direction", "get_gravity_direction");
@@ -569,8 +560,8 @@ void BoneClothSimulator3D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "teleport_angle", PROPERTY_HINT_RANGE, "0,180,0.1,radians_as_degrees"), "set_teleport_angle", "get_teleport_angle");
 	ADD_GROUP("", "");
 
-	// The engine's ADD_ARRAY_COUNT, which godot-cpp does not have: the
-	// array usage and "label,prefix" make the inspector group chains/N/... under one Chains list.
+	// inspector에서 chains/N/... property를 Chains 목록 하나로 묶는다(항목 추가, 삭제 버튼).
+	// godot-cpp에는 ADD_ARRAY_COUNT가 없어서 ARRAY usage와 "label,prefix"로 대신한다.
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "chain_count", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_ARRAY, "Chains,chains/"), "set_chain_count", "get_chain_count");
 
 	BIND_ENUM_CONSTANT(LINK_MODE_NONE);
@@ -578,7 +569,7 @@ void BoneClothSimulator3D::_bind_methods() {
 	BIND_ENUM_CONSTANT(LINK_MODE_LOOP);
 }
 
-// chains/N/..., as SpringBoneSimulator3D's settings/N/...
+// chain별 property(chains/N/...)를 넣고 읽는다 (N은 chain 번호).
 bool BoneClothSimulator3D::_set(const StringName &p_name, const Variant &p_value) {
 	const String path = p_name;
 	if (!path.begins_with("chains/")) {
@@ -671,7 +662,8 @@ bool BoneClothSimulator3D::_get(const StringName &p_name, Variant &r_ret) const 
 	return true;
 }
 
-// The bone names as a drop-down of the skeleton's bones, as BoneAttachment3D does; the indices are saved but not shown, as the engine's.
+// bone 이름을 직접 치지 않도록 skeleton bone 목록을 drop-down으로 보여 준다.
+// bone index는 내부적으로 저장만 하고 inspector에는 보이지 않는다.
 void BoneClothSimulator3D::_get_property_list(List<PropertyInfo> *p_list) const {
 	Skeleton3D *skeleton = get_skeleton();
 	const PropertyHint hint = skeleton ? PROPERTY_HINT_ENUM_SUGGESTION : PROPERTY_HINT_NONE;
@@ -684,7 +676,7 @@ void BoneClothSimulator3D::_get_property_list(List<PropertyInfo> *p_list) const 
 		p_list->push_back(PropertyInfo(Variant::STRING, path + String("end_bone_name"), hint, bone_names));
 		p_list->push_back(PropertyInfo(Variant::INT, path + String("end_bone"), PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR));
 
-		// As the engine's _validate_dynamic_prop: the extension is hidden, and not saved, without an end bone, and its direction and length while it is off.
+		// 안쓰는 값은 숨긴다.
 		const bool has_end_bone = chains[i].end_bone != -1;
 		const uint32_t extend_usage = has_end_bone ? PROPERTY_USAGE_DEFAULT : PROPERTY_USAGE_NONE;
 		const uint32_t tip_usage = has_end_bone && chains[i].extend_end_bone ? PROPERTY_USAGE_DEFAULT : PROPERTY_USAGE_NONE;
@@ -692,7 +684,6 @@ void BoneClothSimulator3D::_get_property_list(List<PropertyInfo> *p_list) const 
 		p_list->push_back(PropertyInfo(Variant::INT, path + String("end_bone/direction"), PROPERTY_HINT_ENUM, "+X,-X,+Y,-Y,+Z,-Z,FromParent", tip_usage));
 		p_list->push_back(PropertyInfo(Variant::FLOAT, path + String("end_bone/length"), PROPERTY_HINT_RANGE, "0,1,0.001,or_greater,suffix:m", tip_usage));
 
-		// SpringBoneSimulator3D's two lists, the one not in use hidden and not saved, as its _validate_dynamic_prop.
 		const Chain &chain = chains[i];
 		const bool all = chain.enable_all_child_collisions;
 		const uint32_t exclude_usage = all ? PROPERTY_USAGE_DEFAULT : PROPERTY_USAGE_NONE;
@@ -709,16 +700,14 @@ void BoneClothSimulator3D::_get_property_list(List<PropertyInfo> *p_list) const 
 	}
 }
 
-// As Camera3D's fov outside perspective: link_stiffness leaves the inspector without a link mode, since no links are built, and is still saved, so a mode
-// picked again finds the value it had. The engine and KawaiiPhysics both hide a value whose condition is a mode.
+// inspector에 노출할 지 말 지 여부를 여기서 최종적으로 정한다.
 void BoneClothSimulator3D::_validate_property(PropertyInfo &p_property) const {
 	if (link_mode == LINK_MODE_NONE && p_property.name == StringName("link_stiffness")) {
 		p_property.usage = PROPERTY_USAGE_NO_EDITOR;
 	}
 }
 
-// The preset's values onto this node, name by name. The chains, the link mode and the collisions are not in a preset.
-// The editor's Presets menu sets the same values through its undo history (editor/bone_cloth_simulator_3d_editor_plugin.cpp).
+// preset 값을 이름별로 이 node에 복사한다 (chain, link mode, collision은 preset에 없다).
 void BoneClothSimulator3D::apply_preset(const Ref<BoneClothPreset> &p_preset) {
 	ERR_FAIL_COND_MSG(p_preset.is_null(), "No preset to apply.");
 	for (const char *name : BoneClothPreset::VALUES) {
@@ -726,7 +715,7 @@ void BoneClothSimulator3D::apply_preset(const Ref<BoneClothPreset> &p_preset) {
 	}
 }
 
-// A new preset from this node's values, which the editor's Presets menu saves to a file of its own.
+// 이 node의 값으로 새 preset을 만든다.
 Ref<BoneClothPreset> BoneClothSimulator3D::make_preset() const {
 	Ref<BoneClothPreset> made;
 	made.instantiate();
@@ -747,8 +736,7 @@ int BoneClothSimulator3D::get_chain_count() const {
 	return chains.size();
 }
 
-// SpringBoneSimulator3D's name and index pair: a name sets the index found on the skeleton, an index sets the name.
-// Without a skeleton yet (a scene loading) each is only stored, and _validate_bone_names settles them once the skeleton is found.
+// bone 이름과 index는 짝이다. 이름을 넣으면 skeleton에서 index를 찾고, index를 넣으면 이름을 찾는다.
 void BoneClothSimulator3D::set_root_bone_name(int p_index, const String &p_bone_name) {
 	ERR_FAIL_INDEX(p_index, int(chains.size()));
 	chains[p_index].root_bone_name = p_bone_name;
@@ -763,7 +751,8 @@ String BoneClothSimulator3D::get_root_bone_name(int p_index) const {
 	return chains[p_index].root_bone_name;
 }
 
-// -1 is no bone: the name stays and the chain prints "Root bone not found" when it builds. An index past the skeleton's bones warns, as the engine's does.
+// -1은 "bone 없음"이다.
+// 이름은 남기고, chain을 만들 때 "Root bone not found"를 출력한다.
 void BoneClothSimulator3D::set_root_bone(int p_index, int p_bone) {
 	ERR_FAIL_INDEX(p_index, int(chains.size()));
 	Chain &chain = chains[p_index];
@@ -868,7 +857,6 @@ bool BoneClothSimulator3D::are_all_child_collisions_enabled(int p_index) const {
 	return chains[p_index].enable_all_child_collisions;
 }
 
-// Each list works only while it is the one in use, as the engine's; a call to the other prints why, where the engine passes over it silently.
 void BoneClothSimulator3D::set_exclude_collision_count(int p_index, int p_count) {
 	ERR_FAIL_INDEX(p_index, int(chains.size()));
 	ERR_FAIL_COND_MSG(!chains[p_index].enable_all_child_collisions, "Chain " + itos(p_index) + ": the exclude collision list is used only while enable_all_child_collisions is on.");
@@ -1029,7 +1017,6 @@ Ref<Curve> BoneClothSimulator3D::get_gravity_damping_curve() const {
 	return gravity_damping_curve;
 }
 
-// A zero direction is refused, as SpringBoneSimulator3D refuses it; the length is dropped where the direction is used.
 void BoneClothSimulator3D::set_gravity_direction(const Vector3 &p_direction) {
 	ERR_FAIL_COND(p_direction.is_zero_approx());
 	gravity_direction = p_direction;
@@ -1099,8 +1086,8 @@ void BoneClothSimulator3D::reset() {
 	needs_reset = true;
 }
 
-// SkeletonModifier3D calls this when it finds its skeleton or the skeleton changes. The name wins and the saved index is the fallback,
-// so a chain still finds its bones after the skeleton's bones are reordered (SpringBoneSimulator3D::_validate_bone_names).
+// skeleton의 bone 순서가 바뀌어도 chain이 같은 bone을 찾도록, bone 이름으로 찾는다.
+// SkeletonModifier3D가 skeleton을 찾았을 때와 skeleton이 수정됐을 때 부른다.
 void BoneClothSimulator3D::_validate_bone_names() {
 	for (uint32_t i = 0; i < chains.size(); i++) {
 		const String root_name = chains[i].root_bone_name;
@@ -1125,7 +1112,7 @@ void BoneClothSimulator3D::_process_modification_with_delta(double p_delta) {
 		return;
 	}
 
-	// A chain that fails to build prints its error once and stays empty until a setting changes; the others still run.
+	// 설정이 바뀌면 chain을 다시 만든다.
 	if (joints_dirty) {
 		joints_dirty = false;
 		needs_reset = true;
@@ -1145,7 +1132,7 @@ void BoneClothSimulator3D::_process_modification_with_delta(double p_delta) {
 		}
 	}
 
-	// Where the skeleton is drawn this frame, also between physics ticks.
+	// 이번 frame에 화면에 그려지는 skeleton transform (physics tick 사이 frame에서도 보간된 값이다).
 	const Transform3D skeleton_transform = skeleton->get_global_transform_interpolated();
 
 	if (needs_reset) {
@@ -1167,8 +1154,6 @@ void BoneClothSimulator3D::_process_modification_with_delta(double p_delta) {
 		smoothing_velocity = Vector3();
 	}
 
-	// The collisions follow their bones before the steps, as SpringBoneSimulator3D syncs its collisions; also while paused, so the editor shows them in place.
-	// The mirrors collide after every collision, in the same order, as KawaiiPhysics appends its mirrored collisions (ApplyMirrorLimits).
 	LocalVector<PosedCollision> collisions;
 	for (int i = 0; i < get_child_count(); i++) {
 		BoneClothCollision3D *collision = Object::cast_to<BoneClothCollision3D>(get_child(i));
@@ -1188,22 +1173,24 @@ void BoneClothSimulator3D::_process_modification_with_delta(double p_delta) {
 	_find_chain_collisions(collisions);
 
 	if (p_delta > 0.0) {
-		// The skeleton's move since the last step, seen from where it is now (KawaiiPhysics' UpdateSkelCompMove).
+		// 지난 step 이후 skeleton이 움직이고 돈 양(현재 skeleton 기준).
 		const Transform3D move = skeleton_transform.affine_inverse() * prev_skeleton_transform;
 		const Vector3 move_location = move.origin;
 		const Quaternion move_rotation = move.basis.get_rotation_quaternion();
 
-		// Magica Cloth 2's teleport check in its Keep mode: after a jump over teleport_distance or a turn over teleport_angle in one frame, the steps go on as if the last step's motion had continued.
+		// 순간이동 때 천이 크게 튀지 않게 한다.
+		// 한 frame에 teleport_distance보다 멀리 가거나 teleport_angle보다 많이 돌면,
+		// skeleton이 지난 step과 같은 양만큼 움직인 것으로 계산한다.
 		const bool teleported = skeleton_transform.origin.distance_to(prev_skeleton_transform.origin) > teleport_distance || move_rotation.get_angle() > teleport_angle;
 
-		// Fixed steps (SimulateModifyBones): the frame's time is added to what was left over and spent in whole steps.
 		const double elapsed = step_time + p_delta;
 		step_time = MIN(elapsed, MAX_STEPS * STEP);
 		const double dropped = elapsed - step_time;
 		const int step_count = int(step_time / STEP);
 		step_time -= step_count * STEP;
 
-		// Each step takes its share of the move, by time, and feels the inertia share of it up to the speed limits; the rest carries the cloth along.
+		// 캐릭터가 움직일 때 천을 얼마나 뒤로 휘날릴지 정한다.
+		// inertia가 1이면 이동을 모두 반영하여 뒤로 휘날리고, 0이면 skeleton과 동일하게 움직인다.
 		const float share = float(STEP / elapsed);
 		Vector3 step_move = (move_location * share * inertia).limit_length(movement_speed_limit * float(STEP));
 		Quaternion step_turn = Quaternion().slerp(move_rotation, share * inertia);
@@ -1217,9 +1204,8 @@ void BoneClothSimulator3D::_process_modification_with_delta(double p_delta) {
 			step_turn = prev_step_turn;
 		}
 
-		// Magica Cloth 2's world inertia smoothing, for sudden starts and stops: the cloth feels the skeleton move at a speed that eases toward the real one,
-		// and the rest of the move carries it along. Magica eases once a frame with a frame's speed capped at the movement speed limit, by (1 - smoothing)^3 * 0.99 + 0.01;
-		// here once a step, so the easing takes the same time at any frame rate. Off at 0, the move as it is; a teleport leaves the eased speed as it was.
+		// 급출발, 급정지 때 천이 갑자기 튀지 않게 한다
+		// frame rate와 상관없이 같은 시간이 걸리도록 step마다 바꾼다.
 		const bool smoothing = inertia_smoothing >= 1e-6f && !teleported;
 		const float smoothing_rate = CLAMP(Math::pow(1.0f - inertia_smoothing, 3.0f) * 0.99f + 0.01f, 0.0f, 1.0f);
 		const Vector3 frame_velocity = skeleton_transform.basis.xform((-move_location / float(elapsed)).limit_length(movement_speed_limit));
@@ -1232,7 +1218,6 @@ void BoneClothSimulator3D::_process_modification_with_delta(double p_delta) {
 				step_move = (to_skeleton.xform(-smoothing_velocity) * float(STEP) * inertia).limit_length(movement_speed_limit * float(STEP));
 			}
 
-			// The pose targets move from last frame's to this frame's across the steps.
 			const float weight = float(step + 1) / float(step_count);
 			for (Chain &chain : chains) {
 				for (Joint &joint : chain.joints) {
@@ -1246,11 +1231,12 @@ void BoneClothSimulator3D::_process_modification_with_delta(double p_delta) {
 			prev_step_turn = step_turn;
 		}
 
-		// The move not yet spent waits for the next step; a teleport and dropped time are thrown away (KawaiiPhysics' AdvancePreSkelCompTransform).
+		// 남은 이동은 다음 step으로 넘긴다.
 		const double spent = teleported ? 1.0 : (step_count * STEP + dropped) / elapsed;
 		prev_skeleton_transform = prev_skeleton_transform.interpolate_with(skeleton_transform, float(spent));
 
-		// This frame's share of the time from the last frame to the next step, which is step_time short of a whole step away.
+		// 화면 위치를 예측 위치 쪽으로 얼마나 옮길지 계산.
+		// 지난 frame부터 다음 step까지 걸리는 시간 중 이번 frame이 쓴 비율이다.
 		const float follow = float(p_delta / (STEP - step_time + p_delta));
 		for (Chain &chain : chains) {
 			if (!chain.joints.is_empty()) {
@@ -1267,6 +1253,6 @@ void BoneClothSimulator3D::_process_modification_with_delta(double p_delta) {
 		_write_rotations(skeleton, chain);
 	}
 
-	// The joints move every frame, and the gizmo draws them where they are.
+	// joint가 매 frame 움직이므로 gizmo도 매 frame 다시 그린다.
 	update_gizmos();
 }

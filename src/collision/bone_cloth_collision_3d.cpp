@@ -34,10 +34,8 @@ void BoneClothCollision3D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::QUATERNION, "rotation_offset"), "set_rotation_offset", "get_rotation_offset");
 }
 
-// In the editor the two bone names are drop-downs of the skeleton's bones with a pencil for typing; the offsets show only with a bone,
-// as SpringBoneCollision3D::_validate_property, and so does the mirror bone, whose offsets are those. The mirror bone is still saved
-// without one, as Camera3D's fov outside perspective: ClassDB records a default only for a property a new node stores or shows
-// (class_get_default_property_value), and hidden from both it would be saved empty on every collision.
+// 인스펙터 표시 형식을 정한다. bone 이름 두 개는 skeleton의 bone 목록에서 고른다(연필 버튼으로 직접 입력도 된다).
+// bone이 없으면 mirror_bone_name을 숨기되 저장은 한다(저장까지 막으면 모든 collision에 빈 이름이 저장된다).
 void BoneClothCollision3D::_validate_property(PropertyInfo &p_property) const {
 	if (Engine::get_singleton()->is_editor_hint() && (p_property.name == StringName("bone_name") || p_property.name == StringName("mirror_bone_name"))) {
 		Skeleton3D *skeleton = get_skeleton();
@@ -56,8 +54,7 @@ void BoneClothCollision3D::_validate_property(PropertyInfo &p_property) const {
 	}
 }
 
-// The node finds its skeleton through the simulator only once it is under it; then the name wins and the saved index is the fallback,
-// as SpringBoneCollision3D::_validate_bone_name.
+// 노드가 simulator 아래에 들어오면, bone을 다시 찾는다 (이름으로 찾는다).
 void BoneClothCollision3D::_notification(int p_what) {
 	switch (p_what) {
 		case NOTIFICATION_ENTER_TREE:
@@ -70,7 +67,8 @@ void BoneClothCollision3D::_notification(int p_what) {
 	}
 }
 
-// The names are copied first: godot-cpp's String assignment has no self check, and set_bone_name(bone_name) would empty it.
+// 이름을 먼저 복사해 둔다. set_bone_name(bone_name)처럼 자기 값을 넘기면 이름이 지워진다.
+// (godot-cpp의 String 대입이 자기 자신을 검사하지 않는다)
 void BoneClothCollision3D::_validate_bone_name() {
 	const String name = bone_name;
 	if (!name.is_empty()) {
@@ -101,7 +99,7 @@ Skeleton3D *BoneClothCollision3D::get_skeleton() const {
 	return parent ? parent->get_skeleton() : nullptr;
 }
 
-// A name not on the skeleton warns, where the engine's says "index '-1' is out of range"; an empty name is no bone, and the node stays where it is put.
+// bone 이름으로 번호를 찾는다.
 void BoneClothCollision3D::set_bone_name(const String &p_bone_name) {
 	bone_name = p_bone_name;
 	Skeleton3D *skeleton = get_skeleton();
@@ -118,7 +116,7 @@ String BoneClothCollision3D::get_bone_name() const {
 	return bone_name;
 }
 
-// -1 is no bone and keeps the name; an index past the skeleton's bones warns, as the engine's does.
+// 번호로 bone을 정하고 이름을 설정한다. -1은 bone 없음.
 void BoneClothCollision3D::set_bone(int p_bone) {
 	bone = p_bone;
 	Skeleton3D *skeleton = get_skeleton();
@@ -138,9 +136,8 @@ int BoneClothCollision3D::get_bone() const {
 	return bone;
 }
 
-// The bone on the other side, picked from the skeleton's bones as the bone is, so any naming works; Magica Cloth 2 also takes its
-// target as a Transform. The bone itself is allowed: it mirrors the shape across the skeleton's middle on that bone, as Magica's
-// Hips to Hips. A name not on the skeleton warns, as the bone's.
+// 반대쪽 bone(예: bone이 LeftUpperLeg면 RightUpperLeg).
+// 자기 bone도 고를 수 있다(Hips를 고르면 몸 가운데를 기준으로 뒤집는다).
 void BoneClothCollision3D::set_mirror_bone_name(const String &p_bone_name) {
 	mirror_bone_name = p_bone_name;
 	Skeleton3D *skeleton = get_skeleton();
@@ -157,7 +154,7 @@ String BoneClothCollision3D::get_mirror_bone_name() const {
 	return mirror_bone_name;
 }
 
-// -1 is no mirror and keeps the name, as the bone's.
+// -1은 mirror 없음.
 void BoneClothCollision3D::set_mirror_bone(int p_bone) {
 	mirror_bone = p_bone;
 	Skeleton3D *skeleton = get_skeleton();
@@ -208,7 +205,7 @@ Quaternion BoneClothCollision3D::get_rotation_offset() const {
 	return rotation_offset;
 }
 
-// A bone's pose this frame plus offsets along its axes, in skeleton space.
+// bone의 이번 프레임 pose에 offset을 더한 위치와 회전(skeleton 공간). offset은 bone 방향 기준.
 static Transform3D get_pose_on_bone(const Skeleton3D *p_skeleton, int p_bone, const Vector3 &p_position_offset, const Quaternion &p_rotation_offset) {
 	Transform3D result = p_skeleton->get_bone_global_pose(p_bone);
 	result.origin += result.basis.get_rotation_quaternion().xform(p_position_offset);
@@ -216,13 +213,9 @@ static Transform3D get_pose_on_bone(const Skeleton3D *p_skeleton, int p_bone, co
 	return result;
 }
 
-// Moves the node to its bone's pose this frame plus the offsets, as SpringBoneCollision3D::sync_pose does, so the editor shows it where it collides.
-// Without a bone the node stays where it was put.
-// The mirror is KawaiiPhysics' (MirrorOffsetLocation, MirrorOffsetRotation): the offsets in skeleton space at rest, mirrored on the
-// skeleton's X, then taken along the mirror bone's rest axes, so the bones' own axes need not mirror each other. X is left and right
-// in Godot's humanoid profile and KawaiiPhysics' default. The mirrored rotation is a rotation, not a reflection: the shape's Y, its
-// axis, is the mirror of the node's, and its X, the fallback for a point on the axis, points opposite to the mirror of the node's.
-// The gizmo draws the mirror relative to the node, which changes with the pose, so it is redrawn each time.
+// 노드를 bone 위로 옮긴다(이번 프레임 bone pose + offset).
+// 아래 mirror 부분: offset을 skeleton 공간에서 좌우(X)로 뒤집어 반대쪽 bone에 놓는다(예: X +0.05 -> -0.05).
+// 양쪽 bone 축이 대칭이 아닌 리그에서도 맞도록, rest 자세에서 뒤집는다.
 void BoneClothCollision3D::sync_pose() {
 	Skeleton3D *skeleton = get_skeleton();
 	if (!skeleton) {
@@ -252,13 +245,9 @@ void BoneClothCollision3D::sync_pose() {
 	update_gizmos();
 }
 
-// A node on a bone moved by anything but sync_pose, the editor's move and rotate tools and their undo among them, keeps its new place
-// as the offsets from the bone, as BoneAttachment3D's override_pose writes a moved attachment back into its bone and KawaiiPhysics
-// writes its widget's drags into a collision's offsets (DoTranslation, DoRotation). SpringBoneCollision3D does not, and the next
-// sync puts the node back. A scale is dropped: the shape's size is its own properties.
-// Before the node is in the tree, a scene being loaded sets its saved transform, and the saved offsets win.
-// A transform set to where the node already is keeps the offsets, since the editor commits its move tool without checking that
-// anything moved: taking them again would put float error into the saved values.
+// 에디터에서 노드를 옮기거나 돌리면 그 자리를 offset으로 저장한다(undo 포함, scale은 버린다).
+// 그래서 애니메이션이 돌아도 옮긴 자리에 붙어 있다. 씬을 불러오는 중에는 저장된 offset을 그대로 쓴다.
+// 지금과 같은 위치가 들어오면 다시 계산하지 않는다(에디터는 안 움직여도 이동을 확정해서, 다시 계산하면 float 오차가 저장된다).
 void BoneClothCollision3D::_take_offsets_from_transform() {
 	if (syncing || bone < 0 || !is_inside_tree()) {
 		return;
@@ -279,7 +268,7 @@ void BoneClothCollision3D::_take_offsets_from_transform() {
 	sync_pose();
 }
 
-// The shape at the node's pose, or with p_mirror at the mirror's.
+// simulator가 호출할 충돌 함수. p_mirror면 mirror 쪽으로 충돌한다.
 Vector3 BoneClothCollision3D::collide(const Vector3 &p_point, float p_radius, bool p_mirror) const {
 	return _collide(p_mirror ? mirror_pose : pose, p_point, p_radius);
 }
@@ -288,7 +277,8 @@ void BoneClothCollision3D::collide_segment(Vector3 &r_a, Vector3 &r_b, float p_r
 	_collide_segment(p_mirror ? mirror_pose : pose, r_a, r_b, p_radius);
 }
 
-// The base collides with nothing. It is registered as a virtual class, as the engine's, so the editor offers only the three shapes.
+// base class는 모양이 없어서 아무것도 밀지 않는다(구, 캡슐, 평면이 이 함수를 다시 쓴다).
+// 에디터의 노드 추가 창에 모양 class만 나오도록 virtual class로 등록한다.
 Vector3 BoneClothCollision3D::_collide(const Transform3D &p_pose, const Vector3 &p_point, float p_radius) const {
 	return p_point;
 }
@@ -296,10 +286,9 @@ Vector3 BoneClothCollision3D::_collide(const Transform3D &p_pose, const Vector3 
 void BoneClothCollision3D::_collide_segment(const Transform3D &p_pose, Vector3 &r_a, Vector3 &r_b, float p_radius) const {
 }
 
-// The line from r_a to r_b out of a shape, so a leg cannot pass between two joints that it does not touch. p_on_segment is the line's point
-// nearest the shape and p_on_shape the shape's center or axis point nearest it, which keep p_limit apart. The push at that point is split
-// between the two ends by how near it is to each, scaled so the point moves by exactly the push: the usual position-based split,
-// as Magica Cloth 2's edge collision does. A line through the center has no direction out and takes p_fallback.
+// 선분(r_a ~ r_b, link 선)을 모양 밖으로 민다. 두 joint 사이로 다리가 빠져나가지 않게 한다.
+// p_on_segment: 선분에서 모양에 가장 가까운 점. p_on_shape: 그 점에 가장 가까운 모양의 중심(또는 축 위 점). 두 점이 p_limit보다 가까우면 밀어낸다.
+// 민 양은 가까운 joint에 더 많이 나눈다(s: 선분 위 위치, r_a 0 ~ r_b 1).
 void BoneClothCollision3D::_push_segment_out(Vector3 &r_a, Vector3 &r_b, const Vector3 &p_on_segment, const Vector3 &p_on_shape, float p_limit, const Vector3 &p_fallback) {
 	const Vector3 offset = p_on_segment - p_on_shape;
 	const float distance_squared = offset.length_squared();

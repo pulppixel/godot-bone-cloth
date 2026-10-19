@@ -1,7 +1,5 @@
-// A shape on a bone that the cloth joints collide with, the base of BoneClothSimulator3D's sphere, capsule and plane children,
-// as SpringBoneCollision3D is of SpringBoneSimulator3D: a bone name with its hidden index and two offsets from the bone.
-// A mirror bone makes the same shape collide a second time on that bone, mirrored, as Magica Cloth 2's Symmetry Mode and KawaiiPhysics'
-// MirrorDataTable do, so one node covers both legs.
+// bone에 붙어 천의 joint를 밀어내는 Collision.
+// mirror bone을 정하면 그 bone에도 좌우 반전된 모양으로 생긴다.
 
 #pragma once
 
@@ -23,16 +21,16 @@ class BoneClothCollision3D : public Node3D {
 	Vector3 position_offset;
 	Quaternion rotation_offset;
 
-	// Set while sync_pose moves the node, so the move is not read back as the user's.
+	// sync_pose가 노드를 옮기는 중이면 true. 이 이동은 사용자가 옮긴 것이 아니므로 offset에 저장하지 않는다.
 	bool syncing = false;
 
 	void _validate_bone_name();
 	void _take_offsets_from_transform();
 
 protected:
-	// The node's transform in skeleton space from the last sync_pose, where the shapes collide.
+	// 충돌에 쓰는 위치와 회전(skeleton 공간).
 	Transform3D pose;
-	// The pose on mirror_bone from the last sync_pose, while the node has a bone and a mirror bone.
+	// mirror bone 쪽 모양의 위치와 회전.
 	Transform3D mirror_pose;
 
 	static void _bind_methods();

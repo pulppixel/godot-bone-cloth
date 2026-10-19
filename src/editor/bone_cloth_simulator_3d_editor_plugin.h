@@ -1,6 +1,6 @@
-// The editor side of BoneClothSimulator3D: a menu named after the node in the 3D viewport's toolbar, shown while one is
-// selected, the place of the Skeleton3D and Mesh menus (editor/scene/3d/skeleton_3d_editor_plugin.cpp,
-// mesh_instance_3d_editor_plugin.cpp), and the gizmos of the bone cloth nodes. Editor only, registered at the EDITOR level.
+// BoneClothSimulator3D의 에디터 기능(에디터 전용).
+// simulator를 선택하면 3D 화면 위 툴바에 BoneClothSimulator3D 메뉴가 생긴다.
+// gizmo도 여기서 추가한다.
 
 #pragma once
 
@@ -16,8 +16,9 @@
 
 using namespace godot;
 
-// Presets, a submenu listing every BoneClothPreset file in the project, addons included, each time it opens; a pick
-// applies it as one undo step. Save Preset... writes the node's values to a new preset file.
+// Presets: 프로젝트의 프리셋 파일 목록.
+// Save Preset...: 노드 값을 새 프리셋 파일로 저장한다.
+// Show Limit Angle: "각도 제한 원뿔"을 그릴지 말지 여부를 선택한다.
 class BoneClothSimulator3DMenu : public MenuButton {
 	GDCLASS(BoneClothSimulator3DMenu, MenuButton)
 

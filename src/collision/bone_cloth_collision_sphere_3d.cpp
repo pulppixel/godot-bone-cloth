@@ -33,9 +33,9 @@ bool BoneClothCollisionSphere3D::is_inside() const {
 	return inside;
 }
 
-// A point p_point_radius thick against a sphere. Outside, it goes out to the two radii from the center, as KawaiiPhysics' and the engine's do;
-// a point at the center has no direction out and takes p_fallback. Inside, it comes in to the sphere's radius less its own, never below zero,
-// so a joint thicker than the sphere stays at the center: KawaiiPhysics' guard, where the engine's limit goes negative and throws it to the far side.
+// 구 충돌(캡슐과 tapered capsule도 이 함수를 쓴다).
+// 밖: 중심에서 "두 반지름의 합"만큼 떨어지게 밀어낸다.
+// 안: 중심에서 "구 반지름 - joint 반지름"까지 당겨준다.
 Vector3 BoneClothCollisionSphere3D::_collide_sphere(const Vector3 &p_center, float p_radius, bool p_inside, const Vector3 &p_fallback, const Vector3 &p_point, float p_point_radius) {
 	const Vector3 offset = p_point - p_center;
 	const float distance_squared = offset.length_squared();
@@ -56,12 +56,13 @@ Vector3 BoneClothCollisionSphere3D::_collide_sphere(const Vector3 &p_center, flo
 	return p_center + direction * limit;
 }
 
-// The fallback direction is the node's X.
+// 밀어낼 방향이 없을 때는 노드의 X 방향으로 밀어낸다.
 Vector3 BoneClothCollisionSphere3D::_collide(const Transform3D &p_pose, const Vector3 &p_point, float p_radius) const {
 	return _collide_sphere(p_pose.origin, radius, inside, p_pose.basis.get_column(0).normalized(), p_point, p_radius);
 }
 
-// Inside, the room left for the line is a smaller sphere and convex, so the line stays in when both of its ends do.
+// 선분 충돌. inside면 양 끝 joint만 안으로 당긴다(양 끝이 안에 있으면 선분 전체가 안에 있다).
+// 밖이면 선분에서 중심에 가장 가까운 점을 찾아 밀어낸다.
 void BoneClothCollisionSphere3D::_collide_segment(const Transform3D &p_pose, Vector3 &r_a, Vector3 &r_b, float p_radius) const {
 	if (inside) {
 		r_a = _collide(p_pose, r_a, p_radius);

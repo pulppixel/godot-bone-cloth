@@ -1,4 +1,4 @@
-// Bone cloth: spring chains linked to their neighbors so a skirt of several chains moves as one surface and stays out of the legs.
+// Bone cloth: 이웃한 spring chain을 연결해서, 여러 chain으로 된 치마가 하나의 면처럼 움직이고 다리에 뚫리지 않게 한다.
 // The solver is ported from KawaiiPhysics (MIT, Copyright (c) 2019-2026 pafuhana1213), see THIRD_PARTY_NOTICES.md.
 
 #pragma once
@@ -18,7 +18,7 @@ class BoneClothSimulator3DGizmoPlugin;
 class BoneClothSimulator3D : public SkeletonModifier3D {
 	GDCLASS(BoneClothSimulator3D, SkeletonModifier3D)
 
-	// The gizmo draws the solver's state as it is.
+	// Gizmo는 simulator의 계산 상태(joint, link)를 읽고 화면에 그린다.
 	friend class BoneClothSimulator3DGizmoPlugin;
 
 public:
@@ -29,24 +29,29 @@ public:
 	};
 
 private:
-	// Everything is in skeleton space.
+	// 위치와 회전은 모두 skeleton 공간 기준이다.
 	struct Joint {
 		int bone = -1;
 		Vector3 location;
 		Vector3 prev_location;
-		// pose_location is the target of the step running, between prev_pose_location (last frame) and current_pose_location.
+
+		// 이번 step에서 joint가 따라갈 pose 위치. prev_pose_location(지난 frame)과 current_pose_location(이번 frame) 사이를 보간한다.
+		// step은 천을 한 번 계산하는 단위다(1/60초 분량). frame마다 0~4번 돈다.
 		Vector3 pose_location;
 		Vector3 prev_pose_location;
 		Vector3 current_pose_location;
-		// Where the joint is drawn, which moves every frame even when no step runs.
+
+		// 화면에 그리는 위치 벡터 (step이 없어도 매 frame마다 동작한다).
 		Vector3 display_location;
 		Basis pose_basis;
 
-		// A later chain's root is this joint: it keeps its pose rotation, as KawaiiPhysics keeps a bone with several children.
+		// 파생 chain의 root가 이 joint다. 파생 chain마다 방향이 달라 회전 하나로 맞출 수 없으므로, pose 회전을 그대로 둔다.
 		bool branched = false;
 
-		// The joint's share of the chain's rest length from the root, where the curves are read, and its settings scaled by them.
+		// chain 안에서 joint의 위치. (root: 0 ~ 가장 먼 끝 점: 1)
 		float length_rate = 0.0f;
+
+		// joint마다 쓸 값. inspector 값에 length_rate 위치의 curve 값을 곱한다.
 		float drag = 0.0f;
 		float stiffness = 0.0f;
 		float radius = 0.0f;
@@ -55,13 +60,14 @@ private:
 	};
 
 	struct Chain {
-		// SpringBoneSimulator3D's pair: the name is what the user picks and wins on load, the index is saved beside it.
+		// inspector에서는 bone 이름을 고르고, index는 같이 저장한다. skeleton의 bone 순서가 바뀌어도 같은 bone을 찾도록 name을 키 값처럼 쓴다.
 		String root_bone_name;
 		int root_bone = -1;
 		String end_bone_name;
 		int end_bone = -1;
-		// SpringBoneSimulator3D's extended end bone: a joint past the end bone, without which the end bone has no point below it and cannot turn.
-		// On by default, unlike the engine's, as skirt and hair rigs seldom carry a tail bone.
+
+		// end bone 뒤에 joint 하나를 더한다. 이 joint가 없으면 end bone이 회전할 수 없다.
+		// 치마와 머리카락 rig에는 끝 bone이 없는 경우가 많아서 기본값을 켜짐으로 했다.
 		bool extend_end_bone = true;
 		BoneDirection end_bone_direction = BONE_DIRECTION_FROM_PARENT;
 		float end_bone_length = 0.1f;
@@ -69,19 +75,58 @@ private:
 
 		Vector3 end_axis;
 
-		// A branch: the root bone is a joint of an earlier chain, which the root follows instead of the pose.
+		/*
+			Hair1 - Hair2 - Hair3 - Hair4   (chain 0)
+					  |
+					  +-- HairB1 - HairB2   (chain 1, root bone: Hair2)
+
+			파생 chain(다른 chain 중간에서 갈라진 chain)이면, 갈라진 곳의 chain 번호와 joint 번호를 저장한다. 아니면 parent_chain은 -1.
+			위 그림이면 chain 1의 parent_chain = 0, parent_joint = 1(Hair2).
+			parent joint(Hair2)는 흔들리기 때문에, 파생된 chain의 root는 그 joint(Hair2)의 위치를 따라간다.
+		*/
 		int parent_chain = -1;
 		uint32_t parent_joint = 0;
 
-		// SpringBoneSimulator3D's collision lists: every child collision but the excluded ones, or only the listed ones.
+		// true: 자식 collision 중 exclude_collisions에 없는 것 전부와 충돌한다.
+		// false: collisions에 있는 collision하고만 충돌한다.
 		bool enable_all_child_collisions = true;
 		LocalVector<NodePath> exclude_collisions;
 		LocalVector<NodePath> collisions;
-		// Which of this frame's posed collisions push the chain, by their index there.
+
+		/*
+			BoneClothSimulator3D
+			 +-- Thighs
+			 +-- Chest
+			 +-- Calves
+
+			만약 exclude_collisions에 Thighs를 넣었다면 아래와 같이 된다.
+
+			0       1       2        <- 칸 번호
+			Thighs  Chest   Calves   <- 자식 collision
+			false   true    true     <- collides
+
+			여기서 true인 collision만 충돌시킨다는 뜻이다.
+			자식 칸 뒤에는 mirror가 있는 collision마다 칸이 하나씩 더 붙는다.
+		*/
 		LocalVector<bool> collides;
 	};
 
-	// Two joints at the same depth of neighboring chains, kept at their rest distance.
+	/*
+				  chain 0    chain 1    chain 2
+		depth 0     R0         R1         R2       <- root끼리는 연결하지 않는다.
+					|          |          |
+		depth 1     a1 ------- b1 ------- c1
+					|          |          |
+		depth 2     a2 ------- b2 ------- c2
+					|          |          |
+		depth 3     a3 ------- b3 ------- c3
+
+		위 그림에서 |는 bone(chain으로 연결되는 부모-자식 관계),
+		----가 바로 Link이다. Loop면 c1과 a1도 잇는다.
+
+		Link는 chain끼리 연결하는 역할을 한다 (이게 없다면 천이 벌어지고, 그 틈으로 body가 뚫고 나오게 된다).
+		즉, 여러 chain이 한 면처럼 움직일 수 있도록, 이웃한 두 chain의 "동일한 depth를 가진 joint를 연결한 선 하나"다.
+	*/
 	struct Link {
 		uint32_t chain_a = 0;
 		uint32_t chain_b = 0;
@@ -89,10 +134,10 @@ private:
 		float length = 0.0f;
 	};
 
-	// A collision at one of its two poses, its own or its mirror's.
+	// 충돌에 쓸 collision. mirror가 존재하는 collision일 경우, 2개가 들어간다. (mirror는 좌우대칭 collision, 자동으로 값 따라감)
 	struct PosedCollision {
-		const BoneClothCollision3D *collision = nullptr;
-		bool mirror = false;
+		const BoneClothCollision3D *collision = nullptr; // 어느 collision 노드인지.
+		bool mirror = false; // true: mirror bone, false: 본인의 bone
 	};
 
 	LocalVector<Chain> chains;
@@ -124,7 +169,8 @@ private:
 	Transform3D prev_skeleton_transform;
 	Vector3 prev_step_move;
 	Quaternion prev_step_turn;
-	// The skeleton's speed as the cloth feels it, eased toward its real speed step by step, in world space so a turn does not carry it round.
+	// 급출발, 급정지 때 천이 튀지 않도록, 천이 감지하는 캐릭터 속도를 실제 속도 쪽으로 자연스럽게 한다.
+	// 캐릭터가 회전해도, 천의 방향이 같이 돌지 않도록 world 공간으로 저장한다.
 	Vector3 smoothing_velocity;
 
 	// State

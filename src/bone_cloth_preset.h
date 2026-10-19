@@ -1,5 +1,6 @@
-// The physics values of a BoneClothSimulator3D saved as a resource, to start a skirt or hair from known numbers.
-// Applied by copy, as Magica Cloth's and KawaiiPhysics' presets are: the chains, the link mode and the collisions stay the node's.
+// preset을 통해 치마나 머리카락 등의 값을 설정할 수 있다.
+// 이 작업을 위해 BoneClothSimulator3D의 설정 값을 Godot Resource로 저장한다.
+// 동작은 참조 복사가 아닌, 값 복사로 이루어진다. (chain, link mode, collision은 rig마다 다르기 때문에 preset에 넣지 않는다)
 
 #pragma once
 
@@ -12,7 +13,7 @@ using namespace godot;
 class BoneClothPreset : public Resource {
 	GDCLASS(BoneClothPreset, Resource)
 
-	// The same defaults as BoneClothSimulator3D.
+	// 기본값은 BoneClothSimulator3D와 같다.
 	float link_stiffness = 0.0f;
 	float drag = 0.1f;
 	Ref<Curve> drag_damping_curve;
@@ -37,7 +38,9 @@ protected:
 	static void _bind_methods();
 
 public:
-	// The property paths a preset carries, the same on the preset and on the simulator, so the copy goes name by name.
+	// 이 배열의 이름으로 preset과 simulator 사이에 값을 복사한다.
+	// apply_preset, make_preset, 에디터의 Presets 메뉴
+	// 쓰는 곳: apply_preset, make_preset, 에디터의 Presets 메뉴
 	static constexpr const char *VALUES[] = {
 		"link_stiffness",
 		"drag/value",
@@ -60,7 +63,7 @@ public:
 		"teleport_angle",
 	};
 
-	// A curve goes over as a copy, so tuning the node's curve after an apply leaves the preset's file as it was.
+	// curve는 복사본을 넘긴다. 대상 노드의 값을 바꿔도, 이 preset의 값이 바뀌지 않게 할 수 있다.
 	static Variant copy_value(const Variant &p_value);
 	void set_link_stiffness(float p_stiffness);
 	float get_link_stiffness() const;

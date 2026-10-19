@@ -19,12 +19,13 @@ void BoneClothCollisionCapsule3D::_bind_methods() {
 
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "radius", PROPERTY_HINT_RANGE, "0,1,0.001,or_greater,suffix:m"), "set_radius", "get_radius");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "height", PROPERTY_HINT_RANGE, "0,1,0.001,or_greater,suffix:m"), "set_height", "get_height");
-	// The straight part alone, for scripts; not shown and not saved, as the engine's.
+	// 스크립트용이라 인스펙터에는 보이지 않는다 (저장도 하지 않는다).
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "mid_height", PROPERTY_HINT_RANGE, "0,1,0.001,or_greater,suffix:m", PROPERTY_USAGE_NONE), "set_mid_height", "get_mid_height");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "inside"), "set_inside", "is_inside");
 }
 
-// Height is end to end, hemispheres included, as CapsuleShape3D and SpringBoneCollisionCapsule3D; it never gets shorter than the two hemispheres.
+// height는 반구를 포함한 전체 길이. 반지름이 height의 절반을 넘지 않게 맞춘다.
+// (반지름을 키우면 height가 늘어나고, height를 줄이면 반지름이 줄어든다).
 void BoneClothCollisionCapsule3D::set_radius(float p_radius) {
 	radius = p_radius;
 	if (radius > height * 0.5f) {
@@ -70,15 +71,13 @@ bool BoneClothCollisionCapsule3D::is_inside() const {
 	return inside;
 }
 
-// The two ends of the axis, the hemispheres' centers, in skeleton space.
 void BoneClothCollisionCapsule3D::_get_head_and_tail(const Transform3D &p_pose, Vector3 &r_head, Vector3 &r_tail) const {
 	const Vector3 half_axis = p_pose.basis.xform(Vector3(0.0f, height * 0.5f - radius, 0.0f));
 	r_head = p_pose.origin + half_axis;
 	r_tail = p_pose.origin - half_axis;
 }
 
-// KawaiiPhysics' AdjustByCapsuleCollision: the sphere collision at the point of the axis nearest the joint.
-// A point on the axis has no direction out and takes the capsule's X.
+// Y축 위에서 joint에 가장 가까운 점에서 구 충돌을 한다(캡슐 = 축을 따라 늘어선 구).
 Vector3 BoneClothCollisionCapsule3D::_collide(const Transform3D &p_pose, const Vector3 &p_point, float p_radius) const {
 	Vector3 head;
 	Vector3 tail;
@@ -89,7 +88,8 @@ Vector3 BoneClothCollisionCapsule3D::_collide(const Transform3D &p_pose, const V
 	return BoneClothCollisionSphere3D::_collide_sphere(head + axis * t, radius, inside, p_pose.basis.get_column(0).normalized(), p_point, p_radius);
 }
 
-// Inside, the room left for the line is a thinner capsule and convex, so the line stays in when both of its ends do.
+// 선분 충돌. inside면 양 끝 joint만 안으로 당긴다(양 끝이 안에 있으면 선분 전체가 안에 있다).
+// 밖이면 선분과 축 사이에서 가장 가까운 두 점을 찾아 밀어낸다.
 void BoneClothCollisionCapsule3D::_collide_segment(const Transform3D &p_pose, Vector3 &r_a, Vector3 &r_b, float p_radius) const {
 	if (inside) {
 		r_a = _collide(p_pose, r_a, p_radius);

@@ -1,5 +1,4 @@
-// The bone cloth nodes drawn in the 3D viewport, as editor/scene/3d/gizmos/spring_bone_3d_gizmo_plugin.cpp draws the engine's
-// SpringBone nodes. Editor only, registered at the EDITOR level and added by BoneClothSimulator3DEditorPlugin.
+// bone cloth 노드를 3D 화면에 그리는 gizmo(에디터 전용).
 
 #pragma once
 
@@ -9,11 +8,12 @@
 
 using namespace godot;
 
-// Each collision shape as wire lines in the node's space, in the editor's spring bone collision colors, with handles for its size as CollisionShape3D's.
+// collision gizmo.
 class BoneClothCollision3DGizmoPlugin : public EditorNode3DGizmoPlugin {
 	GDCLASS(BoneClothCollision3DGizmoPlugin, EditorNode3DGizmoPlugin)
 
-	// The size and the node's transform when the drag began, as the engine's Gizmo3DHelper keeps them: each drag is measured from them, and Esc puts them back.
+	// handle을 끌기 시작할 때의 크기와 노드 위치.
+	// 여기서부터 측정을 시작하고, Esc를 누르면 이 값으로 되돌린다.
 	Variant initial_value;
 	Transform3D initial_transform;
 
@@ -39,10 +39,7 @@ public:
 	BoneClothCollision3DGizmoPlugin();
 };
 
-// Each chain as the solver holds it this frame: the joints, the sphere each collides with, the links and the limit angle's cones.
-// Redrawn every frame from the simulator's state, as KawaiiPhysics' edit mode and Magica Cloth 2's gizmo draw theirs. The engine's
-// SpringBoneSimulator3D skins its lines to the bones instead; a cone skinned to its bone would turn with the cloth, and its axis is
-// the pose direction.
+// simulator gizmo.
 class BoneClothSimulator3DGizmoPlugin : public EditorNode3DGizmoPlugin {
 	GDCLASS(BoneClothSimulator3DGizmoPlugin, EditorNode3DGizmoPlugin)
 
