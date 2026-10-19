@@ -193,6 +193,7 @@ private:
 
 protected:
 	static void _bind_methods();
+	void _notification(int p_what);
 	bool _set(const StringName &p_name, const Variant &p_value);
 	bool _get(const StringName &p_name, Variant &r_ret) const;
 	void _get_property_list(List<PropertyInfo> *p_list) const;
@@ -272,6 +273,7 @@ public:
 	float get_teleport_angle() const;
 
 	void reset();
+	PackedStringArray _get_configuration_warnings() const override;
 	void _validate_bone_names() override;
 	void _process_modification_with_delta(double p_delta) override;
 };

@@ -1,5 +1,6 @@
 #include "bone_cloth_simulator_3d.h"
 
+#include <godot_cpp/classes/engine.hpp>
 #include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/core/math.hpp>
 
@@ -34,12 +35,19 @@ bool BoneClothSimulator3D::_build_joints(Skeleton3D *p_skeleton, Chain &p_chain)
 	p_chain.joints.clear();
 	const int root = p_chain.root_bone;
 	const int end = p_chain.end_bone;
-	ERR_FAIL_COND_V_MSG(root < 0, false, "Root bone not found: '" + p_chain.root_bone_name + "'.");
-	ERR_FAIL_COND_V_MSG(end < 0, false, "End bone not found: '" + p_chain.end_bone_name + "'.");
+
+	// bone이 없거나 end bone이 root bone 아래에 없으면 chain을 만들지 않는다(그 chain은 움직이지 않는다).
+	// 이유는 configuration warning으로 보여 준다.
+	if (root < 0 || end < 0) {
+		return false;
+	}
 
 	LocalVector<int> bones;
 	for (int bone = end; bone != root; bone = p_skeleton->get_bone_parent(bone)) {
-		ERR_FAIL_COND_V_MSG(bone < 0, false, "End bone '" + p_chain.end_bone_name + "' is not under root bone '" + p_chain.root_bone_name + "'.");
+		if (bone < 0) {
+			return false;
+		}
+
 		bones.push_back(bone);
 	}
 
@@ -84,19 +92,15 @@ void BoneClothSimulator3D::_build_branches() {
 			continue;
 		}
 
+		// parent chain은 앞 chain에서만 찾는다. 파생 chain은 이번 step에 먼저 움직인 parent joint를 따라가야 한다.
+		// 순서가 반대면 configuration warning이 알려 준다.
 		const int root = chain.joints[0].bone;
-		for (uint32_t other = 0; other < chains.size() && chain.parent_chain < 0; other++) {
-			if (other == c) {
-				continue;
-			}
-
+		for (uint32_t other = 0; other < c && chain.parent_chain < 0; other++) {
 			for (uint32_t j = 0; j < chains[other].joints.size(); j++) {
 				if (chains[other].joints[j].bone != root) {
 					continue;
 				}
 
-				// 파생 chain은 이번 step에 움직인 parent joint를 따라가야 한다.
-				ERR_CONTINUE_MSG(other > c, vformat("Chain %d's root bone '%s' is a joint of chain %d; list the trunk before its branches.", c, chain.root_bone_name, other));
 				chain.parent_chain = int(other);
 				chain.parent_joint = j;
 				chains[other].joints[j].branched = true;
@@ -569,6 +573,23 @@ void BoneClothSimulator3D::_bind_methods() {
 	BIND_ENUM_CONSTANT(LINK_MODE_LOOP);
 }
 
+// 설정 밖에서 생기는 변화에도 configuration warning을 다시 확인한다.
+// 자식 collision을 더하거나 빼거나 옮길 때, 그리고 skeleton이나 그 위 node의 scale이 바뀔 때다.
+// transform 알림은 scale 경고에만 쓴다. 경고는 에디터에서만 보이므로 에디터에서만 켠다(기본은 꺼져 있다).
+void BoneClothSimulator3D::_notification(int p_what) {
+	switch (p_what) {
+		case NOTIFICATION_ENTER_TREE: {
+			if (Engine::get_singleton()->is_editor_hint()) {
+				set_notify_transform(true);
+			}
+		} break;
+		case NOTIFICATION_CHILD_ORDER_CHANGED:
+		case NOTIFICATION_TRANSFORM_CHANGED: {
+			update_configuration_warnings();
+		} break;
+	}
+}
+
 // chain별 property(chains/N/...)를 넣고 읽는다 (N은 chain 번호).
 bool BoneClothSimulator3D::_set(const StringName &p_name, const Variant &p_value) {
 	const String path = p_name;
@@ -730,6 +751,7 @@ void BoneClothSimulator3D::set_chain_count(int p_count) {
 	chains.resize(p_count);
 	joints_dirty = true;
 	notify_property_list_changed();
+	update_configuration_warnings();
 }
 
 int BoneClothSimulator3D::get_chain_count() const {
@@ -742,7 +764,14 @@ void BoneClothSimulator3D::set_root_bone_name(int p_index, const String &p_bone_
 	chains[p_index].root_bone_name = p_bone_name;
 	Skeleton3D *skeleton = get_skeleton();
 	if (skeleton) {
-		set_root_bone(p_index, skeleton->find_bone(p_bone_name));
+		// 스크립트에서 이름을 잘못 넣어도, 에러임을 알 수 있게 한 번 출력한다
+		// 에디터에서는 configuration warning도 뜬다.
+		const int found = skeleton->find_bone(p_bone_name);
+		if (found < 0 && !p_bone_name.is_empty()) {
+			WARN_PRINT_ED("Chain " + itos(p_index) + ": root bone not found: '" + p_bone_name + "'.");
+		}
+
+		set_root_bone(p_index, found);
 	}
 }
 
@@ -766,7 +795,9 @@ void BoneClothSimulator3D::set_root_bone(int p_index, int p_bone) {
 			chain.root_bone_name = skeleton->get_bone_name(p_bone);
 		}
 	}
+
 	joints_dirty = true;
+	update_configuration_warnings();
 }
 
 int BoneClothSimulator3D::get_root_bone(int p_index) const {
@@ -779,7 +810,12 @@ void BoneClothSimulator3D::set_end_bone_name(int p_index, const String &p_bone_n
 	chains[p_index].end_bone_name = p_bone_name;
 	Skeleton3D *skeleton = get_skeleton();
 	if (skeleton) {
-		set_end_bone(p_index, skeleton->find_bone(p_bone_name));
+		const int found = skeleton->find_bone(p_bone_name);
+		if (found < 0 && !p_bone_name.is_empty()) {
+			WARN_PRINT_ED("Chain " + itos(p_index) + ": end bone not found: '" + p_bone_name + "'.");
+		}
+
+		set_end_bone(p_index, found);
 	}
 }
 
@@ -804,6 +840,7 @@ void BoneClothSimulator3D::set_end_bone(int p_index, int p_bone) {
 
 	joints_dirty = true;
 	notify_property_list_changed();
+	update_configuration_warnings();
 }
 
 int BoneClothSimulator3D::get_end_bone(int p_index) const {
@@ -850,6 +887,7 @@ void BoneClothSimulator3D::set_enable_all_child_collisions(int p_index, bool p_e
 	ERR_FAIL_INDEX(p_index, int(chains.size()));
 	chains[p_index].enable_all_child_collisions = p_enabled;
 	notify_property_list_changed();
+	update_configuration_warnings();
 }
 
 bool BoneClothSimulator3D::are_all_child_collisions_enabled(int p_index) const {
@@ -863,6 +901,7 @@ void BoneClothSimulator3D::set_exclude_collision_count(int p_index, int p_count)
 	ERR_FAIL_COND(p_count < 0);
 	chains[p_index].exclude_collisions.resize(p_count);
 	notify_property_list_changed();
+	update_configuration_warnings();
 }
 
 int BoneClothSimulator3D::get_exclude_collision_count(int p_index) const {
@@ -876,6 +915,7 @@ void BoneClothSimulator3D::set_exclude_collision_path(int p_index, int p_collisi
 	ERR_FAIL_INDEX(p_collision, int(chains[p_index].exclude_collisions.size()));
 	ERR_FAIL_COND_EDMSG(!_is_child_collision(p_node_path), "Collision must be a BoneClothCollision3D child of this BoneClothSimulator3D.");
 	chains[p_index].exclude_collisions[p_collision] = p_node_path;
+	update_configuration_warnings();
 }
 
 NodePath BoneClothSimulator3D::get_exclude_collision_path(int p_index, int p_collision) const {
@@ -894,6 +934,7 @@ void BoneClothSimulator3D::set_collision_count(int p_index, int p_count) {
 	ERR_FAIL_COND(p_count < 0);
 	chains[p_index].collisions.resize(p_count);
 	notify_property_list_changed();
+	update_configuration_warnings();
 }
 
 int BoneClothSimulator3D::get_collision_count(int p_index) const {
@@ -907,6 +948,7 @@ void BoneClothSimulator3D::set_collision_path(int p_index, int p_collision, cons
 	ERR_FAIL_INDEX(p_collision, int(chains[p_index].collisions.size()));
 	ERR_FAIL_COND_EDMSG(!_is_child_collision(p_node_path), "Collision must be a BoneClothCollision3D child of this BoneClothSimulator3D.");
 	chains[p_index].collisions[p_collision] = p_node_path;
+	update_configuration_warnings();
 }
 
 NodePath BoneClothSimulator3D::get_collision_path(int p_index, int p_collision) const {
@@ -1084,6 +1126,82 @@ float BoneClothSimulator3D::get_teleport_angle() const {
 
 void BoneClothSimulator3D::reset() {
 	needs_reset = true;
+}
+
+// p_bone이 p_root에서 p_end까지의 bone 경로 위에 있는지 확인한다(p_root, p_end 포함).
+// p_end가 p_root 아래에 없으면 경로가 없으므로 false다.
+static bool is_on_bone_path(const Skeleton3D *p_skeleton, int p_root, int p_end, int p_bone) {
+	bool found = false;
+	for (int bone = p_end; bone >= 0; bone = p_skeleton->get_bone_parent(bone)) {
+		found = found || bone == p_bone;
+		if (bone == p_root) {
+			return found;
+		}
+	}
+
+	return false;
+}
+
+// 잘못된 설정을 Scene 트리의 노란 삼각형으로 보여 준다(에디터 전용). 잘못된 chain은 움직이지 않는다.
+// skeleton이 없을 때의 경고는 SkeletonModifier3D가 따로 띄운다.
+PackedStringArray BoneClothSimulator3D::_get_configuration_warnings() const {
+	PackedStringArray warnings;
+	if (chains.is_empty()) {
+		warnings.push_back("No chains. Add a chain under Chains and pick its root bone and end bone.");
+	}
+
+	// 천은 skeleton 공간에서 계산한다. 축마다 scale이 다르면 같은 캐릭터를 scale 1로 둘 때와 다르게 움직인다.
+	// 균일한 scale은 경고하지 않는다(radius, bone 길이, 속도 제한은 skeleton 단위라 캐릭터와 같이 커진다).
+	const Skeleton3D *skeleton = get_skeleton();
+	if (skeleton) {
+		const Vector3 scale = skeleton->get_global_transform().basis.get_scale();
+		if (!(Math::is_zero_approx(scale.x - scale.y) && Math::is_zero_approx(scale.y - scale.z))) {
+			warnings.push_back(vformat("The Skeleton3D has a non-uniform scale %s. The cloth is simulated in the skeleton's space and moves differently when its axes are scaled unequally. Make the scale of the Skeleton3D and its parents uniform (the same on all axes).", scale));
+		}
+	}
+
+	for (uint32_t c = 0; c < chains.size(); c++) {
+		const Chain &chain = chains[c];
+		if (skeleton) {
+			if (chain.root_bone < 0) {
+				warnings.push_back(chain.root_bone_name.is_empty() ? vformat("Chain %d: no root bone.", c) : vformat("Chain %d: root bone '%s' is not in the skeleton.", c, chain.root_bone_name));
+			}
+			if (chain.end_bone < 0) {
+				warnings.push_back(chain.end_bone_name.is_empty() ? vformat("Chain %d: no end bone.", c) : vformat("Chain %d: end bone '%s' is not in the skeleton.", c, chain.end_bone_name));
+			}
+
+			const bool has_path = is_on_bone_path(skeleton, chain.root_bone, chain.end_bone, chain.root_bone);
+			if (chain.root_bone >= 0 && chain.end_bone >= 0 && !has_path) {
+				warnings.push_back(vformat("Chain %d: end bone '%s' is neither root bone '%s' nor under it.", c, chain.end_bone_name, chain.root_bone_name));
+			}
+
+			// root bone이 뒤 chain의 중간에 있고 앞 chain 어디에도 없으면 경고한다(_build_branches는 앞 chain에서만 찾는다).
+			// root bone이 같은 chain끼리는 순서와 상관없다.
+			bool has_trunk = false;
+			for (uint32_t other = 0; other < c && has_path; other++) {
+				has_trunk = has_trunk || is_on_bone_path(skeleton, chains[other].root_bone, chains[other].end_bone, chain.root_bone);
+			}
+
+			for (uint32_t other = c + 1; other < chains.size() && has_path && !has_trunk; other++) {
+				const Chain &later = chains[other];
+				if (later.root_bone != chain.root_bone && is_on_bone_path(skeleton, later.root_bone, later.end_bone, chain.root_bone)) {
+					warnings.push_back(vformat("Chain %d: root bone '%s' is on chain %d. Move chain %d above chain %d so that it branches from it.", c, chain.root_bone_name, other, other, c));
+					break;
+				}
+			}
+		}
+
+		// 쓰고 있는 목록만 확인한다(안 쓰는 목록은 저장되지 않는다).
+		const bool all = chain.enable_all_child_collisions;
+		const LocalVector<NodePath> &node_paths = all ? chain.exclude_collisions : chain.collisions;
+		for (const NodePath &node_path : node_paths) {
+			if (!_is_child_collision(node_path)) {
+				warnings.push_back(vformat("Chain %d: %s '%s' is not a BoneClothCollision3D child of this node.", c, all ? "exclude collision" : "collision", node_path));
+			}
+		}
+	}
+
+	return warnings;
 }
 
 // skeleton의 bone 순서가 바뀌어도 chain이 같은 bone을 찾도록, bone 이름으로 찾는다.
