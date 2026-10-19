@@ -1350,7 +1350,8 @@ void BoneClothSimulator3D::_process_modification_with_delta(double p_delta) {
 		// 순간이동 때 천이 크게 튀지 않게 한다.
 		// 한 frame에 teleport_distance보다 멀리 가거나 teleport_angle보다 많이 돌면,
 		// skeleton이 지난 step과 같은 양만큼 움직인 것으로 계산한다.
-		const bool teleported = move_location.length() > teleport_distance * units_per_meter || move_rotation.get_angle() > teleport_angle;
+		// 돈 각도는 angle_to로 잰다.
+		const bool teleported = move_location.length() > teleport_distance * units_per_meter || Quaternion().angle_to(move_rotation) > teleport_angle;
 
 		const double elapsed = step_time + p_delta;
 		step_time = MIN(elapsed, MAX_STEPS * STEP);

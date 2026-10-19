@@ -126,19 +126,23 @@ static func _frame_rate(t) -> void:
 		t.check(largest < FRAME_RATE_TOLERANCE, "Frame rate %d fps: the tip is up to %.4f m from 60 fps." % [fps, largest])
 
 
-# 한 frame에 teleport_distance(0.5 m)보다 멀리 가거나 teleport_angle(90도)보다 많이 돌면, 천이 흔들리지 않고 그대로 따라간다.
+# 한 frame에 teleport_distance(기본 0.5 m)보다 멀리 가거나 teleport_angle(기본 90도)보다 많이 돌면, 천이 흔들리지 않고 그대로 따라간다.
 # 중력을 0으로 둔다. 중력이 있으면 돈 뒤에 chain이 중력 쪽으로 다시 흔들려서, teleport와 상관없이 움직인다.
 static func _teleport(t) -> void:
-	# 이름, 이동, Z축 회전, teleport인지
+	# 이름, 이동, Z축 회전, teleport_angle, teleport인지
 	var cases := [
-		["move 1 m", Vector3(1, 0, 0), 0.0, true],
-		["turn 100 deg", Vector3(), deg_to_rad(100.0), true],
-		["move 0.3 m", Vector3(0.3, 0, 0), 0.0, false],
-		["turn 60 deg", Vector3(), deg_to_rad(60.0), false],
+		["move 1 m", Vector3(1, 0, 0), 0.0, deg_to_rad(90.0), true],
+		["turn 100 deg", Vector3(), deg_to_rad(100.0), deg_to_rad(90.0), true],
+		["move 0.3 m", Vector3(0.3, 0, 0), 0.0, deg_to_rad(90.0), false],
+		["turn 60 deg", Vector3(), deg_to_rad(60.0), deg_to_rad(90.0), false],
+		# 120도보다 많이 돈 회전도 teleport_angle을 기준으로 나뉘어야 한다.
+		["turn 175 deg, limit 170 deg", Vector3(), deg_to_rad(175.0), deg_to_rad(170.0), true],
+		["turn 150 deg, limit 170 deg", Vector3(), deg_to_rad(150.0), deg_to_rad(170.0), false],
 	]
 	for c in cases:
 		var rig := Rig.new(t)
 		rig.simulator.set("gravity/value", 0.0)
+		rig.simulator.teleport_angle = c[3]
 		for frame in 10:
 			await rig.advance(1.0 / 60.0)
 		var before := rig.tip()
@@ -150,7 +154,7 @@ static func _teleport(t) -> void:
 			largest = maxf(largest, rig.tip().distance_to(before))
 		rig.remove()
 
-		if c[3]:
+		if c[4]:
 			t.check(largest < TELEPORT_TOLERANCE, "Teleport, %s: the tip moved %.6f m." % [c[0], largest])
 		else:
 			t.check(largest > SWING_MIN, "No teleport, %s: the tip swung only %.6f m." % [c[0], largest])
