@@ -83,7 +83,7 @@ void BoneClothCollisionTaperedCapsule3D::_get_head_and_tail(const Transform3D &p
 }
 
 // joint가 부딪칠 구 하나를 고른다. 이 모양은 굵기가 조금씩 변하는 구를 축을 따라 이어 붙인 것으로 본다.
-// 굵기가 다르면 옆면이 기울어서, 그 구는 joint 바로 옆보다 굵은 쪽으로 조금 비중이 있다(joint와 축의 거리 * 옆면 기울기만큼).
+// 굵기가 다르면 옆면이 기울어서, 그 구는 joint 바로 옆보다 굵은 쪽으로 조금 옮겨져 있다(joint와 축의 거리 * 옆면 기울기만큼).
 void BoneClothCollisionTaperedCapsule3D::_get_nearest_sphere(const Vector3 &p_head, const Vector3 &p_tail, const Vector3 &p_point, Vector3 &r_center, float &r_radius) const {
 	const Vector3 axis = p_tail - p_head;
 	const float length = axis.length();
