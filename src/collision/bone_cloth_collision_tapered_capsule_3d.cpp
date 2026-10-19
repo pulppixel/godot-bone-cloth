@@ -23,8 +23,8 @@ void BoneClothCollisionTaperedCapsule3D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "inside"), "set_inside", "is_inside");
 }
 
-// Height is end to end, as the capsule's, so equal radii make the same shape as BoneClothCollisionCapsule3D. It never gets shorter than
-// the larger end sphere, so neither end sphere holds the other.
+// height는 캡슐처럼 전체 길이(두 반지름이 같으면 BoneClothCollisionCapsule3D와 같은 모양).
+// 반지름이 height의 절반을 넘지 않게 맞춘다.
 void BoneClothCollisionTaperedCapsule3D::set_top_radius(float p_radius) {
 	top_radius = p_radius;
 	if (top_radius > height * 0.5f) {
@@ -76,23 +76,19 @@ bool BoneClothCollisionTaperedCapsule3D::is_inside() const {
 	return inside;
 }
 
-// The centers of the two end spheres in skeleton space, head at +Y with top_radius.
+// head는 +Y 쪽(top_radius), tail은 -Y 쪽(bottom_radius).
 void BoneClothCollisionTaperedCapsule3D::_get_head_and_tail(const Transform3D &p_pose, Vector3 &r_head, Vector3 &r_tail) const {
 	r_head = p_pose.origin + p_pose.basis.xform(Vector3(0.0f, height * 0.5f - top_radius, 0.0f));
 	r_tail = p_pose.origin - p_pose.basis.xform(Vector3(0.0f, height * 0.5f - bottom_radius, 0.0f));
 }
 
-// The hull is the union of spheres along the axis whose radius goes linearly from one end to the other; the one whose surface is
-// nearest the point collides. KawaiiPhysics' AdjustByTaperedCapsuleCollision takes the sphere at the axis point nearest the point,
-// which is that sphere only when the radii are equal. On a taper the hull's side touches each sphere off its middle, toward the thin
-// end, so the nearest sphere sits back toward the thick end by the point's distance from the axis times the tangent of the side's slope.
-// On Lilith's thigh (8.4 to 5.2 cm over 0.458 m) KawaiiPhysics' shape is 0.2 mm inside the hull at most; on 10 to 3 cm over 0.15 m, 10 mm
+// joint가 부딪칠 구 하나를 고른다.
 void BoneClothCollisionTaperedCapsule3D::_get_nearest_sphere(const Vector3 &p_head, const Vector3 &p_tail, const Vector3 &p_point, Vector3 &r_center, float &r_radius) const {
 	const Vector3 axis = p_tail - p_head;
 	const float length = axis.length();
 	const float shrink = top_radius - bottom_radius;
 
-	// At the least height the larger end sphere holds the other and is the whole shape.
+	// height가 최소면 작은 구가 큰 구 안에 들어간다.
 	if (length <= Math::abs(shrink)) {
 		r_center = shrink >= 0.0f ? p_head : p_tail;
 		r_radius = MAX(top_radius, bottom_radius);
@@ -109,8 +105,7 @@ void BoneClothCollisionTaperedCapsule3D::_get_nearest_sphere(const Vector3 &p_he
 	r_radius = Math::lerp(top_radius, bottom_radius, t);
 }
 
-// The sphere collision against the nearest sphere. A point on the axis has no direction out and takes the node's X.
-// Inside, the room is the hull of the end spheres less the joint's radius, each never below zero, as the sphere's.
+// 선택한 구로 충돌을 한다.
 Vector3 BoneClothCollisionTaperedCapsule3D::_collide(const Transform3D &p_pose, const Vector3 &p_point, float p_radius) const {
 	Vector3 head;
 	Vector3 tail;
@@ -121,8 +116,6 @@ Vector3 BoneClothCollisionTaperedCapsule3D::_collide(const Transform3D &p_pose, 
 	return BoneClothCollisionSphere3D::_collide_sphere(center, radius, inside, p_pose.basis.get_column(0).normalized(), p_point, p_radius);
 }
 
-// Outside, the line's point nearest the axis against the sphere nearest that point, as the capsule's. Inside, the room is convex,
-// so the line stays in when both of its ends do.
 void BoneClothCollisionTaperedCapsule3D::_collide_segment(const Transform3D &p_pose, Vector3 &r_a, Vector3 &r_b, float p_radius) const {
 	if (inside) {
 		r_a = _collide(p_pose, r_a, p_radius);

@@ -1,4 +1,4 @@
-// A plane on a bone, SpringBoneCollisionPlane3D's: endless, through the node and facing its Y; the joints stay on the side it faces.
+// bone에 붙은 끝없는 평면. 노드의 Y 방향이 정면이다.
 
 #pragma once
 

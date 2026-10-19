@@ -29,7 +29,7 @@ void initialize_bone_cloth_module(ModuleInitializationLevel p_level) {
 		GDREGISTER_CLASS(BoneClothCollisionTaperedCapsule3D);
 	}
 
-	// The editor's classes are internal: the class reference, the Create dialog and code completion leave them out.
+	// 에디터 class는 internal로 등록한다(클래스 레퍼런스, Create 창, 자동완성에 안 나온다).
 	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
 		GDREGISTER_INTERNAL_CLASS(BoneClothCollision3DGizmoPlugin);
 		GDREGISTER_INTERNAL_CLASS(BoneClothSimulator3DGizmoPlugin);
