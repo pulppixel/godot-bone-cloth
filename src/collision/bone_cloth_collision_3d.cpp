@@ -271,9 +271,9 @@ void BoneClothCollision3D::_take_offsets_from_transform() {
 	sync_pose();
 }
 
+// simulator가 호출할 충돌 함수. p_mirror면 mirror 쪽으로 충돌한다.
 // 모양 함수는 크기 값(m)을 그대로 쓴다.
 // 그래서 공간 전체를 m 단위로 줄여서(1 / units_per_meter배) 계산하고, 결과를 되돌린다.
-// simulator가 호출할 충돌 함수. p_mirror면 mirror 쪽으로 충돌한다.
 Vector3 BoneClothCollision3D::collide(const Vector3 &p_point, float p_radius, bool p_mirror) const {
 	const float meters = 1.0f / units_per_meter;
 	const Transform3D &shape = p_mirror ? mirror_pose : pose;
