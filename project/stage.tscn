@@ -10,12 +10,12 @@
 [ext_resource type="PackedScene" uid="uid://bty38kckba1b4" path="res://characters/lucia/lucia.gltf" id="4_1edn8"]
 [ext_resource type="Script" uid="uid://0igg748dx7du" path="res://orbit_camera.gd" id="6_vpggq"]
 
-[sub_resource type="Curve" id="Curve_jk7y1"]
-_data = [Vector2(0, 0), 0.0, 1.0, 0, 1, Vector2(1, 1), 1.0, 0.0, 1, 0]
-point_count = 2
-
 [sub_resource type="Curve" id="Curve_8qwj8"]
 _data = [Vector2(0, 0.5), 0.0, 0.5, 0, 1, Vector2(1, 1), 0.5, 0.0, 1, 0]
+point_count = 2
+
+[sub_resource type="Curve" id="Curve_jk7y1"]
+_data = [Vector2(0, 0), 0.0, 1.0, 0, 1, Vector2(1, 1), 1.0, 0.0, 1, 0]
 point_count = 2
 
 [sub_resource type="Curve" id="Curve_jx6rg"]
@@ -123,7 +123,6 @@ bones/162/rotation = Quaternion(0.00043413267, 0.9999527, 0.009639979, 0.0012470
 link_mode = 2
 drag/value = 0.15
 stiffness/value = 0.1
-stiffness/damping_curve = SubResource("Curve_jk7y1")
 radius/value = 0.04
 limit_angle/value = 1.3089969
 limit_angle/damping_curve = SubResource("Curve_8qwj8")
@@ -195,7 +194,7 @@ transform = Transform3D(0.00092040095, 0.97901714, -0.20377581, -0.9994465, -0.0
 
 [node name="Thighs" type="BoneClothCollisionTaperedCapsule3D" parent="lilith/Armature/GeneralSkeleton/BoneClothSimulator3D" unique_id=1189342597]
 top_radius = 0.075
-bottom_radius = 0.095
+bottom_radius = 0.115
 height = 0.628
 bone_name = "LeftUpperLeg"
 bone = 149
