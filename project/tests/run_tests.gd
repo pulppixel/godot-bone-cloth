@@ -4,8 +4,10 @@ extends SceneTree
 
 const TestChain := preload("res://tests/test_chain.gd")
 const TestStage := preload("res://tests/test_stage.gd")
+const TestWarnings := preload("res://tests/test_warnings.gd")
 
 const TIMEOUT_MSEC := 300000
+const EDITOR_PROJECT := "godot-bone-cloth-editor-tests" # OS 임시 폴더 안에 만드는 에디터 테스트용 프로젝트
 
 var passes := 0
 var failures := 0
@@ -41,6 +43,12 @@ func skip(message: String) -> void:
 
 
 func _run() -> void:
+	# 에디터 안에서는 에디터에만 있는 것(configuration warning)을 검사한다. _run_editor_tests가 이렇게 실행한다.
+	if Engine.is_editor_hint():
+		await TestWarnings.run(self)
+		_finish()
+		return
+	
 	# 처음 3 frame을 본다. --fixed-fps가 없으면 처음 frame들이 1/120초로 시작한다.
 	for frame in 3:
 		await process_frame
@@ -51,7 +59,58 @@ func _run() -> void:
 
 	await TestChain.run(self)
 	await TestStage.run(self)
+	_run_editor_tests()
 	_finish()
+
+
+# 임시 폴더에 addon과 tests만 든 프로젝트를 만들고, 거기서 headless 에디터로 이 파일을 다시 실행한다.
+func _run_editor_tests() -> void:
+	var project := OS.get_temp_dir().path_join(EDITOR_PROJECT)
+	_remove(project)
+	_copy("res://addons/bone_cloth", project.path_join("addons/bone_cloth"))
+	_copy("res://tests", project.path_join("tests"))
+	FileAccess.open(project.path_join("project.godot"), FileAccess.WRITE).store_string("config_version=5\n")
+
+	# 먼저 import로 .godot을 만든다. 없으면 에디터가 처음 검사하면서 스크립트를 다시 불러와, 기다리던 테스트가 취소된다.
+	var output := []
+	OS.execute(OS.get_executable_path(), ["--headless", "--import", "--path", project], output, true)
+	output.clear()
+	var arguments := ["--headless", "--editor", "--path", project, "--script", "res://tests/run_tests.gd"]
+	var exit_code := OS.execute(OS.get_executable_path(), arguments, output, true)
+	var text: String = output[0]
+	var counts := RegEx.create_from_string(r"passes (\d+), failures (\d+), skipped (\d+)").search(text)
+	if counts == null:
+		print(text)
+		check(false, "Editor tests did not finish (exit code %d); the editor's output is above." % exit_code)
+		return
+
+	for line in text.split("\n"):
+		if line.begins_with("FAILED: ") or line.begins_with("SKIPPED: "):
+			print(line.strip_edges())
+	passes += counts.get_string(1).to_int()
+	failures += counts.get_string(2).to_int()
+	skips += counts.get_string(3).to_int()
+
+
+# 폴더를 통째로 복사한다. 빌드가 남기는 디버그 파일과 에디터가 쓰는 DLL 사본(~로 시작)은 뺀다.
+func _copy(p_from: String, p_to: String) -> void:
+	DirAccess.make_dir_recursive_absolute(p_to)
+	for file in DirAccess.get_files_at(p_from):
+		if not (file.begins_with("~") or file.get_extension() in ["pdb", "ilk"]):
+			DirAccess.copy_absolute(p_from.path_join(file), p_to.path_join(file))
+	for folder in DirAccess.get_directories_at(p_from):
+		_copy(p_from.path_join(folder), p_to.path_join(folder))
+
+
+# 폴더를 통째로 지운다. 지난 실행의 파일과 에디터 캐시(.godot)가 남지 않게 한다.
+func _remove(p_path: String) -> void:
+	if not DirAccess.dir_exists_absolute(p_path):
+		return
+	for file in DirAccess.get_files_at(p_path):
+		DirAccess.remove_absolute(p_path.path_join(file))
+	for folder in DirAccess.get_directories_at(p_path):
+		_remove(p_path.path_join(folder))
+	DirAccess.remove_absolute(p_path)
 
 
 func _finish() -> void:
