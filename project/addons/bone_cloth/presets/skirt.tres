@@ -9,4 +9,5 @@ drag/value = 0.15
 stiffness/value = 0.1
 limit_angle/value = 1.3089969
 limit_angle/damping_curve = SubResource("Curve_ry6i0")
+depth_inertia = 0.7
 movement_speed_limit = 4.0

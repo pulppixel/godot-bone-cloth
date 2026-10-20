@@ -33,6 +33,8 @@ void BoneClothPreset::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_inertia"), &BoneClothPreset::get_inertia);
 	ClassDB::bind_method(D_METHOD("set_inertia_smoothing", "smoothing"), &BoneClothPreset::set_inertia_smoothing);
 	ClassDB::bind_method(D_METHOD("get_inertia_smoothing"), &BoneClothPreset::get_inertia_smoothing);
+	ClassDB::bind_method(D_METHOD("set_depth_inertia", "depth_inertia"), &BoneClothPreset::set_depth_inertia);
+	ClassDB::bind_method(D_METHOD("get_depth_inertia"), &BoneClothPreset::get_depth_inertia);
 	ClassDB::bind_method(D_METHOD("set_movement_speed_limit", "limit"), &BoneClothPreset::set_movement_speed_limit);
 	ClassDB::bind_method(D_METHOD("get_movement_speed_limit"), &BoneClothPreset::get_movement_speed_limit);
 	ClassDB::bind_method(D_METHOD("set_rotation_speed_limit", "limit"), &BoneClothPreset::set_rotation_speed_limit);
@@ -62,6 +64,7 @@ void BoneClothPreset::_bind_methods() {
 	ADD_GROUP("Inertia", "");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "inertia", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_inertia", "get_inertia");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "inertia_smoothing", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_inertia_smoothing", "get_inertia_smoothing");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "depth_inertia", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_depth_inertia", "get_depth_inertia");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "movement_speed_limit", PROPERTY_HINT_RANGE, "0,20,0.01,or_greater,suffix:m/s"), "set_movement_speed_limit", "get_movement_speed_limit");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "rotation_speed_limit", PROPERTY_HINT_RANGE, "0,1440,0.1,radians_as_degrees,suffix:/s"), "set_rotation_speed_limit", "get_rotation_speed_limit");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "joint_speed_limit", PROPERTY_HINT_RANGE, "0,10,0.01,or_greater,suffix:m/s"), "set_joint_speed_limit", "get_joint_speed_limit");
@@ -199,6 +202,15 @@ void BoneClothPreset::set_inertia_smoothing(float p_smoothing) {
 
 float BoneClothPreset::get_inertia_smoothing() const {
 	return inertia_smoothing;
+}
+
+void BoneClothPreset::set_depth_inertia(float p_depth_inertia) {
+	depth_inertia = p_depth_inertia;
+	emit_changed();
+}
+
+float BoneClothPreset::get_depth_inertia() const {
+	return depth_inertia;
 }
 
 void BoneClothPreset::set_movement_speed_limit(float p_limit) {

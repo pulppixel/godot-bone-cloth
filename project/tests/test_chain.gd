@@ -10,6 +10,7 @@ const LENGTH_TOLERANCE := 0.000001 # m
 const ANGLE_TOLERANCE := 0.0001 # rad
 const SCALE_TOLERANCE := 0.00002 # m
 const BONE_COLLISION_TOLERANCE := 0.001 # m
+const DEPTH_INERTIA_RATIO := 0.5
 
 
 #   Stage
@@ -97,6 +98,7 @@ static func run(t) -> void:
 	await _long_step(t)
 	await _scale(t)
 	await _bone_collision(t)
+	await _depth_inertia(t)
 
 
 # 캐릭터가 좌우로 오가며 몸을 돌리는 움직임. p_time초 때의 자세를 정한다.
@@ -260,3 +262,22 @@ static func _bone_collision(t) -> void:
 
 	var depth := 0.04 + 0.02 - nearest
 	t.check(depth < BONE_COLLISION_TOLERANCE, "Bone collision: a bone is %.4f m into the sphere." % depth)
+
+
+# depth_inertia만큼 root 근처 joint는 root의 움직임을 그대로 따라간다.
+# root bone(b0)을 skeleton 안에서 좌우로 흔든다(달릴 때 골반이 흔들리는 것처럼). 캐릭터는 움직이지 않는다.
+# root 다음 joint(b1)가 제자리(root에서 rest만큼 아래)에서 벗어난 거리의 평균을 depth_inertia 0과 1에서 비교한다.
+static func _depth_inertia(t) -> void:
+	var offsets := {} # depth_inertia마다, b1이 제자리에서 벗어난 평균 거리 (m)
+	for value in [0.0, 1.0]:
+		var rig := Rig.new(t)
+		rig.simulator.set("depth_inertia", value)
+		var sum := 0.0
+		for frame in 120:
+			rig.skeleton.set_bone_pose_position(0, Vector3(sin(float(frame + 1) / 60.0 * 12.0) * 0.05, 0, 0))
+			await rig.advance(1.0 / 60.0)
+			sum += rig.poses[1].origin.distance_to(rig.poses[0].origin + Vector3(0, -BONE_LENGTH, 0))
+		offsets[value] = sum / 120.0
+		rig.remove()
+
+	t.check(offsets[1.0] < offsets[0.0] * DEPTH_INERTIA_RATIO, "Depth inertia 1: the joint next to the root is %.4f m off its place, against %.4f m at 0." % [offsets[1.0], offsets[0.0]])

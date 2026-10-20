@@ -10,6 +10,9 @@
 	<tutorials>
 	</tutorials>
 	<members>
+		<member name="depth_inertia" type="float" setter="set_depth_inertia" getter="get_depth_inertia" default="0.0">
+			See [member BoneClothSimulator3D.depth_inertia].
+		</member>
 		<member name="drag/damping_curve" type="Curve" setter="set_drag_damping_curve" getter="get_drag_damping_curve">
 			See [member BoneClothSimulator3D.drag/damping_curve].
 		</member>
