@@ -124,6 +124,7 @@ link_mode = 2
 drag/value = 0.15
 stiffness/value = 0.1
 stiffness/damping_curve = SubResource("Curve_jk7y1")
+radius/value = 0.04
 limit_angle/value = 1.3089969
 limit_angle/damping_curve = SubResource("Curve_8qwj8")
 movement_speed_limit = 4.0

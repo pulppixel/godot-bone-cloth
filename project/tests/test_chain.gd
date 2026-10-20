@@ -9,6 +9,7 @@ const SWING_MIN := 0.005 # m
 const LENGTH_TOLERANCE := 0.000001 # m
 const ANGLE_TOLERANCE := 0.0001 # rad
 const SCALE_TOLERANCE := 0.00002 # m
+const BONE_COLLISION_TOLERANCE := 0.001 # m
 
 
 #   Stage
@@ -95,6 +96,7 @@ static func run(t) -> void:
 	await _limits_and_lengths(t)
 	await _long_step(t)
 	await _scale(t)
+	await _bone_collision(t)
 
 
 # 캐릭터가 좌우로 오가며 몸을 돌리는 움직임. p_time초 때의 자세를 정한다.
@@ -233,3 +235,28 @@ static func _scale(t) -> void:
 		for frame in tips.size():
 			largest = maxf(largest, tips[frame].distance_to(baselines[c[4]][frame]))
 		t.check(largest < SCALE_TOLERANCE, "Scale, %s: the tip is up to %.6f m from scale 1." % [c[0], largest])
+
+
+# joint 사이의 bone도 collision 밖으로 밀린다.
+# 구를 b1과 b2 사이 옆에 둔다. 두 joint는 구 중심에서 7.1 cm라 밖에 있고(구 4 cm + joint 2 cm = 6 cm), 그 사이 bone 가운데는 5 cm라 구 안을 지난다.
+# 구는 root bone(b0)에 붙여서, chain이 흔들려도 같은 자리에 있다.
+static func _bone_collision(t) -> void:
+	var rig := Rig.new(t)
+	rig.simulator.set("gravity/value", 0.0)
+	var sphere: Node = ClassDB.instantiate("BoneClothCollisionSphere3D")
+	rig.simulator.add_child(sphere)
+	sphere.set("bone_name", "b0")
+	sphere.set("position_offset", Vector3(0.05, -0.15, 0.0))
+	sphere.set("radius", 0.04)
+	for frame in 60:
+		await rig.advance(1.0 / 60.0)
+	var center := rig.poses[0].origin + Vector3(0.05, -0.15, 0.0)
+	var nearest := INF
+	for i in range(1, TIP + 1):
+		var a := rig.poses[i - 1].origin
+		var b := rig.poses[i].origin
+		nearest = minf(nearest, center.distance_to(Geometry3D.get_closest_point_to_segment(center, a, b)))
+	rig.remove()
+
+	var depth := 0.04 + 0.02 - nearest
+	t.check(depth < BONE_COLLISION_TOLERANCE, "Bone collision: a bone is %.4f m into the sphere." % depth)

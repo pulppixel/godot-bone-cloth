@@ -299,7 +299,7 @@ Vector3 BoneClothCollision3D::_collide(const Transform3D &p_pose, const Vector3 
 void BoneClothCollision3D::_collide_segment(const Transform3D &p_pose, Vector3 &r_a, Vector3 &r_b, float p_radius) const {
 }
 
-// 선분(r_a ~ r_b, link 선)을 모양 밖으로 민다. 두 joint 사이로 다리가 빠져나가지 않게 한다.
+// 선분(r_a ~ r_b, bone이나 link)을 모양 밖으로 민다. 두 joint 사이로 다리가 빠져나가지 않게 한다.
 // p_on_segment: 선분에서 모양에 가장 가까운 점. p_on_shape: 그 점에 가장 가까운 모양의 중심(또는 축 위 점). 두 점이 p_limit보다 가까우면 밀어낸다.
 // 민 양은 가까운 joint에 더 많이 나눈다(s: 선분 위 위치, r_a 0 ~ r_b 1).
 void BoneClothCollision3D::_push_segment_out(Vector3 &r_a, Vector3 &r_b, const Vector3 &p_on_segment, const Vector3 &p_on_shape, float p_limit, const Vector3 &p_fallback) {

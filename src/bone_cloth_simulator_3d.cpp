@@ -353,12 +353,30 @@ void BoneClothSimulator3D::_solve_links() {
 }
 
 // joint마다, 이 chain의 collides가 true인 collision으로만 밀어낸다 (root 제외).
+// 그다음 bone(위 joint와 아래 joint를 잇는 선분)마다 같은 collision으로 밀어낸다.
+// joint 사이가 멀면 joint만 밀어서는 그 사이로 몸이 빠져나온다(예: 땋은 머리 bone 가운데가 가슴에 묻힌다).
+// 위 joint가 root면 아래 joint만 움직인다(root는 pose나 parent chain을 따라간다).
 void BoneClothSimulator3D::_collide(Chain &p_chain, const LocalVector<PosedCollision> &p_collisions) {
 	for (uint32_t i = 1; i < p_chain.joints.size(); i++) {
 		Joint &joint = p_chain.joints[i];
 		for (uint32_t c = 0; c < p_collisions.size(); c++) {
 			if (p_chain.collides[c]) {
 				joint.location = p_collisions[c].collision->collide(joint.location, joint.radius, p_collisions[c].mirror);
+			}
+		}
+	}
+
+	for (uint32_t i = 1; i < p_chain.joints.size(); i++) {
+		Joint &parent = p_chain.joints[i - 1];
+		Joint &joint = p_chain.joints[i];
+		const float bone_radius = (parent.radius + joint.radius) * 0.5f;
+		for (uint32_t c = 0; c < p_collisions.size(); c++) {
+			if (p_chain.collides[c]) {
+				Vector3 parent_location = parent.location;
+				p_collisions[c].collision->collide_segment(parent_location, joint.location, bone_radius, p_collisions[c].mirror);
+				if (i > 1) {
+					parent.location = parent_location;
+				}
 			}
 		}
 	}
