@@ -336,7 +336,7 @@ void BoneClothSimulator3D::_simulate(Chain &p_chain, const Vector3 &p_gravity_di
 		Joint &joint = p_chain.joints[i];
 		const Joint &parent = p_chain.joints[i - 1];
 
-		// 중심(root들)이 이번 step에 움직이고 회전항 양 중 share만큼을 joint에 그대로 옮긴다.
+		// 중심(root들)이 이번 step에 움직이고 회전한 양 중 share만큼을 joint에 그대로 옮긴다.
 		// share는 root 쪽에서 depth_inertia이고, 끝으로 갈수록 줄어 끝에서 0이다. 허리는 골반을 따라가고 끝단만 흔들린다.
 		const float share = depth_inertia * (1.0f - joint.length_rate * joint.length_rate);
 		if (share > 0.0f) {
