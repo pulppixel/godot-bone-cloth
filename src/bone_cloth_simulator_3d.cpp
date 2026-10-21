@@ -74,6 +74,16 @@ bool BoneClothSimulator3D::_build_joints(Skeleton3D *p_skeleton, Chain &p_chain)
 		joint.length_rate = length;
 	}
 
+	for (uint32_t i = 0; i < p_chain.joints.size(); i++) {
+		Joint &joint = p_chain.joints[i];
+		if (joint.bone >= 0) {
+			joint.rest_location = p_skeleton->get_bone_global_rest(joint.bone).origin;
+		} else {
+			const Transform3D end = p_skeleton->get_bone_global_rest(p_chain.joints[i - 1].bone);
+			joint.rest_location = end.origin + end.basis.orthonormalized().xform(p_chain.end_axis) * (p_chain.end_bone_length * units_per_meter);
+		}
+	}
+
 	return true;
 }
 
@@ -154,16 +164,6 @@ void BoneClothSimulator3D::_build_links(Skeleton3D *p_skeleton) {
 		return;
 	}
 
-	auto rest_location = [&](const Chain &p_chain, uint32_t p_depth) {
-		const Joint &joint = p_chain.joints[p_depth];
-		if (joint.bone >= 0) {
-			return p_skeleton->get_bone_global_rest(joint.bone).origin;
-		}
-
-		const Transform3D end = p_skeleton->get_bone_global_rest(p_chain.joints[p_depth - 1].bone);
-		return end.origin + end.basis.orthonormalized().xform(p_chain.end_axis) * (p_chain.end_bone_length * units_per_meter);
-	};
-
 	// Loop라도 chain이 2개면 마지막과 처음은 이미 이어져있다. 그래서 3개 이상일 때만 마지막과 처음을 잇는다.
 	const uint32_t pair_count = (link_mode == LINK_MODE_LOOP && count >= 3) ? count : count - 1;
 	for (uint32_t i = 0; i < pair_count; i++) {
@@ -181,7 +181,7 @@ void BoneClothSimulator3D::_build_links(Skeleton3D *p_skeleton) {
 			link.chain_a = a;
 			link.chain_b = b;
 			link.depth = depth;
-			link.length = (rest_location(chain_a, depth) - rest_location(chain_b, depth)).length();
+			link.length = (chain_a.joints[depth].rest_location - chain_b.joints[depth].rest_location).length();
 			links.push_back(link);
 		}
 	}
@@ -480,6 +480,17 @@ void BoneClothSimulator3D::_collide_segment(Joint &r_a, Joint &r_b, float p_radi
 		Vector3 a = r_a.location;
 		Vector3 b = r_b.location;
 		p_collisions[c].collision->collide_segment(a, b, p_radius, p_collisions[c].mirror);
+		if (a == r_a.location && b == r_b.location) {
+			continue;
+		}
+
+		const float rest_depth = p_collisions[c].collision->get_rest_depth(r_a.rest_location, r_b.rest_location, p_radius, p_collisions[c].mirror);
+		if (rest_depth > 0.0f) {
+			a = r_a.location;
+			b = r_b.location;
+			p_collisions[c].collision->collide_segment(a, b, p_radius - rest_depth, p_collisions[c].mirror);
+		}
+
 		const Vector3 moved = (a - r_a.location) + (b - r_b.location);
 		if (moved.is_zero_approx()) {
 			continue;
@@ -599,7 +610,7 @@ void BoneClothSimulator3D::_update_display(Chain &p_chain, float p_follow) {
 
 // frame의 마지막 단계. joint 위치를 bone 회전으로 바꿔 skeleton에 넣는다(mesh는 bone 회전으로 움직인다).
 // bone마다 위 bone이 돈 만큼 먼저 돌고, 남은 각만큼 더 돌아서 아래 joint를 향한다.
-// // pose 방향에서 바로 돌리면, 머리카락이 머리 위로 넘어갈 때(180도 근처) bone이 frame마다 비틀린다.
+// pose 방향에서 바로 돌리면, 머리카락이 머리 위로 넘어갈 때(180도 근처) bone이 frame마다 비틀린다.
 // pose 방향은 sync로 옮기기 전, 애니메이션의 방향이다. pose_basis가 그 방향의 회전이기 때문이다.
 // root부터 차례로 넣어야 한다(set_bone_global_pose가 부모 bone의 pose를 쓴다).
 void BoneClothSimulator3D::_write_rotations(Skeleton3D *p_skeleton, const Chain &p_chain) {

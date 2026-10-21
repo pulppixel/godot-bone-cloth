@@ -73,3 +73,13 @@ void BoneClothCollisionSphere3D::_collide_segment(const Transform3D &p_pose, Vec
 	const Vector3 on_segment = Geometry3D::get_singleton()->get_closest_point_to_segment(p_pose.origin, r_a, r_b);
 	_push_segment_out(r_a, r_b, on_segment, p_pose.origin, radius + p_radius, p_pose.basis.get_column(0).normalized());
 }
+
+// 선분에서 중심에 가장 가까운 점이 들어간 깊이.
+float BoneClothCollisionSphere3D::_segment_depth(const Transform3D &p_pose, const Vector3 &p_a, const Vector3 &p_b, float p_radius) const {
+	if (inside) {
+		return BoneClothCollision3D::_segment_depth(p_pose, p_a, p_b, p_radius);
+	}
+
+	const Vector3 on_segment = Geometry3D::get_singleton()->get_closest_point_to_segment(p_pose.origin, p_a, p_b);
+	return MAX(radius + p_radius - on_segment.distance_to(p_pose.origin), 0.0f);
+}

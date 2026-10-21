@@ -45,6 +45,9 @@ private:
 		// bone 회전은 이 위치를 기준으로 구한다. 그래야 sync로 기운 만큼 mesh도 기운다.
 		Vector3 animated_location;
 
+		// skeleton이 rest 자세일 때의 위치.
+		Vector3 rest_location;
+
 		// 화면에 그리는 위치 벡터 (step이 없어도 매 frame마다 동작한다).
 		Vector3 display_location;
 		Basis pose_basis;

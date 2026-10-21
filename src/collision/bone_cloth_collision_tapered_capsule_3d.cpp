@@ -133,3 +133,19 @@ void BoneClothCollisionTaperedCapsule3D::_collide_segment(const Transform3D &p_p
 	_get_nearest_sphere(head, tail, closest[0], center, radius);
 	_push_segment_out(r_a, r_b, closest[0], center, radius + p_radius, p_pose.basis.get_column(0).normalized());
 }
+
+// 선분과 축 사이에서 가장 가까운 점에 고른 구의 깊이.
+float BoneClothCollisionTaperedCapsule3D::_segment_depth(const Transform3D &p_pose, const Vector3 &p_a, const Vector3 &p_b, float p_radius) const {
+	if (inside) {
+		return BoneClothCollision3D::_segment_depth(p_pose, p_a, p_b, p_radius);
+	}
+
+	Vector3 head;
+	Vector3 tail;
+	_get_head_and_tail(p_pose, head, tail);
+	const PackedVector3Array closest = Geometry3D::get_singleton()->get_closest_points_between_segments(p_a, p_b, head, tail);
+	Vector3 center;
+	float radius;
+	_get_nearest_sphere(head, tail, closest[0], center, radius);
+	return MAX(radius + p_radius - closest[0].distance_to(center), 0.0f);
+}

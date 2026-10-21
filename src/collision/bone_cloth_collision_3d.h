@@ -36,6 +36,9 @@ protected:
 	Transform3D pose;
 	// mirror bone 쪽 모양의 위치와 회전.
 	Transform3D mirror_pose;
+	// skeleton이 rest 자세일 때의 pose와 mirror_pose. 쉬는 자세에서 천이 이 모양에 이미 들어가 있는 깊이를 잴 때 쓴다.
+	Transform3D rest_pose;
+	Transform3D mirror_rest_pose;
 
 	static void _bind_methods();
 	void _validate_property(PropertyInfo &p_property) const;
@@ -45,10 +48,10 @@ protected:
 
 	virtual Vector3 _collide(const Transform3D &p_pose, const Vector3 &p_point, float p_radius) const;
 	virtual void _collide_segment(const Transform3D &p_pose, Vector3 &r_a, Vector3 &r_b, float p_radius) const;
+	virtual float _segment_depth(const Transform3D &p_pose, const Vector3 &p_a, const Vector3 &p_b, float p_radius) const;
 
 public:
 	PackedStringArray _get_configuration_warnings() const override;
-
 	Skeleton3D *get_skeleton() const;
 
 	void set_bone_name(const String &p_bone_name);
@@ -69,6 +72,7 @@ public:
 	void sync_pose();
 	Vector3 collide(const Vector3 &p_point, float p_radius, bool p_mirror) const;
 	void collide_segment(Vector3 &r_a, Vector3 &r_b, float p_radius, bool p_mirror) const;
+	float get_rest_depth(const Vector3 &p_a, const Vector3 &p_b, float p_radius, bool p_mirror) const;
 
 	BoneClothCollision3D();
 };

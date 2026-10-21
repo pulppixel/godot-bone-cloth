@@ -14,6 +14,7 @@ const DEPTH_INERTIA_RATIO := 0.5
 const SYNC_MIN := 0.05 # m
 const SYNC_TOLERANCE := 0.0001 # m
 const SQUEEZE_TOLERANCE := 0.0001 # m
+const REST_OVERLAP_TOLERANCE := 0.0001 # m
 
 
 #   Stage
@@ -105,6 +106,7 @@ static func run(t) -> void:
 	await _depth_speed_limit(t)
 	await _sync_bone(t)
 	await _squeeze(t)
+	await _rest_overlap(t)
 
 
 # 캐릭터가 좌우로 오가며 몸을 돌리는 움직임. p_time초 때의 자세를 정한다.
@@ -247,14 +249,13 @@ static func _scale(t) -> void:
 
 # joint 사이의 bone도 collision 밖으로 밀린다.
 # 구를 b1과 b2 사이 옆에 둔다. 두 joint는 구 중심에서 7.1 cm라 밖에 있고(구 4 cm + joint 2 cm = 6 cm), 그 사이 bone 가운데는 5 cm라 구 안을 지난다.
-# 구는 root bone(b0)에 붙여서, chain이 흔들려도 같은 자리에 있다.
+# 구는 bone에 붙이지 않는다. bone에 붙은 구는 쉬는 자세에서 이미 겹친 1 cm를 밀지 않는다(_rest_overlap).
 static func _bone_collision(t) -> void:
 	var rig := Rig.new(t)
 	rig.simulator.set("gravity/value", 0.0)
 	var sphere: Node = ClassDB.instantiate("BoneClothCollisionSphere3D")
 	rig.simulator.add_child(sphere)
-	sphere.set("bone_name", "b0")
-	sphere.set("position_offset", Vector3(0.05, -0.15, 0.0))
+	sphere.set("position", Vector3(0.05, -0.15, 0.0))
 	sphere.set("radius", 0.04)
 	for frame in 60:
 		await rig.advance(1.0 / 60.0)
@@ -307,6 +308,7 @@ static func _depth_speed_limit(t) -> void:
 
 	t.check(trails[1.0] < trails[0.0] * DEPTH_INERTIA_RATIO, "Depth inertia 1 under joint_speed_limit: the joint next to the root trails %.4f m, against %.4f m at 0." % [trails[1.0], trails[0.0]])
 
+
 # chain 끝이 앞(+Z)으로 5 cm 나간 chain에, root 아래 0.4 m의 knee bone을 sync bone으로 준다.
 static func _sync_bone(t) -> void:
 	var tips := {} # 경우마다, knee를 옮긴 뒤 끝 bone 위치 (m)
@@ -337,7 +339,7 @@ static func _sync_bone(t) -> void:
 	t.check(tilt < ANGLE_TOLERANCE, "Sync bone forward 0.1 m: the root bone's rotation points %.4f rad off the moved joint." % tilt)
 	t.check(tips["back"].distance_to(tips["rest"]) < SYNC_TOLERANCE, "Sync bone back 0.1 m, away from the chain: the chain end moves %.5f m." % tips["back"].distance_to(tips["rest"]))
 	t.check(tips["off"].distance_to(tips["rest"]) < SYNC_TOLERANCE, "Sync value 0: the chain end moves %.5f m." % tips["off"].distance_to(tips["rest"]))
-	
+
 
 # 두 구가 bone b1 ~ b2를 양쪽(+X, -X)에서 1 cm씩 민다.
 static func _squeeze(t) -> void:
@@ -346,8 +348,7 @@ static func _squeeze(t) -> void:
 	for side in [1.0, -1.0]:
 		var sphere: Node = ClassDB.instantiate("BoneClothCollisionSphere3D")
 		rig.simulator.add_child(sphere)
-		sphere.set("bone_name", "b0")
-		sphere.set("position_offset", Vector3(0.05 * side, -0.15, 0.0))
+		sphere.set("position", Vector3(0.05 * side, -0.15, 0.0))
 		sphere.set("radius", 0.04)
 	var largest := 0.0 # b1 ~ 끝 bone이 옆(X)으로 간 가장 먼 거리 (m)
 	for frame in 60:
@@ -357,3 +358,38 @@ static func _squeeze(t) -> void:
 	rig.remove()
 
 	t.check(largest < SQUEEZE_TOLERANCE, "Squeeze: a chain between two spheres pushing opposite ways moves %.5f m sideways." % largest)
+
+
+# bone에 붙은 구는 쉬는 자세에서 이미 겹친 깊이만큼은 밀지 않는다.
+# 구를 b0에 붙여 _bone_collision과 같은 자리에 둔다. 쉬는 자세에서 bone b1 ~ b2가 구에 1 cm 들어가 있다.
+# 그대로 두면 chain은 밀리지 않는다. b1의 pose를 구 쪽(+X)으로 0.3 rad 돌리면 bone이 더 들어가려 하지만, 1 cm까지만 들어간다.
+# stiffness는 0.2다. 1이면 bone 길이를 맞추는 마지막 단계가 joint를 pose 쪽으로 도로 당겨서, bone에 붙지 않은 구에도 0.9 cm 들어간다.
+static func _rest_overlap(t) -> void:
+	var center := Vector3(0.05, -0.15, 0.0)
+	var depths := {} # 경우마다, bone이 구에 들어간 가장 깊은 거리 (m)
+	var largest := 0.0 # 그대로 둔 경우, b1 ~ 끝 bone이 옆(X)으로 간 가장 먼 거리 (m)
+	for case in ["rest", "bent"]:
+		var rig := Rig.new(t)
+		rig.simulator.set("gravity/value", 0.0)
+		rig.simulator.set("stiffness/value", 0.2)
+		var sphere: Node = ClassDB.instantiate("BoneClothCollisionSphere3D")
+		rig.simulator.add_child(sphere)
+		sphere.set("bone_name", "b0")
+		sphere.set("position_offset", center)
+		sphere.set("radius", 0.04)
+		if case == "bent":
+			rig.skeleton.set_bone_pose_rotation(1, Quaternion(Vector3(0, 0, 1), 0.3))
+		for frame in 60:
+			await rig.advance(1.0 / 60.0)
+			if case == "rest":
+				for i in range(1, TIP + 1):
+					largest = maxf(largest, absf(rig.poses[i].origin.x))
+		var deepest := 0.0
+		for i in range(1, TIP + 1):
+			var nearest := Geometry3D.get_closest_point_to_segment(center, rig.poses[i - 1].origin, rig.poses[i].origin)
+			deepest = maxf(deepest, 0.04 + 0.02 - center.distance_to(nearest))
+		depths[case] = deepest
+		rig.remove()
+
+	t.check(largest < REST_OVERLAP_TOLERANCE, "Rest overlap: a chain that overlaps a sphere at rest moves %.5f m." % largest)
+	t.check(absf(depths["bent"] - depths["rest"]) < BONE_COLLISION_TOLERANCE, "Rest overlap: bent toward the sphere, a bone is %.4f m in, %.4f m at rest." % [depths["bent"], depths["rest"]])

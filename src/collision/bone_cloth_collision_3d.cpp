@@ -207,8 +207,8 @@ Quaternion BoneClothCollision3D::get_rotation_offset() const {
 
 // bone의 이번 프레임 pose에 offset을 더한 위치와 회전(skeleton 공간). offset은 bone 방향 기준, m 단위다.
 // p_units로 offset을 skeleton 단위로 바꾸고, 모양의 크기도 같은 배율로 커지도록 scale을 넣는다(예: cm rig는 100배).
-static Transform3D get_pose_on_bone(const Skeleton3D *p_skeleton, int p_bone, const Vector3 &p_position_offset, const Quaternion &p_rotation_offset, float p_units) {
-	Transform3D result = p_skeleton->get_bone_global_pose(p_bone);
+static Transform3D get_pose_on_bone(const Skeleton3D *p_skeleton, int p_bone, const Vector3 &p_position_offset, const Quaternion &p_rotation_offset, float p_units, bool p_rest = false) {
+	Transform3D result = p_rest ? p_skeleton->get_bone_global_rest(p_bone) : p_skeleton->get_bone_global_pose(p_bone);
 	result.origin += result.basis.get_rotation_quaternion().xform(p_position_offset * p_units);
 	result.basis *= Basis(p_rotation_offset) * p_units;
 	return result;
@@ -227,6 +227,7 @@ void BoneClothCollision3D::sync_pose() {
 	if (bone >= 0) {
 		units_per_meter = Object::cast_to<BoneClothSimulator3D>(get_parent())->get_units_per_meter();
 		pose = get_pose_on_bone(skeleton, bone, position_offset, rotation_offset, units_per_meter);
+		rest_pose = get_pose_on_bone(skeleton, bone, position_offset, rotation_offset, units_per_meter, true);
 		syncing = true;
 		set_global_transform(skeleton_global * pose);
 		syncing = false;
@@ -245,6 +246,7 @@ void BoneClothCollision3D::sync_pose() {
 	const Vector3 mirrored_position(-position.x, position.y, position.z);
 	const Quaternion mirrored_rotation(rotation.x, -rotation.y, -rotation.z, rotation.w);
 	mirror_pose = get_pose_on_bone(skeleton, mirror_bone, mirror_rest.inverse().xform(mirrored_position), mirror_rest.inverse() * mirrored_rotation, units_per_meter);
+	mirror_rest_pose = get_pose_on_bone(skeleton, mirror_bone, mirror_rest.inverse().xform(mirrored_position), mirror_rest.inverse() * mirrored_rotation, units_per_meter, true);
 	update_gizmos();
 }
 
@@ -288,6 +290,24 @@ void BoneClothCollision3D::collide_segment(Vector3 &r_a, Vector3 &r_b, float p_r
 	_collide_segment(Transform3D(shape.basis * meters, shape.origin * meters), r_a, r_b, p_radius * meters);
 	r_a *= units_per_meter;
 	r_b *= units_per_meter;
+}
+
+// 선분(p_a ~ p_b, 굵기 p_radius)이 skeleton의 rest 자세에서 이 모양에 얼마나 깊이 들어가 있는지(skeleton 단위). 겹치지 않으면 0.
+// bone에 붙지 않은 collision은 늘 0이다. 캐릭터 밖에 놓인 물체(예: 탁자)라 캐릭터의 rest 자세와 상관이 없다.
+float BoneClothCollision3D::get_rest_depth(const Vector3 &p_a, const Vector3 &p_b, float p_radius, bool p_mirror) const {
+	if (bone < 0) {
+		return 0.0f;
+	}
+
+	const float meters = 1.0f / units_per_meter;
+	const Transform3D &shape = p_mirror ? mirror_rest_pose : rest_pose;
+	return _segment_depth(Transform3D(shape.basis * meters, shape.origin * meters), p_a * meters, p_b * meters, p_radius * meters) * units_per_meter;
+}
+
+// 양 끝 joint 중 더 많이 밀릴 joint가 밀리는 거리. 양 끝만 미는 모양(plane, inside)은 이것이 선분의 깊이다.
+// 선분 가운데를 미는 모양(구, 캡슐)은 이 함수를 다시 쓴다.
+float BoneClothCollision3D::_segment_depth(const Transform3D &p_pose, const Vector3 &p_a, const Vector3 &p_b, float p_radius) const {
+	return MAX(_collide(p_pose, p_a, p_radius).distance_to(p_a), _collide(p_pose, p_b, p_radius).distance_to(p_b));
 }
 
 // base class는 모양이 없어서 아무것도 밀지 않는다(구, 캡슐, 평면이 이 함수를 다시 쓴다).

@@ -103,3 +103,16 @@ void BoneClothCollisionCapsule3D::_collide_segment(const Transform3D &p_pose, Ve
 	const PackedVector3Array closest = Geometry3D::get_singleton()->get_closest_points_between_segments(r_a, r_b, head, tail);
 	_push_segment_out(r_a, r_b, closest[0], closest[1], radius + p_radius, p_pose.basis.get_column(0).normalized());
 }
+
+// 선분과 축 사이에서 가장 가까운 두 점의 깊이.
+float BoneClothCollisionCapsule3D::_segment_depth(const Transform3D &p_pose, const Vector3 &p_a, const Vector3 &p_b, float p_radius) const {
+	if (inside) {
+		return BoneClothCollision3D::_segment_depth(p_pose, p_a, p_b, p_radius);
+	}
+
+	Vector3 head;
+	Vector3 tail;
+	_get_head_and_tail(p_pose, head, tail);
+	const PackedVector3Array closest = Geometry3D::get_singleton()->get_closest_points_between_segments(p_a, p_b, head, tail);
+	return MAX(radius + p_radius - closest[0].distance_to(closest[1]), 0.0f);
+}
