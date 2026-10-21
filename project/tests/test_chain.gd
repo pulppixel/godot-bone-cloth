@@ -304,7 +304,6 @@ static func _depth_speed_limit(t) -> void:
 		rig.remove()
 
 	t.check(trails[1.0] < trails[0.0] * DEPTH_INERTIA_RATIO, "Depth inertia 1 under joint_speed_limit: the joint next to the root trails %.4f m, against %.4f m at 0." % [trails[1.0], trails[0.0]])
-	
 
 # chain 끝이 앞(+Z)으로 5 cm 나간 chain에, root 아래 0.4 m의 knee bone을 sync bone으로 준다.
 static func _sync_bone(t) -> void:

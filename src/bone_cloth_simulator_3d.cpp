@@ -273,7 +273,7 @@ static float sample_curve(const Ref<Curve> &p_curve, float p_rate) {
 }
 
 // chain 위치마다 값을 다르게 주기 위해, joint의 length_rate 위치에서 읽은 curve 값을 곱한다.
-// // sync는 sync bone이 움직인 양 중 joint의 pose를 옮기는 비율이다(1이면 같은 양만큼 옮긴다).
+// sync는 sync bone이 움직인 양 중 joint의 pose를 옮기는 비율이다(1이면 같은 양만큼 옮긴다).
 // 실행 중에 값이나 curve를 바꾸면 바로 반영되도록 매 frame 다시 계산한다.
 // radius와 gravity는 m 단위 값이라 units_per_meter를 곱해 skeleton 단위로 바꾼다.
 void BoneClothSimulator3D::_update_joint_settings(Chain &p_chain) {
@@ -571,6 +571,7 @@ void BoneClothSimulator3D::_update_display(Chain &p_chain, float p_follow) {
 
 // frame의 마지막 단계. joint 위치를 bone 회전으로 바꿔 skeleton에 넣는다(mesh는 bone 회전으로 움직인다).
 // bone마다 위 bone이 돈 만큼 먼저 돌고, 남은 각만큼 더 돌아서 아래 joint를 향한다.
+// // pose 방향에서 바로 돌리면, 머리카락이 머리 위로 넘어갈 때(180도 근처) bone이 frame마다 비틀린다.
 // pose 방향은 sync로 옮기기 전, 애니메이션의 방향이다. pose_basis가 그 방향의 회전이기 때문이다.
 // root부터 차례로 넣어야 한다(set_bone_global_pose가 부모 bone의 pose를 쓴다).
 void BoneClothSimulator3D::_write_rotations(Skeleton3D *p_skeleton, const Chain &p_chain) {
