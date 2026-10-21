@@ -47,6 +47,10 @@ const EXPECTED := {
 		["The Skeleton3D has a non-uniform scale (2.0, 1.0, 1.0), so the cloth moves differently. Make the scale of the Skeleton3D and its parents uniform (the same on all axes)."],
 		[],
 	],
+	"SyncNotInSkeleton": [
+		["Chain 0: sync bone 'nope_knee' is not in the skeleton."],
+		[],
+	],
 }
 
 
@@ -127,6 +131,8 @@ static func _set_up(p_case: String, p_simulator: Node) -> void:
 		p_simulator.set("chains/0/enable_all_child_collisions", false)
 		p_simulator.set("chains/0/collision_count", 1)
 		p_simulator.set("chains/0/collisions/0", NodePath("Sphere"))
+	if p_case == "SyncNotInSkeleton":
+		p_simulator.set("chains/0/sync_bone_name", "nope_knee")
 
 
 # 이름을 붙인 collision node. p_class는 BoneClothCollisionSphere3D 같은 클래스 이름이다.
@@ -151,6 +157,7 @@ static func _change(p_cases: Node3D) -> void:
 	branch.set("chains/0/root_bone_name", "b0")
 	branch.set("chains/1/root_bone_name", "b2")
 	p_cases.get_node("NoChains/Skeleton3D/Sim").set("chain_count", 1)
+	p_cases.get_node("SyncNotInSkeleton/Skeleton3D/Sim").set("chains/0/sync_bone_name", "d0")
 
 
 static func _compare(t, p_cases: Node3D, p_label: String, p_column: int) -> void:

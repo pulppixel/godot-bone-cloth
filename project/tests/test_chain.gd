@@ -11,6 +11,8 @@ const ANGLE_TOLERANCE := 0.0001 # rad
 const SCALE_TOLERANCE := 0.00002 # m
 const BONE_COLLISION_TOLERANCE := 0.001 # m
 const DEPTH_INERTIA_RATIO := 0.5
+const SYNC_MIN := 0.05 # m
+const SYNC_TOLERANCE := 0.0001 # m
 
 
 #   Stage
@@ -100,6 +102,7 @@ static func run(t) -> void:
 	await _bone_collision(t)
 	await _depth_inertia(t)
 	await _depth_speed_limit(t)
+	await _sync_bone(t)
 
 
 # 캐릭터가 좌우로 오가며 몸을 돌리는 움직임. p_time초 때의 자세를 정한다.
@@ -301,3 +304,35 @@ static func _depth_speed_limit(t) -> void:
 		rig.remove()
 
 	t.check(trails[1.0] < trails[0.0] * DEPTH_INERTIA_RATIO, "Depth inertia 1 under joint_speed_limit: the joint next to the root trails %.4f m, against %.4f m at 0." % [trails[1.0], trails[0.0]])
+	
+
+# chain 끝이 앞(+Z)으로 5 cm 나간 chain에, root 아래 0.4 m의 knee bone을 sync bone으로 준다.
+static func _sync_bone(t) -> void:
+	var tips := {} # 경우마다, knee를 옮긴 뒤 끝 bone 위치 (m)
+	var tilt := 0.0 # 앞으로 간 경우, root bone 회전이 가리키는 b1 방향과 실제 b1 방향 사이의 각도 (rad)
+	for case in ["rest", "forward", "back", "off"]:
+		var rig := Rig.new(t)
+		rig.skeleton.set_bone_rest(1, Transform3D(Basis(), Vector3(0, -BONE_LENGTH, 0.05)))
+		rig.skeleton.set_bone_pose(1, rig.skeleton.get_bone_rest(1))
+		var knee := rig.skeleton.add_bone("knee")
+		rig.skeleton.set_bone_parent(knee, 0)
+		rig.skeleton.set_bone_rest(knee, Transform3D(Basis(), Vector3(0, -0.4, 0)))
+		rig.skeleton.set_bone_pose(knee, rig.skeleton.get_bone_rest(knee))
+		rig.simulator.set("gravity/value", 0.0)
+		rig.simulator.set("stiffness/value", 1.0)
+		rig.simulator.set("chains/0/sync_bone_name", "knee")
+		if case == "off":
+			rig.simulator.set("sync/value", 0.0)
+		var move := {"rest": 0.0, "forward": 0.1, "back": -0.1, "off": 0.1}[case] as float
+		rig.skeleton.set_bone_pose_position(knee, Vector3(0, -0.4, move))
+		for frame in 30:
+			await rig.advance(1.0 / 60.0)
+		tips[case] = rig.tip()
+		if case == "forward":
+			tilt = (rig.poses[0].basis * Vector3(0, -BONE_LENGTH, 0.05)).angle_to(rig.poses[1].origin - rig.poses[0].origin)
+		rig.remove()
+
+	t.check(tips["forward"].z - tips["rest"].z > SYNC_MIN, "Sync bone forward 0.1 m: the chain end moves %.4f m forward." % (tips["forward"].z - tips["rest"].z))
+	t.check(tilt < ANGLE_TOLERANCE, "Sync bone forward 0.1 m: the root bone's rotation points %.4f rad off the moved joint." % tilt)
+	t.check(tips["back"].distance_to(tips["rest"]) < SYNC_TOLERANCE, "Sync bone back 0.1 m, away from the chain: the chain end moves %.5f m." % tips["back"].distance_to(tips["rest"]))
+	t.check(tips["off"].distance_to(tips["rest"]) < SYNC_TOLERANCE, "Sync value 0: the chain end moves %.5f m." % tips["off"].distance_to(tips["rest"]))

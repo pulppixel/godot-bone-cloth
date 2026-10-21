@@ -41,6 +41,10 @@ private:
 		Vector3 prev_pose_location;
 		Vector3 current_pose_location;
 
+		// 이번 frame에 애니메이션(과 앞선 modifier)이 만든 위치. current_pose_location은 여기에 sync로 옮긴 양을 더한 위치다.
+		// bone 회전은 이 위치를 기준으로 구한다. 그래야 sync로 기운 만큼 mesh도 기운다.
+		Vector3 animated_location;
+
 		// 화면에 그리는 위치 벡터 (step이 없어도 매 frame마다 동작한다).
 		Vector3 display_location;
 		Basis pose_basis;
@@ -57,6 +61,7 @@ private:
 		float radius = 0.0f;
 		float limit_angle = 0.0f;
 		float gravity = 0.0f;
+		float sync = 0.0f;
 	};
 
 	struct Chain {
@@ -74,6 +79,13 @@ private:
 		LocalVector<Joint> joints;
 
 		Vector3 end_axis;
+
+		// sync bone(예: 무릎)이 움직인 만큼 chain이 따라갈 pose를 옮긴다.
+		String sync_bone_name;
+		int sync_bone = -1;
+
+		// chain이 몸 밖을 향하는 수평 방향(rest).
+		Vector3 sync_direction;
 
 		/*
 			Hair1 - Hair2 - Hair3 - Hair4   (chain 0)
@@ -154,6 +166,8 @@ private:
 	float gravity = 0.0f;
 	Ref<Curve> gravity_damping_curve;
 	Vector3 gravity_direction = Vector3(0, -1, 0);
+	float sync = 1.0f;
+	Ref<Curve> sync_damping_curve;
 	float inertia = 1.0f;
 	float inertia_smoothing = 0.4f;
 	float depth_inertia = 0.0f;
@@ -186,6 +200,9 @@ private:
 	Vector3 center_move;
 	Quaternion center_turn;
 
+	// rest에서 모든 chain root의 중심. sync bone이 rest에서 움직인 양을 이 중심 기준으로 잰다.
+	Vector3 rest_center;
+
 	// 급출발, 급정지 때 천이 튀지 않도록, 천이 감지하는 캐릭터 속도를 실제 속도 쪽으로 자연스럽게 한다.
 	// 캐릭터가 회전해도, 천의 방향이 같이 돌지 않도록 world 공간으로 저장한다.
 	Vector3 smoothing_velocity;
@@ -195,11 +212,13 @@ private:
 	bool _build_joints(Skeleton3D *p_skeleton, Chain &p_chain);
 	void _build_branches();
 	void _build_links(Skeleton3D *p_skeleton);
+	void _build_sync(Skeleton3D *p_skeleton);
 	bool _is_child_collision(const NodePath &p_node_path) const;
 	void _find_chain_collisions(const LocalVector<PosedCollision> &p_collisions);
 	void _read_pose(Skeleton3D *p_skeleton, Chain &p_chain);
 	void _update_joint_settings(Chain &p_chain);
 	void _read_center(Skeleton3D *p_skeleton);
+	void _apply_sync(Skeleton3D *p_skeleton);
 	void _step(const Vector3 &p_gravity_direction, const Vector3 &p_move, const Quaternion &p_turn, const LocalVector<PosedCollision> &p_collisions);
 	void _follow_parent_chain(Chain &p_chain);
 	void _simulate(Chain &p_chain, const Vector3 &p_gravity_direction, const Vector3 &p_move, const Quaternion &p_turn);
@@ -238,6 +257,10 @@ public:
 	BoneDirection get_end_bone_direction(int p_index) const;
 	void set_end_bone_length(int p_index, float p_length);
 	float get_end_bone_length(int p_index) const;
+	void set_sync_bone_name(int p_index, const String &p_bone_name);
+	String get_sync_bone_name(int p_index) const;
+	void set_sync_bone(int p_index, int p_bone);
+	int get_sync_bone(int p_index) const;
 	void set_enable_all_child_collisions(int p_index, bool p_enabled);
 	bool are_all_child_collisions_enabled(int p_index) const;
 	void set_exclude_collision_count(int p_index, int p_count);
@@ -276,6 +299,10 @@ public:
 	Ref<Curve> get_gravity_damping_curve() const;
 	void set_gravity_direction(const Vector3 &p_direction);
 	Vector3 get_gravity_direction() const;
+	void set_sync(float p_sync);
+	float get_sync() const;
+	void set_sync_damping_curve(const Ref<Curve> &p_curve);
+	Ref<Curve> get_sync_damping_curve() const;
 	void set_inertia(float p_inertia);
 	float get_inertia() const;
 	void set_inertia_smoothing(float p_smoothing);

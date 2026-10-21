@@ -187,6 +187,35 @@ void BoneClothSimulator3D::_build_links(Skeleton3D *p_skeleton) {
 	}
 }
 
+// sync에 쓸 rest 값을 구한다. root들의 중심과, chain마다 몸 밖을 향하는 수평 방향이다.
+// 방향은 중심에서 chain의 end bone으로 가는 방향에서 위아래(skeleton의 Y축) 성분을 뺀 것이다. 앞 치마는 앞, 옆 치마는 옆을 향한다.
+// 끝이 중심 바로 아래에 있는 chain은 방향이 없어서 sync bone이 있어도 옮기지 않는다.
+void BoneClothSimulator3D::_build_sync(Skeleton3D *p_skeleton) {
+	rest_center = Vector3();
+	int count = 0;
+	for (const Chain &chain : chains) {
+		if (!chain.joints.is_empty() && chain.parent_chain < 0) {
+			rest_center += p_skeleton->get_bone_global_rest(chain.joints[0].bone).origin;
+			count++;
+		}
+	}
+
+	if (count > 0) {
+		rest_center /= float(count);
+	}
+
+	for (Chain &chain : chains) {
+		chain.sync_direction = Vector3();
+		if (chain.joints.size() < 2) {
+			continue;
+		}
+
+		Vector3 outward = p_skeleton->get_bone_global_rest(chain.end_bone).origin - rest_center;
+		outward.y = 0.0f;
+		chain.sync_direction = outward.normalized();
+	}
+}
+
 // collision 목록에는 이 simulator의 자식 collision만 넣을 수 있다.
 bool BoneClothSimulator3D::_is_child_collision(const NodePath &p_node_path) const {
 	if (!is_inside_tree() || p_node_path.is_empty()) {
@@ -224,6 +253,7 @@ void BoneClothSimulator3D::_read_pose(Skeleton3D *p_skeleton, Chain &p_chain) {
 		if (joint.bone >= 0) {
 			const Transform3D pose = p_skeleton->get_bone_global_pose(joint.bone);
 			joint.current_pose_location = pose.origin;
+			joint.animated_location = pose.origin;
 			joint.pose_basis = pose.basis;
 		}
 	}
@@ -232,6 +262,7 @@ void BoneClothSimulator3D::_read_pose(Skeleton3D *p_skeleton, Chain &p_chain) {
 	if (tip.bone < 0) {
 		const Joint &end = p_chain.joints[p_chain.joints.size() - 2];
 		tip.current_pose_location = end.current_pose_location + end.pose_basis.orthonormalized().xform(p_chain.end_axis) * (p_chain.end_bone_length * units_per_meter);
+		tip.animated_location = tip.current_pose_location;
 	}
 }
 
@@ -242,6 +273,7 @@ static float sample_curve(const Ref<Curve> &p_curve, float p_rate) {
 }
 
 // chain 위치마다 값을 다르게 주기 위해, joint의 length_rate 위치에서 읽은 curve 값을 곱한다.
+// // sync는 sync bone이 움직인 양 중 joint의 pose를 옮기는 비율이다(1이면 같은 양만큼 옮긴다).
 // 실행 중에 값이나 curve를 바꾸면 바로 반영되도록 매 frame 다시 계산한다.
 // radius와 gravity는 m 단위 값이라 units_per_meter를 곱해 skeleton 단위로 바꾼다.
 void BoneClothSimulator3D::_update_joint_settings(Chain &p_chain) {
@@ -251,6 +283,7 @@ void BoneClothSimulator3D::_update_joint_settings(Chain &p_chain) {
 		joint.radius = MAX(radius * sample_curve(radius_damping_curve, joint.length_rate), 0.0f) * units_per_meter;
 		joint.limit_angle = MAX(limit_angle * sample_curve(limit_angle_damping_curve, joint.length_rate), 0.0f);
 		joint.gravity = gravity * sample_curve(gravity_damping_curve, joint.length_rate) * units_per_meter;
+		joint.sync = MAX(sync * sample_curve(sync_damping_curve, joint.length_rate), 0.0f);
 	}
 }
 
@@ -283,6 +316,41 @@ void BoneClothSimulator3D::_read_center(Skeleton3D *p_skeleton) {
 	if (count > 0) {
 		frame_center = location_sum / float(count);
 		frame_center_rotation = rotation_sum.normalized();
+	}
+}
+
+// sync bone이 움직인 만큼 chain이 따라갈 pose를 옮긴다(root 제외).
+// 움직임은 root들의 중심 기준으로 잰다. 달리며 골반이 흔들리거나 돌아도, 다리가 골반에 대해 움직인 양만 남는다.
+// 그중 chain의 sync_direction 성분만 그쪽으로 움직일 때만 쓴다. 무릎이 앞으로 나오면 앞 치마만 앞으로 가고, 뒤 치마는 그대로.
+// joint마다 sync 값만큼 옮기고, 위 joint에서 bone 길이를 다시 맞춘다(chain이 root를 중심으로 들린다).
+/*
+	예: 왼쪽 무릎이 골반 기준으로 rest보다 20 cm 앞에 있고, sync는 1이다.
+	왼쪽 앞 치마(sync_direction이 앞에서 45도 왼쪽): 무릎의 움직임 중 그 방향 성분 14 cm(20 x cos 45도)만큼 pose를 옮긴다.
+	왼쪽 뒤 치마(sync_direction이 뒤쪽): 무릎이 그 방향으로 가지 않았으므로 그대로.
+*/
+void BoneClothSimulator3D::_apply_sync(Skeleton3D *p_skeleton) {
+	for (Chain &chain : chains) {
+		if (chain.sync_bone < 0 || chain.joints.size() < 2) {
+			continue;
+		}
+
+		// 중심 기준, rest 방향으로 잰 sync bone의 위치와 rest 위치의 차이.
+		const Vector3 location = frame_center_rotation.xform_inv(p_skeleton->get_bone_global_pose(chain.sync_bone).origin - frame_center);
+		const Vector3 rest_location = p_skeleton->get_bone_global_rest(chain.sync_bone).origin - rest_center;
+		const float along = (location - rest_location).dot(chain.sync_direction);
+		if (along <= 0.0f) {
+			continue;
+		}
+
+		const Vector3 offset = frame_center_rotation.xform(chain.sync_direction * along);
+		for (uint32_t i = 1; i < chain.joints.size(); i++) {
+			Joint &joint = chain.joints[i];
+			const Joint &parent = chain.joints[i - 1];
+			const Vector3 direction = joint.current_pose_location + offset * joint.sync - parent.current_pose_location;
+			if (!direction.is_zero_approx()) {
+				joint.current_pose_location = parent.current_pose_location + direction.normalized() * (joint.animated_location - parent.animated_location).length();
+			}
+		}
 	}
 }
 
@@ -503,14 +571,14 @@ void BoneClothSimulator3D::_update_display(Chain &p_chain, float p_follow) {
 
 // frame의 마지막 단계. joint 위치를 bone 회전으로 바꿔 skeleton에 넣는다(mesh는 bone 회전으로 움직인다).
 // bone마다 위 bone이 돈 만큼 먼저 돌고, 남은 각만큼 더 돌아서 아래 joint를 향한다.
-// pose 방향에서 바로 돌리면, 머리카락이 머리 위로 넘어갈 때(180도 근처) bone이 frame마다 비틀린다.
+// pose 방향은 sync로 옮기기 전, 애니메이션의 방향이다. pose_basis가 그 방향의 회전이기 때문이다.
 // root부터 차례로 넣어야 한다(set_bone_global_pose가 부모 bone의 pose를 쓴다).
 void BoneClothSimulator3D::_write_rotations(Skeleton3D *p_skeleton, const Chain &p_chain) {
 	Quaternion turn; // 위 bone들이 pose보다 더 회전한 양. 처음은 회전 없음.
 	for (uint32_t i = p_chain.parent_chain >= 0 ? 2 : 1; i < p_chain.joints.size(); i++) {
 		const Joint &joint = p_chain.joints[i];
 		const Joint &parent = p_chain.joints[i - 1];
-		const Vector3 pose_vector = joint.current_pose_location - parent.current_pose_location;
+		const Vector3 pose_vector = joint.animated_location - parent.animated_location;
 		const Vector3 display_vector = joint.display_location - parent.display_location;
 		turn = parent.branched ? Quaternion() : Quaternion(turn.xform(pose_vector), display_vector) * turn;
 		p_skeleton->set_bone_global_pose(parent.bone, Transform3D(Basis(turn) * parent.pose_basis, parent.display_location));
@@ -537,6 +605,11 @@ void BoneClothSimulator3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_end_bone_direction", "index"), &BoneClothSimulator3D::get_end_bone_direction);
 	ClassDB::bind_method(D_METHOD("set_end_bone_length", "index", "length"), &BoneClothSimulator3D::set_end_bone_length);
 	ClassDB::bind_method(D_METHOD("get_end_bone_length", "index"), &BoneClothSimulator3D::get_end_bone_length);
+
+	ClassDB::bind_method(D_METHOD("set_sync_bone_name", "index", "bone_name"), &BoneClothSimulator3D::set_sync_bone_name);
+	ClassDB::bind_method(D_METHOD("get_sync_bone_name", "index"), &BoneClothSimulator3D::get_sync_bone_name);
+	ClassDB::bind_method(D_METHOD("set_sync_bone", "index", "bone"), &BoneClothSimulator3D::set_sync_bone);
+	ClassDB::bind_method(D_METHOD("get_sync_bone", "index"), &BoneClothSimulator3D::get_sync_bone);
 
 	ClassDB::bind_method(D_METHOD("set_enable_all_child_collisions", "index", "enabled"), &BoneClothSimulator3D::set_enable_all_child_collisions);
 	ClassDB::bind_method(D_METHOD("are_all_child_collisions_enabled", "index"), &BoneClothSimulator3D::are_all_child_collisions_enabled);
@@ -579,6 +652,10 @@ void BoneClothSimulator3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_gravity_damping_curve"), &BoneClothSimulator3D::get_gravity_damping_curve);
 	ClassDB::bind_method(D_METHOD("set_gravity_direction", "direction"), &BoneClothSimulator3D::set_gravity_direction);
 	ClassDB::bind_method(D_METHOD("get_gravity_direction"), &BoneClothSimulator3D::get_gravity_direction);
+	ClassDB::bind_method(D_METHOD("set_sync", "sync"), &BoneClothSimulator3D::set_sync);
+	ClassDB::bind_method(D_METHOD("get_sync"), &BoneClothSimulator3D::get_sync);
+	ClassDB::bind_method(D_METHOD("set_sync_damping_curve", "curve"), &BoneClothSimulator3D::set_sync_damping_curve);
+	ClassDB::bind_method(D_METHOD("get_sync_damping_curve"), &BoneClothSimulator3D::get_sync_damping_curve);
 
 	ClassDB::bind_method(D_METHOD("set_inertia", "inertia"), &BoneClothSimulator3D::set_inertia);
 	ClassDB::bind_method(D_METHOD("get_inertia"), &BoneClothSimulator3D::get_inertia);
@@ -617,6 +694,10 @@ void BoneClothSimulator3D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "gravity/value", PROPERTY_HINT_RANGE, "0,20,0.01,or_greater,or_less,suffix:m/s^2"), "set_gravity", "get_gravity");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "gravity/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_gravity_damping_curve", "get_gravity_damping_curve");
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR3, "gravity/direction"), "set_gravity_direction", "get_gravity_direction");
+
+	// sync/value는 chain의 sync bone이 움직인 양 중 pose를 옮기는 비율이다. sync bone이 없는 chain에는 쓰지 않는다.
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "sync/value", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_sync", "get_sync");
+	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "sync/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_sync_damping_curve", "get_sync_damping_curve");
 
 	ADD_GROUP("Inertia", "");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "inertia", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_inertia", "get_inertia");
@@ -685,6 +766,10 @@ bool BoneClothSimulator3D::_set(const StringName &p_name, const Variant &p_value
 		}
 	} else if (what == "extend_end_bone") {
 		set_extend_end_bone(which, p_value);
+	} else if (what == "sync_bone_name") {
+		set_sync_bone_name(which, p_value);
+	} else if (what == "sync_bone") {
+		set_sync_bone(which, p_value);
 	} else if (what == "enable_all_child_collisions") {
 		set_enable_all_child_collisions(which, p_value);
 	} else if (what == "exclude_collision_count") {
@@ -731,6 +816,10 @@ bool BoneClothSimulator3D::_get(const StringName &p_name, Variant &r_ret) const 
 		}
 	} else if (what == "extend_end_bone") {
 		r_ret = is_end_bone_extended(which);
+	} else if (what == "sync_bone_name") {
+		r_ret = get_sync_bone_name(which);
+	} else if (what == "sync_bone") {
+		r_ret = get_sync_bone(which);
 	} else if (what == "enable_all_child_collisions") {
 		r_ret = are_all_child_collisions_enabled(which);
 	} else if (what == "exclude_collision_count") {
@@ -769,6 +858,8 @@ void BoneClothSimulator3D::_get_property_list(List<PropertyInfo> *p_list) const 
 		p_list->push_back(PropertyInfo(Variant::BOOL, path + String("extend_end_bone"), PROPERTY_HINT_NONE, "", extend_usage));
 		p_list->push_back(PropertyInfo(Variant::INT, path + String("end_bone/direction"), PROPERTY_HINT_ENUM, "+X,-X,+Y,-Y,+Z,-Z,FromParent", tip_usage));
 		p_list->push_back(PropertyInfo(Variant::FLOAT, path + String("end_bone/length"), PROPERTY_HINT_RANGE, "0,1,0.001,or_greater,suffix:m", tip_usage));
+		p_list->push_back(PropertyInfo(Variant::STRING, path + String("sync_bone_name"), hint, bone_names));
+		p_list->push_back(PropertyInfo(Variant::INT, path + String("sync_bone"), PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR));
 
 		const Chain &chain = chains[i];
 		const bool all = chain.enable_all_child_collisions;
@@ -946,6 +1037,48 @@ void BoneClothSimulator3D::set_end_bone_length(int p_index, float p_length) {
 float BoneClothSimulator3D::get_end_bone_length(int p_index) const {
 	ERR_FAIL_INDEX_V(p_index, int(chains.size()), 0.0f);
 	return chains[p_index].end_bone_length;
+}
+
+// sync bone은 비워 둘 수 있다(-1). 그 chain은 sync로 옮기지 않는다.
+void BoneClothSimulator3D::set_sync_bone_name(int p_index, const String &p_bone_name) {
+	ERR_FAIL_INDEX(p_index, int(chains.size()));
+	chains[p_index].sync_bone_name = p_bone_name;
+	Skeleton3D *skeleton = get_skeleton();
+	if (skeleton) {
+		const int found = skeleton->find_bone(p_bone_name);
+		if (found < 0 && !p_bone_name.is_empty()) {
+			WARN_PRINT_ED("Chain " + itos(p_index) + ": sync bone not found: '" + p_bone_name + "'.");
+		}
+
+		set_sync_bone(p_index, found);
+	}
+}
+
+String BoneClothSimulator3D::get_sync_bone_name(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, int(chains.size()), String());
+	return chains[p_index].sync_bone_name;
+}
+
+void BoneClothSimulator3D::set_sync_bone(int p_index, int p_bone) {
+	ERR_FAIL_INDEX(p_index, int(chains.size()));
+	Chain &chain = chains[p_index];
+	chain.sync_bone = p_bone;
+	Skeleton3D *skeleton = get_skeleton();
+	if (skeleton && p_bone >= 0) {
+		if (p_bone >= skeleton->get_bone_count()) {
+			WARN_PRINT_ED("Chain " + itos(p_index) + ": sync bone index " + itos(p_bone) + " is out of range.");
+			chain.sync_bone = -1;
+		} else {
+			chain.sync_bone_name = skeleton->get_bone_name(p_bone);
+		}
+	}
+
+	update_configuration_warnings();
+}
+
+int BoneClothSimulator3D::get_sync_bone(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, int(chains.size()), -1);
+	return chains[p_index].sync_bone;
 }
 
 void BoneClothSimulator3D::set_enable_all_child_collisions(int p_index, bool p_enabled) {
@@ -1133,6 +1266,22 @@ Vector3 BoneClothSimulator3D::get_gravity_direction() const {
 	return gravity_direction;
 }
 
+void BoneClothSimulator3D::set_sync(float p_sync) {
+	sync = p_sync;
+}
+
+float BoneClothSimulator3D::get_sync() const {
+	return sync;
+}
+
+void BoneClothSimulator3D::set_sync_damping_curve(const Ref<Curve> &p_curve) {
+	sync_damping_curve = p_curve;
+}
+
+Ref<Curve> BoneClothSimulator3D::get_sync_damping_curve() const {
+	return sync_damping_curve;
+}
+
 void BoneClothSimulator3D::set_inertia(float p_inertia) {
 	inertia = p_inertia;
 }
@@ -1256,6 +1405,10 @@ PackedStringArray BoneClothSimulator3D::_get_configuration_warnings() const {
 				problems.push_back(vformat("end bone '%s' is not in the skeleton", chain.end_bone_name));
 			}
 
+			if (!chain.sync_bone_name.is_empty() && chain.sync_bone < 0) {
+				problems.push_back(vformat("sync bone '%s' is not in the skeleton", chain.sync_bone_name));
+			}
+
 			const bool has_path = is_on_bone_path(skeleton, chain.root_bone, chain.end_bone, chain.root_bone);
 			if (chain.root_bone >= 0 && chain.end_bone >= 0 && !has_path) {
 				problems.push_back(vformat("end bone '%s' is neither root bone '%s' nor under it", chain.end_bone_name, chain.root_bone_name));
@@ -1311,6 +1464,13 @@ void BoneClothSimulator3D::_validate_bone_names() {
 		} else if (chains[i].end_bone != -1) {
 			set_end_bone(i, chains[i].end_bone);
 		}
+
+		const String sync_name = chains[i].sync_bone_name;
+		if (!sync_name.is_empty()) {
+			set_sync_bone_name(i, sync_name);
+		} else if (chains[i].sync_bone != -1) {
+			set_sync_bone(i, chains[i].sync_bone);
+		}
 	}
 }
 
@@ -1364,6 +1524,7 @@ void BoneClothSimulator3D::_process_modification_with_delta(double p_delta) {
 		}
 		_build_branches();
 		_build_links(skeleton);
+		_build_sync(skeleton);
 	}
 
 	for (Chain &chain : chains) {
@@ -1374,6 +1535,7 @@ void BoneClothSimulator3D::_process_modification_with_delta(double p_delta) {
 	}
 
 	_read_center(skeleton);
+	_apply_sync(skeleton);
 
 	// 이번 frame에 화면에 그려지는 skeleton transform (physics tick 사이 frame에서도 보간된 값이다).
 	const Transform3D skeleton_transform = skeleton->get_global_transform_interpolated();

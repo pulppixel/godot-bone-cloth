@@ -7,6 +7,7 @@
 		This [SkeletonModifier3D] sways hair, skirts, capes and tails, and returns them toward the animated pose.
 		Each chain runs from [method set_root_bone_name] down to [method set_end_bone_name]. The root bone follows the pose and the bones below it are simulated. A chain whose root bone is in an earlier chain branches from it; list the trunk before its branches.
 		With [member link_mode] set, neighboring chains are linked at every depth. The links keep the joints at their rest distance and collide as lines, so a collision cannot pass between two chains.
+		A chain with a sync bone ([method set_sync_bone_name]) moves its pose with that bone, such as a skirt following the knees.
 		The values apply to every chain. Each damping curve scales its value along the chains, from [code]0.0[/code] at the root to [code]1.0[/code] at the farthest tip. Use a separate node for parts that need other values.
 		To tune a node, start from a preset in the [b]Presets[/b] submenu of the node's toolbar menu. Set how far the chains swing first, with [member stiffness/value] and [member limit_angle/value]. Then set how soon the swaying dies out after the skeleton stops, with [member drag/value]. Raise [member depth_inertia] if the part near the roots sways too much while the character moves. Lower [member inertia] last, if the cloth still reacts too much to the character's movement.
 		Lengths, speeds and [member gravity/value] are in meters at the size the character has in its model, the scene the skeleton comes from (the skeleton's [member Node.owner]). A scale inside the model is converted, so a centimeter rig whose armature has a scale of [code]0.01[/code] takes the same values as a meter rig. A scale on the model itself scales the cloth with it, gravity included, so a scaled character moves as a scaled copy. A skeleton without an owner uses its global scale.
@@ -115,6 +116,20 @@
 			<param index="0" name="index" type="int" />
 			<description>
 				Returns the root bone name of the chain.
+			</description>
+		</method>
+		<method name="get_sync_bone" qualifiers="const">
+			<return type="int" />
+			<param index="0" name="index" type="int" />
+			<description>
+				Returns the sync bone index of the chain.
+			</description>
+		</method>
+		<method name="get_sync_bone_name" qualifiers="const">
+			<return type="String" />
+			<param index="0" name="index" type="int" />
+			<description>
+				Returns the sync bone name of the chain.
 			</description>
 		</method>
 		<method name="is_end_bone_extended" qualifiers="const">
@@ -238,6 +253,22 @@
 				Sets the root bone name of the chain. The root bone follows the pose and is not simulated.
 			</description>
 		</method>
+		<method name="set_sync_bone">
+			<return type="void" />
+			<param index="0" name="index" type="int" />
+			<param index="1" name="bone" type="int" />
+			<description>
+				Sets the sync bone index of the chain. [code]-1[/code] is no bone.
+			</description>
+		</method>
+		<method name="set_sync_bone_name">
+			<return type="void" />
+			<param index="0" name="index" type="int" />
+			<param index="1" name="bone_name" type="String" />
+			<description>
+				Sets the sync bone name of the chain, such as the knee beside a skirt chain. While the sync bone is moved from its rest position toward the chain, the chain's animated pose moves with it, so the chain follows the bone instead of being pushed by a collision. The movement is measured against the chains' roots, so the hips bouncing or turning does not count. Only its part along the chain's outward direction (from the roots' center toward the chain's end bone, level) is used, and only while the bone moves that way: a knee coming forward lifts the front of a skirt and leaves the back. The bone rotations follow the moved pose, so the mesh tilts with it. See [member sync/value]. An empty name is no bone.
+			</description>
+		</method>
 	</methods>
 	<members>
 		<member name="chain_count" type="int" setter="set_chain_count" getter="get_chain_count" default="0">
@@ -302,6 +333,12 @@
 		<member name="stiffness/value" type="float" setter="set_stiffness" getter="get_stiffness" default="0.05">
 			How far each joint is pulled toward its animated position per step, from [code]0.0[/code] to [code]1.0[/code]. Higher values keep the chain closer to the pose and make it swing less. At [code]0.0[/code], the chain does not return to the pose. Recommended values are between [code]0.05[/code] and [code]0.2[/code]. Lower values let long hair swing more freely, but it overshoots after the skeleton stops.
 			[b]Note:[/b] [SpringBoneSimulator3D]'s stiffness uses a different formula, so its values do not carry over.
+		</member>
+		<member name="sync/damping_curve" type="Curve" setter="set_sync_damping_curve" getter="get_sync_damping_curve">
+			The curve that scales [member sync/value] along the chains. If not set, the scale is [code]1.0[/code].
+		</member>
+		<member name="sync/value" type="float" setter="set_sync" getter="get_sync" default="1.0">
+			How far each joint's animated pose moves with the chain's sync bone, see [method set_sync_bone_name]. At [code]1.0[/code], the joints move as far as the sync bone toward the chain, then the bone lengths are kept, so the chain tilts around its root. It has no effect on chains without a sync bone.
 		</member>
 		<member name="teleport_angle" type="float" setter="set_teleport_angle" getter="get_teleport_angle" default="1.5707964">
 			A skeleton rotation larger than this in one frame, in radians, counts as a teleport. The cloth then continues as if the skeleton had kept its last motion. Has no effect when [member inertia] is [code]0.0[/code].
