@@ -235,6 +235,26 @@ position_offset = Vector3(0, 0.237, 0)
 rotation_offset = Quaternion(0, 0, 0, 1)
 transform = Transform3D(0.99419034, 0.073391825, 0.07873479, 0.07440834, -0.9971771, -0.0100513995, 0.077774845, 0.015851557, -0.9968449, 0.1431914, 0.31752157, 0.14171514)
 
+[node name="Forearms" type="BoneClothCollisionCapsule3D" parent="lilith/Armature/GeneralSkeleton/BoneClothSimulator3D"]
+radius = 0.04
+height = 0.313
+bone_name = "LeftLowerArm"
+bone = 50
+mirror_bone_name = "RightLowerArm"
+mirror_bone = 80
+position_offset = Vector3(0, 0.116, 0)
+rotation_offset = Quaternion(0, 0, 0, 1)
+
+[node name="Hands" type="BoneClothCollisionCapsule3D" parent="lilith/Armature/GeneralSkeleton/BoneClothSimulator3D"]
+radius = 0.05
+height = 0.266
+bone_name = "LeftHand"
+bone = 51
+mirror_bone_name = "RightHand"
+mirror_bone = 81
+position_offset = Vector3(0, 0.083, 0)
+rotation_offset = Quaternion(0, 0, 0, 1)
+
 [node name="FrontHair" type="BoneClothSimulator3D" parent="lilith/Armature/GeneralSkeleton" index="18" unique_id=782347978]
 drag/value = 0.2
 stiffness/value = 0.1

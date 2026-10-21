@@ -371,11 +371,7 @@ void BoneClothSimulator3D::_step(const Vector3 &p_gravity_direction, const Vecto
 	}
 
 	_solve_links();
-	for (Chain &chain : chains) {
-		_collide(chain, p_collisions);
-	}
-
-	_collide_links(p_collisions);
+	_collide(p_collisions);
 	_solve_links();
 
 	for (Chain &chain : chains) {
@@ -463,49 +459,81 @@ void BoneClothSimulator3D::_solve_links() {
 	}
 }
 
-// joint마다, 이 chain의 collides가 true인 collision으로만 밀어낸다 (root 제외).
-// 그다음 bone(위 joint와 아래 joint를 잇는 선분)마다 같은 collision으로 밀어낸다.
-// joint 사이가 멀면 joint만 밀어서는 그 사이로 몸이 빠져나온다(예: 땋은 머리 bone 가운데가 가슴에 묻힌다).
-// 위 joint가 root면 아래 joint만 움직인다(root는 pose나 parent chain을 따라간다).
-void BoneClothSimulator3D::_collide(Chain &p_chain, const LocalVector<PosedCollision> &p_collisions) {
-	for (uint32_t i = 1; i < p_chain.joints.size(); i++) {
-		Joint &joint = p_chain.joints[i];
-		for (uint32_t c = 0; c < p_collisions.size(); c++) {
-			if (p_chain.collides[c]) {
-				joint.location = p_collisions[c].collision->collide(joint.location, joint.radius, p_collisions[c].mirror);
-			}
+// 선분 하나(r_a ~ r_b)를 collision 밖으로 밀 양을 구해서, 두 joint의 collision_push에 더한다(여기서 옮기지는 않는다).
+// collision마다 같은 시작 위치에서 민다. 민 양을 collision 개수로 평균 내고, 민 방향이 얼마나 같은지(0 ~ 1)를 곱한다.
+//
+//     손 -->  |치마|  <-- 허벅지
+//
+// 위처럼 두 collision이 반대로 밀면 두 방향이 서로 지워져 선분은 거의 움직이지 않는다.
+// 하나씩 차례로 밀면 마지막 collision이 이기고, 다음 step에는 반대쪽이 이겨서 치마가 튄다.
+// 두 joint의 chain이 모두 쓰는 collision만 민다(한쪽 chain에서 뺀 collision이 link를 거쳐 그 chain을 밀지 않게).
+void BoneClothSimulator3D::_collide_segment(Joint &r_a, Joint &r_b, float p_radius, const LocalVector<PosedCollision> &p_collisions, const LocalVector<bool> &p_collides_a, const LocalVector<bool> &p_collides_b) {
+	Vector3 push_a;
+	Vector3 push_b;
+	Vector3 direction_sum;
+	int count = 0;
+	for (uint32_t c = 0; c < p_collisions.size(); c++) {
+		if (!p_collides_a[c] || !p_collides_b[c]) {
+			continue;
 		}
+
+		Vector3 a = r_a.location;
+		Vector3 b = r_b.location;
+		p_collisions[c].collision->collide_segment(a, b, p_radius, p_collisions[c].mirror);
+		const Vector3 moved = (a - r_a.location) + (b - r_b.location);
+		if (moved.is_zero_approx()) {
+			continue;
+		}
+
+		push_a += a - r_a.location;
+		push_b += b - r_b.location;
+		direction_sum += moved.normalized();
+		count++;
 	}
 
-	for (uint32_t i = 1; i < p_chain.joints.size(); i++) {
-		Joint &parent = p_chain.joints[i - 1];
-		Joint &joint = p_chain.joints[i];
-		const float bone_radius = (parent.radius + joint.radius) * 0.5f;
-		for (uint32_t c = 0; c < p_collisions.size(); c++) {
-			if (p_chain.collides[c]) {
-				Vector3 parent_location = parent.location;
-				p_collisions[c].collision->collide_segment(parent_location, joint.location, bone_radius, p_collisions[c].mirror);
-				if (i > 1) {
-					parent.location = parent_location;
-				}
-			}
-		}
+	if (count == 0) {
+		return;
 	}
+
+	// 민 방향이 모두 같으면 1, 서로 반대면 0에 가깝다.
+	const float agreement = MIN((direction_sum / float(count)).length(), 1.0f);
+	const float scale = agreement / float(count);
+	r_a.collision_push += push_a * scale;
+	r_a.collision_count++;
+	r_b.collision_push += push_b * scale;
+	r_b.collision_count++;
 }
 
-// 치마의 joint 두 개가 벌어져 있을 때, 두 joint가 닿지 않는 사이의 천에서는 다리가 뚫고 나올 수 있다.
-// 그래서 두 joint를 잇는 선을 다리 밖으로 밀어 준다.
-// 두 chain의 collides가 모두 true인 collision만 쓴다(한쪽 chain에서 뺀 collision이 link를 거쳐 그 chain을 밀지 않게).
-void BoneClothSimulator3D::_collide_links(const LocalVector<PosedCollision> &p_collisions) {
+// collision이 천을 몸 밖으로 민다. root는 옮기지 않는다(pose나 parent chain을 따라간다).
+void BoneClothSimulator3D::_collide(const LocalVector<PosedCollision> &p_collisions) {
+	for (Chain &chain : chains) {
+		for (Joint &joint : chain.joints) {
+			joint.collision_push = Vector3();
+			joint.collision_count = 0;
+		}
+	}
+
+	for (Chain &chain : chains) {
+		for (uint32_t i = 1; i < chain.joints.size(); i++) {
+			Joint &parent = chain.joints[i - 1];
+			Joint &joint = chain.joints[i];
+			_collide_segment(parent, joint, (parent.radius + joint.radius) * 0.5f, p_collisions, chain.collides, chain.collides);
+		}
+	}
+
 	for (const Link &link : links) {
 		Chain &chain_a = chains[link.chain_a];
 		Chain &chain_b = chains[link.chain_b];
 		Joint &joint_a = chain_a.joints[link.depth];
 		Joint &joint_b = chain_b.joints[link.depth];
-		const float link_radius = (joint_a.radius + joint_b.radius) * 0.5f;
-		for (uint32_t c = 0; c < p_collisions.size(); c++) {
-			if (chain_a.collides[c] && chain_b.collides[c]) {
-				p_collisions[c].collision->collide_segment(joint_a.location, joint_b.location, link_radius, p_collisions[c].mirror);
+		_collide_segment(joint_a, joint_b, (joint_a.radius + joint_b.radius) * 0.5f, p_collisions, chain_a.collides, chain_b.collides);
+	}
+
+	for (Chain &chain : chains) {
+		for (uint32_t i = 1; i < chain.joints.size(); i++) {
+			Joint &joint = chain.joints[i];
+			if (joint.collision_count > 0) {
+				joint.location += joint.collision_push / float(joint.collision_count);
 			}
 		}
 	}

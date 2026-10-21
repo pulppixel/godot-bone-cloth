@@ -62,6 +62,10 @@ private:
 		float limit_angle = 0.0f;
 		float gravity = 0.0f;
 		float sync = 0.0f;
+
+		// 이번 step에 collision이 이 joint를 밀 양.
+		Vector3 collision_push;
+		int collision_count = 0;
 	};
 
 	struct Chain {
@@ -223,8 +227,8 @@ private:
 	void _follow_parent_chain(Chain &p_chain);
 	void _simulate(Chain &p_chain, const Vector3 &p_gravity_direction, const Vector3 &p_move, const Quaternion &p_turn);
 	void _solve_links();
-	void _collide(Chain &p_chain, const LocalVector<PosedCollision> &p_collisions);
-	void _collide_links(const LocalVector<PosedCollision> &p_collisions);
+	void _collide_segment(Joint &r_a, Joint &r_b, float p_radius, const LocalVector<PosedCollision> &p_collisions, const LocalVector<bool> &p_collides_a, const LocalVector<bool> &p_collides_b);
+	void _collide(const LocalVector<PosedCollision> &p_collisions);
 	void _restore_limits_and_lengths(Chain &p_chain);
 	void _update_display(Chain &p_chain, float p_follow);
 	void _write_rotations(Skeleton3D *p_skeleton, const Chain &p_chain);

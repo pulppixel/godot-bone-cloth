@@ -13,6 +13,7 @@ const BONE_COLLISION_TOLERANCE := 0.001 # m
 const DEPTH_INERTIA_RATIO := 0.5
 const SYNC_MIN := 0.05 # m
 const SYNC_TOLERANCE := 0.0001 # m
+const SQUEEZE_TOLERANCE := 0.0001 # m
 
 
 #   Stage
@@ -103,6 +104,7 @@ static func run(t) -> void:
 	await _depth_inertia(t)
 	await _depth_speed_limit(t)
 	await _sync_bone(t)
+	await _squeeze(t)
 
 
 # 캐릭터가 좌우로 오가며 몸을 돌리는 움직임. p_time초 때의 자세를 정한다.
@@ -335,3 +337,23 @@ static func _sync_bone(t) -> void:
 	t.check(tilt < ANGLE_TOLERANCE, "Sync bone forward 0.1 m: the root bone's rotation points %.4f rad off the moved joint." % tilt)
 	t.check(tips["back"].distance_to(tips["rest"]) < SYNC_TOLERANCE, "Sync bone back 0.1 m, away from the chain: the chain end moves %.5f m." % tips["back"].distance_to(tips["rest"]))
 	t.check(tips["off"].distance_to(tips["rest"]) < SYNC_TOLERANCE, "Sync value 0: the chain end moves %.5f m." % tips["off"].distance_to(tips["rest"]))
+	
+
+# 두 구가 bone b1 ~ b2를 양쪽(+X, -X)에서 1 cm씩 민다.
+static func _squeeze(t) -> void:
+	var rig := Rig.new(t)
+	rig.simulator.set("gravity/value", 0.0)
+	for side in [1.0, -1.0]:
+		var sphere: Node = ClassDB.instantiate("BoneClothCollisionSphere3D")
+		rig.simulator.add_child(sphere)
+		sphere.set("bone_name", "b0")
+		sphere.set("position_offset", Vector3(0.05 * side, -0.15, 0.0))
+		sphere.set("radius", 0.04)
+	var largest := 0.0 # b1 ~ 끝 bone이 옆(X)으로 간 가장 먼 거리 (m)
+	for frame in 60:
+		await rig.advance(1.0 / 60.0)
+		for i in range(1, TIP + 1):
+			largest = maxf(largest, absf(rig.poses[i].origin.x))
+	rig.remove()
+
+	t.check(largest < SQUEEZE_TOLERANCE, "Squeeze: a chain between two spheres pushing opposite ways moves %.5f m sideways." % largest)
