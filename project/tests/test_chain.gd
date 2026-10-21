@@ -99,6 +99,7 @@ static func run(t) -> void:
 	await _scale(t)
 	await _bone_collision(t)
 	await _depth_inertia(t)
+	await _depth_speed_limit(t)
 
 
 # 캐릭터가 좌우로 오가며 몸을 돌리는 움직임. p_time초 때의 자세를 정한다.
@@ -281,3 +282,22 @@ static func _depth_inertia(t) -> void:
 		rig.remove()
 
 	t.check(offsets[1.0] < offsets[0.0] * DEPTH_INERTIA_RATIO, "Depth inertia 1: the joint next to the root is %.4f m off its place, against %.4f m at 0." % [offsets[1.0], offsets[0.0]])
+
+
+# depth_inertia만큼 root 근처 joint는 joint_speed_limit에 덜 걸린다(허리 쪽 천이 달릴 때 뒤로 밀리지 않는다).
+static func _depth_speed_limit(t) -> void:
+	var trails := {} # depth_inertia마다, b1이 제자리에서 뒤로 처진 평균 거리 (m)
+	for value in [0.0, 1.0]:
+		var rig := Rig.new(t)
+		rig.simulator.set("depth_inertia", value)
+		rig.simulator.set("joint_speed_limit", 1.0)
+		var sum := 0.0
+		for frame in 120:
+			rig.character.position = Vector3(float(frame + 1) / 60.0 * 3.0, 0, 0)
+			await rig.advance(1.0 / 60.0)
+			if frame >= 60:
+				sum += (rig.poses[0].origin + Vector3(0, -BONE_LENGTH, 0) - rig.poses[1].origin).x
+		trails[value] = sum / 60.0
+		rig.remove()
+
+	t.check(trails[1.0] < trails[0.0] * DEPTH_INERTIA_RATIO, "Depth inertia 1 under joint_speed_limit: the joint next to the root trails %.4f m, against %.4f m at 0." % [trails[1.0], trails[0.0]])

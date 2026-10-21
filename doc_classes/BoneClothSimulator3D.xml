@@ -269,7 +269,7 @@
 			Softens the cloth's reaction to sudden starts and stops of the skeleton. Higher values smooth more. [code]0.0[/code] disables it. Has no effect when [member inertia] is [code]0.0[/code].
 		</member>
 		<member name="joint_speed_limit" type="float" setter="set_joint_speed_limit" getter="get_joint_speed_limit" default="4.0">
-			The maximum speed of each joint relative to the skeleton. A low limit weakens the push out of collisions. [code]0.0[/code] disables it.
+			The maximum speed of each joint over the ground, in m/s. It keeps the tips of long chains from swinging out too far. While the skeleton moves faster than this, the chains trail behind it, the joints near the roots less as [member depth_inertia] rises. A low limit weakens the push out of collisions. [code]0.0[/code] disables it.
 		</member>
 		<member name="limit_angle/damping_curve" type="Curve" setter="set_limit_angle_damping_curve" getter="get_limit_angle_damping_curve">
 			The curve that scales [member limit_angle/value] along the chains. If not set, the scale is [code]1.0[/code].

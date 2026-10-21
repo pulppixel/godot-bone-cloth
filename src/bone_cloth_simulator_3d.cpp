@@ -348,9 +348,9 @@ void BoneClothSimulator3D::_simulate(Chain &p_chain, const Vector3 &p_gravity_di
 
 		Vector3 velocity = (joint.location - joint.prev_location) / dt;
 
-		// 캐릭터가 움직이는 속도는 그대로 두고, 몸을 기준으로 천이 흔들리는 속도만 joint_speed_limit으로 제한한다.
+		// 땅에 대한 joint 속도를 joint_speed_limit으로 제한한다.
 		if (joint_speed_limit > 0.0f) {
-			const Vector3 carried = (prev_step_move + prev_step_turn.xform(joint.prev_location) - joint.prev_location) / dt;
+			const Vector3 carried = (prev_step_move + prev_step_turn.xform(joint.prev_location) - joint.prev_location) / dt * (1.0f - share);
 			velocity = (velocity - carried).limit_length(joint_speed_limit * units_per_meter) + carried;
 		}
 

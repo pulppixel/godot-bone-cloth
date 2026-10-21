@@ -22,6 +22,10 @@ point_count = 2
 _data = [Vector2(0, 0.5), 0.0, 0.5, 0, 1, Vector2(1, 1), 0.5, 0.0, 1, 0]
 point_count = 2
 
+[sub_resource type="Curve" id="Curve_r4d1u"]
+_data = [Vector2(0, 0.43), 0.0, 0.57, 0, 1, Vector2(1, 1), 0.57, 0.0, 1, 0]
+point_count = 2
+
 [sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_aees8"]
 panorama = ExtResource("2_aees8")
 
@@ -124,7 +128,8 @@ link_mode = 2
 drag/value = 0.15
 stiffness/value = 0.1
 stiffness/damping_curve = SubResource("Curve_jk7y1")
-radius/value = 0.04
+radius/value = 0.07
+radius/damping_curve = SubResource("Curve_r4d1u")
 limit_angle/value = 1.3089969
 limit_angle/damping_curve = SubResource("Curve_8qwj8")
 gravity/value = 5.0
@@ -197,7 +202,7 @@ transform = Transform3D(0.00092040095, 0.97901714, -0.20377581, -0.9994465, -0.0
 
 [node name="Thighs" type="BoneClothCollisionTaperedCapsule3D" parent="lilith/Armature/GeneralSkeleton/BoneClothSimulator3D" unique_id=1189342597]
 top_radius = 0.075
-bottom_radius = 0.115
+bottom_radius = 0.095
 height = 0.628
 bone_name = "LeftUpperLeg"
 bone = 149
