@@ -951,7 +951,7 @@ bool BoneClothSimulator3D::_get(const StringName &p_name, Variant &r_ret) const 
 void BoneClothSimulator3D::_get_property_list(List<PropertyInfo> *p_list) const {
 	Skeleton3D *skeleton = get_skeleton();
 	const PropertyHint hint = skeleton ? PROPERTY_HINT_ENUM_SUGGESTION : PROPERTY_HINT_NONE;
-	const String bone_names = skeleton ? skeleton->get_concatenated_bone_names() : String();
+	const String bone_names = skeleton ? String(skeleton->get_concatenated_bone_names()) : String();
 
 	for (uint32_t i = 0; i < chains.size(); i++) {
 		const String path = "chains/" + itos(i) + "/";
