@@ -17,6 +17,8 @@ const SQUEEZE_TOLERANCE := 0.0001 # m
 const REST_OVERLAP_TOLERANCE := 0.0001 # m
 const ROOT_SPRING_LIMIT := 0.03 # m
 const ROOT_SPRING_TOLERANCE := 0.001 # m
+const TIME_MONITOR := &"bone_cloth/time"
+const JOINTS_MONITOR := &"bone_cloth/joints"
 
 
 #   Stage
@@ -96,7 +98,7 @@ class Rig:
 			poses.append(skeleton.get_bone_global_pose(i))
 
 
-# t: run_tests.gd. check와 skip으로 결과를 센다.
+# t: run_tests.gd.
 static func run(t) -> void:
 	await _frame_rate(t)
 	await _teleport(t)
@@ -110,6 +112,7 @@ static func run(t) -> void:
 	await _squeeze(t)
 	await _rest_overlap(t)
 	await _root_spring(t)
+	await _monitors(t)
 
 
 # 캐릭터가 좌우로 오가며 몸을 돌리는 움직임. p_time초 때의 자세를 정한다.
@@ -419,3 +422,25 @@ static func _root_spring(t) -> void:
 	t.check(moved[0.0] < LENGTH_TOLERANCE, "Root spring 0: the root moves %.6f m." % moved[0.0])
 	t.check(moved[0.15] > SWING_MIN and moved[0.15] < ROOT_SPRING_LIMIT + LENGTH_TOLERANCE, "Root spring: the root moves up to %.4f m (limit %.2f m)." % [moved[0.15], ROOT_SPRING_LIMIT])
 	t.check(settled[0.15] < ROOT_SPRING_TOLERANCE, "Root spring: 2 s after the character stops, the root is %.5f m off its pose." % settled[0.15])
+
+
+# Debugger의 Monitors 탭에 나오는 값. 두 chain이 도는 동안, Joints는 두 chain의 joint 수(b0 ~ b4와 끝 joint, 6개씩)의 합이고, Time은 0보다 크다.
+static func _monitors(t) -> void:
+	if not (Performance.has_custom_monitor(TIME_MONITOR) and Performance.has_custom_monitor(JOINTS_MONITOR)):
+		t.check(false, "Monitors: the plugin has not added %s and %s." % [TIME_MONITOR, JOINTS_MONITOR])
+		return
+
+	var rigs: Array[Rig] = [Rig.new(t), Rig.new(t)]
+	# 앞의 테스트들이 더한 값은 한 번 읽어서 비운다.
+	Performance.get_custom_monitor(TIME_MONITOR)
+	Performance.get_custom_monitor(JOINTS_MONITOR)
+	for frame in 10:
+		rigs[0].skeleton.advance(1.0 / 60.0)
+		await rigs[1].advance(1.0 / 60.0)
+	var time: float = Performance.get_custom_monitor(TIME_MONITOR)
+	var joints: int = Performance.get_custom_monitor(JOINTS_MONITOR)
+	for rig in rigs:
+		rig.remove()
+
+	t.check(joints == 2 * (TIP + 2), "Monitors: Joints shows %d for two chains of %d joints." % [joints, TIP + 2])
+	t.check(time > 0.0, "Monitors: Time shows %f s." % time)

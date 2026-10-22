@@ -342,6 +342,10 @@ public:
 	PackedStringArray _get_configuration_warnings() const override;
 	void _validate_bone_names() override;
 	void _process_modification_with_delta(double p_delta) override;
+
+	// Debugger > Monitors 탭의 Bone Cloth 값.
+	static void add_monitors();
+	static void remove_monitors();
 };
 
 VARIANT_ENUM_CAST(BoneClothSimulator3D::LinkMode);

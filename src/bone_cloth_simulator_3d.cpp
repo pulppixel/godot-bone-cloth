@@ -1,8 +1,12 @@
 #include "bone_cloth_simulator_3d.h"
 
 #include <godot_cpp/classes/engine.hpp>
+#include <godot_cpp/classes/performance.hpp>
 #include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/core/math.hpp>
+
+#include <atomic>
+#include <chrono>
 
 using namespace godot;
 
@@ -14,6 +18,35 @@ static constexpr int MAX_STEPS = 4;
 
 // link의 부드러움 정도 (사실상 거의 늘어나지 않는다. 세기는 link_stiffness로 정할 수 있다).
 static constexpr float LINK_COMPLIANCE = 1e-9f;
+
+// Debugger > Monitors 탭의 Bone Cloth 값 하나(시간 또는 joint 수).
+struct MonitorSum {
+	std::atomic<uint64_t> sum = 0;
+	uint64_t read_frame = 0;
+	double average = 0.0;
+
+	// 같은 frame에 다시 읽으면 지난 평균을 그대로 돌려준다.
+	double read() {
+		const uint64_t frame = Engine::get_singleton()->get_process_frames();
+		if (frame != read_frame) {
+			average = double(sum.exchange(0)) / double(frame - read_frame);
+			read_frame = frame;
+		}
+		return average;
+	}
+};
+
+static MonitorSum monitor_time; // _process_modification_with_delta에 쓴 시간(ns)
+static MonitorSum monitor_joints; // 계산한 joint 수
+
+// MONITOR_TYPE_TIME은 초로 받아서 ms로 보여 준다.
+static double get_monitor_time() {
+	return monitor_time.read() / 1e9;
+}
+
+static int64_t get_monitor_joints() {
+	return int64_t(Math::round(monitor_joints.read()));
+}
 
 // tip: end bone 뒤에 붙이는 가상의 joint.
 // bone은 아래 joint를 향해 회전하므로, 이 joint가 있어야 end bone도 회전한다.
@@ -1597,6 +1630,9 @@ void BoneClothSimulator3D::_process_modification_with_delta(double p_delta) {
 		return;
 	}
 
+	// 이 노드가 이번 frame에 쓰는 시간(Monitors 탭의 Bone Cloth 값).
+	const std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+
 	// 씬 안의 scale이 바뀌면 길이 값을 다시 바꿔야 하므로 chain을 다시 만든다.
 	// owner가 없으면 캐릭터가 돌 때 float 오차가 생기므로, 근사값으로 비교한다.
 	const float units = _get_units_per_meter(skeleton);
@@ -1771,4 +1807,25 @@ void BoneClothSimulator3D::_process_modification_with_delta(double p_delta) {
 
 	// joint가 매 frame 움직이므로 gizmo도 매 frame 다시 그린다.
 	update_gizmos();
+
+	uint64_t joint_count = 0;
+	for (const Chain &chain : chains) {
+		joint_count += chain.joints.size();
+	}
+
+	monitor_joints.sum.fetch_add(joint_count, std::memory_order_relaxed);
+	monitor_time.sum.fetch_add(std::chrono::nanoseconds(std::chrono::steady_clock::now() - start).count(), std::memory_order_relaxed);
+}
+
+// 탭에는 Bone Cloth 아래에 Time과 Joints로 나온다(에디터가 이름의 _를 띄우고, 단어의 첫 글자를 대문자로 바꾼다).
+void BoneClothSimulator3D::add_monitors() {
+	Performance *performance = Performance::get_singleton();
+	performance->add_custom_monitor("bone_cloth/time", callable_mp_static(&get_monitor_time), Array(), Performance::MONITOR_TYPE_TIME);
+	performance->add_custom_monitor("bone_cloth/joints", callable_mp_static(&get_monitor_joints));
+}
+
+void BoneClothSimulator3D::remove_monitors() {
+	Performance *performance = Performance::get_singleton();
+	performance->remove_custom_monitor("bone_cloth/time");
+	performance->remove_custom_monitor("bone_cloth/joints");
 }
