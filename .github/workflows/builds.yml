@@ -1,0 +1,80 @@
+# 플러그인의 바이너리를 Windows, Linux, macOS에서 빌드한다.
+name: Builds
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: ${{ matrix.platform }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { platform: windows, arch: x86_64, os: windows-latest }
+          - { platform: linux, arch: x86_64, os: ubuntu-22.04 }
+          - { platform: macos, arch: universal, os: macos-latest, flags: macos_deployment_target=10.13 }
+    env:
+      SCONS_CACHE: ${{ github.workspace }}/.scons-cache/
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          submodules: true
+
+      - name: Setup godot-cpp
+        uses: ./godot-cpp/.github/actions/setup-godot-cpp
+        with:
+          platform: ${{ matrix.platform }}
+          windows-compiler: msvc
+
+      - name: Restore SCons cache
+        uses: ./godot-cpp/.github/actions/godot-cache-restore
+        with:
+          cache-name: ${{ matrix.platform }}
+
+      - name: Build
+        shell: sh
+        run: |
+          scons platform=${{ matrix.platform }} arch=${{ matrix.arch }} ${{ matrix.flags }} target=template_debug
+          scons platform=${{ matrix.platform }} arch=${{ matrix.arch }} ${{ matrix.flags }} target=template_release
+
+      - name: Save SCons cache
+        uses: ./godot-cpp/.github/actions/godot-cache-save
+        with:
+          cache-name: ${{ matrix.platform }}
+
+      - name: Test
+        if: matrix.platform == 'linux'
+        run: |
+          wget -q https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip
+          unzip -q Godot_v4.7.2-stable_linux.x86_64.zip
+          chmod +x Godot_v4.7.2-stable_linux.x86_64
+          ./Godot_v4.7.2-stable_linux.x86_64 --headless --import --path project || true
+          ./Godot_v4.7.2-stable_linux.x86_64 --headless --fixed-fps 60 --path project --script res://tests/run_tests.gd
+
+      # 바이너리만 올린다. Windows 빌드가 남기는 .exp, .lib는 제외.
+      - name: Upload
+        uses: actions/upload-artifact@v7
+        with:
+          name: bin-${{ matrix.platform }}
+          path: |
+            project/addons/bone_cloth/bin/*.dll
+            project/addons/bone_cloth/bin/*.so
+            project/addons/bone_cloth/bin/*.dylib
+          if-no-files-found: error
+
+  merge:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Merge
+        uses: actions/upload-artifact/merge@v7
+        with:
+          name: bone-cloth-bin
+          pattern: bin-*
+          delete-merged: true
