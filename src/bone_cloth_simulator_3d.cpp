@@ -357,9 +357,15 @@ void BoneClothSimulator3D::_apply_sync(Skeleton3D *p_skeleton) {
 // step 1번의 처리 순서.
 void BoneClothSimulator3D::_step(const Vector3 &p_gravity_direction, const Vector3 &p_move, const Quaternion &p_turn, const LocalVector<PosedCollision> &p_collisions) {
 	// root는 몸에 붙은 joint라 물리 계산 없이 pose를 따라간다. 파생된 chain의 root는 _follow_parent_chain에서 옮긴다.
+	// root_spring_stiffness가 있으면 root도 흔들린다(_move_root).
 	for (Chain &chain : chains) {
 		if (!chain.joints.is_empty() && chain.parent_chain < 0) {
 			Joint &root = chain.joints[0];
+			if (root_spring_stiffness > 0.0f) {
+				_move_root(root, p_move, p_turn);
+				continue;
+			}
+
 			root.prev_location = root.location;
 			root.location = root.pose_location;
 		}
@@ -391,43 +397,62 @@ void BoneClothSimulator3D::_follow_parent_chain(Chain &p_chain) {
 	root.location = chains[p_chain.parent_chain].joints[p_chain.parent_joint].location;
 }
 
-// root 아래 joint를 움직인다.
-// 이전 움직임을 이어 가고(drag로 줄이고 gravity를 더한다), 캐릭터 움직임을 반영하고, stiffness만큼 pose 쪽으로 당긴다.
-void BoneClothSimulator3D::_simulate(Chain &p_chain, const Vector3 &p_gravity_direction, const Vector3 &p_move, const Quaternion &p_turn) {
+// joint 하나를 step 한 번만큼 움직인다.
+// 이전 움직임을 이어 가고(drag로 줄이고 gravity를 더한다), 캐릭터 움직임을 반영한다.
+void BoneClothSimulator3D::_move_joint(Joint &r_joint, const Vector3 &p_gravity_direction, const Vector3 &p_move, const Quaternion &p_turn) {
 	const float dt = float(STEP);
 
+	// 중심(root들)이 이번 step에 움직이고 회전한 양 중 share만큼을 joint에 그대로 옮긴다.
+	// share는 root 쪽에서 depth_inertia이고, 끝으로 갈수록 줄어 끝에서 0이다. 허리는 골반을 따라가고 끝단만 흔들린다.
+	const float share = depth_inertia * (1.0f - r_joint.length_rate * r_joint.length_rate);
+	if (share > 0.0f) {
+		const Vector3 move = center_move * share;
+		const Quaternion turn = Quaternion().slerp(center_turn, share);
+		r_joint.location = step_center + turn.xform(r_joint.location - step_center) + move;
+		r_joint.prev_location = step_center + turn.xform(r_joint.prev_location - step_center) + move;
+	}
+
+	Vector3 velocity = (r_joint.location - r_joint.prev_location) / dt;
+
+	// 땅에 대한 joint 속도를 joint_speed_limit으로 제한한다.
+	if (joint_speed_limit > 0.0f) {
+		const Vector3 carried = (prev_step_move + prev_step_turn.xform(r_joint.prev_location) - r_joint.prev_location) / dt * (1.0f - share);
+		velocity = (velocity - carried).limit_length(joint_speed_limit * units_per_meter) + carried;
+	}
+
+	r_joint.prev_location = r_joint.location;
+	velocity *= 1.0f - r_joint.drag;
+	velocity += p_gravity_direction * r_joint.gravity * dt;
+	r_joint.location += velocity * dt;
+
+	// 캐릭터가 등속도로 달리는 동안에는 천이 뒤로 밀리지 않게 한다.
+	// 출발, 정지, 방향 전환처럼 skeleton 움직임이 지난 step과 달라진 만큼만 joint 위치에 더한다.
+	// 이 중 share만큼은 중심과 함께 옮긴 것으로 보고 뺀다(root 쪽은 출발, 정지 때도 덜 흔들린다).
+	r_joint.location += (p_move - prev_step_move) * (1.0f - share);
+	r_joint.location += (p_turn.xform(r_joint.prev_location) - prev_step_turn.xform(r_joint.prev_location)) * (1.0f - share);
+}
+
+// root spring: root도 아래 joint처럼 움직이고, root_spring_stiffness만큼 pose 쪽으로 당긴다. pose에서 root_spring_limit보다 멀어지지 않는다.
+// gravity는 주지 않는다. 주면 서 있을 때도 root가 pose 아래로 처져서 모델 모양이 바뀐다.
+// 거리를 자르면 다음 step의 속도(위치의 차이)도 같이 줄어서, 한계에 닿은 root가 벽에 부딪힌 듯 떨지 않는다.
+/*
+	예: 가슴 bone 하나로 된 chain(root = end bone, 끝에 tip).
+	달리며 몸이 오르내리면 가슴 bone이 조금 늦게 따라갔다가 pose로 돌아온다(위치).
+	tip은 지금처럼 root를 따라가며 bone을 돌린다(회전). 가슴은 위치와 회전이 같이 흔들린다.
+*/
+void BoneClothSimulator3D::_move_root(Joint &r_root, const Vector3 &p_move, const Quaternion &p_turn) {
+	_move_joint(r_root, Vector3(), p_move, p_turn);
+
+	const Vector3 offset = (r_root.location - r_root.pose_location) * (1.0f - root_spring_stiffness);
+	r_root.location = r_root.pose_location + offset.limit_length(root_spring_limit * units_per_meter);
+}
+
+// root 아래 joint를 움직인다(_move_joint). 그리고 stiffness만큼 pose 쪽으로 당긴다.
+void BoneClothSimulator3D::_simulate(Chain &p_chain, const Vector3 &p_gravity_direction, const Vector3 &p_move, const Quaternion &p_turn) {
 	for (uint32_t i = 1; i < p_chain.joints.size(); i++) {
 		Joint &joint = p_chain.joints[i];
 		const Joint &parent = p_chain.joints[i - 1];
-
-		// 중심(root들)이 이번 step에 움직이고 회전한 양 중 share만큼을 joint에 그대로 옮긴다.
-		// share는 root 쪽에서 depth_inertia이고, 끝으로 갈수록 줄어 끝에서 0이다. 허리는 골반을 따라가고 끝단만 흔들린다.
-		const float share = depth_inertia * (1.0f - joint.length_rate * joint.length_rate);
-		if (share > 0.0f) {
-			const Vector3 move = center_move * share;
-			const Quaternion turn = Quaternion().slerp(center_turn, share);
-			joint.location = step_center + turn.xform(joint.location - step_center) + move;
-			joint.prev_location = step_center + turn.xform(joint.prev_location - step_center) + move;
-		}
-
-		Vector3 velocity = (joint.location - joint.prev_location) / dt;
-
-		// 땅에 대한 joint 속도를 joint_speed_limit으로 제한한다.
-		if (joint_speed_limit > 0.0f) {
-			const Vector3 carried = (prev_step_move + prev_step_turn.xform(joint.prev_location) - joint.prev_location) / dt * (1.0f - share);
-			velocity = (velocity - carried).limit_length(joint_speed_limit * units_per_meter) + carried;
-		}
-
-		joint.prev_location = joint.location;
-		velocity *= 1.0f - joint.drag;
-		velocity += p_gravity_direction * joint.gravity * dt;
-		joint.location += velocity * dt;
-
-		// 캐릭터가 등속도로 달리는 동안에는 천이 뒤로 밀리지 않게 한다.
-		// 출발, 정지, 방향 전환처럼 skeleton 움직임이 지난 step과 달라진 만큼만 joint 위치에 더한다.
-		// 이 중 share만큼은 중심과 함께 옮긴 것으로 보고 뺀다(root 쪽은 출발, 정지 때도 덜 흔들린다).
-		joint.location += (p_move - prev_step_move) * (1.0f - share);
-		joint.location += (p_turn.xform(joint.prev_location) - prev_step_turn.xform(joint.prev_location)) * (1.0f - share);
+		_move_joint(joint, p_gravity_direction, p_move, p_turn);
 
 		const Vector3 target = parent.location + (joint.pose_location - parent.pose_location);
 		joint.location += (target - joint.location) * joint.stiffness;
@@ -589,8 +614,9 @@ void BoneClothSimulator3D::_restore_limits_and_lengths(Chain &p_chain) {
 // 지난 step의 이동으로 다음 step 위치를 예측하고, 이번 frame 시간 비율만큼 그쪽으로 옮긴다.
 // 예측은 실제와 다를 수 있으므로, 화면 위치에도 root부터 각도 제한과 bone 길이를 다시 맞춘다.
 void BoneClothSimulator3D::_update_display(Chain &p_chain, float p_follow) {
+	// root spring이 root를 pose에서 옮긴 만큼(location - pose_location)을 이번 frame의 pose에 더한다. 스프링이 없으면 0.
 	Joint &root = p_chain.joints[0];
-	root.display_location = p_chain.parent_chain >= 0 ? chains[p_chain.parent_chain].joints[p_chain.parent_joint].display_location : root.current_pose_location;
+	root.display_location = p_chain.parent_chain >= 0 ? chains[p_chain.parent_chain].joints[p_chain.parent_joint].display_location : root.current_pose_location + (root.location - root.pose_location);
 
 	for (uint32_t i = 1; i < p_chain.joints.size(); i++) {
 		Joint &joint = p_chain.joints[i];
@@ -609,6 +635,7 @@ void BoneClothSimulator3D::_update_display(Chain &p_chain, float p_follow) {
 }
 
 // frame의 마지막 단계. joint 위치를 bone 회전으로 바꿔 skeleton에 넣는다(mesh는 bone 회전으로 움직인다).
+// bone 위치는 joint의 화면 위치다. root spring이 있으면 root bone은 위치도 바뀐다.
 // bone마다 위 bone이 돈 만큼 먼저 돌고, 남은 각만큼 더 돌아서 아래 joint를 향한다.
 // pose 방향에서 바로 돌리면, 머리카락이 머리 위로 넘어갈 때(180도 근처) bone이 frame마다 비틀린다.
 // pose 방향은 sync로 옮기기 전, 애니메이션의 방향이다. pose_basis가 그 방향의 회전이기 때문이다.
@@ -713,6 +740,10 @@ void BoneClothSimulator3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_teleport_distance"), &BoneClothSimulator3D::get_teleport_distance);
 	ClassDB::bind_method(D_METHOD("set_teleport_angle", "angle"), &BoneClothSimulator3D::set_teleport_angle);
 	ClassDB::bind_method(D_METHOD("get_teleport_angle"), &BoneClothSimulator3D::get_teleport_angle);
+	ClassDB::bind_method(D_METHOD("set_root_spring_stiffness", "stiffness"), &BoneClothSimulator3D::set_root_spring_stiffness);
+	ClassDB::bind_method(D_METHOD("get_root_spring_stiffness"), &BoneClothSimulator3D::get_root_spring_stiffness);
+	ClassDB::bind_method(D_METHOD("set_root_spring_limit", "limit"), &BoneClothSimulator3D::set_root_spring_limit);
+	ClassDB::bind_method(D_METHOD("get_root_spring_limit"), &BoneClothSimulator3D::get_root_spring_limit);
 
 	ClassDB::bind_method(D_METHOD("reset"), &BoneClothSimulator3D::reset);
 
@@ -748,6 +779,11 @@ void BoneClothSimulator3D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "joint_speed_limit", PROPERTY_HINT_RANGE, "0,10,0.01,or_greater,suffix:m/s"), "set_joint_speed_limit", "get_joint_speed_limit");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "teleport_distance", PROPERTY_HINT_RANGE, "0,10,0.01,or_greater,suffix:m"), "set_teleport_distance", "get_teleport_distance");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "teleport_angle", PROPERTY_HINT_RANGE, "0,180,0.1,radians_as_degrees"), "set_teleport_angle", "get_teleport_angle");
+
+	// root_spring_stiffness는 step마다 root를 pose 쪽으로 당기는 비율이다(0에서 1, 0이면 root는 pose에 고정).
+	ADD_GROUP("Root Spring", "root_spring_");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "root_spring_stiffness", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_root_spring_stiffness", "get_root_spring_stiffness");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "root_spring_limit", PROPERTY_HINT_RANGE, "0,0.2,0.001,or_greater,suffix:m"), "set_root_spring_limit", "get_root_spring_limit");
 	ADD_GROUP("", "");
 
 	// inspector에서 chains/N/... property를 Chains 목록 하나로 묶는다(항목 추가, 삭제 버튼).
@@ -1384,6 +1420,22 @@ void BoneClothSimulator3D::set_teleport_angle(float p_angle) {
 
 float BoneClothSimulator3D::get_teleport_angle() const {
 	return teleport_angle;
+}
+
+void BoneClothSimulator3D::set_root_spring_stiffness(float p_stiffness) {
+	root_spring_stiffness = p_stiffness;
+}
+
+float BoneClothSimulator3D::get_root_spring_stiffness() const {
+	return root_spring_stiffness;
+}
+
+void BoneClothSimulator3D::set_root_spring_limit(float p_limit) {
+	root_spring_limit = p_limit;
+}
+
+float BoneClothSimulator3D::get_root_spring_limit() const {
+	return root_spring_limit;
 }
 
 void BoneClothSimulator3D::reset() {

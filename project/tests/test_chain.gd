@@ -15,6 +15,8 @@ const SYNC_MIN := 0.05 # m
 const SYNC_TOLERANCE := 0.0001 # m
 const SQUEEZE_TOLERANCE := 0.0001 # m
 const REST_OVERLAP_TOLERANCE := 0.0001 # m
+const ROOT_SPRING_LIMIT := 0.03 # m
+const ROOT_SPRING_TOLERANCE := 0.001 # m
 
 
 #   Stage
@@ -107,6 +109,7 @@ static func run(t) -> void:
 	await _sync_bone(t)
 	await _squeeze(t)
 	await _rest_overlap(t)
+	await _root_spring(t)
 
 
 # 캐릭터가 좌우로 오가며 몸을 돌리는 움직임. p_time초 때의 자세를 정한다.
@@ -393,3 +396,26 @@ static func _rest_overlap(t) -> void:
 
 	t.check(largest < REST_OVERLAP_TOLERANCE, "Rest overlap: a chain that overlaps a sphere at rest moves %.5f m." % largest)
 	t.check(absf(depths["bent"] - depths["rest"]) < BONE_COLLISION_TOLERANCE, "Rest overlap: bent toward the sphere, a bone is %.4f m in, %.4f m at rest." % [depths["bent"], depths["rest"]])
+
+
+# root spring이 있으면 root bone(b0)도 흔들린다. pose에서 root_spring_limit보다 멀어지지 않고, 캐릭터가 멈추면 pose로 돌아온다.
+static func _root_spring(t) -> void:
+	var moved := {} # stiffness마다, 움직이는 동안 root가 pose에서 가장 멀리 간 거리 (m)
+	var settled := {} # stiffness마다, 멈추고 2초 뒤 root가 pose에서 떨어진 거리 (m)
+	for stiffness in [0.0, 0.15]:
+		var rig := Rig.new(t)
+		rig.simulator.set("root_spring_stiffness", stiffness)
+		rig.simulator.set("root_spring_limit", ROOT_SPRING_LIMIT)
+		var largest := 0.0
+		for frame in 240:
+			if frame < 120:
+				_move(rig, float(frame + 1) / 60.0)
+			await rig.advance(1.0 / 60.0)
+			largest = maxf(largest, rig.poses[0].origin.length())
+		moved[stiffness] = largest
+		settled[stiffness] = rig.poses[0].origin.length()
+		rig.remove()
+
+	t.check(moved[0.0] < LENGTH_TOLERANCE, "Root spring 0: the root moves %.6f m." % moved[0.0])
+	t.check(moved[0.15] > SWING_MIN and moved[0.15] < ROOT_SPRING_LIMIT + LENGTH_TOLERANCE, "Root spring: the root moves up to %.4f m (limit %.2f m)." % [moved[0.15], ROOT_SPRING_LIMIT])
+	t.check(settled[0.15] < ROOT_SPRING_TOLERANCE, "Root spring: 2 s after the character stops, the root is %.5f m off its pose." % settled[0.15])

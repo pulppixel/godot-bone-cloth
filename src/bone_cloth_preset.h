@@ -34,6 +34,8 @@ class BoneClothPreset : public Resource {
 	float joint_speed_limit = 4.0f;
 	float teleport_distance = 0.5f;
 	float teleport_angle = Math::deg_to_rad(90.0f);
+	float root_spring_stiffness = 0.0f;
+	float root_spring_limit = 0.04f;
 
 protected:
 	static void _bind_methods();
@@ -63,6 +65,8 @@ public:
 		"joint_speed_limit",
 		"teleport_distance",
 		"teleport_angle",
+		"root_spring_stiffness",
+		"root_spring_limit",
 	};
 
 	// curve는 복사본을 넘긴다. 대상 노드의 값을 바꿔도, 이 preset의 값이 바뀌지 않게 할 수 있다.
@@ -107,4 +111,8 @@ public:
 	float get_teleport_distance() const;
 	void set_teleport_angle(float p_angle);
 	float get_teleport_angle() const;
+	void set_root_spring_stiffness(float p_stiffness);
+	float get_root_spring_stiffness() const;
+	void set_root_spring_limit(float p_limit);
+	float get_root_spring_limit() const;
 };

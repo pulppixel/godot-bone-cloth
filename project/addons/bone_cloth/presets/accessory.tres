@@ -5,3 +5,4 @@ drag/value = 0.2
 stiffness/value = 0.15
 radius/value = 0.015
 limit_angle/value = 0.7853982
+joint_speed_limit = 0.0

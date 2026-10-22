@@ -5,7 +5,7 @@
 	</brief_description>
 	<description>
 		A preset holds the values of a [BoneClothSimulator3D]. Apply one with [method BoneClothSimulator3D.apply_preset] and create one with [method BoneClothSimulator3D.make_preset]. The chains, [member BoneClothSimulator3D.link_mode] and the collisions are not included.
-		In the 3D editor, the node's toolbar menu lists the project's presets under [b]Presets[/b], and [b]Save Preset...[/b] saves a new one. The plugin includes six presets in [code]addons/bone_cloth/presets/[/code].
+		In the 3D editor, the node's toolbar menu lists the project's presets under [b]Presets[/b], and [b]Save Preset...[/b] saves a new one. The plugin includes seven presets in [code]addons/bone_cloth/presets/[/code].
 	</description>
 	<tutorials>
 	</tutorials>
@@ -54,6 +54,12 @@
 		</member>
 		<member name="radius/value" type="float" setter="set_radius" getter="get_radius" default="0.03">
 			See [member BoneClothSimulator3D.radius/value].
+		</member>
+		<member name="root_spring_limit" type="float" setter="set_root_spring_limit" getter="get_root_spring_limit" default="0.04">
+			See [member BoneClothSimulator3D.root_spring_limit].
+		</member>
+		<member name="root_spring_stiffness" type="float" setter="set_root_spring_stiffness" getter="get_root_spring_stiffness" default="0.0">
+			See [member BoneClothSimulator3D.root_spring_stiffness].
 		</member>
 		<member name="rotation_speed_limit" type="float" setter="set_rotation_speed_limit" getter="get_rotation_speed_limit" default="12.566371">
 			See [member BoneClothSimulator3D.rotation_speed_limit].

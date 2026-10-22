@@ -45,6 +45,10 @@ void BoneClothPreset::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_teleport_distance"), &BoneClothPreset::get_teleport_distance);
 	ClassDB::bind_method(D_METHOD("set_teleport_angle", "angle"), &BoneClothPreset::set_teleport_angle);
 	ClassDB::bind_method(D_METHOD("get_teleport_angle"), &BoneClothPreset::get_teleport_angle);
+	ClassDB::bind_method(D_METHOD("set_root_spring_stiffness", "stiffness"), &BoneClothPreset::set_root_spring_stiffness);
+	ClassDB::bind_method(D_METHOD("get_root_spring_stiffness"), &BoneClothPreset::get_root_spring_stiffness);
+	ClassDB::bind_method(D_METHOD("set_root_spring_limit", "limit"), &BoneClothPreset::set_root_spring_limit);
+	ClassDB::bind_method(D_METHOD("get_root_spring_limit"), &BoneClothPreset::get_root_spring_limit);
 
 	// 이름과 범위(hint)를 BoneClothSimulator3D와 맞춘다.
 	// 값을 이름으로 복사하고, preset을 열면 node와 같은 슬라이더로 보인다.
@@ -70,6 +74,9 @@ void BoneClothPreset::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "joint_speed_limit", PROPERTY_HINT_RANGE, "0,10,0.01,or_greater,suffix:m/s"), "set_joint_speed_limit", "get_joint_speed_limit");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "teleport_distance", PROPERTY_HINT_RANGE, "0,10,0.01,or_greater,suffix:m"), "set_teleport_distance", "get_teleport_distance");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "teleport_angle", PROPERTY_HINT_RANGE, "0,180,0.1,radians_as_degrees"), "set_teleport_angle", "get_teleport_angle");
+	ADD_GROUP("Root Spring", "root_spring_");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "root_spring_stiffness", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_root_spring_stiffness", "get_root_spring_stiffness");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "root_spring_limit", PROPERTY_HINT_RANGE, "0,0.2,0.001,or_greater,suffix:m"), "set_root_spring_limit", "get_root_spring_limit");
 }
 
 Variant BoneClothPreset::copy_value(const Variant &p_value) {
@@ -256,4 +263,22 @@ void BoneClothPreset::set_teleport_angle(float p_angle) {
 
 float BoneClothPreset::get_teleport_angle() const {
 	return teleport_angle;
+}
+
+void BoneClothPreset::set_root_spring_stiffness(float p_stiffness) {
+	root_spring_stiffness = p_stiffness;
+	emit_changed();
+}
+
+float BoneClothPreset::get_root_spring_stiffness() const {
+	return root_spring_stiffness;
+}
+
+void BoneClothPreset::set_root_spring_limit(float p_limit) {
+	root_spring_limit = p_limit;
+	emit_changed();
+}
+
+float BoneClothPreset::get_root_spring_limit() const {
+	return root_spring_limit;
 }

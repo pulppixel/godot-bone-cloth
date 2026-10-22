@@ -237,7 +237,7 @@ position_offset = Vector3(0, 0.237, 0)
 rotation_offset = Quaternion(0, 0, 0, 1)
 transform = Transform3D(0.99419034, 0.073391825, 0.07873479, 0.07440834, -0.9971771, -0.0100513995, 0.077774845, 0.015851557, -0.9968449, 0.1431914, 0.31752157, 0.14171514)
 
-[node name="Forearms" type="BoneClothCollisionCapsule3D" parent="lilith/Armature/GeneralSkeleton/BoneClothSimulator3D"]
+[node name="Forearms" type="BoneClothCollisionCapsule3D" parent="lilith/Armature/GeneralSkeleton/BoneClothSimulator3D" unique_id=1839069749]
 radius = 0.04
 height = 0.313
 bone_name = "LeftLowerArm"
@@ -246,8 +246,9 @@ mirror_bone_name = "RightLowerArm"
 mirror_bone = 80
 position_offset = Vector3(0, 0.116, 0)
 rotation_offset = Quaternion(0, 0, 0, 1)
+transform = Transform3D(-0.96764326, 0.16586742, -0.19014291, -0.2453151, -0.79478544, 0.5551003, -0.05904981, 0.58378434, 0.8097589, 0.22524816, 1.0945474, 0.013833847)
 
-[node name="Hands" type="BoneClothCollisionCapsule3D" parent="lilith/Armature/GeneralSkeleton/BoneClothSimulator3D"]
+[node name="Hands" type="BoneClothCollisionCapsule3D" parent="lilith/Armature/GeneralSkeleton/BoneClothSimulator3D" unique_id=1887311944]
 radius = 0.05
 height = 0.266
 bone_name = "LeftHand"
@@ -256,6 +257,7 @@ mirror_bone_name = "RightHand"
 mirror_bone = 81
 position_offset = Vector3(0, 0.083, 0)
 rotation_offset = Quaternion(0, 0, 0, 1)
+transform = Transform3D(-0.1365234, 0.35429224, -0.9251152, -0.62593913, -0.7546725, -0.19664513, -0.76782924, 0.55221945, 0.32479593, 0.27402222, 0.939105, 0.12783474)
 
 [node name="FrontHair" type="BoneClothSimulator3D" parent="lilith/Armature/GeneralSkeleton" index="18" unique_id=782347978]
 drag/value = 0.2
@@ -330,7 +332,7 @@ position_offset = Vector3(0, 0.1, 0)
 rotation_offset = Quaternion(0, 0, 0, 1)
 transform = Transform3D(-0.026285708, 0.33459958, -0.94199365, 0.1881142, -0.9238287, -0.33339667, -0.98179567, -0.18596596, -0.038659476, 0.15788573, 1.3196068, -0.027139675)
 
-[node name="Sleeves" type="BoneClothSimulator3D" parent="lilith/Armature/GeneralSkeleton"]
+[node name="Sleeves" type="BoneClothSimulator3D" parent="lilith/Armature/GeneralSkeleton" index="19" unique_id=1922052079]
 drag/value = 0.2
 stiffness/value = 0.15
 radius/value = 0.015
@@ -342,11 +344,69 @@ chains/0/root_bone = 71
 chains/0/end_bone_name = "lilith_sleeve_03_l"
 chains/0/end_bone = 73
 chains/0/extend_end_bone = false
+chains/0/sync_bone_name = ""
+chains/0/sync_bone = -1
+chains/0/enable_all_child_collisions = true
+chains/0/exclude_collision_count = 0
 chains/1/root_bone_name = "lilith_sleeve_01_r"
 chains/1/root_bone = 101
 chains/1/end_bone_name = "lilith_sleeve_03_r"
 chains/1/end_bone = 103
 chains/1/extend_end_bone = false
+chains/1/sync_bone_name = ""
+chains/1/sync_bone = -1
+chains/1/enable_all_child_collisions = true
+chains/1/exclude_collision_count = 0
+
+[node name="Earrings" type="BoneClothSimulator3D" parent="lilith/Armature/GeneralSkeleton" index="20" unique_id=1605942802]
+drag/value = 0.2
+stiffness/value = 0.15
+radius/value = 0.015
+limit_angle/value = 0.7853982
+joint_speed_limit = 0.0
+chain_count = 1
+chains/0/root_bone_name = "lilith_earring_01"
+chains/0/root_bone = 145
+chains/0/end_bone_name = "lilith_earring_02"
+chains/0/end_bone = 146
+chains/0/extend_end_bone = true
+chains/0/end_bone/direction = 6
+chains/0/end_bone/length = 0.02
+chains/0/sync_bone_name = ""
+chains/0/sync_bone = -1
+chains/0/enable_all_child_collisions = true
+chains/0/exclude_collision_count = 0
+
+[node name="Breast" type="BoneClothSimulator3D" parent="lilith/Armature/GeneralSkeleton" index="21" unique_id=209830920]
+drag/value = 0.3
+stiffness/value = 0.25
+radius/value = 0.05
+limit_angle/value = 0.5235988
+joint_speed_limit = 0.0
+root_spring_stiffness = 0.15
+chain_count = 2
+chains/0/root_bone_name = "breast_l"
+chains/0/root_bone = 45
+chains/0/end_bone_name = "breast_l"
+chains/0/end_bone = 45
+chains/0/extend_end_bone = true
+chains/0/end_bone/direction = 6
+chains/0/end_bone/length = 0.1
+chains/0/sync_bone_name = ""
+chains/0/sync_bone = -1
+chains/0/enable_all_child_collisions = true
+chains/0/exclude_collision_count = 0
+chains/1/root_bone_name = "breast_r"
+chains/1/root_bone = 46
+chains/1/end_bone_name = "breast_r"
+chains/1/end_bone = 46
+chains/1/extend_end_bone = true
+chains/1/end_bone/direction = 6
+chains/1/end_bone/length = 0.1
+chains/1/sync_bone_name = ""
+chains/1/sync_bone = -1
+chains/1/enable_all_child_collisions = true
+chains/1/exclude_collision_count = 0
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="lilith" unique_id=1935651821]
 libraries/rpg_motions = ExtResource("2_gx6sy")
@@ -738,6 +798,8 @@ drag/value = 0.3
 stiffness/value = 0.25
 radius/value = 0.05
 limit_angle/value = 0.5235988
+joint_speed_limit = 0.0
+root_spring_stiffness = 0.15
 chain_count = 2
 chains/0/root_bone_name = "breast_l"
 chains/0/root_bone = 34
@@ -764,9 +826,10 @@ chains/1/exclude_collision_count = 0
 
 [node name="Wings" type="BoneClothSimulator3D" parent="lucia/root/GeneralSkeleton" index="26" unique_id=1177975513]
 drag/value = 0.2
-stiffness/value = 0.15
+stiffness/value = 0.3
 radius/value = 0.015
-limit_angle/value = 0.7853982
+limit_angle/value = 0.34906584
+joint_speed_limit = 0.0
 chain_count = 6
 chains/0/root_bone_name = "wing_01_01_l"
 chains/0/root_bone = 153
@@ -834,6 +897,129 @@ chains/5/sync_bone_name = ""
 chains/5/sync_bone = -1
 chains/5/enable_all_child_collisions = true
 chains/5/exclude_collision_count = 0
+
+[node name="NeckChain" type="BoneClothSimulator3D" parent="lucia/root/GeneralSkeleton" index="27" unique_id=1248029150]
+drag/value = 0.2
+stiffness/value = 0.15
+radius/value = 0.015
+limit_angle/value = 0.7853982
+joint_speed_limit = 0.0
+chain_count = 1
+chains/0/root_bone_name = "neck_chain_01"
+chains/0/root_bone = 150
+chains/0/end_bone_name = "neck_chain_03"
+chains/0/end_bone = 152
+chains/0/extend_end_bone = true
+chains/0/end_bone/direction = 6
+chains/0/end_bone/length = 0.04
+chains/0/sync_bone_name = ""
+chains/0/sync_bone = -1
+chains/0/enable_all_child_collisions = true
+chains/0/exclude_collision_count = 0
+
+[node name="HeadWings" type="BoneClothSimulator3D" parent="lucia/root/GeneralSkeleton" index="28" unique_id=15302254]
+drag/value = 0.2
+stiffness/value = 0.3
+radius/value = 0.015
+limit_angle/value = 0.34906584
+joint_speed_limit = 0.0
+chain_count = 6
+chains/0/root_bone_name = "head_wings_01_01_l"
+chains/0/root_bone = 128
+chains/0/end_bone_name = "head_wings_01_08_l"
+chains/0/end_bone = 135
+chains/0/extend_end_bone = true
+chains/0/end_bone/direction = 6
+chains/0/end_bone/length = 0.05
+chains/0/sync_bone_name = ""
+chains/0/sync_bone = -1
+chains/0/enable_all_child_collisions = true
+chains/0/exclude_collision_count = 0
+chains/1/root_bone_name = "head_wings_01_04_l"
+chains/1/root_bone = 131
+chains/1/end_bone_name = "head_wings_02_02_l"
+chains/1/end_bone = 137
+chains/1/extend_end_bone = true
+chains/1/end_bone/direction = 6
+chains/1/end_bone/length = 0.03
+chains/1/sync_bone_name = ""
+chains/1/sync_bone = -1
+chains/1/enable_all_child_collisions = true
+chains/1/exclude_collision_count = 0
+chains/2/root_bone_name = "head_wings_01_02_l"
+chains/2/root_bone = 129
+chains/2/end_bone_name = "head_wings_03_01_l"
+chains/2/end_bone = 138
+chains/2/extend_end_bone = true
+chains/2/end_bone/direction = 6
+chains/2/end_bone/length = 0.02
+chains/2/sync_bone_name = ""
+chains/2/sync_bone = -1
+chains/2/enable_all_child_collisions = true
+chains/2/exclude_collision_count = 0
+chains/3/root_bone_name = "head_wings_01_01_r"
+chains/3/root_bone = 139
+chains/3/end_bone_name = "head_wings_01_08_r"
+chains/3/end_bone = 146
+chains/3/extend_end_bone = true
+chains/3/end_bone/direction = 6
+chains/3/end_bone/length = 0.05
+chains/3/sync_bone_name = ""
+chains/3/sync_bone = -1
+chains/3/enable_all_child_collisions = true
+chains/3/exclude_collision_count = 0
+chains/4/root_bone_name = "head_wings_01_04_r"
+chains/4/root_bone = 142
+chains/4/end_bone_name = "head_wings_02_02_r"
+chains/4/end_bone = 148
+chains/4/extend_end_bone = true
+chains/4/end_bone/direction = 6
+chains/4/end_bone/length = 0.03
+chains/4/sync_bone_name = ""
+chains/4/sync_bone = -1
+chains/4/enable_all_child_collisions = true
+chains/4/exclude_collision_count = 0
+chains/5/root_bone_name = "head_wings_01_02_r"
+chains/5/root_bone = 140
+chains/5/end_bone_name = "head_wings_03_01_r"
+chains/5/end_bone = 149
+chains/5/extend_end_bone = true
+chains/5/end_bone/direction = 6
+chains/5/end_bone/length = 0.02
+chains/5/sync_bone_name = ""
+chains/5/sync_bone = -1
+chains/5/enable_all_child_collisions = true
+chains/5/exclude_collision_count = 0
+
+[node name="FootWings" type="BoneClothSimulator3D" parent="lucia/root/GeneralSkeleton" index="29" unique_id=78315753]
+drag/value = 0.2
+stiffness/value = 0.3
+radius/value = 0.015
+limit_angle/value = 0.34906584
+joint_speed_limit = 0.0
+chain_count = 2
+chains/0/root_bone_name = "foot_wing_01_l"
+chains/0/root_bone = 193
+chains/0/end_bone_name = "foot_wing_07_l"
+chains/0/end_bone = 199
+chains/0/extend_end_bone = true
+chains/0/end_bone/direction = 6
+chains/0/end_bone/length = 0.05
+chains/0/sync_bone_name = ""
+chains/0/sync_bone = -1
+chains/0/enable_all_child_collisions = true
+chains/0/exclude_collision_count = 0
+chains/1/root_bone_name = "foot_wing_01_r"
+chains/1/root_bone = 206
+chains/1/end_bone_name = "foot_wing_07_r"
+chains/1/end_bone = 212
+chains/1/extend_end_bone = true
+chains/1/end_bone/direction = 6
+chains/1/end_bone/length = 0.05
+chains/1/sync_bone_name = ""
+chains/1/sync_bone = -1
+chains/1/enable_all_child_collisions = true
+chains/1/exclude_collision_count = 0
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="lucia" unique_id=1831916549]
 libraries/rpg_motions = ExtResource("2_gx6sy")
