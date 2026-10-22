@@ -8,6 +8,10 @@ reloadable = true
 
 windows.debug.x86_64 = "bin/libbonecloth.windows.template_debug.x86_64.dll"
 windows.release.x86_64 = "bin/libbonecloth.windows.template_release.x86_64.dll"
+linux.debug.x86_64 = "bin/libbonecloth.linux.template_debug.x86_64.so"
+linux.release.x86_64 = "bin/libbonecloth.linux.template_release.x86_64.so"
+macos.debug = "bin/libbonecloth.macos.template_debug.universal.dylib"
+macos.release = "bin/libbonecloth.macos.template_release.universal.dylib"
 
 [icons]
 
