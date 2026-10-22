@@ -3,3 +3,5 @@
 [resource]
 stiffness/value = 0.02
 radius/value = 0.02
+limit_angle/value = 1.0471976
+joint_speed_limit = 0.0
