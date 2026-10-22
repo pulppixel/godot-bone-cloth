@@ -42,7 +42,6 @@ protected:
 
 public:
 	// 이 배열의 이름으로 preset과 simulator 사이에 값을 복사한다.
-	// apply_preset, make_preset, 에디터의 Presets 메뉴
 	// 쓰는 곳: apply_preset, make_preset, 에디터의 Presets 메뉴
 	static constexpr const char *VALUES[] = {
 		"link_stiffness",
