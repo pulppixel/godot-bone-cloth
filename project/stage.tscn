@@ -13,18 +13,6 @@
 [ext_resource type="AnimationLibrary" uid="uid://du4gfb65gvyby" path="res://demo/motions/demo_motions.glb" id="11_m1lne"]
 [ext_resource type="PackedScene" uid="uid://2ihrtniqvu7j" path="res://demo/characters/victoria.glb" id="11_uis2a"]
 
-[sub_resource type="Curve" id="Curve_jk7y1"]
-_data = [Vector2(0, 0), 0.0, 1.0, 0, 1, Vector2(1, 1), 1.0, 0.0, 1, 0]
-point_count = 2
-
-[sub_resource type="Curve" id="Curve_r4d1u"]
-_data = [Vector2(0, 0.43), 0.0, 0.57, 0, 1, Vector2(1, 1), 0.57, 0.0, 1, 0]
-point_count = 2
-
-[sub_resource type="Curve" id="Curve_8qwj8"]
-_data = [Vector2(0, 0.5), 0.0, 0.5, 0, 1, Vector2(1, 1), 0.5, 0.0, 1, 0]
-point_count = 2
-
 [sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_aees8"]
 panorama = ExtResource("2_aees8")
 
@@ -53,80 +41,82 @@ adjustment_saturation = 1.2
 
 [sub_resource type="CameraAttributesPractical" id="CameraAttributesPractical_aees8"]
 
-[sub_resource type="Curve" id="Curve_jx6rg"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_rnkuw"]
+albedo_color = Color(0.6627451, 0.8901961, 0.49019608, 1)
+
+[sub_resource type="Curve" id="Curve_jk7y1"]
+_data = [Vector2(0, 0), 0.0, 1.0, 0, 1, Vector2(1, 1), 1.0, 0.0, 1, 0]
+point_count = 2
+
+[sub_resource type="Curve" id="Curve_r4d1u"]
+_data = [Vector2(0, 0.43), 0.0, 0.57, 0, 1, Vector2(1, 1), 0.57, 0.0, 1, 0]
+point_count = 2
+
+[sub_resource type="Curve" id="Curve_8qwj8"]
 _data = [Vector2(0, 0.5), 0.0, 0.5, 0, 1, Vector2(1, 1), 0.5, 0.0, 1, 0]
 point_count = 2
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_rnkuw"]
-albedo_color = Color(0.6627451, 0.8901961, 0.49019608, 1)
+[sub_resource type="Curve" id="Curve_jx6rg"]
+_data = [Vector2(0, 0.5), 0.0, 0.5, 0, 1, Vector2(1, 1), 0.5, 0.0, 1, 0]
+point_count = 2
 
 [node name="Stage" type="Node3D" unique_id=287086239 node_paths=PackedStringArray("characters", "camera")]
 script = ExtResource("1_vsjsl")
 characters = [NodePath("lilith"), NodePath("lucia"), NodePath("death_knight")]
 camera = NodePath("Camera3D")
 
+[node name="shino" parent="." unique_id=398394798 instance=ExtResource("10_i76fu")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9.152542, 0.0001620442, -0.6133561)
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="shino" unique_id=12440683]
+libraries/demo_motions = ExtResource("11_m1lne")
+
+[node name="victoria" parent="." unique_id=181843146 instance=ExtResource("11_uis2a")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.805807, 1.0050956e-05, -0.58622885)
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="victoria" unique_id=827713330]
+libraries/demo_motions = ExtResource("11_m1lne")
+autoplay = &"demo_motions/Jog_Fwd"
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1150259320]
+environment = SubResource("Environment_6eo5e")
+camera_attributes = SubResource("CameraAttributesPractical_aees8")
+
+[node name="Sun" type="DirectionalLight3D" parent="." unique_id=1046903856]
+transform = Transform3D(0.81915206, -0.43938506, 0.36868784, 0, 0.64278764, 0.76604444, -0.57357645, -0.62750685, 0.5265408, 0, 10, 0)
+light_temperature = 5600.0
+light_color = Color(1, 0.972549, 0.95686275, 1)
+light_angular_distance = 0.5
+shadow_enabled = true
+
+[node name="Rim" type="DirectionalLight3D" parent="." unique_id=1885138835]
+transform = Transform3D(-0.90630776, 0.24240392, -0.34618866, 0, 0.81915206, 0.57357645, 0.42261833, 0.5198368, -0.74240386, 0, 10, 0)
+light_intensity_lux = 80000.0
+light_temperature = 9000.0
+
+[node name="cyclorama" parent="." unique_id=1708363437 instance=ExtResource("3_rnkuw")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -2)
+
+[node name="Cyclorama" parent="cyclorama" index="0" unique_id=323128486]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -6)
+surface_material_override/0 = SubResource("StandardMaterial3D_rnkuw")
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=1790056850 node_paths=PackedStringArray("target")]
+transform = Transform3D(-0.64278764, -0.1982669, 0.73994213, 0, 0.9659258, 0.25881907, -0.76604444, 0.16636568, -0.62088525, 2, 1.75, -2)
+fov = 40.0
+script = ExtResource("6_vpggq")
+target = NodePath("../lucia")
+
+[node name="CameraFill" type="DirectionalLight3D" parent="Camera3D" unique_id=1014711665]
+transform = Transform3D(0.9396926, 0.14454395, -0.3099755, 0, 0.90630776, 0.42261827, 0.34202012, -0.39713126, 0.8516507, 0, 0, 0)
+light_intensity_lux = 40000.0
+light_temperature = 6000.0
+
 [node name="lilith" parent="." unique_id=1126799021 instance=ExtResource("1_6eo5e")]
 transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, 0.8070699, -2.3841858e-07, 0.011623502)
 script = ExtResource("2_16g40")
 
-[node name="GeneralSkeleton" parent="lilith/Armature" parent_id_path=PackedInt32Array(1126799021, 1458929827) index="0" unique_id=835554210]
-bones/10/position = Vector3(0.006723075, 1.0003695, -0.064489625)
-bones/10/rotation = Quaternion(0.016588613, -0.10242009, -0.0012455301, 0.99460214)
-bones/41/rotation = Quaternion(0.026013251, 0.013826095, -0.0016561734, 0.9995646)
-bones/44/rotation = Quaternion(0.054684054, 0.012494009, -0.0045232675, 0.9984153)
-bones/47/rotation = Quaternion(0.09663501, -0.00073947804, -0.0020018672, 0.99531764)
-bones/48/rotation = Quaternion(0.4784463, 0.4947669, 0.5195107, -0.506363)
-bones/49/rotation = Quaternion(-0.011215597, 0.79617995, -0.5829521, 0.16167451)
-bones/50/rotation = Quaternion(0.3135848, -0.6483013, 0.2471317, 0.6483024)
-bones/51/rotation = Quaternion(-0.07123961, 0.57449853, 0.06672513, 0.8126648)
-bones/53/rotation = Quaternion(0.38995954, 0.020170256, -0.23525202, 0.89004564)
-bones/54/rotation = Quaternion(0.4082172, 3.427267e-07, -0.2769501, 0.8698606)
-bones/55/rotation = Quaternion(0.25736523, -8.791685e-07, -0.17459628, 0.95041007)
-bones/57/rotation = Quaternion(0.4283316, 0.023986187, -0.273019, 0.8610559)
-bones/58/rotation = Quaternion(0.41899028, -1.1026859e-06, -0.20750895, 0.8839611)
-bones/59/rotation = Quaternion(0.3199146, -2.0265581e-06, -0.1584381, 0.93410504)
-bones/61/rotation = Quaternion(0.2997997, 0.11631146, -0.29922673, 0.8983626)
-bones/62/rotation = Quaternion(0.4856959, -2.5331974e-06, -0.080286205, 0.87043303)
-bones/63/rotation = Quaternion(0.30185363, -7.748605e-07, -0.049901195, 0.95204747)
-bones/65/rotation = Quaternion(0.34816045, 0.05971401, -0.30217874, 0.88538504)
-bones/66/rotation = Quaternion(0.45165002, -7.8976143e-07, -0.13932402, 0.88124967)
-bones/67/rotation = Quaternion(0.32893917, -3.4272668e-07, -0.10147418, 0.93888336)
-bones/68/rotation = Quaternion(0.40224418, 0.7038659, 0.47513735, 0.34207764)
-bones/69/rotation = Quaternion(0.18468864, 2.5047077e-06, -0.08808294, 0.978842)
-bones/70/rotation = Quaternion(0.4052748, 1.9520521e-06, -0.19328791, 0.893528)
-bones/70/scale = Vector3(1.0000131, 0.9999873, 0.99999994)
-bones/78/rotation = Quaternion(0.4920776, -0.48529005, -0.5111352, -0.5109736)
-bones/79/rotation = Quaternion(0.052838683, 0.7866453, -0.60006416, -0.13535263)
-bones/80/rotation = Quaternion(0.27266735, 0.6631277, -0.21488528, 0.66312784)
-bones/81/rotation = Quaternion(-0.00043484755, -0.6001242, -0.025296858, 0.7995067)
-bones/83/rotation = Quaternion(0.32479, -0.023368629, 0.21689403, 0.9202839)
-bones/84/rotation = Quaternion(0.36554098, 1.4901163e-07, 0.24799576, 0.89715)
-bones/85/rotation = Quaternion(0.23783118, 2.2053719e-06, 0.16136122, 0.95780945)
-bones/87/rotation = Quaternion(0.36895296, -0.01931259, 0.25772116, 0.8927938)
-bones/88/rotation = Quaternion(0.37566218, -5.5134285e-07, 0.18606193, 0.907887)
-bones/89/rotation = Quaternion(0.29696202, 1.1771917e-06, 0.14708582, 0.9434932)
-bones/91/rotation = Quaternion(0.2380065, -0.0980743, 0.26750717, 0.9285334)
-bones/92/rotation = Quaternion(0.43034375, 2.503395e-06, 0.0711537, 0.8998564)
-bones/93/rotation = Quaternion(0.24930547, 1.7434361e-06, 0.041224096, 0.9675472)
-bones/95/rotation = Quaternion(0.29202846, -0.053185873, 0.27186903, 0.91541135)
-bones/96/rotation = Quaternion(0.41530025, -1.3262033e-06, 0.12811804, 0.90061736)
-bones/97/rotation = Quaternion(0.27170685, 8.493661e-07, 0.08382406, 0.9587226)
-bones/98/rotation = Quaternion(0.3676411, -0.71509755, -0.47890872, 0.35230947)
-bones/99/rotation = Quaternion(0.17611545, 3.0832887e-06, 0.0839991, 0.98077905)
-bones/100/rotation = Quaternion(0.2136608, 3.7550926e-06, 0.10190213, 0.97157866)
-bones/100/scale = Vector3(1.0000123, 0.9999909, 0.9999969)
-bones/108/rotation = Quaternion(-0.09826048, 0.026408203, -0.003780741, 0.9948032)
-bones/110/rotation = Quaternion(-0.008230693, 0.038087178, -0.0023621356, 0.9992378)
-bones/149/rotation = Quaternion(0.047017798, 0.22512303, 0.97182614, -0.051602993)
-bones/150/rotation = Quaternion(-0.00028989313, 0.9782587, -0.20725796, 0.0073523605)
-bones/153/rotation = Quaternion(-0.043842845, 0.71245366, -0.69999963, -0.022094725)
-bones/154/rotation = Quaternion(-0.00019253735, 0.9999908, 0.0042525833, -0.00055058015)
-bones/157/rotation = Quaternion(-0.039606415, 0.069315314, 0.99568385, 0.047333393)
-bones/158/rotation = Quaternion(0.00030319576, 0.9762546, -0.21649015, -0.0076799067)
-bones/161/rotation = Quaternion(0.04090504, 0.59021145, -0.80616724, 0.008473187)
-bones/162/rotation = Quaternion(0.00043413267, 0.9999527, 0.009639979, 0.0012470717)
-
-[node name="BoneClothSimulator3D" type="BoneClothSimulator3D" parent="lilith/Armature/GeneralSkeleton" index="17" unique_id=279156758]
+[node name="BoneClothSimulator3D" type="BoneClothSimulator3D" parent="lilith/Armature/GeneralSkeleton" parent_id_path=PackedInt32Array(1126799021, 835554210) index="17" unique_id=279156758]
 link_mode = 2
 drag/value = 0.15
 stiffness/value = 0.1
@@ -215,7 +205,7 @@ bone_name = "Hips"
 bone = 10
 position_offset = Vector3(0, -0.092, -0.026)
 rotation_offset = Quaternion(0, 0, -0.707107, 0.707107)
-transform = Transform3D(0.00092040095, 0.97901714, -0.20377581, -0.9994465, -0.0058756284, -0.032743007, -0.033253275, 0.20369317, 0.9784699, 0.012105912, 0.9092718, -0.09298915)
+transform = Transform3D(0, 1, 0, -1, 0, 0, 0, 0, 1, 0, 0.9604163, -0.04019987)
 
 [node name="Thighs" type="BoneClothCollisionTaperedCapsule3D" parent="lilith/Armature/GeneralSkeleton/BoneClothSimulator3D" unique_id=1189342597]
 top_radius = 0.075
@@ -227,7 +217,7 @@ mirror_bone_name = "RightUpperLeg"
 mirror_bone = 157
 position_offset = Vector3(-3.1664968e-08, 0.21900001, 0)
 rotation_offset = Quaternion(-2.9802322e-08, 3.3527613e-08, 1.3038517e-08, 1)
-transform = Transform3D(-0.9927585, 0.031565856, -0.11590507, -0.07701961, -0.9077009, 0.41248864, -0.09218657, 0.41842863, 0.90355915, 0.10291839, 0.77261096, 0.044944536)
+transform = Transform3D(-1, 2.6077036e-08, -6.7055225e-08, -2.6077032e-08, -1, -5.9604645e-08, -6.7055225e-08, -5.9604645e-08, 1, 0.09120461, 0.8049699, -0.014029756)
 
 [node name="Calves" type="BoneClothCollisionCapsule3D" parent="lilith/Armature/GeneralSkeleton/BoneClothSimulator3D" unique_id=251832674]
 radius = 0.05
@@ -238,7 +228,7 @@ mirror_bone_name = "RightLowerLeg"
 mirror_bone = 158
 position_offset = Vector3(0, 0.237, 0)
 rotation_offset = Quaternion(0, 0, 0, 1)
-transform = Transform3D(0.99419034, 0.073391825, 0.07873479, 0.07440834, -0.9971771, -0.0100513995, 0.077774845, 0.015851557, -0.9968449, 0.1431914, 0.31752157, 0.14171514)
+transform = Transform3D(1, 0, 0, 0, -1, 0, 0, 0, -1, 0.10564399, 0.3297608, -0.02287349)
 
 [node name="Forearms" type="BoneClothCollisionCapsule3D" parent="lilith/Armature/GeneralSkeleton/BoneClothSimulator3D" unique_id=1839069749]
 radius = 0.04
@@ -249,7 +239,7 @@ mirror_bone_name = "RightLowerArm"
 mirror_bone = 80
 position_offset = Vector3(0, 0.116, 0)
 rotation_offset = Quaternion(0, 0, 0, 1)
-transform = Transform3D(-0.96764326, 0.16586742, -0.19014291, -0.2453151, -0.79478544, 0.5551003, -0.05904981, 0.58378434, 0.8097589, 0.22524816, 1.0945474, 0.013833847)
+transform = Transform3D(0, 1, 0, -1, 0, 0, 0, 0, 1, 0.4796391, 1.4565998, -0.050035603)
 
 [node name="Hands" type="BoneClothCollisionCapsule3D" parent="lilith/Armature/GeneralSkeleton/BoneClothSimulator3D" unique_id=1887311944]
 radius = 0.05
@@ -260,9 +250,9 @@ mirror_bone_name = "RightHand"
 mirror_bone = 81
 position_offset = Vector3(0, 0.083, 0)
 rotation_offset = Quaternion(0, 0, 0, 1)
-transform = Transform3D(-0.1365234, 0.35429224, -0.9251152, -0.62593913, -0.7546725, -0.19664513, -0.76782924, 0.55221945, 0.32479593, 0.27402222, 0.939105, 0.12783474)
+transform = Transform3D(0, 1, 0, 0, 0, -1, -1, 0, 0, 0.6794061, 1.4565998, -0.050035596)
 
-[node name="FrontHair" type="BoneClothSimulator3D" parent="lilith/Armature/GeneralSkeleton" index="18" unique_id=782347978]
+[node name="FrontHair" type="BoneClothSimulator3D" parent="lilith/Armature/GeneralSkeleton" parent_id_path=PackedInt32Array(1126799021, 835554210) index="18" unique_id=782347978]
 drag/value = 0.2
 stiffness/value = 0.1
 limit_angle/value = 1.0471976
@@ -297,7 +287,7 @@ bone_name = "Head"
 bone = 110
 position_offset = Vector3(0, 0.06, 0.006)
 rotation_offset = Quaternion(0, 0, 0, 1)
-transform = Transform3D(0.99973464, -0.0039069797, -0.022700273, -0.00012637209, 0.98456466, -0.17502084, 0.023033679, 0.17497724, 0.9843032, -0.0038122833, 1.6129284, 0.06932932)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.9802322e-08, 1.677277, 0.002167087)
 
 [node name="Chest" type="BoneClothCollisionCapsule3D" parent="lilith/Armature/GeneralSkeleton/FrontHair" unique_id=42027898]
 radius = 0.115
@@ -306,7 +296,7 @@ bone_name = "Chest"
 bone = 44
 position_offset = Vector3(0, 0.056, 0.012)
 rotation_offset = Quaternion(0, 0, -0.707107, 0.707107)
-transform = Transform3D(0.016522318, 0.9884883, -0.15039228, -0.98102754, -0.013031533, -0.19342993, -0.19316307, 0.15073489, 0.9695191, -0.0004788339, 1.2623078, -0.008703465)
+transform = Transform3D(0, 1, 0, -1, 0, 0, 0, 0, 1, -2.9802322e-08, 1.3198761, 0.015433833)
 
 [node name="UpperChest" type="BoneClothCollisionCapsule3D" parent="lilith/Armature/GeneralSkeleton/FrontHair" unique_id=1350116983]
 radius = 0.065
@@ -315,14 +305,14 @@ bone_name = "UpperChest"
 bone = 47
 position_offset = Vector3(0, 0.06, 0)
 rotation_offset = Quaternion(0, 0, -0.707107, 0.707107)
-transform = Transform3D(0.041346423, 0.9883843, -0.14624256, -0.9254375, -0.0172909, -0.37850535, -0.37663746, 0.1509882, 0.9139733, -0.00026071072, 1.3864282, 0.0021259934)
+transform = Transform3D(0, 1, 0, -1, 0, 0, 0, 0, 1, -2.9802322e-08, 1.4448509, -0.009650301)
 
 [node name="FrontPlane" type="BoneClothCollisionPlane3D" parent="lilith/Armature/GeneralSkeleton/FrontHair" unique_id=467863369]
 bone_name = "UpperChest"
 bone = 47
 position_offset = Vector3(0, 0, -0.02)
 rotation_offset = Quaternion(0.707107, 0, 0, 0.707107)
-transform = Transform3D(0.9883843, -0.14624256, 0.041346423, -0.0172909, -0.37850535, -0.9254375, 0.1509882, 0.9139733, -0.37663746, 0.005144924, 1.3384721, -0.03875172)
+transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, -2.9802322e-08, 1.384851, -0.0296503)
 
 [node name="UpperArm" type="BoneClothCollisionCapsule3D" parent="lilith/Armature/GeneralSkeleton/FrontHair" unique_id=1469685477]
 radius = 0.055
@@ -333,9 +323,9 @@ mirror_bone_name = "RightUpperArm"
 mirror_bone = 79
 position_offset = Vector3(0, 0.1, 0)
 rotation_offset = Quaternion(0, 0, 0, 1)
-transform = Transform3D(-0.026285708, 0.33459958, -0.94199365, 0.1881142, -0.9238287, -0.33339667, -0.98179567, -0.18596596, -0.038659476, 0.15788573, 1.3196068, -0.027139675)
+transform = Transform3D(0, 1, 0, 0, 0, -1, -1, 0, 0, 0.21982002, 1.4565998, -0.050035615)
 
-[node name="Sleeves" type="BoneClothSimulator3D" parent="lilith/Armature/GeneralSkeleton" index="19" unique_id=1922052079]
+[node name="Sleeves" type="BoneClothSimulator3D" parent="lilith/Armature/GeneralSkeleton" parent_id_path=PackedInt32Array(1126799021, 835554210) index="19" unique_id=1922052079]
 drag/value = 0.2
 stiffness/value = 0.15
 radius/value = 0.015
@@ -361,7 +351,7 @@ chains/1/sync_bone = -1
 chains/1/enable_all_child_collisions = true
 chains/1/exclude_collision_count = 0
 
-[node name="Earrings" type="BoneClothSimulator3D" parent="lilith/Armature/GeneralSkeleton" index="20" unique_id=1605942802]
+[node name="Earrings" type="BoneClothSimulator3D" parent="lilith/Armature/GeneralSkeleton" parent_id_path=PackedInt32Array(1126799021, 835554210) index="20" unique_id=1605942802]
 drag/value = 0.2
 stiffness/value = 0.15
 radius/value = 0.015
@@ -380,7 +370,7 @@ chains/0/sync_bone = -1
 chains/0/enable_all_child_collisions = true
 chains/0/exclude_collision_count = 0
 
-[node name="Breast" type="BoneClothSimulator3D" parent="lilith/Armature/GeneralSkeleton" index="21" unique_id=209830920]
+[node name="Breast" type="BoneClothSimulator3D" parent="lilith/Armature/GeneralSkeleton" parent_id_path=PackedInt32Array(1126799021, 835554210) index="21" unique_id=209830920]
 drag/value = 0.3
 stiffness/value = 0.25
 radius/value = 0.05
@@ -418,64 +408,7 @@ autoplay = &"rpg_motions/Run_A_F"
 [node name="lucia" parent="." unique_id=1286178778 instance=ExtResource("4_1edn8")]
 script = ExtResource("2_16g40")
 
-[node name="GeneralSkeleton" parent="lucia/root" parent_id_path=PackedInt32Array(1286178778, 1134644129) index="0" unique_id=557005281]
-bones/7/position = Vector3(-0.011226095, 0.95881194, -0.04862876)
-bones/7/rotation = Quaternion(-0.009548148, -0.071182884, 0.001492906, 0.9974165)
-bones/8/rotation = Quaternion(0.012803768, 0.045490578, -0.0035082372, 0.9988766)
-bones/33/rotation = Quaternion(0.03419932, 0.053728797, -0.011966284, 0.9978981)
-bones/36/rotation = Quaternion(0.07981998, 0.024018532, -0.0007833351, 0.9965197)
-bones/37/rotation = Quaternion(0.5035872, 0.46884117, 0.48506042, -0.53972626)
-bones/38/rotation = Quaternion(-0.077161506, 0.7882787, -0.60944265, -0.035249963)
-bones/39/rotation = Quaternion(0.25818616, -0.66780883, 0.20347476, 0.6678094)
-bones/45/rotation = Quaternion(-0.0805827, 0.64602154, 0.011191842, 0.75897133)
-bones/46/rotation = Quaternion(0.38995934, 0.020169824, -0.23525223, 0.8900457)
-bones/47/rotation = Quaternion(0.40821707, 6.5565104e-07, -0.27695018, 0.86986053)
-bones/48/rotation = Quaternion(0.2573655, -7.30157e-07, -0.17459597, 0.9504101)
-bones/49/rotation = Quaternion(0.42833188, 0.023985837, -0.27301887, 0.86105597)
-bones/50/rotation = Quaternion(0.41899008, -9.685756e-07, -0.20750892, 0.88396126)
-bones/51/rotation = Quaternion(0.3199147, -1.8924475e-06, -0.15843791, 0.934105)
-bones/52/rotation = Quaternion(0.29979947, 0.116311446, -0.2992268, 0.89836264)
-bones/53/rotation = Quaternion(0.48569602, -3.0174851e-06, -0.08028558, 0.87043303)
-bones/54/rotation = Quaternion(0.3018536, -8.1956387e-07, -0.049901277, 0.95204747)
-bones/55/rotation = Quaternion(0.34816036, 0.05971358, -0.30217883, 0.88538504)
-bones/56/rotation = Quaternion(0.45165005, -4.917383e-07, -0.13932437, 0.88124967)
-bones/57/rotation = Quaternion(0.32893923, -2.8312206e-07, -0.10147405, 0.9388834)
-bones/58/rotation = Quaternion(0.4022442, 0.7038659, 0.4751372, 0.3420777)
-bones/59/rotation = Quaternion(0.1846885, 2.4749054e-06, -0.08808279, 0.97884196)
-bones/60/rotation = Quaternion(0.40527463, 1.7136333e-06, -0.19328794, 0.893528)
-bones/60/scale = Vector3(1.0000131, 0.9999873, 0.9999999)
-bones/63/rotation = Quaternion(0.4404637, -0.5080202, -0.56530195, -0.47785038)
-bones/64/rotation = Quaternion(-0.21281138, 0.83564246, -0.47177866, -0.18395078)
-bones/65/rotation = Quaternion(0.28727955, 0.65810823, -0.22640122, 0.65810835)
-bones/71/rotation = Quaternion(0.05698776, -0.6201097, 0.04496251, 0.7811497)
-bones/72/rotation = Quaternion(0.32479015, -0.023369016, 0.21689397, 0.92028385)
-bones/73/rotation = Quaternion(0.3655409, 7.45058e-08, 0.24799576, 0.89714986)
-bones/74/rotation = Quaternion(0.23783119, 2.3096798e-06, 0.16136138, 0.95780945)
-bones/75/rotation = Quaternion(0.36895302, -0.019312546, 0.25772104, 0.8927938)
-bones/76/rotation = Quaternion(0.3756622, -4.172325e-07, 0.18606198, 0.9078871)
-bones/77/rotation = Quaternion(0.29696232, 1.206994e-06, 0.14708614, 0.94349307)
-bones/78/rotation = Quaternion(0.23800676, -0.09807423, 0.26750702, 0.9285334)
-bones/79/rotation = Quaternion(0.43034393, 2.6375053e-06, 0.071153514, 0.8998562)
-bones/80/rotation = Quaternion(0.24930532, 1.8775461e-06, 0.041224148, 0.9675471)
-bones/81/rotation = Quaternion(0.29202852, -0.053185575, 0.2718688, 0.91541135)
-bones/82/rotation = Quaternion(0.41530028, -1.4156103e-06, 0.12811792, 0.9006173)
-bones/83/rotation = Quaternion(0.27170676, 6.109476e-07, 0.08382437, 0.9587226)
-bones/84/rotation = Quaternion(0.36764118, -0.7150975, -0.47890854, 0.35230973)
-bones/85/rotation = Quaternion(0.17611563, 2.9491787e-06, 0.083998986, 0.9807791)
-bones/86/rotation = Quaternion(0.21366088, 3.7103896e-06, 0.10190217, 0.9715787)
-bones/86/scale = Vector3(1.0000123, 0.99999076, 0.9999968)
-bones/89/rotation = Quaternion(-0.034984432, -0.019218234, 0.0037905395, 0.9991959)
-bones/90/rotation = Quaternion(0.006742342, -0.030836426, 0.01244627, 0.9994243)
-bones/188/rotation = Quaternion(0.10241613, 0.30274716, 0.94755197, -0.00068117346)
-bones/189/rotation = Quaternion(-0.00016947289, 0.99266756, -0.12080062, 0.0042857938)
-bones/191/rotation = Quaternion(-0.0023323381, 0.74980265, -0.66087836, 0.03209979)
-bones/192/rotation = Quaternion(-0.0004912985, 0.99993944, 0.010913481, -0.0014116769)
-bones/201/rotation = Quaternion(-0.01342001, -0.06862434, 0.9973178, -0.02162963)
-bones/202/rotation = Quaternion(0.00038161958, 0.9620326, -0.27276284, -0.009676005)
-bones/204/rotation = Quaternion(-0.0042410013, 0.55082226, -0.8343973, -0.018918931)
-bones/205/rotation = Quaternion(0.0009277875, 0.9997838, 0.020603301, 0.0026654138)
-
-[node name="BoneClothSimulator3D" type="BoneClothSimulator3D" parent="lucia/root/GeneralSkeleton" index="20" unique_id=140541581]
+[node name="BoneClothSimulator3D" type="BoneClothSimulator3D" parent="lucia/root/GeneralSkeleton" parent_id_path=PackedInt32Array(1286178778, 557005281) index="20" unique_id=140541581]
 link_mode = 2
 drag/value = 0.15
 stiffness/value = 0.1
@@ -559,7 +492,7 @@ bone_name = "Hips"
 bone = 7
 position_offset = Vector3(0, -0.092, -0.026)
 rotation_offset = Quaternion(0, 0, -0.707107, 0.707107)
-transform = Transform3D(0.0016187683, 0.98986155, -0.14202645, -0.9998132, 0.004337427, 0.01883442, 0.019259498, 0.14196944, 0.9896837, -0.0073844804, 0.86633945, -0.07258866)
+transform = Transform3D(0, 1, 0, -1, 0, 0, 0, 0, 1, -1.6940659e-23, 0.94277036, -0.036561534)
 
 [node name="Thighs" type="BoneClothCollisionTaperedCapsule3D" parent="lucia/root/GeneralSkeleton/BoneClothSimulator3D" unique_id=1913947902]
 top_radius = 0.08
@@ -571,7 +504,7 @@ mirror_bone_name = "RightUpperLeg"
 mirror_bone = 201
 position_offset = Vector3(0, 0.211, 0)
 rotation_offset = Quaternion(0, 0, 0, 1)
-transform = Transform3D(-0.9968178, -0.017482549, 0.07777229, 0.06012703, -0.8054568, 0.5895964, 0.052334577, 0.59239644, 0.803945, 0.073506385, 0.7748453, 0.094638765)
+transform = Transform3D(-1, 0, 0, 0, -1, 0, 0, 0, 1, 0.090058096, 0.80926275, -0.0053003025)
 
 [node name="Calves" type="BoneClothCollisionCapsule3D" parent="lucia/root/GeneralSkeleton/BoneClothSimulator3D" unique_id=2028555361]
 radius = 0.05
@@ -582,7 +515,7 @@ mirror_bone_name = "RightLowerLeg"
 mirror_bone = 202
 position_offset = Vector3(0, 0.247, 0)
 rotation_offset = Quaternion(0, 0, 0, 1)
-transform = Transform3D(0.9961466, -0.036321297, -0.079829276, -0.064012386, -0.92331064, -0.3786817, -0.05995301, 0.3823325, -0.9220779, 0.07767877, 0.3525039, 0.314468)
+transform = Transform3D(1, 0, 0, 0, -1, 0, 0, 0, -1, 0.10827932, 0.33172297, -0.018017853)
 
 [node name="Forearms" type="BoneClothCollisionCapsule3D" parent="lucia/root/GeneralSkeleton/BoneClothSimulator3D" unique_id=1349519977]
 radius = 0.06
@@ -593,7 +526,7 @@ mirror_bone_name = "RightLowerArm"
 mirror_bone = 65
 position_offset = Vector3(0, 0.113, 0)
 rotation_offset = Quaternion(0, 0, 0, 1)
-transform = Transform3D(-0.96645564, 0.23147981, 0.11126857, -0.20542952, -0.9567359, 0.20604639, 0.15415035, 0.17627673, 0.9721955, 0.20027755, 1.0780385, -0.17762351)
+transform = Transform3D(0, 1, 0, -1, 0, 0, 0, 0, 1, 0.49838823, 1.4683906, -0.04560029)
 
 [node name="Hands" type="BoneClothCollisionCapsule3D" parent="lucia/root/GeneralSkeleton/BoneClothSimulator3D" unique_id=1344850152]
 radius = 0.07
@@ -604,9 +537,9 @@ mirror_bone_name = "RightHand"
 mirror_bone = 71
 position_offset = Vector3(0, 0.087, 0)
 rotation_offset = Quaternion(0, 0, 0, 1)
-transform = Transform3D(-0.2890066, 0.3334567, -0.8973751, -0.15297596, -0.94141656, -0.300555, -0.9450257, 0.05041428, 0.32308653, 0.25543895, 0.8880513, -0.1533232)
+transform = Transform3D(0, 1, 0, 0, 0, -1, -1, 0, 0, 0.6983598, 1.4683906, -0.045600284)
 
-[node name="Twintails" type="BoneClothSimulator3D" parent="lucia/root/GeneralSkeleton" index="21" unique_id=625231802]
+[node name="Twintails" type="BoneClothSimulator3D" parent="lucia/root/GeneralSkeleton" parent_id_path=PackedInt32Array(1286178778, 557005281) index="21" unique_id=625231802]
 stiffness/value = 0.02
 radius/value = 0.02
 limit_angle/value = 1.0471976
@@ -641,7 +574,7 @@ bone_name = "Head"
 bone = 90
 position_offset = Vector3(0, 0.06, -0.027)
 rotation_offset = Quaternion(0, 0, 0, 1)
-transform = Transform3D(0.9999951, 0.0031430374, -0.00015803427, -0.0031206943, 0.98390174, -0.17868252, -0.00040609762, 0.17868215, 0.9839068, -0.0010246802, 1.5920347, -0.02811954)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.318326e-08, 1.6699371, -0.051277786)
 
 [node name="UpperChest" type="BoneClothCollisionCapsule3D" parent="lucia/root/GeneralSkeleton/Twintails" unique_id=422574697]
 radius = 0.08
@@ -650,9 +583,9 @@ bone_name = "UpperChest"
 bone = 36
 position_offset = Vector3(0, 0.058, 0.02)
 rotation_offset = Quaternion(0, 0, -0.707107, 0.707107)
-transform = Transform3D(-0.04074091, 0.99439055, 0.09760961, -0.9718005, -0.016727064, -0.23521048, -0.23225838, -0.10443975, 0.9670308, -0.0054452047, 1.3716888, -0.0332585)
+transform = Transform3D(0, 1, 0, -1, 0, 0, 0, 0, 1, 4.4157463e-08, 1.4525764, -0.0149794035)
 
-[node name="Hair" type="BoneClothSimulator3D" parent="lucia/root/GeneralSkeleton" index="22" unique_id=1105726521]
+[node name="Hair" type="BoneClothSimulator3D" parent="lucia/root/GeneralSkeleton" parent_id_path=PackedInt32Array(1286178778, 557005281) index="22" unique_id=1105726521]
 drag/value = 0.2
 stiffness/value = 0.1
 radius/value = 0.02
@@ -721,7 +654,7 @@ bone_name = "Head"
 bone = 90
 position_offset = Vector3(0, 0.06, -0.027)
 rotation_offset = Quaternion(0, 0, 0, 1)
-transform = Transform3D(0.9999951, 0.0031430374, -0.00015803427, -0.0031206943, 0.98390174, -0.17868252, -0.00040609762, 0.17868215, 0.9839068, -0.0010246802, 1.5920347, -0.02811954)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.318326e-08, 1.6699371, -0.051277786)
 
 [node name="Chest" type="BoneClothCollisionCapsule3D" parent="lucia/root/GeneralSkeleton/Hair" unique_id=1384566376]
 radius = 0.12
@@ -730,7 +663,7 @@ bone_name = "Chest"
 bone = 33
 position_offset = Vector3(0, 0.048, 0.025)
 rotation_offset = Quaternion(0, 0, -0.707107, 0.707107)
-transform = Transform3D(-0.02695024, 0.9981222, 0.055007212, -0.9968053, -0.022694442, -0.07657747, -0.075185314, -0.056895252, 0.9955452, -0.008884464, 1.2578073, -0.025884792)
+transform = Transform3D(0, 1, 0, -1, 0, 0, 0, 0, 1, 3.1125694e-08, 1.3355987, 0.009839826)
 
 [node name="UpperChest" type="BoneClothCollisionCapsule3D" parent="lucia/root/GeneralSkeleton/Hair" unique_id=249653097]
 radius = 0.08
@@ -739,9 +672,9 @@ bone_name = "UpperChest"
 bone = 36
 position_offset = Vector3(0, 0.058, 0.02)
 rotation_offset = Quaternion(0, 0, -0.707107, 0.707107)
-transform = Transform3D(-0.04074091, 0.99439055, 0.09760961, -0.9718005, -0.016727064, -0.23521048, -0.23225838, -0.10443975, 0.9670308, -0.0054452047, 1.3716888, -0.0332585)
+transform = Transform3D(0, 1, 0, -1, 0, 0, 0, 0, 1, 4.4157463e-08, 1.4525764, -0.0149794035)
 
-[node name="Tail" type="BoneClothSimulator3D" parent="lucia/root/GeneralSkeleton" index="23" unique_id=765665077]
+[node name="Tail" type="BoneClothSimulator3D" parent="lucia/root/GeneralSkeleton" parent_id_path=PackedInt32Array(1286178778, 557005281) index="23" unique_id=765665077]
 drag/value = 0.12
 stiffness/value = 0.08
 radius/value = 0.04
@@ -765,9 +698,9 @@ bone_name = "Hips"
 bone = 7
 position_offset = Vector3(0, -0.092, -0.026)
 rotation_offset = Quaternion(0, 0, -0.707107, 0.707107)
-transform = Transform3D(0.0016187683, 0.98986155, -0.14202645, -0.9998132, 0.004337427, 0.01883442, 0.019259498, 0.14196944, 0.9896837, -0.0073844804, 0.86633945, -0.07258866)
+transform = Transform3D(0, 1, 0, -1, 0, 0, 0, 0, 1, -1.6940659e-23, 0.94277036, -0.036561534)
 
-[node name="ArmChains" type="BoneClothSimulator3D" parent="lucia/root/GeneralSkeleton" index="24" unique_id=2001465402]
+[node name="ArmChains" type="BoneClothSimulator3D" parent="lucia/root/GeneralSkeleton" parent_id_path=PackedInt32Array(1286178778, 557005281) index="24" unique_id=2001465402]
 drag/value = 0.2
 stiffness/value = 0.15
 radius/value = 0.015
@@ -796,7 +729,7 @@ chains/1/sync_bone = -1
 chains/1/enable_all_child_collisions = true
 chains/1/exclude_collision_count = 0
 
-[node name="Breast" type="BoneClothSimulator3D" parent="lucia/root/GeneralSkeleton" index="25" unique_id=2054378880]
+[node name="Breast" type="BoneClothSimulator3D" parent="lucia/root/GeneralSkeleton" parent_id_path=PackedInt32Array(1286178778, 557005281) index="25" unique_id=2054378880]
 drag/value = 0.3
 stiffness/value = 0.25
 radius/value = 0.05
@@ -827,7 +760,7 @@ chains/1/sync_bone = -1
 chains/1/enable_all_child_collisions = true
 chains/1/exclude_collision_count = 0
 
-[node name="Wings" type="BoneClothSimulator3D" parent="lucia/root/GeneralSkeleton" index="26" unique_id=1177975513]
+[node name="Wings" type="BoneClothSimulator3D" parent="lucia/root/GeneralSkeleton" parent_id_path=PackedInt32Array(1286178778, 557005281) index="26" unique_id=1177975513]
 drag/value = 0.2
 stiffness/value = 0.3
 radius/value = 0.015
@@ -901,7 +834,7 @@ chains/5/sync_bone = -1
 chains/5/enable_all_child_collisions = true
 chains/5/exclude_collision_count = 0
 
-[node name="NeckChain" type="BoneClothSimulator3D" parent="lucia/root/GeneralSkeleton" index="27" unique_id=1248029150]
+[node name="NeckChain" type="BoneClothSimulator3D" parent="lucia/root/GeneralSkeleton" parent_id_path=PackedInt32Array(1286178778, 557005281) index="27" unique_id=1248029150]
 drag/value = 0.2
 stiffness/value = 0.15
 radius/value = 0.015
@@ -920,7 +853,7 @@ chains/0/sync_bone = -1
 chains/0/enable_all_child_collisions = true
 chains/0/exclude_collision_count = 0
 
-[node name="HeadWings" type="BoneClothSimulator3D" parent="lucia/root/GeneralSkeleton" index="28" unique_id=15302254]
+[node name="HeadWings" type="BoneClothSimulator3D" parent="lucia/root/GeneralSkeleton" parent_id_path=PackedInt32Array(1286178778, 557005281) index="28" unique_id=15302254]
 drag/value = 0.2
 stiffness/value = 0.3
 radius/value = 0.015
@@ -994,7 +927,7 @@ chains/5/sync_bone = -1
 chains/5/enable_all_child_collisions = true
 chains/5/exclude_collision_count = 0
 
-[node name="FootWings" type="BoneClothSimulator3D" parent="lucia/root/GeneralSkeleton" index="29" unique_id=78315753]
+[node name="FootWings" type="BoneClothSimulator3D" parent="lucia/root/GeneralSkeleton" parent_id_path=PackedInt32Array(1286178778, 557005281) index="29" unique_id=78315753]
 drag/value = 0.2
 stiffness/value = 0.3
 radius/value = 0.015
@@ -1027,17 +960,6 @@ chains/1/exclude_collision_count = 0
 [node name="AnimationPlayer" type="AnimationPlayer" parent="lucia" unique_id=1831916549]
 libraries/rpg_motions = ExtResource("2_gx6sy")
 autoplay = &"rpg_motions/Walk_A_F"
-
-[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1150259320]
-environment = SubResource("Environment_6eo5e")
-camera_attributes = SubResource("CameraAttributesPractical_aees8")
-
-[node name="Sun" type="DirectionalLight3D" parent="." unique_id=1046903856]
-transform = Transform3D(0.81915206, -0.43938506, 0.36868784, 0, 0.64278764, 0.76604444, -0.57357645, -0.62750685, 0.5265408, 0, 10, 0)
-light_temperature = 5600.0
-light_color = Color(1, 0.972549, 0.95686275, 1)
-light_angular_distance = 0.5
-shadow_enabled = true
 
 [node name="death_knight" parent="." unique_id=1933797549 instance=ExtResource("2_jx6rg")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 0, 0)
@@ -1285,43 +1207,7 @@ visible = false
 [node name="AnimationPlayer" type="AnimationPlayer" parent="death_knight" unique_id=1111876923]
 libraries/rpg_motions = ExtResource("2_gx6sy")
 
-[node name="Rim" type="DirectionalLight3D" parent="." unique_id=1885138835]
-transform = Transform3D(-0.90630776, 0.24240392, -0.34618866, 0, 0.81915206, 0.57357645, 0.42261833, 0.5198368, -0.74240386, 0, 10, 0)
-light_intensity_lux = 80000.0
-light_temperature = 9000.0
-
-[node name="cyclorama" parent="." unique_id=1708363437 instance=ExtResource("3_rnkuw")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -2)
-
-[node name="Cyclorama" parent="cyclorama" index="0" unique_id=323128486]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -6)
-surface_material_override/0 = SubResource("StandardMaterial3D_rnkuw")
-
-[node name="Camera3D" type="Camera3D" parent="." unique_id=1790056850 node_paths=PackedStringArray("target")]
-transform = Transform3D(-0.64278764, -0.1982669, 0.73994213, 0, 0.9659258, 0.25881907, -0.76604444, 0.16636568, -0.62088525, 2, 1.75, -2)
-fov = 40.0
-script = ExtResource("6_vpggq")
-target = NodePath("../lucia")
-
-[node name="CameraFill" type="DirectionalLight3D" parent="Camera3D" unique_id=1014711665]
-transform = Transform3D(0.9396926, 0.14454395, -0.3099755, 0, 0.90630776, 0.42261827, 0.34202012, -0.39713126, 0.8516507, 0, 0, 0)
-light_intensity_lux = 40000.0
-light_temperature = 6000.0
-
-[node name="shino" parent="." unique_id=398394798 instance=ExtResource("10_i76fu")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9.152542, 0.0001620442, -0.6133561)
-
-[node name="AnimationPlayer" type="AnimationPlayer" parent="shino" unique_id=12440683]
-libraries/demo_motions = ExtResource("11_m1lne")
-
-[node name="victoria" parent="." unique_id=181843146 instance=ExtResource("11_uis2a")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.805807, 1.0050956e-05, -0.58622885)
-
-[node name="AnimationPlayer" type="AnimationPlayer" parent="victoria" unique_id=827713330]
-libraries/demo_motions = ExtResource("11_m1lne")
-autoplay = &"demo_motions/Jog_Fwd"
-
+[editable path="cyclorama"]
 [editable path="lilith"]
 [editable path="lucia"]
 [editable path="death_knight"]
-[editable path="cyclorama"]
