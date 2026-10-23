@@ -1,6 +1,8 @@
 extends SceneTree
 # 실행 (저장소 루트에서):
 #   godot --headless --fixed-fps 60 --path project --script res://tests/run_tests.gd
+# 막 clone해서 project/.godot이 없으면 먼저 한 번 import한다. 그래야 플러그인을 불러온다:
+#   godot --headless --import --path project
 
 const TestChain := preload("res://tests/test_chain.gd")
 const TestStage := preload("res://tests/test_stage.gd")
@@ -43,13 +45,17 @@ func skip(message: String) -> void:
 
 
 func _run() -> void:
-	# 에디터 안에서는 에디터에만 있는 것(configuration warning)을 검사한다. _run_editor_tests가 이렇게 실행한다.
+	# 플러그인이 로드되었는지 체크한다.
+	if not ClassDB.class_exists(&"BoneClothSimulator3D"):
+		check(false, "The plugin is not loaded (no BoneClothSimulator3D class). In a new clone, run --headless --import first.")
+		_finish()
+		return
+
 	if Engine.is_editor_hint():
 		await TestWarnings.run(self)
 		_finish()
 		return
 	
-	# 처음 3 frame을 본다. --fixed-fps가 없으면 처음 frame들이 1/120초로 시작한다.
 	for frame in 3:
 		await process_frame
 		if absf(_delta - 1.0 / 60.0) > 1e-9:
