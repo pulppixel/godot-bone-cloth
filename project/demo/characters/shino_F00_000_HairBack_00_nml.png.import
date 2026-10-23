@@ -1,0 +1,44 @@
+[remap]
+
+importer="texture"
+type="CompressedTexture2D"
+uid="uid://cwfprmha0vpfw"
+path.s3tc="res://.godot/imported/shino_F00_000_HairBack_00_nml.png-31f6744ab4adcc015e7b104bd0cd9e45.s3tc.ctex"
+metadata={
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
+}
+generator_parameters={
+"md5": "5c9840d5b36ce0dbcc58e92f72abec0c"
+}
+
+[deps]
+
+source_file="res://demo/characters/shino_F00_000_HairBack_00_nml.png"
+dest_files=["res://.godot/imported/shino_F00_000_HairBack_00_nml.png-31f6744ab4adcc015e7b104bd0cd9e45.s3tc.ctex"]
+
+[params]
+
+compress/mode=2
+compress/high_quality=false
+compress/lossy_quality=0.7
+compress/uastc_level=0
+compress/rdo_quality_loss=0.0
+compress/hdr_compression=1
+compress/normal_map=1
+compress/channel_pack=0
+mipmaps/generate=true
+mipmaps/limit=-1
+roughness/mode=1
+roughness/src_normal="res://demo/characters/shino_F00_000_HairBack_00_nml.png"
+process/channel_remap/red=0
+process/channel_remap/green=1
+process/channel_remap/blue=2
+process/channel_remap/alpha=3
+process/fix_alpha_border=true
+process/premult_alpha=false
+process/normal_map_invert_y=false
+process/hdr_as_srgb=false
+process/hdr_clamp_exposure=false
+process/size_limit=0
+detect_3d/compress_to=0

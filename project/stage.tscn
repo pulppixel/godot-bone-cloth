@@ -9,6 +9,9 @@
 [ext_resource type="PackedScene" uid="uid://dhy55s0vfy687" path="res://studio/cyclorama.gltf" id="3_rnkuw"]
 [ext_resource type="PackedScene" uid="uid://bty38kckba1b4" path="res://characters/lucia/lucia.gltf" id="4_1edn8"]
 [ext_resource type="Script" uid="uid://0igg748dx7du" path="res://orbit_camera.gd" id="6_vpggq"]
+[ext_resource type="PackedScene" uid="uid://c4oocujbmlnbv" path="res://demo/characters/shino.glb" id="10_i76fu"]
+[ext_resource type="AnimationLibrary" uid="uid://du4gfb65gvyby" path="res://demo/motions/demo_motions.glb" id="11_m1lne"]
+[ext_resource type="PackedScene" uid="uid://2ihrtniqvu7j" path="res://demo/characters/victoria.glb" id="11_uis2a"]
 
 [sub_resource type="Curve" id="Curve_jk7y1"]
 _data = [Vector2(0, 0), 0.0, 1.0, 0, 1, Vector2(1, 1), 1.0, 0.0, 1, 0]
@@ -19,10 +22,6 @@ _data = [Vector2(0, 0.43), 0.0, 0.57, 0, 1, Vector2(1, 1), 0.57, 0.0, 1, 0]
 point_count = 2
 
 [sub_resource type="Curve" id="Curve_8qwj8"]
-_data = [Vector2(0, 0.5), 0.0, 0.5, 0, 1, Vector2(1, 1), 0.5, 0.0, 1, 0]
-point_count = 2
-
-[sub_resource type="Curve" id="Curve_jx6rg"]
 _data = [Vector2(0, 0.5), 0.0, 0.5, 0, 1, Vector2(1, 1), 0.5, 0.0, 1, 0]
 point_count = 2
 
@@ -53,6 +52,10 @@ adjustment_enabled = true
 adjustment_saturation = 1.2
 
 [sub_resource type="CameraAttributesPractical" id="CameraAttributesPractical_aees8"]
+
+[sub_resource type="Curve" id="Curve_jx6rg"]
+_data = [Vector2(0, 0.5), 0.0, 0.5, 0, 1, Vector2(1, 1), 0.5, 0.0, 1, 0]
+point_count = 2
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_rnkuw"]
 albedo_color = Color(0.6627451, 0.8901961, 0.49019608, 1)
@@ -1025,6 +1028,17 @@ chains/1/exclude_collision_count = 0
 libraries/rpg_motions = ExtResource("2_gx6sy")
 autoplay = &"rpg_motions/Walk_A_F"
 
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1150259320]
+environment = SubResource("Environment_6eo5e")
+camera_attributes = SubResource("CameraAttributesPractical_aees8")
+
+[node name="Sun" type="DirectionalLight3D" parent="." unique_id=1046903856]
+transform = Transform3D(0.81915206, -0.43938506, 0.36868784, 0, 0.64278764, 0.76604444, -0.57357645, -0.62750685, 0.5265408, 0, 10, 0)
+light_temperature = 5600.0
+light_color = Color(1, 0.972549, 0.95686275, 1)
+light_angular_distance = 0.5
+shadow_enabled = true
+
 [node name="death_knight" parent="." unique_id=1933797549 instance=ExtResource("2_jx6rg")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 0, 0)
 script = ExtResource("2_16g40")
@@ -1271,17 +1285,6 @@ visible = false
 [node name="AnimationPlayer" type="AnimationPlayer" parent="death_knight" unique_id=1111876923]
 libraries/rpg_motions = ExtResource("2_gx6sy")
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1150259320]
-environment = SubResource("Environment_6eo5e")
-camera_attributes = SubResource("CameraAttributesPractical_aees8")
-
-[node name="Sun" type="DirectionalLight3D" parent="." unique_id=1046903856]
-transform = Transform3D(0.81915206, -0.43938506, 0.36868784, 0, 0.64278764, 0.76604444, -0.57357645, -0.62750685, 0.5265408, 0, 10, 0)
-light_temperature = 5600.0
-light_color = Color(1, 0.972549, 0.95686275, 1)
-light_angular_distance = 0.5
-shadow_enabled = true
-
 [node name="Rim" type="DirectionalLight3D" parent="." unique_id=1885138835]
 transform = Transform3D(-0.90630776, 0.24240392, -0.34618866, 0, 0.81915206, 0.57357645, 0.42261833, 0.5198368, -0.74240386, 0, 10, 0)
 light_intensity_lux = 80000.0
@@ -1304,6 +1307,19 @@ target = NodePath("../lucia")
 transform = Transform3D(0.9396926, 0.14454395, -0.3099755, 0, 0.90630776, 0.42261827, 0.34202012, -0.39713126, 0.8516507, 0, 0, 0)
 light_intensity_lux = 40000.0
 light_temperature = 6000.0
+
+[node name="shino" parent="." unique_id=398394798 instance=ExtResource("10_i76fu")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9.152542, 0.0001620442, -0.6133561)
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="shino" unique_id=12440683]
+libraries/demo_motions = ExtResource("11_m1lne")
+
+[node name="victoria" parent="." unique_id=181843146 instance=ExtResource("11_uis2a")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.805807, 1.0050956e-05, -0.58622885)
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="victoria" unique_id=827713330]
+libraries/demo_motions = ExtResource("11_m1lne")
+autoplay = &"demo_motions/Jog_Fwd"
 
 [editable path="lilith"]
 [editable path="lucia"]
