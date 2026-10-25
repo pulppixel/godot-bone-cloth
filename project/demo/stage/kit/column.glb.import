@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://dhy55s0vfy687"
-path="res://.godot/imported/cyclorama.gltf-0994de322e0af1151bb4fdd2b4912c23.scn"
+uid="uid://c6r4xu624pv1l"
+path="res://.godot/imported/column.glb-d3a597ee912552e62b1052a737cae4b6.scn"
 
 [deps]
 
-source_file="res://studio/cyclorama.gltf"
-dest_files=["res://.godot/imported/cyclorama.gltf-0994de322e0af1151bb4fdd2b4912c23.scn"]
+source_file="res://demo/stage/kit/column.glb"
+dest_files=["res://.godot/imported/column.glb-d3a597ee912552e62b1052a737cae4b6.scn"]
 
 [params]
 

@@ -1,0 +1,14 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://bwho858lr0623"]
+
+[ext_resource type="Shader" uid="uid://bs0j1qy3j54t1" path="res://demo/stage/grid.gdshader" id="1_8pqmc"]
+[ext_resource type="Texture2D" uid="uid://df0ix337jysq5" path="res://demo/stage/kit/Textures/grid_lines.png" id="2_b0u4n"]
+
+[resource]
+render_priority = 0
+shader = ExtResource("1_8pqmc")
+shader_parameter/color_a = Color(0.105882354, 0.8509804, 0.46666667, 1)
+shader_parameter/color_b = Color(0.09411765, 0.7607843, 0.41568628, 1)
+shader_parameter/line_color = Color(0.043137256, 0.41960785, 0.22745098, 1)
+shader_parameter/line_mask = ExtResource("2_b0u4n")
+shader_parameter/check_size = 1.0
+shader_parameter/roughness = 0.85
