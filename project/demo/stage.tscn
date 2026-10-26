@@ -1,16 +1,16 @@
 [gd_scene format=3 uid="uid://ljjloheqvke8"]
 
-[ext_resource type="Script" uid="uid://77lvhsp7nagn" path="res://character_switch.gd" id="1_vsjsl"]
-[ext_resource type="Script" uid="uid://bh2u8ukcbg5tf" path="res://player.gd" id="2_g8oy1"]
-[ext_resource type="AnimationNodeBlendTree" uid="uid://bcsixpyfun3ks" path="res://demo/motions/locomotion.tres" id="5_g8oy1"]
-[ext_resource type="Script" uid="uid://b31tfi6s47b4q" path="res://face.gd" id="6_g8oy1"]
-[ext_resource type="Script" uid="uid://devckjxwpb5us" path="res://camera_rig.gd" id="6_jx6rg"]
-[ext_resource type="Script" uid="uid://csfpwv81biimb" path="res://look.gd" id="7_i76fu"]
-[ext_resource type="Material" uid="uid://bwho858lr0623" path="res://demo/stage/floor.tres" id="8_vsjsl"]
-[ext_resource type="MeshLibrary" uid="uid://cyqygeretjs7t" path="res://demo/stage/block_lib.meshlib" id="9_jx6rg"]
-[ext_resource type="PackedScene" uid="uid://c4oocujbmlnbv" path="res://demo/characters/shino.glb" id="10_i76fu"]
-[ext_resource type="AnimationLibrary" uid="uid://du4gfb65gvyby" path="res://demo/motions/demo_motions.glb" id="11_m1lne"]
-[ext_resource type="PackedScene" uid="uid://2ihrtniqvu7j" path="res://demo/characters/victoria.glb" id="11_uis2a"]
+[ext_resource type="Script" uid="uid://77lvhsp7nagn" path="res://demo/scripts/character_switch.gd" id="1_vknmp"]
+[ext_resource type="Script" uid="uid://bh2u8ukcbg5tf" path="res://demo/scripts/player.gd" id="2_r7osq"]
+[ext_resource type="PackedScene" uid="uid://c4oocujbmlnbv" path="res://demo/characters/shino.glb" id="3_chd14"]
+[ext_resource type="AnimationLibrary" uid="uid://du4gfb65gvyby" path="res://demo/motions/demo_motions.glb" id="4_s2bi8"]
+[ext_resource type="AnimationNodeBlendTree" uid="uid://bcsixpyfun3ks" path="res://demo/motions/locomotion.tres" id="5_awah3"]
+[ext_resource type="Script" uid="uid://b31tfi6s47b4q" path="res://demo/scripts/face.gd" id="6_as1by"]
+[ext_resource type="Script" uid="uid://csfpwv81biimb" path="res://demo/scripts/look.gd" id="7_6jfhx"]
+[ext_resource type="PackedScene" uid="uid://2ihrtniqvu7j" path="res://demo/characters/victoria.glb" id="8_62w1b"]
+[ext_resource type="Script" uid="uid://devckjxwpb5us" path="res://demo/scripts/camera_rig.gd" id="9_lb125"]
+[ext_resource type="Material" uid="uid://bwho858lr0623" path="res://demo/stage/floor.tres" id="10_3d2ym"]
+[ext_resource type="MeshLibrary" uid="uid://cyqygeretjs7t" path="res://demo/stage/block_lib.meshlib" id="11_g7ck0"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_i76fu"]
 radius = 0.25
@@ -54,13 +54,13 @@ size = Vector2(2000, 2000)
 size = Vector3(2000, 1, 2000)
 
 [node name="Stage" type="Node3D" unique_id=287086239 node_paths=PackedStringArray("characters", "player")]
-script = ExtResource("1_vsjsl")
+script = ExtResource("1_vknmp")
 characters = [NodePath("Player/Skin/shino"), NodePath("Player/Skin/victoria")]
 player = NodePath("Player")
 
 [node name="Player" type="CharacterBody3D" parent="." unique_id=1170255093 node_paths=PackedStringArray("camera_rig")]
 floor_snap_length = 0.3
-script = ExtResource("2_g8oy1")
+script = ExtResource("2_r7osq")
 camera_rig = NodePath("CameraRig")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Player" unique_id=1783795205]
@@ -69,14 +69,14 @@ shape = SubResource("CapsuleShape3D_i76fu")
 
 [node name="Skin" type="Node3D" parent="Player" unique_id=2051496143]
 
-[node name="shino" parent="Player/Skin" unique_id=398394798 instance=ExtResource("10_i76fu")]
+[node name="shino" parent="Player/Skin" unique_id=398394798 instance=ExtResource("3_chd14")]
 visible = false
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="Player/Skin/shino" unique_id=12440683]
-libraries/demo_motions = ExtResource("11_m1lne")
+libraries/demo_motions = ExtResource("4_s2bi8")
 
 [node name="AnimationTree" type="AnimationTree" parent="Player/Skin/shino" unique_id=1306395879]
-tree_root = ExtResource("5_g8oy1")
+tree_root = ExtResource("5_awah3")
 anim_player = NodePath("../AnimationPlayer")
 parameters/Move/blend_position = 0.0
 parameters/State/current_state = "idle"
@@ -88,18 +88,18 @@ parameters/LeanPhase/seek_request = -1.0
 parameters/Lean/add_amount = 0.0
 
 [node name="Expression" type="Node" parent="Player/Skin/shino" unique_id=1734883868]
-script = ExtResource("6_g8oy1")
+script = ExtResource("6_as1by")
 
 [node name="Look" type="Node" parent="Player/Skin/shino" unique_id=1692926837]
-script = ExtResource("7_i76fu")
+script = ExtResource("7_6jfhx")
 
-[node name="victoria" parent="Player/Skin" unique_id=181843146 instance=ExtResource("11_uis2a")]
+[node name="victoria" parent="Player/Skin" unique_id=181843146 instance=ExtResource("8_62w1b")]
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="Player/Skin/victoria" unique_id=827713330]
-libraries/demo_motions = ExtResource("11_m1lne")
+libraries/demo_motions = ExtResource("4_s2bi8")
 
 [node name="AnimationTree" type="AnimationTree" parent="Player/Skin/victoria" unique_id=1868214803]
-tree_root = ExtResource("5_g8oy1")
+tree_root = ExtResource("5_awah3")
 anim_player = NodePath("../AnimationPlayer")
 parameters/Move/blend_position = 0.0
 parameters/State/current_state = "idle"
@@ -111,15 +111,15 @@ parameters/LeanPhase/seek_request = -1.0
 parameters/Lean/add_amount = 0.0
 
 [node name="Expression" type="Node" parent="Player/Skin/victoria" unique_id=334618947]
-script = ExtResource("6_g8oy1")
+script = ExtResource("6_as1by")
 style = "bright"
 
 [node name="Look" type="Node" parent="Player/Skin/victoria" unique_id=618283989]
-script = ExtResource("7_i76fu")
+script = ExtResource("7_6jfhx")
 
 [node name="CameraRig" type="Node3D" parent="Player" unique_id=272568532]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0, 1.25, 0)
-script = ExtResource("6_jx6rg")
+script = ExtResource("9_lb125")
 
 [node name="SpringArm3D" type="SpringArm3D" parent="Player/CameraRig" unique_id=1879199661]
 transform = Transform3D(1, 0, 0, 0, 0.9659258, 0.25881904, 0, -0.25881904, 0.9659258, 0, 0, 0)
@@ -156,7 +156,7 @@ light_intensity_lux = 80000.0
 light_temperature = 9000.0
 
 [node name="Floor" type="MeshInstance3D" parent="." unique_id=824049718]
-material_override = ExtResource("8_vsjsl")
+material_override = ExtResource("10_3d2ym")
 mesh = SubResource("PlaneMesh_1edn8")
 
 [node name="StaticBody3D" type="StaticBody3D" parent="Floor" unique_id=19643650]
@@ -166,7 +166,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
 shape = SubResource("BoxShape3D_4efso")
 
 [node name="GridMap" type="GridMap" parent="." unique_id=957373530]
-mesh_library = ExtResource("9_jx6rg")
+mesh_library = ExtResource("11_g7ck0")
 cell_size = Vector3(1, 1, 1)
 cell_center_y = false
 data = {
