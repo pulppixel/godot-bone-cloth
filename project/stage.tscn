@@ -81,7 +81,7 @@ parameters/State/current_index = 0
 [node name="Expression" type="Node" parent="Player/Skin/shino" unique_id=1734883868]
 script = ExtResource("6_g8oy1")
 
-[node name="Look" type="Node3D" parent="Player/Skin/shino" unique_id=1183921034]
+[node name="Look" type="Node" parent="Player/Skin/shino" unique_id=1692926837]
 script = ExtResource("7_i76fu")
 
 [node name="victoria" parent="Player/Skin" unique_id=181843146 instance=ExtResource("11_uis2a")]
@@ -101,7 +101,7 @@ parameters/State/current_index = 0
 script = ExtResource("6_g8oy1")
 style = "bright"
 
-[node name="Look" type="Node3D" parent="Player/Skin/victoria" unique_id=1082457967]
+[node name="Look" type="Node" parent="Player/Skin/victoria" unique_id=618283989]
 script = ExtResource("7_i76fu")
 
 [node name="CameraRig" type="Node3D" parent="Player" unique_id=272568532]

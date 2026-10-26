@@ -13,7 +13,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	var key := event as InputEventKey
 	if key == null or not key.pressed or key.echo:
 		return
-
+	
 	var index := key.physical_keycode - KEY_1
 	if index >= 0 and index < characters.size():
 		_show(index)
