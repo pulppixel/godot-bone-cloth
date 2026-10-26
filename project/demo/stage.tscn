@@ -8,6 +8,7 @@
 [ext_resource type="Script" uid="uid://b31tfi6s47b4q" path="res://demo/scripts/face.gd" id="6_as1by"]
 [ext_resource type="Script" uid="uid://csfpwv81biimb" path="res://demo/scripts/look.gd" id="7_6jfhx"]
 [ext_resource type="PackedScene" uid="uid://2ihrtniqvu7j" path="res://demo/characters/victoria.glb" id="8_62w1b"]
+[ext_resource type="Script" uid="uid://olte1161ncgj" path="res://demo/scripts/feet.gd" id="8_r7osq"]
 [ext_resource type="Script" uid="uid://devckjxwpb5us" path="res://demo/scripts/camera_rig.gd" id="9_lb125"]
 [ext_resource type="Material" uid="uid://bwho858lr0623" path="res://demo/stage/floor.tres" id="10_3d2ym"]
 [ext_resource type="MeshLibrary" uid="uid://cyqygeretjs7t" path="res://demo/stage/block_lib.meshlib" id="11_g7ck0"]
@@ -93,6 +94,9 @@ script = ExtResource("6_as1by")
 [node name="Look" type="Node" parent="Player/Skin/shino" unique_id=1692926837]
 script = ExtResource("7_6jfhx")
 
+[node name="Feet" type="Node" parent="Player/Skin/shino" unique_id=611189268]
+script = ExtResource("8_r7osq")
+
 [node name="victoria" parent="Player/Skin" unique_id=181843146 instance=ExtResource("8_62w1b")]
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="Player/Skin/victoria" unique_id=827713330]
@@ -116,6 +120,9 @@ style = "bright"
 
 [node name="Look" type="Node" parent="Player/Skin/victoria" unique_id=618283989]
 script = ExtResource("7_6jfhx")
+
+[node name="Feet" type="Node" parent="Player/Skin/victoria" unique_id=276296219]
+script = ExtResource("8_r7osq")
 
 [node name="CameraRig" type="Node3D" parent="Player" unique_id=272568532]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0, 1.25, 0)
