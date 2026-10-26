@@ -1,0 +1,39 @@
+[gd_resource type="ShaderMaterial" format=3]
+
+[ext_resource type="Shader" path="res://demo/shaders/mtoon/mtoon_cutout_cull_off.gdshader" id="1_ohuc7"]
+[ext_resource type="Texture2D" path="res://demo/characters/shino_F00_000_Hair_00_nml.png" id="2_1owqq"]
+[ext_resource type="Texture2D" path="res://demo/characters/shino_F00_000_Hair_00_spe.png" id="3_a5rol"]
+[ext_resource type="Texture2D" path="res://demo/characters/shino_F00_000_Hair_00_01.png" id="4_27ypa"]
+[ext_resource type="Texture2D" path="res://demo/characters/shino_Matcap_RimHair.png" id="5_40et7"]
+
+[resource]
+resource_name = "F00_000_Hair_00_HAIR_01"
+render_priority = 0
+shader = ExtResource("1_ohuc7")
+shader_parameter/_AlphaCutoutEnable = 1.0
+shader_parameter/_Cutoff = 0.5
+shader_parameter/_Color = Color(0.098039225, 0.14117649, 0.21960784, 1)
+shader_parameter/_ShadeColor = Color(0.25098047, 0.21176471, 0.43529412, 1)
+shader_parameter/_MainTex = ExtResource("4_27ypa")
+shader_parameter/_MainTex_ST = Vector4(1, 1, 0, 0)
+shader_parameter/_ShadeTexture = ExtResource("4_27ypa")
+shader_parameter/_BumpScale = 1.0
+shader_parameter/_BumpMap = ExtResource("2_1owqq")
+shader_parameter/_ReceiveShadowRate = 1.0
+shader_parameter/_ShadingGradeRate = 1.0
+shader_parameter/_ShadeShift = -0.3
+shader_parameter/_ShadeToony = 0.0
+shader_parameter/_LightColorAttenuation = 0.0
+shader_parameter/_IndirectLightIntensity = 0.1
+shader_parameter/_MatcapColor = Color(1, 1, 1, 1)
+shader_parameter/_SphereAdd = ExtResource("5_40et7")
+shader_parameter/_EmissionColor = Color(0.5457181, 0.5642772, 0.6739363, 1)
+shader_parameter/_EmissionMultiplier = 1.0
+shader_parameter/_EmissionMap = ExtResource("3_a5rol")
+shader_parameter/_OutlineWidthMode = 0.0
+shader_parameter/_OutlineWidth = 0.172
+shader_parameter/_OutlineScaledMaxDistance = 2.71
+shader_parameter/_OutlineColorMode = 0.0
+shader_parameter/_OutlineColor = Color(0, 0, 0, 1)
+shader_parameter/_OutlineLightingMix = 1.0
+shader_parameter/_DebugMode = 0.0

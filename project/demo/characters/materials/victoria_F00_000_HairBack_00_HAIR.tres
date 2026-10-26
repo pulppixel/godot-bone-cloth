@@ -1,0 +1,38 @@
+[gd_resource type="ShaderMaterial" format=3]
+
+[ext_resource type="Shader" path="res://demo/shaders/mtoon/mtoon_trans.gdshader" id="1_106vo"]
+[ext_resource type="Texture2D" path="res://demo/characters/victoria_F00_000_HairBack_00_nml.png" id="2_5ir1g"]
+[ext_resource type="Texture2D" path="res://demo/characters/victoria_Shader_NoneBlack.png" id="3_lxpcs"]
+[ext_resource type="Texture2D" path="res://demo/characters/victoria_F00_000_HairBack_00.png" id="4_d0w4o"]
+[ext_resource type="Texture2D" path="res://demo/characters/victoria_Matcap_RimHair.png" id="5_45cfe"]
+
+[resource]
+resource_name = "F00_000_HairBack_00_HAIR"
+render_priority = 0
+shader = ExtResource("1_106vo")
+shader_parameter/_Cutoff = 0.5
+shader_parameter/_Color = Color(0.9478437, 0.94253105, 0.80409455, 1)
+shader_parameter/_ShadeColor = Color(0.86089873, 0.8104346, 0.7074844, 1)
+shader_parameter/_MainTex = ExtResource("4_d0w4o")
+shader_parameter/_MainTex_ST = Vector4(1, 1, 0, 0)
+shader_parameter/_ShadeTexture = ExtResource("4_d0w4o")
+shader_parameter/_BumpScale = 1.0
+shader_parameter/_BumpMap = ExtResource("2_5ir1g")
+shader_parameter/_ReceiveShadowRate = 1.0
+shader_parameter/_ShadingGradeRate = 1.0
+shader_parameter/_ShadeShift = -0.3
+shader_parameter/_ShadeToony = 0.0
+shader_parameter/_LightColorAttenuation = 0.0
+shader_parameter/_IndirectLightIntensity = 0.1
+shader_parameter/_MatcapColor = Color(1, 1, 1, 1)
+shader_parameter/_SphereAdd = ExtResource("5_45cfe")
+shader_parameter/_EmissionColor = Color(0.9638445, 0.95319486, 0.86677986, 1)
+shader_parameter/_EmissionMultiplier = 1.0
+shader_parameter/_EmissionMap = ExtResource("3_lxpcs")
+shader_parameter/_OutlineWidthMode = 0.0
+shader_parameter/_OutlineWidth = 0.165
+shader_parameter/_OutlineScaledMaxDistance = 1.0
+shader_parameter/_OutlineColorMode = 1.0
+shader_parameter/_OutlineColor = Color(0, 0, 0, 1)
+shader_parameter/_OutlineLightingMix = 1.0
+shader_parameter/_DebugMode = 0.0

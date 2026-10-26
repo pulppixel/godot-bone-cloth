@@ -1,0 +1,89 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://cvvjcxkhfksyt"]
+
+[ext_resource type="Shader" uid="uid://bta78oqjbb6g6" path="res://demo/shaders/mtoon/mtoon_outline_cutout.gdshader" id="1_pgnr6"]
+[ext_resource type="Texture2D" uid="uid://c8ei2nun72ndv" path="res://demo/characters/victoria_F00_002_02_Body_00_nml.png" id="2_hwuqj"]
+[ext_resource type="Texture2D" uid="uid://g8h4vl7kcurc" path="res://demo/characters/victoria_Shader_NoneBlack.png" id="3_0xbee"]
+[ext_resource type="Texture2D" uid="uid://dsr3fff33yjdi" path="res://demo/characters/victoria_F00_002_Body_00.png" id="4_73khp"]
+[ext_resource type="Texture2D" uid="uid://0k1ngw1oqg5d" path="res://demo/characters/victoria_Matcap_Rim.png" id="5_hv8uo"]
+[ext_resource type="Shader" uid="uid://3fkhy3cxjt7y" path="res://demo/shaders/mtoon/mtoon_cutout.gdshader" id="6_btpgi"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ekljr"]
+resource_name = "F00_002_02_Body_00_SKIN_Outline"
+render_priority = 0
+shader = ExtResource("1_pgnr6")
+shader_parameter/_AlphaCutoutEnable = 1.0
+shader_parameter/_Cutoff = 0.5
+shader_parameter/_Color = Color(1, 1, 1, 1)
+shader_parameter/_ShadeColor = Color(0.97, 0.81, 0.86, 1)
+shader_parameter/_MainTex = ExtResource("4_73khp")
+shader_parameter/_MainTex_ST = Vector4(1, 1, 0, 0)
+shader_parameter/_ShadeTexture = ExtResource("4_73khp")
+shader_parameter/_BumpScale = 1.0
+shader_parameter/_BumpMap = ExtResource("2_hwuqj")
+shader_parameter/_ReceiveShadowRate = 1.0
+shader_parameter/_ShadingGradeRate = 1.0
+shader_parameter/_ShadeShift = -0.6
+shader_parameter/_ShadeToony = 0.0
+shader_parameter/_LightColorAttenuation = 0.0
+shader_parameter/_IndirectLightIntensity = 0.1
+shader_parameter/_RimColor = Color(0, 0, 0, 1)
+shader_parameter/_RimLightingMix = 0.0
+shader_parameter/_RimFresnelPower = 1.0
+shader_parameter/_RimLift = 0.0
+shader_parameter/_MatcapColor = Color(1, 1, 1, 1)
+shader_parameter/_SphereAdd = ExtResource("5_hv8uo")
+shader_parameter/_EmissionColor = Color(0, 0, 0, 0)
+shader_parameter/_EmissionMultiplier = 1.0
+shader_parameter/_EmissionMap = ExtResource("3_0xbee")
+shader_parameter/_OutlineWidthMode = 1.0
+shader_parameter/_OutlineWidth = 0.075
+shader_parameter/_OutlineScaledMaxDistance = 4.63
+shader_parameter/_OutlineColorMode = 0.0
+shader_parameter/_OutlineColor = Color(0.27450982, 0.09019608, 0.1254902, 1)
+shader_parameter/_OutlineLightingMix = 1.0
+shader_parameter/_UvAnimScrollX = 0.0
+shader_parameter/_UvAnimRotation = 0.0
+shader_parameter/_UvAnimScrollY = 0.0
+shader_parameter/_DebugMode = 0.0
+shader_parameter/_MToonVersion = 33.0
+
+[resource]
+resource_name = "F00_002_02_Body_00_SKIN"
+render_priority = 0
+next_pass = SubResource("ShaderMaterial_ekljr")
+shader = ExtResource("6_btpgi")
+shader_parameter/_AlphaCutoutEnable = 1.0
+shader_parameter/_Cutoff = 0.5
+shader_parameter/_Color = Color(1, 1, 1, 1)
+shader_parameter/_ShadeColor = Color(0.97, 0.81, 0.86, 1)
+shader_parameter/_MainTex = ExtResource("4_73khp")
+shader_parameter/_MainTex_ST = Vector4(1, 1, 0, 0)
+shader_parameter/_ShadeTexture = ExtResource("4_73khp")
+shader_parameter/_BumpScale = 1.0
+shader_parameter/_BumpMap = ExtResource("2_hwuqj")
+shader_parameter/_ReceiveShadowRate = 1.0
+shader_parameter/_ShadingGradeRate = 1.0
+shader_parameter/_ShadeShift = -0.6
+shader_parameter/_ShadeToony = 0.0
+shader_parameter/_LightColorAttenuation = 0.0
+shader_parameter/_IndirectLightIntensity = 0.1
+shader_parameter/_RimColor = Color(0, 0, 0, 1)
+shader_parameter/_RimLightingMix = 0.0
+shader_parameter/_RimFresnelPower = 1.0
+shader_parameter/_RimLift = 0.0
+shader_parameter/_MatcapColor = Color(1, 1, 1, 1)
+shader_parameter/_SphereAdd = ExtResource("5_hv8uo")
+shader_parameter/_EmissionColor = Color(0, 0, 0, 0)
+shader_parameter/_EmissionMultiplier = 1.0
+shader_parameter/_EmissionMap = ExtResource("3_0xbee")
+shader_parameter/_OutlineWidthMode = 1.0
+shader_parameter/_OutlineWidth = 0.075
+shader_parameter/_OutlineScaledMaxDistance = 4.63
+shader_parameter/_OutlineColorMode = 0.0
+shader_parameter/_OutlineColor = Color(0.27450982, 0.09019608, 0.1254902, 1)
+shader_parameter/_OutlineLightingMix = 1.0
+shader_parameter/_UvAnimScrollX = 0.0
+shader_parameter/_UvAnimRotation = 0.0
+shader_parameter/_UvAnimScrollY = 0.0
+shader_parameter/_DebugMode = 0.0
+shader_parameter/_MToonVersion = 33.0

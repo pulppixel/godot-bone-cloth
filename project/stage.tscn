@@ -25,24 +25,22 @@ sky_material = SubResource("ProceduralSkyMaterial_d3j2v")
 [sub_resource type="Environment" id="Environment_6eo5e"]
 background_mode = 2
 sky = SubResource("Sky_6eo5e")
-tonemap_mode = 4
 tonemap_agx_white = 4.0
 tonemap_agx_contrast = 1.35
 ssao_enabled = true
 ssao_radius = 2.0
 ssao_intensity = 1.0
 ssao_power = 0.3
-glow_enabled = true
 glow_levels/1 = 0.85
 glow_levels/2 = 0.13
 glow_levels/3 = 0.02
 glow_levels/4 = 0.0
 glow_intensity = 0.26
 glow_blend_mode = 0
-adjustment_enabled = true
 adjustment_saturation = 1.2
 
 [sub_resource type="CameraAttributesPractical" id="CameraAttributesPractical_aees8"]
+exposure_multiplier = 0.7
 
 [sub_resource type="PlaneMesh" id="PlaneMesh_1edn8"]
 size = Vector2(2000, 2000)

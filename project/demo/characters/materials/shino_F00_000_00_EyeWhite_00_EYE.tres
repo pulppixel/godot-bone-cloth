@@ -1,0 +1,37 @@
+[gd_resource type="ShaderMaterial" format=3]
+
+[ext_resource type="Shader" path="res://demo/shaders/mtoon/mtoon.gdshader" id="1_7fy3s"]
+[ext_resource type="Texture2D" path="res://demo/characters/shino_Shader_NoneNormal.png" id="2_q6e8m"]
+[ext_resource type="Texture2D" path="res://demo/characters/shino_Shader_NoneBlack.png" id="3_p3m7n"]
+[ext_resource type="Texture2D" path="res://demo/characters/shino_F00_000_EyeWhite_00.png" id="4_u0ynk"]
+
+[resource]
+resource_name = "F00_000_00_EyeWhite_00_EYE"
+render_priority = 0
+shader = ExtResource("1_7fy3s")
+shader_parameter/_Cutoff = 0.5
+shader_parameter/_Color = Color(1, 1, 1, 1)
+shader_parameter/_ShadeColor = Color(1, 1, 1, 1)
+shader_parameter/_MainTex = ExtResource("4_u0ynk")
+shader_parameter/_MainTex_ST = Vector4(1, 1, 0, 0)
+shader_parameter/_ShadeTexture = ExtResource("4_u0ynk")
+shader_parameter/_BumpScale = 1.0
+shader_parameter/_BumpMap = ExtResource("2_q6e8m")
+shader_parameter/_ReceiveShadowRate = 1.0
+shader_parameter/_ShadingGradeRate = 1.0
+shader_parameter/_ShadeShift = -1.0
+shader_parameter/_ShadeToony = 0.0
+shader_parameter/_LightColorAttenuation = 0.0
+shader_parameter/_IndirectLightIntensity = 0.1
+shader_parameter/_MatcapColor = Color(1, 1, 1, 1)
+shader_parameter/_SphereAdd = ExtResource("3_p3m7n")
+shader_parameter/_EmissionColor = Color(0, 0, 0, 0)
+shader_parameter/_EmissionMultiplier = 1.0
+shader_parameter/_EmissionMap = ExtResource("3_p3m7n")
+shader_parameter/_OutlineWidthMode = 0.0
+shader_parameter/_OutlineWidth = 0.165
+shader_parameter/_OutlineScaledMaxDistance = 1.0
+shader_parameter/_OutlineColorMode = 1.0
+shader_parameter/_OutlineColor = Color(0.27450982, 0.09019608, 0.1254902, 1)
+shader_parameter/_OutlineLightingMix = 1.0
+shader_parameter/_DebugMode = 0.0
