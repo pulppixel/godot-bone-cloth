@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://77lvhsp7nagn" path="res://character_switch.gd" id="1_vsjsl"]
 [ext_resource type="Script" uid="uid://bh2u8ukcbg5tf" path="res://player.gd" id="2_g8oy1"]
 [ext_resource type="AnimationNodeBlendTree" uid="uid://bcsixpyfun3ks" path="res://demo/motions/locomotion.tres" id="5_g8oy1"]
+[ext_resource type="Script" uid="uid://b31tfi6s47b4q" path="res://face.gd" id="6_g8oy1"]
 [ext_resource type="Script" uid="uid://devckjxwpb5us" path="res://camera_rig.gd" id="6_jx6rg"]
 [ext_resource type="Material" uid="uid://bwho858lr0623" path="res://demo/stage/floor.tres" id="8_vsjsl"]
 [ext_resource type="MeshLibrary" uid="uid://cyqygeretjs7t" path="res://demo/stage/block_lib.meshlib" id="9_jx6rg"]
@@ -76,6 +77,9 @@ parameters/State/current_state = "idle"
 parameters/State/transition_request = ""
 parameters/State/current_index = 0
 
+[node name="Expression" type="Node" parent="Player/Skin/shino" unique_id=1734883868]
+script = ExtResource("6_g8oy1")
+
 [node name="victoria" parent="Player/Skin" unique_id=181843146 instance=ExtResource("11_uis2a")]
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="Player/Skin/victoria" unique_id=827713330]
@@ -88,6 +92,10 @@ parameters/Move/blend_position = 0.0
 parameters/State/current_state = "idle"
 parameters/State/transition_request = ""
 parameters/State/current_index = 0
+
+[node name="Expression" type="Node" parent="Player/Skin/victoria" unique_id=334618947]
+script = ExtResource("6_g8oy1")
+style = "bright"
 
 [node name="CameraRig" type="Node3D" parent="Player" unique_id=272568532]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0, 1.2, 0)
