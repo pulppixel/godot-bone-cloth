@@ -2,7 +2,6 @@ extends RefCounted
 
 const GOLDEN_PATH := "res://tests/stage_golden.cfg"
 const FRAMES := 720 # 12초. run_tests.gd가 frame마다 1/60초인지 확인한다.
-const RUN := 2 # character_switch.gd의 MOTIONS에서 Jog_Fwd의 번호
 
 
 static func run(t) -> void:

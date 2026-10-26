@@ -17,77 +17,6 @@ height = 1.5
 [sub_resource type="SphereShape3D" id="SphereShape3D_jx6rg"]
 radius = 0.2
 
-[sub_resource type="GDScript" id="GDScript_jx6rg"]
-script/source = "extends Camera3D
-# Test only: orbits the target with A and D or the left and right arrow keys, W and S move in and out, Q and E move the
-# camera and the point it looks at down and up together. All of these run in real time, so they still work at time scale 0.
-# Comma and period step Engine.time_scale down and up by 0.1 between 0 and 1.
-
-@export var target: Node3D
-@export var look_height := 1.0
-@export var turn_speed := 90.0
-@export var zoom_speed := 1.5
-@export var lift_speed := 1.0
-@export var min_distance := 0.5
-@export var max_distance := 10.0
-
-var _distance := 0.0
-var _height := 0.0
-var _yaw := 0.0
-var _last_ticks := 0
-
-
-func _ready() -> void:
-	var offset := global_position - target.global_position
-	_height = offset.y
-	_distance = Vector2(offset.x, offset.z).length()
-	_yaw = atan2(offset.x, offset.z)
-	_last_ticks = Time.get_ticks_usec()
-
-
-func _unhandled_input(event: InputEvent) -> void:
-	var key := event as InputEventKey
-	if key == null or not key.pressed or key.echo:
-		return
-
-	if key.physical_keycode == KEY_COMMA:
-		_set_time_scale(Engine.time_scale - 0.1)
-	elif key.physical_keycode == KEY_PERIOD:
-		_set_time_scale(Engine.time_scale + 0.1)
-
-
-func _set_time_scale(value: float) -> void:
-	Engine.time_scale = snappedf(clampf(value, 0.0, 1.0), 0.1)
-	print(\"Time Scale \", Engine.time_scale)
-
-
-func _process(_delta: float) -> void:
-	# Real seconds since the last frame: delta shrinks with Engine.time_scale and is 0 at 0.
-	var now := Time.get_ticks_usec()
-	var real_delta := (now - _last_ticks) / 1000000.0
-	_last_ticks = now
-
-	_yaw += deg_to_rad(turn_speed) * _axis(KEY_A, KEY_D, KEY_LEFT, KEY_RIGHT) * real_delta
-	_distance = clampf(_distance + zoom_speed * _axis(KEY_W, KEY_S) * real_delta, min_distance, max_distance)
-	var lift := lift_speed * _axis(KEY_Q, KEY_E) * real_delta
-	_height += lift
-	look_height += lift
-
-	var center := target.global_position
-	global_position = center + Vector3(sin(_yaw) * _distance, _height, cos(_yaw) * _distance)
-	look_at(center + Vector3(0.0, look_height, 0.0))
-
-
-# -1 while a negative key is held, 1 while a positive one is, 0 for both or neither.
-func _axis(negative: Key, positive: Key, negative_alt := KEY_NONE, positive_alt := KEY_NONE) -> float:
-	var value := 0.0
-	if Input.is_physical_key_pressed(negative) or (negative_alt != KEY_NONE and Input.is_physical_key_pressed(negative_alt)):
-		value -= 1.0
-	if Input.is_physical_key_pressed(positive) or (positive_alt != KEY_NONE and Input.is_physical_key_pressed(positive_alt)):
-		value += 1.0
-	return value
-"
-
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_d3j2v"]
 
 [sub_resource type="Sky" id="Sky_6eo5e"]
@@ -158,9 +87,9 @@ libraries/demo_motions = ExtResource("11_m1lne")
 tree_root = ExtResource("5_g8oy1")
 anim_player = NodePath("../AnimationPlayer")
 parameters/Move/blend_position = 0.0
-parameters/State/current_state = ""
+parameters/State/current_state = "idle"
 parameters/State/transition_request = ""
-parameters/State/current_index = -1
+parameters/State/current_index = 0
 
 [node name="CameraRig" type="Node3D" parent="Player" unique_id=272568532]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0, 1.2, 0)
@@ -171,11 +100,9 @@ transform = Transform3D(1, 0, 0, 0, 0.9659258, 0.25881904, 0, -0.25881904, 0.965
 shape = SubResource("SphereShape3D_jx6rg")
 spring_length = 3.0
 
-[node name="Camera3D" type="Camera3D" parent="Player/CameraRig/SpringArm3D" unique_id=1790056850 node_paths=PackedStringArray("target")]
-transform = Transform3D(0.6427876, 0.19826692, -0.73994213, -0.19826692, 0.9760715, 0.089303166, 0.73994225, 0.08930312, 0.6667164, -2.0000002, 0.013620973, 2.0742023)
+[node name="Camera3D" type="Camera3D" parent="Player/CameraRig/SpringArm3D" unique_id=1790056850]
+transform = Transform3D(1.0000001, 0, 0, 0, 1.0000001, 0, 0, 0, 1.0000001, 0, 0, 0)
 fov = 40.0
-script = SubResource("GDScript_jx6rg")
-target = NodePath("../../../Skin/shino")
 
 [node name="CameraFill" type="DirectionalLight3D" parent="Player/CameraRig/SpringArm3D/Camera3D" unique_id=1014711665]
 transform = Transform3D(0.9396926, 0.14454395, -0.3099755, 0, 0.90630776, 0.42261827, 0.34202012, -0.39713126, 0.8516507, 0, 0, 0)
