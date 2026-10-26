@@ -6,9 +6,9 @@
 [resource]
 render_priority = 0
 shader = ExtResource("1_6w58d")
-shader_parameter/color_a = Color(0.5019608, 0.52156866, 0.5568628, 1)
-shader_parameter/color_b = Color(0.41568628, 0.43529412, 0.47058824, 1)
-shader_parameter/line_color = Color(0.7058824, 0.7254902, 0.7607843, 1)
+shader_parameter/color_a = Color(0.105882354, 0.8509804, 0.46666667, 1)
+shader_parameter/color_b = Color(0.09411765, 0.7607843, 0.41568628, 1)
+shader_parameter/line_color = Color(0.043137256, 0.41960785, 0.22745098, 1)
 shader_parameter/line_mask = ExtResource("2_ujtyi")
 shader_parameter/check_size = 1.0
 shader_parameter/roughness = 0.85
