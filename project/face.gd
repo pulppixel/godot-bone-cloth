@@ -151,3 +151,7 @@ func _blink_amount(t: float) -> float:
 	if t < BLINK_CLOSE + BLINK_HOLD:
 		return 1.0
 	return 1.0 - (t - BLINK_CLOSE - BLINK_HOLD) / BLINK_OPEN
+
+
+func blink() -> void:
+	_request_blink()

@@ -46,7 +46,7 @@ func use(character: Node3D) -> void:
 func _physics_process(delta: float) -> void:
 	var input := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
 	var direction := Basis(Vector3.UP, camera_rig.rotation.y) * Vector3(input.x, 0.0, input.y)
-	var top_speed := (walk_speed if Input.is_action_pressed("walk") else run_speed) * _scale
+	var top_speed := (run_speed if Input.is_action_pressed("run") else walk_speed) * _scale
 	_accelerate(direction * top_speed, delta)
 
 	if state == State.GROUND and Input.is_action_just_pressed("jump"):
