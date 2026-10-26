@@ -27,6 +27,10 @@ const SHARP_TURN := deg_to_rad(140.0)
 @export var jump_height := 0.8
 @export var max_fall_speed := 20.0
 
+@export_group("Step")
+@export var step_spring := 18.7
+@export var step_lag := 0.15
+
 @export var camera_rig: Node3D
 
 var state := State.GROUND
@@ -36,9 +40,19 @@ var _scale := 1.0
 var _anim := &"idle"
 var _lean := 0.0
 var _lean_length := 1.0
+var _step_offset := 0.0
+var _step_speed := 0.0
+var _ground_normal := Vector3.UP
+var _skin_y := 0.0
+var _rig_y := 0.0
 
 @onready var _skin: Node3D = $Skin
 @onready var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
+
+
+func _ready() -> void:
+	_skin_y = _skin.position.y
+	_rig_y = camera_rig.position.y
 
 
 func use(character: Node3D) -> void:
@@ -71,7 +85,13 @@ func _physics_process(delta: float) -> void:
 		_request(&"jump_start")
 	elif state == State.AIR:
 		velocity.y = maxf(velocity.y - _gravity * delta, -max_fall_speed)
+	var grounded := state == State.GROUND and is_on_floor()
+	var before := global_position
 	move_and_slide()
+	if grounded and is_on_floor():
+		_absorb_step(global_position - before)
+	_ground_normal = _ground()
+	_settle_step(delta)
 	
 	var pressing := not direction.is_zero_approx()
 	var speed := Vector2(velocity.x, velocity.z).length()
@@ -138,3 +158,28 @@ func _turn_skin(direction: Vector3, delta: float) -> void:
 	var gap := absf(angle_difference(_skin.rotation.y, target)) / PI
 	var speed := deg_to_rad(turn_speed_deg) * lerpf(1.0, turn_boost, gap * gap)
 	_skin.rotation.y = rotate_toward(_skin.rotation.y, target, speed * delta)
+
+
+func _absorb_step(moved: Vector3) -> void:
+	var n := _ground_normal
+	var slope_rise := -(n.x * moved.x + n.z * moved.z) / n.y
+	_step_offset = clampf(_step_offset - (moved.y - slope_rise), -step_lag, step_lag)
+
+
+func _ground() -> Vector3:
+	var from := global_position + Vector3.UP * 0.3
+	var query := PhysicsRayQueryParameters3D.create(from, from + Vector3.DOWN * 0.6, collision_mask, [get_rid()])
+	var hit := get_world_3d().direct_space_state.intersect_ray(query)
+	if hit.is_empty() or hit.normal.y < cos(floor_max_angle):
+		return Vector3.UP
+	return hit.normal
+
+
+func _settle_step(delta: float) -> void:
+	var w := step_spring
+	var e := exp(-w * delta)
+	var k := (_step_speed + w * _step_offset) * delta
+	_step_offset = (_step_offset + k) * e
+	_step_speed = (_step_speed - w * k) * e
+	_skin.position.y = _skin_y + _step_offset
+	camera_rig.position.y = _rig_y + _step_offset
