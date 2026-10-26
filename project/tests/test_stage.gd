@@ -29,7 +29,7 @@ static func run(t) -> void:
 			t.check(md5 == expected, "Stage, %s: the 12 s Run changed (md5 %s, saved %s)." % [name, md5, expected])
 
 
-# 캐릭터 하나를 보이게 하고 Run을 FRAMES만큼 돌린다.
+# 캐릭터 하나를 보이게 하고, 앞으로 가는 키(move_forward)를 누른 채 FRAMES만큼 돌린다.
 static func _run_character(t, p_stage: Node, p_index: int) -> String:
 	var character: Node3D = p_stage.get(&"characters")[p_index]
 	var skeleton: Skeleton3D = character.find_children("*", "Skeleton3D", true, false)[0]
@@ -45,8 +45,10 @@ static func _run_character(t, p_stage: Node, p_index: int) -> String:
 	t.root.add_child(p_stage)
 	skeleton.skeleton_updated.connect(record)
 	p_stage.call(&"_show", p_index)
-	p_stage.set(&"_motion", RUN)
-	p_stage.call(&"_play_motion")
+	Input.action_press(&"move_forward")
+	for frame in FRAMES:
+		await t.process_frame
+	Input.action_release(&"move_forward")
 	for frame in FRAMES:
 		await t.process_frame
 	skeleton.skeleton_updated.disconnect(record)

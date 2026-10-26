@@ -1,0 +1,75 @@
+[gd_resource type="AnimationNodeBlendTree" format=3 uid="uid://bcsixpyfun3ks"]
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_g8oy1"]
+animation = &"demo_motions/Jump"
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_jx6rg"]
+animation = &"demo_motions/Idle"
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_i76fu"]
+animation = &"demo_motions/Jump_Start"
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_uis2a"]
+animation = &"demo_motions/Jump_Land"
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_m1lne"]
+animation = &"demo_motions/Walk"
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_0bo5f"]
+animation = &"demo_motions/Jog_Fwd"
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_tumy4"]
+animation = &"demo_motions/Sprint"
+
+[sub_resource type="AnimationNodeBlendSpace1D" id="AnimationNodeBlendSpace1D_g8oy1"]
+min_space = 0.0
+max_space = 9.0
+sync_mode = 2
+blend_point_0/node = SubResource("AnimationNodeAnimation_m1lne")
+blend_point_0/pos = 1.06
+blend_point_0/name = &"demo_motions_Walk"
+blend_point_1/node = SubResource("AnimationNodeAnimation_0bo5f")
+blend_point_1/pos = 5.84
+blend_point_1/name = &"demo_motions_Jog_Fwd"
+blend_point_2/node = SubResource("AnimationNodeAnimation_tumy4")
+blend_point_2/pos = 9.0
+blend_point_2/name = &"demo_motions_Sprint"
+
+[sub_resource type="AnimationNodeTransition" id="AnimationNodeTransition_jx6rg"]
+xfade_time = 0.2
+input_0/name = "idle"
+input_0/auto_advance = false
+input_0/break_loop_at_end = false
+input_0/reset = true
+input_1/name = "move"
+input_1/auto_advance = false
+input_1/break_loop_at_end = false
+input_1/reset = true
+input_2/name = "jump_start"
+input_2/auto_advance = true
+input_2/break_loop_at_end = false
+input_2/reset = true
+input_3/name = "fall"
+input_3/auto_advance = false
+input_3/break_loop_at_end = false
+input_3/reset = true
+input_4/name = "land"
+input_4/auto_advance = true
+input_4/break_loop_at_end = false
+input_4/reset = true
+
+[resource]
+nodes/output/position = Vector2(1026.6666, 93.333336)
+nodes/Idle/node = SubResource("AnimationNodeAnimation_jx6rg")
+nodes/Idle/position = Vector2(306.66666, -240)
+nodes/Move/node = SubResource("AnimationNodeBlendSpace1D_g8oy1")
+nodes/Move/position = Vector2(346.66666, -40)
+nodes/JumpStart/node = SubResource("AnimationNodeAnimation_i76fu")
+nodes/JumpStart/position = Vector2(253.33333, 186.66667)
+nodes/Fall/node = SubResource("AnimationNodeAnimation_g8oy1")
+nodes/Fall/position = Vector2(280, 386.66666)
+nodes/Land/node = SubResource("AnimationNodeAnimation_uis2a")
+nodes/Land/position = Vector2(226.66667, 600)
+nodes/State/node = SubResource("AnimationNodeTransition_jx6rg")
+nodes/State/position = Vector2(746.6667, 93.333336)
+node_connections = [&"output", 0, &"State", &"State", 0, &"Idle", &"State", 1, &"Move", &"State", 2, &"JumpStart", &"State", 3, &"Fall", &"State", 4, &"Land"]
