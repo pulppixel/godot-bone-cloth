@@ -5,7 +5,7 @@ enum State { GROUND, AIR }
 
 
 const WALK := 1.064
-const SPRINT := 8.997
+const SPRINT := 7.844
 
 
 const STOP_SPEED := 0.2
@@ -20,7 +20,8 @@ const SHARP_TURN := deg_to_rad(140.0)
 @export_group("Turn")
 @export var turn_speed_deg := 360.0
 @export var turn_boost := 4.0
-@export var turn_grip := 20.0
+@export var turn_grip := 27.6
+@export var lean_time := 0.15
 
 @export_group("Jump")
 @export var jump_height := 0.8
@@ -33,6 +34,8 @@ var state := State.GROUND
 var _tree: AnimationTree
 var _scale := 1.0
 var _anim := &"idle"
+var _lean := 0.0
+var _lean_length := 1.0
 
 @onready var _skin: Node3D = $Skin
 @onready var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
@@ -43,13 +46,24 @@ func use(character: Node3D) -> void:
 	var skeleton: Skeleton3D = character.find_children("*", "Skeleton3D", true, false)[0]
 	_scale = skeleton.motion_scale
 	_tree.set("parameters/State/transition_request", _anim)
+	_tree.set("parameters/LeanOnly/sub_amount", 1.0)
+	_tree.set("parameters/Lean/add_amount", 1.0)
+	var player: AnimationPlayer = character.get_node("AnimationPlayer")
+	_lean_length = player.get_animation(&"demo_motions/Jog_Fwd_LeanR").length
+
+func _process(_delta: float) -> void:
+	var length: float = _tree.get("parameters/Move/current_length")
+	if length <= 0.0:
+		return
+	var at: float = _tree.get("parameters/Move/current_position") + _tree.get("parameters/Move/current_delta")
+	_tree.set("parameters/LeanPhase/seek_request", fposmod(at, length) / length * _lean_length)
 
 
 func _physics_process(delta: float) -> void:
 	var input := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
 	var direction := Basis(Vector3.UP, camera_rig.rotation.y) * Vector3(input.x, 0.0, input.y)
 	var top_speed := (run_speed if Input.is_action_pressed("run") else walk_speed) * _scale
-	_steer(direction, top_speed, delta)
+	var turned := _steer(direction, top_speed, delta)
 	
 	if state == State.GROUND and Input.is_action_just_pressed("jump"):
 		velocity.y = sqrt(2.0 * _gravity * jump_height)
@@ -75,6 +89,10 @@ func _physics_process(delta: float) -> void:
 	var facing := Vector3(velocity.x, 0.0, velocity.z) if speed > STOP_SPEED else direction
 	_turn_skin(facing, delta)
 	_tree.set("parameters/Move/blend_position", speed / _scale)
+	
+	var lean_target := clampf(-turned / delta * speed / turn_grip, -1.0, 1.0)
+	_lean = lerpf(_lean, lean_target, 1.0 - exp(-delta / lean_time))
+	_tree.set("parameters/Side/blend_amount", _lean)
 
 
 func _request(anim: StringName) -> void:
