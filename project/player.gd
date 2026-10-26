@@ -9,6 +9,7 @@ const SPRINT := 8.997
 
 
 const STOP_SPEED := 0.2
+const SHARP_TURN := deg_to_rad(140.0)
 
 @export_group("Speed")
 @export var walk_speed := WALK
@@ -19,6 +20,7 @@ const STOP_SPEED := 0.2
 @export_group("Turn")
 @export var turn_speed_deg := 360.0
 @export var turn_boost := 4.0
+@export var turn_grip := 20.0
 
 @export_group("Jump")
 @export var jump_height := 0.8
@@ -47,8 +49,8 @@ func _physics_process(delta: float) -> void:
 	var input := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
 	var direction := Basis(Vector3.UP, camera_rig.rotation.y) * Vector3(input.x, 0.0, input.y)
 	var top_speed := (run_speed if Input.is_action_pressed("run") else walk_speed) * _scale
-	_accelerate(direction * top_speed, delta)
-
+	_steer(direction, top_speed, delta)
+	
 	if state == State.GROUND and Input.is_action_just_pressed("jump"):
 		velocity.y = sqrt(2.0 * _gravity * jump_height)
 		state = State.AIR
@@ -56,7 +58,7 @@ func _physics_process(delta: float) -> void:
 	elif state == State.AIR:
 		velocity.y = maxf(velocity.y - _gravity * delta, -max_fall_speed)
 	move_and_slide()
-
+	
 	var pressing := not direction.is_zero_approx()
 	var speed := Vector2(velocity.x, velocity.z).length()
 	if state == State.GROUND and not is_on_floor():
@@ -69,8 +71,9 @@ func _physics_process(delta: float) -> void:
 		_request(&"move")
 	elif state == State.GROUND and _anim != &"land":
 		_request(&"idle")
-
-	_turn_skin(direction, delta)
+	
+	var facing := Vector3(velocity.x, 0.0, velocity.z) if speed > STOP_SPEED else direction
+	_turn_skin(facing, delta)
 	_tree.set("parameters/Move/blend_position", speed / _scale)
 
 
@@ -81,12 +84,33 @@ func _request(anim: StringName) -> void:
 	_tree.set("parameters/State/transition_request", anim)
 
 
-func _accelerate(target: Vector3, delta: float) -> void:
+func _steer(direction: Vector3, top_speed: float, delta: float) -> float:
 	var horizontal := Vector3(velocity.x, 0.0, velocity.z)
-	var rate := deceleration if target.is_zero_approx() else acceleration
-	horizontal = horizontal.move_toward(target, rate * delta)
-	velocity.x = horizontal.x
-	velocity.z = horizontal.z
+	var speed := horizontal.length()
+	var yaw := atan2(horizontal.x, horizontal.z)
+	var target := atan2(direction.x, direction.z)
+	var wanted := direction.length() * top_speed
+	var turned := 0.0
+	if direction.is_zero_approx():
+		speed = move_toward(speed, 0.0, deceleration * delta)
+	elif speed < STOP_SPEED:
+		yaw = target
+		speed = move_toward(speed, _aligned(yaw) * wanted, acceleration * delta)
+	elif absf(angle_difference(yaw, target)) > SHARP_TURN:
+		speed = move_toward(speed, 0.0, deceleration * delta)
+	else:
+		var rate := minf(turn_grip / speed, deg_to_rad(turn_speed_deg))
+		var to := rotate_toward(yaw, target, rate * delta)
+		turned = angle_difference(yaw, to)
+		yaw = to
+		speed = move_toward(speed, _aligned(yaw) * wanted, acceleration * delta)
+	velocity.x = sin(yaw) * speed
+	velocity.z = cos(yaw) * speed
+	return turned
+
+
+func _aligned(yaw: float) -> float:
+	return maxf(cos(angle_difference(_skin.rotation.y, yaw)), 0.0)
 
 
 func _turn_skin(direction: Vector3, delta: float) -> void:
