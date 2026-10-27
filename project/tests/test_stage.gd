@@ -7,11 +7,11 @@ const FRAMES := 720 # 12초. run_tests.gd가 frame마다 1/60초인지 확인한
 static func run(t) -> void:
 	var golden := ConfigFile.new()
 	golden.load(GOLDEN_PATH)
-	var first: Node = load("res://stage.tscn").instantiate()
+	var first: Node = load("res://demo/stage.tscn").instantiate()
 	var count: int = first.get(&"characters").size()
 	first.free()
 	for index in count:
-		var stage: Node = load("res://stage.tscn").instantiate()
+		var stage: Node = load("res://demo/stage.tscn").instantiate()
 		var character: Node3D = stage.get(&"characters")[index]
 		var name := String(character.name)
 		var skeleton: Skeleton3D = character.find_children("*", "Skeleton3D", true, false)[0]

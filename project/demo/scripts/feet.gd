@@ -9,6 +9,10 @@ const FOOT_SPRING := 31.6
 const HIP_SPRING := 18.7
 const HIP_DROP := 0.35
 const HIP_RISE := 0.15
+const HEEL := 0.06
+const TIP := 0.05
+const FOOT_GROUND := 2
+const TREAD_REACH := 0.6
 
 var _skeleton: Skeleton3D
 var _body: CharacterBody3D
@@ -82,8 +86,9 @@ func _ground(delta: float) -> void:
 	for i in LEGS.size():
 		var ankle := space * _skeleton.get_bone_global_pose(_bones[i][2]).origin
 		var toes := space * _skeleton.get_bone_global_pose(_bones[i][3]).origin
+		var forward := ((toes - ankle) * Vector3(1, 0, 1)).normalized()
 		if grounded:
-			lift[i] = maxf(_floor_under(ankle, floor_y), _floor_under(toes, floor_y)) - floor_y
+			lift[i] = maxf(_floor_under(ankle - forward * HEEL, floor_y), _floor_under(toes + forward * TIP, floor_y)) - floor_y
 		_foot[i] = _spring(_foot[i], lift[i], FOOT_SPRING, delta)
 
 	var hip_target := clampf(minf(_foot[0].x, _foot[1].x), -HIP_DROP, HIP_RISE)
@@ -121,13 +126,19 @@ func _restore() -> void:
 
 
 func _floor_under(point: Vector3, floor_y: float) -> float:
-	var from := Vector3(point.x, floor_y + REACH, point.z)
-	var to := Vector3(point.x, floor_y - REACH, point.z)
-	var query := PhysicsRayQueryParameters3D.create(from, to, _body.collision_mask, [_body.get_rid()])
-	var hit := _skeleton.get_world_3d().direct_space_state.intersect_ray(query)
+	var hit := _ray(point, floor_y, TREAD_REACH, FOOT_GROUND)
+	if hit.is_empty():
+		hit = _ray(point, floor_y, REACH, _body.collision_mask)
 	if hit.is_empty() or hit.normal.y < 0.7:
 		return floor_y
 	return hit.position.y
+
+
+func _ray(point: Vector3, floor_y: float, reach: float, mask: int) -> Dictionary:
+	var from := Vector3(point.x, floor_y + reach, point.z)
+	var to := Vector3(point.x, floor_y - reach, point.z)
+	var query := PhysicsRayQueryParameters3D.create(from, to, mask, [_body.get_rid()])
+	return _skeleton.get_world_3d().direct_space_state.intersect_ray(query)
 
 
 func _spring(state: Vector2, target: float, w: float, delta: float) -> Vector2:

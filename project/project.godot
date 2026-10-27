@@ -77,6 +77,10 @@ jump={
 ]
 }
 
+[layer_names]
+
+3d_physics/layer_2="foot_ground"
+
 [rendering]
 
 lights_and_shadows/use_physical_light_units=true

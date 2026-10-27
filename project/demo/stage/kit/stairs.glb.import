@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://b4v2gddumdkk8"
-path="res://.godot/imported/stairs-small.glb-d97dd5ff26d077dfdbc578bf28fc2864.scn"
+uid="uid://crd42ncxkyg8f"
+path="res://.godot/imported/stairs.glb-d962294501264702a6185ff125423115.scn"
 
 [deps]
 
-source_file="res://demo/stage/kit/stairs-small.glb"
-dest_files=["res://.godot/imported/stairs-small.glb-d97dd5ff26d077dfdbc578bf28fc2864.scn"]
+source_file="res://demo/stage/kit/stairs.glb"
+dest_files=["res://.godot/imported/stairs.glb-d962294501264702a6185ff125423115.scn"]
 
 [params]
 
