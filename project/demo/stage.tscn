@@ -130,3 +130,6 @@ metadata/_editor_floor_ = Vector3(0, 1, 0)
 
 [node name="Stairs" parent="." unique_id=2104189406 instance=ExtResource("13_chd14")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1.48)
+
+[node name="Stairs2" parent="." unique_id=969629693 instance=ExtResource("13_chd14")]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0, 0, 15.5)
