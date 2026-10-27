@@ -1,0 +1,90 @@
+[gd_scene format=3 uid="uid://b0nb0eek5tvfs"]
+
+[ext_resource type="PackedScene" uid="uid://2ihrtniqvu7j" path="res://demo/characters/victoria.glb" id="1_7vg0e"]
+[ext_resource type="AnimationLibrary" uid="uid://du4gfb65gvyby" path="res://demo/motions/demo_motions.glb" id="2_k5vep"]
+[ext_resource type="AnimationNodeBlendTree" uid="uid://bcsixpyfun3ks" path="res://demo/motions/locomotion.tres" id="3_jkrjl"]
+[ext_resource type="Script" uid="uid://b31tfi6s47b4q" path="res://demo/scripts/face.gd" id="4_6no24"]
+[ext_resource type="Script" uid="uid://csfpwv81biimb" path="res://demo/scripts/look.gd" id="5_nhxe8"]
+[ext_resource type="Script" uid="uid://olte1161ncgj" path="res://demo/scripts/feet.gd" id="6_m6ahk"]
+
+[node name="victoria" unique_id=1265756670 instance=ExtResource("1_7vg0e")]
+
+[node name="GeneralSkeleton" parent="." index="0" unique_id=2129559619]
+bones/3/position = Vector3(-0.0024255104, 0.9652128, -0.095407955)
+bones/3/rotation = Quaternion(-0.046172608, -0.11588905, -0.00539311, 0.9921738)
+bones/11/rotation = Quaternion(0.09134098, 0.00011233414, 0.00025450718, 0.9958197)
+bones/12/rotation = Quaternion(0.09134091, 0.0003196949, 0.00024790218, 0.9958197)
+bones/17/rotation = Quaternion(-0.09135649, -0.00021632382, -0.00026071, 0.99581826)
+bones/18/rotation = Quaternion(0.07870905, 0.095712155, 0.008066734, 0.9922596)
+bones/80/rotation = Quaternion(0.4878162, 0.5265025, 0.5264863, -0.45567834)
+bones/81/rotation = Quaternion(-0.061814878, 0.81774265, -0.5721711, 0.009800311)
+bones/83/rotation = Quaternion(0.19015986, -0.6510293, 0.1832436, 0.71163327)
+bones/87/rotation = Quaternion(0.09913024, 0.70686626, 0.0629003, 0.69753635)
+bones/88/rotation = Quaternion(0.6295969, -4.0978193e-08, -4.61936e-06, 0.77692205)
+bones/89/rotation = Quaternion(0.62334186, 2.9802322e-08, -4.261732e-06, 0.78194946)
+bones/90/rotation = Quaternion(0.62334144, -2.2351742e-07, -4.4703484e-06, 0.78194976)
+bones/92/rotation = Quaternion(0.6630008, -0.044529784, 0.07369417, 0.7436506)
+bones/93/rotation = Quaternion(0.6203661, -0.06229401, 0.015573084, 0.7816796)
+bones/94/rotation = Quaternion(0.62192154, -0.04205184, -4.4703484e-06, 0.78194964)
+bones/96/rotation = Quaternion(0.6288943, -0.0297349, -4.470348e-06, 0.7769219)
+bones/97/rotation = Quaternion(0.6227327, -0.02755458, -4.410744e-06, 0.7819494)
+bones/98/rotation = Quaternion(0.6226684, -0.028961532, -4.4703493e-06, 0.78194976)
+bones/100/rotation = Quaternion(0.6291978, -0.022414071, -4.202128e-06, 0.77692205)
+bones/101/rotation = Quaternion(0.6229472, -0.022176376, -4.321337e-06, 0.78194946)
+bones/102/rotation = Quaternion(0.6228982, -0.023505477, -4.5001498e-06, 0.7819497)
+bones/104/rotation = Quaternion(-0.123819165, 0.7195233, 0.2018354, 0.65285325)
+bones/105/rotation = Quaternion(0.18180694, 0.11012423, 0.060063303, 0.9753006)
+bones/106/rotation = Quaternion(0.5994299, 0.27396563, 0.19463211, 0.7264606)
+bones/110/rotation = Quaternion(0.54004985, -0.4744162, -0.47476703, -0.50781065)
+bones/111/rotation = Quaternion(0.09061285, 0.8249193, -0.5578586, -0.009554971)
+bones/113/rotation = Quaternion(0.29240286, 0.5419481, -0.20456515, 0.760885)
+bones/117/rotation = Quaternion(0.12024976, -0.69903094, -0.056890074, 0.702609)
+bones/118/rotation = Quaternion(0.6295971, 3.7252903e-08, 4.172325e-06, 0.7769218)
+bones/119/rotation = Quaternion(0.62334144, 1.825392e-07, 4.470348e-06, 0.7819497)
+bones/120/rotation = Quaternion(0.62334156, 1.00582824e-07, 4.2319293e-06, 0.78194964)
+bones/122/rotation = Quaternion(0.6630007, 0.044529956, -0.07369393, 0.7436508)
+bones/123/rotation = Quaternion(0.62036633, 0.06229363, -0.015572906, 0.7816794)
+bones/124/rotation = Quaternion(0.62192184, 0.04205143, 4.4703484e-06, 0.7819494)
+bones/126/rotation = Quaternion(0.6288947, 0.029734796, 4.351139e-06, 0.77692175)
+bones/127/rotation = Quaternion(0.62273216, 0.027554482, 4.5001507e-06, 0.78194976)
+bones/128/rotation = Quaternion(0.62266874, 0.028961398, 4.3213377e-06, 0.78194946)
+bones/130/rotation = Quaternion(0.6291981, 0.022413792, 4.11272e-06, 0.7769218)
+bones/131/rotation = Quaternion(0.62294656, 0.022176204, 4.470349e-06, 0.7819501)
+bones/132/rotation = Quaternion(0.6228987, 0.02350526, 4.1723247e-06, 0.7819493)
+bones/134/rotation = Quaternion(-0.12381923, -0.7195234, -0.2018356, 0.6528533)
+bones/135/rotation = Quaternion(0.18180703, -0.11012423, -0.060063303, 0.97530067)
+bones/136/rotation = Quaternion(0.5994302, -0.2739653, -0.19463223, 0.7264605)
+bones/140/rotation = Quaternion(-0.000803591, 0.11749885, 0.9864048, -0.114887424)
+bones/148/rotation = Quaternion(0.0155316815, 0.9832766, -0.14224048, 0.11266555)
+bones/150/rotation = Quaternion(-0.09806156, 0.7311762, -0.67503434, 0.009693529)
+bones/151/rotation = Quaternion(4.664862e-08, 1, 5.9604645e-08, 2.7766912e-08)
+bones/153/rotation = Quaternion(0.00078934286, -0.108890966, 0.9876266, 0.11285332)
+bones/161/rotation = Quaternion(-0.030888423, 0.9285412, -0.08634425, -0.3597246)
+bones/163/rotation = Quaternion(0.16937736, 0.6418294, -0.747908, -0.00024016947)
+bones/164/rotation = Quaternion(-6.703263e-08, 1, 8.940697e-08, 2.1454163e-09)
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." index="3" unique_id=571714125]
+libraries/demo_motions = ExtResource("2_k5vep")
+
+[node name="AnimationTree" type="AnimationTree" parent="." index="4" unique_id=2084481607]
+tree_root = ExtResource("3_jkrjl")
+anim_player = NodePath("../AnimationPlayer")
+parameters/Move/blend_position = 0.0
+parameters/State/current_state = "idle"
+parameters/State/transition_request = ""
+parameters/State/current_index = 0
+parameters/Side/blend_amount = 0.0
+parameters/LeanOnly/sub_amount = 0.0
+parameters/LeanPhase/seek_request = -1.0
+parameters/Lean/add_amount = 0.0
+parameters/IdleFoot/blend_amount = 0.0
+
+[node name="Expression" type="Node" parent="." index="5" unique_id=327986377]
+script = ExtResource("4_6no24")
+style = "bright"
+
+[node name="Look" type="Node" parent="." index="6" unique_id=1887249369]
+script = ExtResource("5_nhxe8")
+
+[node name="Feet" type="Node" parent="." index="7" unique_id=657396383]
+script = ExtResource("6_m6ahk")
