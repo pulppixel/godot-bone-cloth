@@ -111,13 +111,12 @@ func _ground(delta: float) -> void:
 		if from_hip.length() > reach:
 			target = hip + Vector3.UP * _hip.x + from_hip.normalized() * reach
 		_targets[i].global_position = target
-		var line := (ankle - hip).normalized()
-		var out := knee - hip
-		out -= line * out.dot(line)
-		if out.length() < 0.02:
-			out = toes - ankle
-			out -= line * out.dot(line)
-		_poles[i].global_position = knee + Vector3.UP * _hip.x + out.normalized() * 0.5
+		var root := hip + Vector3.UP * _hip.x
+		var line := (target - root).normalized()
+		var thigh_x := space.basis * _skeleton.get_bone_global_pose(_bones[i][0]).basis.x
+		var axis := thigh_x * signf(_skeleton.get_bone_global_rest(_bones[i][0]).basis.x.x)
+		var out := line.cross(axis).normalized()
+		_poles[i].global_position = (root + target) * 0.5 + out * 0.5
 		_foot_basis[i] = _skeleton.get_bone_global_pose(_bones[i][2]).basis
 
 	var pose := _skeleton.get_bone_pose_position(_hips)

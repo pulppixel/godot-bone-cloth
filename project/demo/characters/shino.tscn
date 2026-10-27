@@ -7,18 +7,22 @@
 [ext_resource type="Script" uid="uid://csfpwv81biimb" path="res://demo/scripts/look.gd" id="5_nimuv"]
 [ext_resource type="Script" uid="uid://olte1161ncgj" path="res://demo/scripts/feet.gd" id="6_ucpkf"]
 
+[sub_resource type="Curve" id="Curve_py2mv"]
+_data = [Vector2(0, 0.5), 0.0, 0.5, 0, 1, Vector2(1, 1), 0.5, 0.0, 1, 0]
+point_count = 2
+
 [node name="shino" unique_id=1067818726 instance=ExtResource("1_py2mv")]
 
 [node name="GeneralSkeleton" parent="." index="0" unique_id=1568887277]
-bones/3/position = Vector3(0.0012883516, 0.88651055, -0.089956686)
-bones/3/rotation = Quaternion(-0.034322187, -0.115945175, -0.004008948, 0.9926544)
-bones/5/rotation = Quaternion(0.095769085, 0.000113508526, 0.00025213225, 0.9954035)
-bones/6/rotation = Quaternion(0.09580209, 0.00032328587, 0.00024543173, 0.9954003)
-bones/11/rotation = Quaternion(-0.095798835, -0.00021875763, -0.0002588849, 0.99540067)
-bones/12/rotation = Quaternion(0.04682895, 0.09549899, 0.010279076, 0.9942744)
-bones/80/rotation = Quaternion(0.5026797, 0.52131045, 0.5310353, -0.43994325)
-bones/81/rotation = Quaternion(-0.013192473, 0.8256363, -0.5639658, 0.009659781)
-bones/83/rotation = Quaternion(0.1626147, -0.68716234, 0.173513, 0.68648213)
+bones/3/position = Vector3(-0.0021881997, 0.8933502, -0.08803608)
+bones/3/rotation = Quaternion(-0.04701476, -0.115884416, -0.005491484, 0.9921342)
+bones/5/rotation = Quaternion(0.085967645, 0.00011088351, 0.00025736442, 0.99629796)
+bones/6/rotation = Quaternion(0.08596759, 0.00031533797, 0.00025081637, 0.9962979)
+bones/11/rotation = Quaternion(-0.085967615, -0.00021339102, -0.00026290794, 0.9962979)
+bones/12/rotation = Quaternion(0.072505996, 0.09556207, 0.009696631, 0.992732)
+bones/80/rotation = Quaternion(0.48940563, 0.52596426, 0.52698195, -0.45401967)
+bones/81/rotation = Quaternion(-0.056175277, 0.8186152, -0.57150483, 0.009788994)
+bones/83/rotation = Quaternion(0.18092015, -0.6570338, 0.1768185, 0.7101477)
 bones/85/rotation = Quaternion(0.09913024, 0.70686626, 0.0629003, 0.69753635)
 bones/86/rotation = Quaternion(0.6295969, -4.0978193e-08, -4.61936e-06, 0.77692205)
 bones/87/rotation = Quaternion(0.62334186, 2.9802322e-08, -4.261732e-06, 0.78194946)
@@ -35,9 +39,9 @@ bones/100/rotation = Quaternion(0.6228982, -0.023505477, -4.5001498e-06, 0.78194
 bones/102/rotation = Quaternion(-0.123819165, 0.7195233, 0.2018354, 0.65285325)
 bones/103/rotation = Quaternion(0.18180694, 0.11012423, 0.060063303, 0.9753006)
 bones/104/rotation = Quaternion(0.5994299, 0.27396563, 0.19463211, 0.7264606)
-bones/106/rotation = Quaternion(0.5546321, -0.47101933, -0.47757855, -0.49238473)
-bones/107/rotation = Quaternion(0.060202956, 0.81985295, -0.56931704, -0.009751353)
-bones/109/rotation = Quaternion(0.28718486, 0.5596753, -0.21162944, 0.74799824)
+bones/106/rotation = Quaternion(0.54160947, -0.4740662, -0.4750759, -0.506185)
+bones/107/rotation = Quaternion(0.09279429, 0.825287, -0.5569558, -0.009539524)
+bones/109/rotation = Quaternion(0.29255688, 0.5414117, -0.20435135, 0.7612651)
 bones/111/rotation = Quaternion(0.12024976, -0.69903094, -0.056890074, 0.702609)
 bones/112/rotation = Quaternion(0.6295971, 3.7252903e-08, 4.172325e-06, 0.7769218)
 bones/113/rotation = Quaternion(0.62334144, 1.825392e-07, 4.470348e-06, 0.7819497)
@@ -54,14 +58,99 @@ bones/126/rotation = Quaternion(0.6228987, 0.02350526, 4.1723247e-06, 0.7819493)
 bones/128/rotation = Quaternion(-0.12381923, -0.7195234, -0.2018356, 0.6528533)
 bones/129/rotation = Quaternion(0.18180703, -0.11012423, -0.060063303, 0.97530067)
 bones/130/rotation = Quaternion(0.5994302, -0.2739653, -0.19463223, 0.7264605)
-bones/132/rotation = Quaternion(-0.00083959947, 0.16029043, 0.97974366, -0.1200365)
-bones/140/rotation = Quaternion(0.021417629, 0.9740546, -0.19678117, 0.10971)
-bones/142/rotation = Quaternion(-0.09660935, 0.7145146, -0.6928805, 0.007216268)
+bones/132/rotation = Quaternion(-0.0008079969, 0.11862248, 0.9861966, -0.11551851)
+bones/140/rotation = Quaternion(0.01613204, 0.98248506, -0.14783409, 0.112286285)
+bones/142/rotation = Quaternion(-0.098165385, 0.7291997, -0.6771603, 0.009224483)
 bones/143/rotation = Quaternion(4.664862e-08, 1, 5.9604645e-08, 2.7766912e-08)
-bones/145/rotation = Quaternion(0.0009741274, -0.0695923, 0.9878056, 0.13927019)
-bones/153/rotation = Quaternion(-0.054676544, 0.922226, -0.14990291, -0.35219133)
-bones/155/rotation = Quaternion(0.1703812, 0.6188117, -0.7668331, 0.003077351)
+bones/145/rotation = Quaternion(0.0008088835, -0.10826085, 0.9873728, 0.11564527)
+bones/153/rotation = Quaternion(-0.033399496, 0.9281561, -0.09301622, -0.35882974)
+bones/155/rotation = Quaternion(0.16967496, 0.63960654, -0.7497427, 0.00016099219)
 bones/156/rotation = Quaternion(-6.703263e-08, 1, 8.940697e-08, 2.1454163e-09)
+
+[node name="Skirt" type="BoneClothSimulator3D" parent="GeneralSkeleton" index="3" unique_id=198064974]
+drag/value = 0.15
+limit_angle/value = 1.3089969
+limit_angle/damping_curve = SubResource("Curve_py2mv")
+depth_inertia = 0.7
+movement_speed_limit = 4.0
+chain_count = 6
+chains/0/root_bone_name = "J_Sec_L_SkirtBack"
+chains/0/root_bone = 134
+chains/0/end_bone_name = "J_Sec_L_SkirtBack_end"
+chains/0/end_bone = 135
+chains/0/extend_end_bone = true
+chains/0/end_bone/direction = 6
+chains/0/end_bone/length = 0.1
+chains/0/sync_bone_name = ""
+chains/0/sync_bone = -1
+chains/0/enable_all_child_collisions = true
+chains/0/exclude_collision_count = 0
+chains/1/root_bone_name = "J_Sec_L_SkirtFront"
+chains/1/root_bone = 136
+chains/1/end_bone_name = "J_Sec_L_SkirtFront_end"
+chains/1/end_bone = 137
+chains/1/extend_end_bone = true
+chains/1/end_bone/direction = 6
+chains/1/end_bone/length = 0.1
+chains/1/sync_bone_name = ""
+chains/1/sync_bone = -1
+chains/1/enable_all_child_collisions = true
+chains/1/exclude_collision_count = 0
+chains/2/root_bone_name = "J_Sec_L_SkirtSide"
+chains/2/root_bone = 138
+chains/2/end_bone_name = "J_Sec_L_SkirtSide_end"
+chains/2/end_bone = 139
+chains/2/extend_end_bone = true
+chains/2/end_bone/direction = 6
+chains/2/end_bone/length = 0.1
+chains/2/sync_bone_name = ""
+chains/2/sync_bone = -1
+chains/2/enable_all_child_collisions = true
+chains/2/exclude_collision_count = 0
+chains/3/root_bone_name = "J_Sec_R_SkirtBack"
+chains/3/root_bone = 147
+chains/3/end_bone_name = "J_Sec_R_SkirtBack_end"
+chains/3/end_bone = 148
+chains/3/extend_end_bone = true
+chains/3/end_bone/direction = 6
+chains/3/end_bone/length = 0.1
+chains/3/sync_bone_name = ""
+chains/3/sync_bone = -1
+chains/3/enable_all_child_collisions = true
+chains/3/exclude_collision_count = 0
+chains/4/root_bone_name = "J_Sec_R_SkirtFront"
+chains/4/root_bone = 149
+chains/4/end_bone_name = "J_Sec_R_SkirtFront_end"
+chains/4/end_bone = 150
+chains/4/extend_end_bone = true
+chains/4/end_bone/direction = 6
+chains/4/end_bone/length = 0.1
+chains/4/sync_bone_name = ""
+chains/4/sync_bone = -1
+chains/4/enable_all_child_collisions = true
+chains/4/exclude_collision_count = 0
+chains/5/root_bone_name = "J_Sec_R_SkirtSide"
+chains/5/root_bone = 151
+chains/5/end_bone_name = "J_Sec_R_SkirtSide_end"
+chains/5/end_bone = 152
+chains/5/extend_end_bone = true
+chains/5/end_bone/direction = 6
+chains/5/end_bone/length = 0.1
+chains/5/sync_bone_name = ""
+chains/5/sync_bone = -1
+chains/5/enable_all_child_collisions = true
+chains/5/exclude_collision_count = 0
+
+[node name="Thighs" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/Skirt" index="0" unique_id=480782465]
+radius = 0.081
+height = 0.382
+bone_name = "LeftUpperLeg"
+bone = 132
+mirror_bone_name = "RightUpperLeg"
+mirror_bone = 145
+position_offset = Vector3(0, 0.11, 0)
+rotation_offset = Quaternion(0, 0, 0, 1)
+transform = Transform3D(-0.95800114, 0.14720732, -0.24609676, -0.22457677, -0.9187904, 0.32463714, -0.17832236, 0.36627042, 0.91326183, 0.08931195, 0.75229496, -0.031074539)
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="." index="3" unique_id=1758635981]
 libraries/demo_motions = ExtResource("2_a47cr")
