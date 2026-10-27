@@ -36,6 +36,9 @@ const SHARP_TURN := deg_to_rad(140.0)
 var state := State.GROUND
 
 var _tree: AnimationTree
+var _skeleton: Skeleton3D
+var _left_foot := -1 # LeftFoot's Bone Num
+var _right_foot := -1
 var _scale := 1.0
 var _anim := &"idle"
 var _lean := 0.0
@@ -57,8 +60,10 @@ func _ready() -> void:
 
 func use(character: Node3D) -> void:
 	_tree = character.get_node("AnimationTree")
-	var skeleton: Skeleton3D = character.find_children("*", "Skeleton3D", true, false)[0]
-	_scale = skeleton.motion_scale
+	_skeleton = character.find_children("*", "Skeleton3D", true, false)[0]
+	_scale = _skeleton.motion_scale
+	_left_foot = _skeleton.find_bone(&"LeftFoot")
+	_right_foot = _skeleton.find_bone(&"RightFoot")
 	_tree.set("parameters/State/transition_request", _anim)
 	_tree.set("parameters/LeanOnly/sub_amount", 1.0)
 	_tree.set("parameters/Lean/add_amount", 1.0)
@@ -100,10 +105,13 @@ func _physics_process(delta: float) -> void:
 		_request(&"fall")
 	elif state == State.AIR and is_on_floor():
 		state = State.GROUND
+		_tree.set("parameters/IdleFoot/blend_amount", 0.0)
 		_request(&"move" if pressing else &"land")
 	elif state == State.GROUND and (pressing or (speed > STOP_SPEED and _anim != &"land")):
 		_request(&"move")
 	elif state == State.GROUND and _anim != &"land":
+		if _anim != &"idle":
+			_tree.set("parameters/IdleFoot/blend_amount", 1.0 if _right_ahead() else 0.0)
 		_request(&"idle")
 	
 	var facing := Vector3(velocity.x, 0.0, velocity.z) if speed > STOP_SPEED else direction
@@ -120,6 +128,12 @@ func _request(anim: StringName) -> void:
 		return
 	_anim = anim
 	_tree.set("parameters/State/transition_request", anim)
+
+
+func _right_ahead() -> bool:
+	var left := _skeleton.get_bone_global_pose(_left_foot).origin
+	var right := _skeleton.get_bone_global_pose(_right_foot).origin
+	return right.z > left.z
 
 
 func _steer(direction: Vector3, top_speed: float, delta: float) -> float:

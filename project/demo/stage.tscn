@@ -88,6 +88,7 @@ parameters/Side/blend_amount = 0.0
 parameters/LeanOnly/sub_amount = 0.0
 parameters/LeanPhase/seek_request = -1.0
 parameters/Lean/add_amount = 0.0
+parameters/IdleFoot/blend_amount = 0.0
 
 [node name="Expression" type="Node" parent="Player/Skin/shino" unique_id=1734883868]
 script = ExtResource("6_as1by")
@@ -114,6 +115,7 @@ parameters/Side/blend_amount = 0.0
 parameters/LeanOnly/sub_amount = 0.0
 parameters/LeanPhase/seek_request = -1.0
 parameters/Lean/add_amount = 0.0
+parameters/IdleFoot/blend_amount = 0.0
 
 [node name="Expression" type="Node" parent="Player/Skin/victoria" unique_id=334618947]
 script = ExtResource("6_as1by")

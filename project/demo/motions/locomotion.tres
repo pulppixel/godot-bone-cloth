@@ -6,6 +6,11 @@ animation = &"demo_motions/Jump"
 [sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_jx6rg"]
 animation = &"demo_motions/Idle"
 
+[sub_resource type="AnimationNodeBlend2" id="AnimationNodeBlend2_8yaut"]
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_awgyb"]
+animation = &"demo_motions/Idle_Mirror"
+
 [sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_i76fu"]
 animation = &"demo_motions/Jump_Start"
 
@@ -79,11 +84,12 @@ input_4/break_loop_at_end = false
 input_4/reset = true
 
 [resource]
-nodes/output/position = Vector2(1573.3334, -306.66666)
+graph_offset = Vector2(-213.52553, -201.31506)
+nodes/output/position = Vector2(1613.3334, -400)
 nodes/Idle/node = SubResource("AnimationNodeAnimation_jx6rg")
-nodes/Idle/position = Vector2(306.66666, -240)
+nodes/Idle/position = Vector2(480, -373.33334)
 nodes/Move/node = SubResource("AnimationNodeBlendSpace1D_g8oy1")
-nodes/Move/position = Vector2(346.66666, -40)
+nodes/Move/position = Vector2(346.66666, 26.666666)
 nodes/JumpStart/node = SubResource("AnimationNodeAnimation_i76fu")
 nodes/JumpStart/position = Vector2(600, 413.33334)
 nodes/Fall/node = SubResource("AnimationNodeAnimation_g8oy1")
@@ -91,7 +97,7 @@ nodes/Fall/position = Vector2(626.6667, 613.3333)
 nodes/Land/node = SubResource("AnimationNodeAnimation_uis2a")
 nodes/Land/position = Vector2(573.3333, 826.6667)
 nodes/State/node = SubResource("AnimationNodeTransition_jx6rg")
-nodes/State/position = Vector2(1266.6666, -306.66666)
+nodes/State/position = Vector2(1280, -413.33334)
 nodes/LeanL/node = SubResource("AnimationNodeAnimation_c0e7a")
 nodes/LeanL/position = Vector2(-440, 240)
 nodes/LeanJog/node = SubResource("AnimationNodeAnimation_v7bdu")
@@ -103,9 +109,13 @@ nodes/LeanBase/position = Vector2(-13.333333, 533.3333)
 nodes/Side/node = SubResource("AnimationNodeBlend3_7jeql")
 nodes/Side/position = Vector2(40, 240)
 nodes/LeanOnly/node = SubResource("AnimationNodeSub2_awgyb")
-nodes/LeanOnly/position = Vector2(360, 226.66667)
+nodes/LeanOnly/position = Vector2(360, 293.33334)
 nodes/LeanPhase/node = SubResource("AnimationNodeTimeSeek_1loei")
-nodes/LeanPhase/position = Vector2(586.6667, 80)
+nodes/LeanPhase/position = Vector2(586.6667, 146.66667)
 nodes/Lean/node = SubResource("AnimationNodeAdd2_8yaut")
-nodes/Lean/position = Vector2(800, -106.666664)
-node_connections = [&"output", 0, &"State", &"State", 0, &"Idle", &"State", 1, &"Lean", &"State", 2, &"JumpStart", &"State", 3, &"Fall", &"State", 4, &"Land", &"Side", 0, &"LeanL", &"Side", 1, &"LeanJog", &"Side", 2, &"LeanR", &"LeanOnly", 0, &"Side", &"LeanOnly", 1, &"LeanBase", &"LeanPhase", 0, &"LeanOnly", &"Lean", 0, &"Move", &"Lean", 1, &"LeanPhase"]
+nodes/Lean/position = Vector2(800, -40)
+nodes/IdleMirror/node = SubResource("AnimationNodeAnimation_awgyb")
+nodes/IdleMirror/position = Vector2(426.66666, -186.66667)
+nodes/IdleFoot/node = SubResource("AnimationNodeBlend2_8yaut")
+nodes/IdleFoot/position = Vector2(800, -386.66666)
+node_connections = [&"output", 0, &"State", &"State", 0, &"IdleFoot", &"State", 1, &"Lean", &"State", 2, &"JumpStart", &"State", 3, &"Fall", &"State", 4, &"Land", &"Side", 0, &"LeanL", &"Side", 1, &"LeanJog", &"Side", 2, &"LeanR", &"LeanOnly", 0, &"Side", &"LeanOnly", 1, &"LeanBase", &"LeanPhase", 0, &"LeanOnly", &"Lean", 0, &"Move", &"Lean", 1, &"LeanPhase", &"IdleFoot", 0, &"Idle", &"IdleFoot", 1, &"IdleMirror"]
