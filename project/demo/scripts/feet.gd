@@ -7,12 +7,15 @@ const LEGS := [
 const REACH := 0.35
 const FOOT_SPRING := 31.6
 const HIP_SPRING := 18.7
-const HIP_DROP := 0.35
-const HIP_RISE := 0.15
 const HEEL := 0.06
 const TIP := 0.05
 const FOOT_GROUND := 2
 const TREAD_REACH := 0.6
+const PLANT_SPEED := 0.6
+const PLANT_HEIGHT := 0.1
+const MIN_EXTENSION := 0.2
+const MAX_OFFSET := 0.5
+const FADE := 0.4
 
 var _skeleton: Skeleton3D
 var _body: CharacterBody3D
@@ -24,6 +27,11 @@ var _foot: Array[Vector2] = [Vector2.ZERO, Vector2.ZERO]
 var _hip := Vector2.ZERO
 var _floor_y := NAN
 var _foot_basis: Array[Basis] = [Basis(), Basis()]
+var _toes_floor := 0.0
+var _last_toes: Array[Vector3] = [Vector3.INF, Vector3.INF]
+var _planted: Array[bool] = [true, true]
+var _weight: Array[float] = [1.0, 1.0]
+var _hip_target := 0.0
 
 
 class FootGround extends SkeletonModifier3D:
@@ -56,7 +64,8 @@ func _ready() -> void:
 		add_child(pole)
 		_targets.append(target)
 		_poles.append(pole)
-
+	
+	_toes_floor = _skeleton.get_bone_global_rest(_bones[0][3]).origin.y
 	var ground := FootGround.new()
 	ground.name = "FootGround"
 	ground.feet = self
@@ -97,14 +106,16 @@ func _ground(delta: float) -> void:
 			lift[i] = maxf(_floor_under(ankle - forward * HEEL, floor_y), _floor_under(toes + forward * TIP, floor_y)) - floor_y
 		_foot[i] = _spring(_carried(_foot[i], lift[i], moved), lift[i], FOOT_SPRING, delta)
 	
-	var hip_target := clampf(minf(_foot[0].x, _foot[1].x), -HIP_DROP, HIP_RISE)
-	_hip = _spring(_carried(_hip, hip_target, moved), hip_target, HIP_SPRING, delta)
-
+	for i in LEGS.size():
+		_planted[i] = _plants(i, space, delta)
+		_weight[i] = move_toward(_weight[i], 1.0 if _planted[i] else 0.0, delta / FADE)
+	_hip_target = _pelvis(space)
+	_hip = _spring(_carried(_hip, _hip_target, moved), _hip_target, HIP_SPRING, delta)
+	
 	for i in LEGS.size():
 		var hip := space * _skeleton.get_bone_global_pose(_bones[i][0]).origin
 		var knee := space * _skeleton.get_bone_global_pose(_bones[i][1]).origin
 		var ankle := space * _skeleton.get_bone_global_pose(_bones[i][2]).origin
-		var toes := space * _skeleton.get_bone_global_pose(_bones[i][3]).origin
 		var target := ankle + Vector3.UP * _foot[i].x
 		var reach := _reach(hip, knee, ankle)
 		var from_hip := target - (hip + Vector3.UP * _hip.x)
@@ -132,6 +143,58 @@ func _carried(state: Vector2, target: float, moved: float) -> Vector2:
 	if absf(carried - target) < absf(state.x - target):
 		state.x = carried
 	return state
+
+
+func _plants(i: int, space: Transform3D, delta: float) -> bool:
+	var toes := _skeleton.get_bone_global_pose(_bones[i][3]).origin
+	var world := space * toes
+	var speed := 0.0
+	if _last_toes[i] != Vector3.INF:
+		speed = Vector2(world.x - _last_toes[i].x, world.z - _last_toes[i].z).length() / delta
+	_last_toes[i] = world
+	return toes.y < _toes_floor + PLANT_HEIGHT and speed < PLANT_SPEED
+
+
+func _pelvis(space: Transform3D) -> float:
+	var desired := []
+	var mosts := []
+	var least := -INF
+	var total := 0.0
+	var mean := 0.0
+	for i in LEGS.size():
+		var hip := space * _skeleton.get_bone_global_pose(_bones[i][0]).origin
+		var knee := space * _skeleton.get_bone_global_pose(_bones[i][1]).origin
+		var ankle := space * _skeleton.get_bone_global_pose(_bones[i][2]).origin
+		var target := ankle + Vector3.UP * _foot[i].x
+		var want := hip.distance_to(ankle)
+		var full := hip.distance_to(knee) + knee.distance_to(ankle)
+		var h := Vector2(target.x - hip.x, target.z - hip.z).length()
+		desired.append(_rise_to(hip, target, h, want))
+		mosts.append(_rise_to(hip, target, h, _reach(hip, knee, ankle)))
+		var short := minf(want, MIN_EXTENSION * full)
+		if h < short and _weight[i] > 0.0:
+			least = maxf(least, _rise_to(hip, target, h, short))
+		total += _weight[i]
+		mean += _weight[i] * desired[i]
+	if total <= 0.0:
+		return _hip_target
+	mean /= total
+	var high: float = desired.max()
+	var low := INF
+	var most := INF
+	for i in LEGS.size():
+		low = minf(low, lerpf(high, desired[i], _weight[i]))
+		most = minf(most, mosts[i] + (1.0 - _weight[i]) * MAX_OFFSET * 2.0)
+	var offset := low
+	if most > low and mean > low:
+		offset = low + (mean - low) * (most - low) / ((mean - low) + (most - low))
+	return clampf(clampf(offset, least, most), -MAX_OFFSET, MAX_OFFSET)
+
+
+func _rise_to(hip: Vector3, target: Vector3, h: float, r: float) -> float:
+	if h >= r:
+		return target.y - hip.y
+	return target.y + sqrt(r * r - h * h) - hip.y
 
 
 func _reach(hip: Vector3, knee: Vector3, ankle: Vector3) -> float:

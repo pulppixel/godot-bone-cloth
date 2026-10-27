@@ -40,7 +40,8 @@ static func _run_character(t, p_stage: Node, p_index: int) -> String:
 			var pose := skeleton.get_bone_global_pose(bone)
 			columns.append("%.9f %.9f %.9f %.9f %.9f %.9f" % [pose.origin.x, pose.origin.y, pose.origin.z, pose.basis.y.x, pose.basis.y.y, pose.basis.y.z])
 		rows.append(",".join(columns))
-
+	
+	skeleton.reset_bone_poses()
 	t.root.add_child(p_stage)
 	skeleton.skeleton_updated.connect(record)
 	p_stage.call(&"_show", p_index)
