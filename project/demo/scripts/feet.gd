@@ -22,6 +22,7 @@ var _targets: Array[Node3D] = []
 var _poles: Array[Node3D] = []
 var _foot: Array[Vector2] = [Vector2.ZERO, Vector2.ZERO]
 var _hip := Vector2.ZERO
+var _floor_y := NAN
 var _foot_basis: Array[Basis] = [Basis(), Basis()]
 
 
@@ -83,23 +84,33 @@ func _ground(delta: float) -> void:
 	var floor_y := space.origin.y
 	var grounded := _body.is_on_floor()
 	var lift := [0.0, 0.0]
+	var moved := 0.0
+	if grounded and not is_nan(_floor_y):
+		moved = floor_y - _floor_y
+	_floor_y = floor_y
+	
 	for i in LEGS.size():
 		var ankle := space * _skeleton.get_bone_global_pose(_bones[i][2]).origin
 		var toes := space * _skeleton.get_bone_global_pose(_bones[i][3]).origin
 		var forward := ((toes - ankle) * Vector3(1, 0, 1)).normalized()
 		if grounded:
 			lift[i] = maxf(_floor_under(ankle - forward * HEEL, floor_y), _floor_under(toes + forward * TIP, floor_y)) - floor_y
-		_foot[i] = _spring(_foot[i], lift[i], FOOT_SPRING, delta)
-
+		_foot[i] = _spring(_carried(_foot[i], lift[i], moved), lift[i], FOOT_SPRING, delta)
+	
 	var hip_target := clampf(minf(_foot[0].x, _foot[1].x), -HIP_DROP, HIP_RISE)
-	_hip = _spring(_hip, hip_target, HIP_SPRING, delta)
+	_hip = _spring(_carried(_hip, hip_target, moved), hip_target, HIP_SPRING, delta)
 
 	for i in LEGS.size():
 		var hip := space * _skeleton.get_bone_global_pose(_bones[i][0]).origin
 		var knee := space * _skeleton.get_bone_global_pose(_bones[i][1]).origin
 		var ankle := space * _skeleton.get_bone_global_pose(_bones[i][2]).origin
 		var toes := space * _skeleton.get_bone_global_pose(_bones[i][3]).origin
-		_targets[i].global_position = ankle + Vector3.UP * _foot[i].x
+		var target := ankle + Vector3.UP * _foot[i].x
+		var reach := _reach(hip, knee, ankle)
+		var from_hip := target - (hip + Vector3.UP * _hip.x)
+		if from_hip.length() > reach:
+			target = hip + Vector3.UP * _hip.x + from_hip.normalized() * reach
+		_targets[i].global_position = target
 		var line := (ankle - hip).normalized()
 		var out := knee - hip
 		out -= line * out.dot(line)
@@ -115,6 +126,19 @@ func _ground(delta: float) -> void:
 	if parent >= 0:
 		up = _skeleton.get_bone_global_pose(parent).basis.inverse() * up
 	_skeleton.set_bone_pose_position(_hips, pose + up)
+
+
+func _carried(state: Vector2, target: float, moved: float) -> Vector2:
+	var carried := state.x - moved
+	if absf(carried - target) < absf(state.x - target):
+		state.x = carried
+	return state
+
+
+func _reach(hip: Vector3, knee: Vector3, ankle: Vector3) -> float:
+	var desired := hip.distance_to(ankle)
+	var full := hip.distance_to(knee) + knee.distance_to(ankle)
+	return desired + 0.5 * (full - desired)
 
 
 func _restore() -> void:
