@@ -22,11 +22,20 @@ const BLINK_SHIFT := 15.0
 const MUTUAL_TIME := Vector2(2.0, 5.0)
 const GLANCE_CHANCE := 0.35
 const GLANCE_TIME := Vector2(0.2, 0.6)
+const RUN_FROM := 3.454
+const WALK_AHEAD_TIME := Vector2(3.0, 6.0)
+const WALK_GLANCE_TIME := Vector2(0.4, 1.0)
+const HAND_OVER := 3.0
 
 var _skeleton: Skeleton3D
 var _body: CharacterBody3D
 var _expression: Node
-var _chest: LookAtModifier3D
+var _tree: AnimationTree
+var _looks: Array[LookAtModifier3D] = []
+var _chest_weight := 0.0
+var _weight := 1.0
+var _walk_glance := false
+var _next_walk_glance := 0.0
 var _head_target: Node3D
 var _eye_target: Node3D
 var _time := 0.0
@@ -47,6 +56,7 @@ func _ready() -> void:
 	var parent := get_parent()
 	_skeleton = parent.find_children("*", "Skeleton3D", true, false)[0]
 	_expression = parent.get_node_or_null("Expression")
+	_tree = parent.get_node("AnimationTree")
 	var node := parent
 	while node != null and node is not CharacterBody3D:
 		node = node.get_parent()
@@ -58,15 +68,16 @@ func _ready() -> void:
 	for part in BODY:
 		var look := _add_look(part[0], _head_target, SkeletonModifier3D.BONE_AXIS_PLUS_Z, Vector3.AXIS_Y, part[1], true)
 		look.influence = part[2]
-		if part[0] == &"UpperChest":
-			_chest = look
-	_add_look(&"LeftEye", _eye_target, SkeletonModifier3D.BONE_AXIS_PLUS_Y, Vector3.AXIS_Z, EYE_LIMIT, false)
-	_add_look(&"RightEye", _eye_target, SkeletonModifier3D.BONE_AXIS_PLUS_Y, Vector3.AXIS_Z, EYE_LIMIT, false)
+		_looks.append(look)
+	_looks.append(_add_look(&"LeftEye", _eye_target, SkeletonModifier3D.BONE_AXIS_PLUS_Y, Vector3.AXIS_Z, EYE_LIMIT, false))
+	_looks.append(_add_look(&"RightEye", _eye_target, SkeletonModifier3D.BONE_AXIS_PLUS_Y, Vector3.AXIS_Z, EYE_LIMIT, false))
+	_chest_weight = BODY[0][2]
 	_last_facing = _facing()
 	_eye = _head
 	_pursuit = _head
 	_from = _head
 	_next_glance = randf_range(MUTUAL_TIME.x, MUTUAL_TIME.y)
+	_next_walk_glance = randf_range(WALK_AHEAD_TIME.x, WALK_AHEAD_TIME.y)
 
 
 func _add_look(bone: StringName, target: Node3D, forward: SkeletonModifier3D.BoneAxis, turn: Vector3.Axis, limit: Vector2, relative: bool) -> LookAtModifier3D:
@@ -98,25 +109,41 @@ func _process(delta: float) -> void:
 	
 	# 1
 	var camera := get_viewport().get_camera_3d()
+	var stepping := _speed() > MOVING
+	var walking := stepping and float(_tree.get("parameters/Move/blend_position")) < RUN_FROM
+	var sees := camera != null and _within(camera.global_position - eyes, REACH_OUT if _at_camera else REACH)
+	if not walking:
+		_walk_glance = false
+		_next_walk_glance = _time + randf_range(WALK_AHEAD_TIME.x, WALK_AHEAD_TIME.y)
+	elif _time >= _next_walk_glance:
+		_walk_glance = not _walk_glance and sees
+		var span := WALK_GLANCE_TIME if _walk_glance else WALK_AHEAD_TIME
+		_next_walk_glance = _time + randf_range(span.x, span.y)
+	_at_camera = sees and (not stepping or _walk_glance)
 	var goal := Vector2.ZERO
 	var distance := AHEAD
-	_at_camera = camera != null and _speed() <= MOVING and _within(camera.global_position - eyes, REACH_OUT if _at_camera else REACH)
 	if _at_camera:
 		goal = _direction(camera.global_position - eyes)
 		distance = eyes.distance_to(camera.global_position)
-	elif _speed() > MOVING:
+	elif stepping:
 		goal = Vector2(_direction(_body.velocity).x, 0.0)
 	else:
 		goal = Vector2(facing, 0.0)
-	goal.x = _clamp_to_reach(angle_difference(facing, goal.x), REACH_OUT if _at_camera else (MOVE_REACH if _speed() > MOVING else REACH))
+	goal.x = _clamp_to_reach(angle_difference(facing, goal.x), REACH_OUT if _at_camera else (MOVE_REACH if stepping else REACH))
 	
 	# 2
 	_head = _rotate_toward(_head, goal, 1.0 - exp(-HEAD_FOLLOW * delta))
 	_head_target.global_position = eyes + _vector(_head, facing) * distance
-	_chest.influence = move_toward(_chest.influence, BODY[0][2] if _speed() <= MOVING else 0.0, delta * 2.0)
+	var state: StringName = _tree.get("parameters/State/current_state")
+	var to_clip := state == &"land" or ((state == &"jump_start" or state == &"fall") and _body.velocity.y < 0.0)
+	_weight = move_toward(_weight, 0.0 if to_clip else 1.0, delta * HAND_OVER)
+	_chest_weight = move_toward(_chest_weight, BODY[0][2] if not stepping else 0.0, delta * 2.0)
+	for i in _looks.size():
+		var base: float = 1.0 if i >= BODY.size() else (_chest_weight if i == 0 else BODY[i][2])
+		_looks[i].influence = base * _weight
 	
 	# 3
-	if not _at_camera:
+	if not _at_camera or stepping:
 		_glance = Vector2.ZERO
 	elif _time >= _next_glance:
 		if _glance != Vector2.ZERO or randf() >= GLANCE_CHANCE:
