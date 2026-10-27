@@ -84,7 +84,6 @@ input_4/break_loop_at_end = false
 input_4/reset = true
 
 [resource]
-graph_offset = Vector2(-213.52553, -201.31506)
 nodes/output/position = Vector2(1613.3334, -400)
 nodes/Idle/node = SubResource("AnimationNodeAnimation_jx6rg")
 nodes/Idle/position = Vector2(480, -373.33334)

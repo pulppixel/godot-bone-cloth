@@ -37,12 +37,13 @@ var state := State.GROUND
 
 var _tree: AnimationTree
 var _skeleton: Skeleton3D
-var _left_foot := -1 # LeftFoot's Bone Num
+var _left_foot := -1
 var _right_foot := -1
 var _scale := 1.0
 var _anim := &"idle"
 var _lean := 0.0
 var _lean_length := 1.0
+var _half := 0.0
 var _step_offset := 0.0
 var _step_speed := 0.0
 var _ground_normal := Vector3.UP
@@ -75,7 +76,7 @@ func _process(_delta: float) -> void:
 	if length <= 0.0:
 		return
 	var at: float = _tree.get("parameters/Move/current_position") + _tree.get("parameters/Move/current_delta")
-	_tree.set("parameters/LeanPhase/seek_request", fposmod(at, length) / length * _lean_length)
+	_tree.set("parameters/LeanPhase/seek_request", fposmod(at / length + _half, 1.0) * _lean_length)
 
 
 func _physics_process(delta: float) -> void:
@@ -126,8 +127,22 @@ func _physics_process(delta: float) -> void:
 func _request(anim: StringName) -> void:
 	if anim == _anim:
 		return
+	if anim == &"move":
+		_start_foot()
 	_anim = anim
 	_tree.set("parameters/State/transition_request", anim)
+
+
+func _start_foot() -> void:
+	_half = 0.5 if _tree.get("parameters/IdleFoot/blend_amount") > 0.5 else 0.0
+	var move: AnimationNodeBlendSpace1D = (_tree.tree_root as AnimationNodeBlendTree).get_node(&"Move")
+	for i in move.get_blend_point_count():
+		var clip := move.get_blend_point_node(i) as AnimationNodeAnimation
+		var length := _tree.get_animation(clip.animation).length
+		clip.use_custom_timeline = true
+		clip.timeline_length = length
+		clip.loop_mode = Animation.LOOP_LINEAR
+		clip.start_offset = length * _half
 
 
 func _right_ahead() -> bool:
