@@ -29,6 +29,8 @@ class BoneClothPreset : public Resource {
 	float inertia = 1.0f;
 	float inertia_smoothing = 0.4f;
 	float depth_inertia = 0.0f;
+	float local_movement_speed_limit = 0.0f;
+	float local_rotation_speed_limit = 0.0f;
 	float movement_speed_limit = 5.0f;
 	float rotation_speed_limit = Math::deg_to_rad(720.0f);
 	float joint_speed_limit = 4.0f;
@@ -59,6 +61,8 @@ public:
 		"inertia",
 		"inertia_smoothing",
 		"depth_inertia",
+		"local_movement_speed_limit",
+		"local_rotation_speed_limit",
 		"movement_speed_limit",
 		"rotation_speed_limit",
 		"joint_speed_limit",
@@ -100,6 +104,10 @@ public:
 	float get_inertia_smoothing() const;
 	void set_depth_inertia(float p_depth_inertia);
 	float get_depth_inertia() const;
+	void set_local_movement_speed_limit(float p_limit);
+	float get_local_movement_speed_limit() const;
+	void set_local_rotation_speed_limit(float p_limit);
+	float get_local_rotation_speed_limit() const;
 	void set_movement_speed_limit(float p_limit);
 	float get_movement_speed_limit() const;
 	void set_rotation_speed_limit(float p_limit);

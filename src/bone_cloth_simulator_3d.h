@@ -178,6 +178,8 @@ private:
 	float inertia = 1.0f;
 	float inertia_smoothing = 0.4f;
 	float depth_inertia = 0.0f;
+	float local_movement_speed_limit = 0.0f;
+	float local_rotation_speed_limit = 0.0f;
 	float movement_speed_limit = 5.0f;
 	float rotation_speed_limit = Math::deg_to_rad(720.0f);
 	float joint_speed_limit = 4.0f;
@@ -200,7 +202,7 @@ private:
 	Vector3 prev_step_move;
 	Quaternion prev_step_turn;
 
-	// 모든 chain root의 중심(skeleton 공간)과 회전. depth_inertia가 이 중심의 움직임을 root 근처 joint에 그대로 옮긴다.
+	// 모든 chain root의 중심(skeleton 공간)과 회전.
 	// frame마다 frame_center를 읽고, step마다 지난 frame 값(prev_frame_center)과 보간한다.
 	Vector3 prev_frame_center;
 	Quaternion prev_frame_center_rotation;
@@ -211,10 +213,13 @@ private:
 	Vector3 center_move;
 	Quaternion center_turn;
 
+	// 이번 step에 중심의 움직임과 회전 중, 모든 joint에 흔들림 없이 그대로 옮기는 몫(0 ~ 1).
+	float local_move_share = 0.0f;
+	float local_turn_share = 0.0f;
+
 	// rest에서 모든 chain root의 중심. sync bone이 rest에서 움직인 양을 이 중심 기준으로 잰다.
 	Vector3 rest_center;
 
-	// 급출발, 급정지 때 천이 튀지 않도록, 천이 감지하는 캐릭터 속도를 실제 속도 쪽으로 자연스럽게 한다.
 	// 캐릭터가 회전해도, 천의 방향이 같이 돌지 않도록 world 공간으로 저장한다.
 	Vector3 smoothing_velocity;
 
@@ -229,6 +234,7 @@ private:
 	void _read_pose(Skeleton3D *p_skeleton, Chain &p_chain);
 	void _update_joint_settings(Chain &p_chain);
 	void _read_center(Skeleton3D *p_skeleton);
+	void _update_local_shares(const Vector3 &p_center, const Quaternion &p_center_rotation, const Vector3 &p_move, const Quaternion &p_turn);
 	void _apply_sync(Skeleton3D *p_skeleton);
 	void _step(const Vector3 &p_gravity_direction, const Vector3 &p_move, const Quaternion &p_turn, const LocalVector<PosedCollision> &p_collisions);
 	void _follow_parent_chain(Chain &p_chain);
@@ -322,6 +328,10 @@ public:
 	float get_inertia_smoothing() const;
 	void set_depth_inertia(float p_depth_inertia);
 	float get_depth_inertia() const;
+	void set_local_movement_speed_limit(float p_limit);
+	float get_local_movement_speed_limit() const;
+	void set_local_rotation_speed_limit(float p_limit);
+	float get_local_rotation_speed_limit() const;
 	void set_movement_speed_limit(float p_limit);
 	float get_movement_speed_limit() const;
 	void set_rotation_speed_limit(float p_limit);

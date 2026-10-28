@@ -11,6 +11,7 @@ const ANGLE_TOLERANCE := 0.0001 # rad
 const SCALE_TOLERANCE := 0.00002 # m
 const BONE_COLLISION_TOLERANCE := 0.001 # m
 const DEPTH_INERTIA_RATIO := 0.5
+const LOCAL_SPEED_LIMIT_RATIO := 0.5
 const SYNC_MIN := 0.05 # m
 const SYNC_TOLERANCE := 0.0001 # m
 const SQUEEZE_TOLERANCE := 0.0001 # m
@@ -108,6 +109,8 @@ static func run(t) -> void:
 	await _bone_collision(t)
 	await _depth_inertia(t)
 	await _depth_speed_limit(t)
+	await _local_speed_limit(t)
+	await _local_rotation_limit(t)
 	await _sync_bone(t)
 	await _squeeze(t)
 	await _rest_overlap(t)
@@ -313,6 +316,40 @@ static func _depth_speed_limit(t) -> void:
 		rig.remove()
 
 	t.check(trails[1.0] < trails[0.0] * DEPTH_INERTIA_RATIO, "Depth inertia 1 under joint_speed_limit: the joint next to the root trails %.4f m, against %.4f m at 0." % [trails[1.0], trails[0.0]])
+
+
+static func _local_speed_limit(t) -> void:
+	var offsets := {} # 제한마다, b4가 제자리에서 벗어난 평균 거리 (m)
+	for limit in [0.0, 0.1]:
+		var rig := Rig.new(t)
+		rig.simulator.set("gravity/value", 0.0)
+		rig.simulator.set("local_movement_speed_limit", limit)
+		var sum := 0.0
+		for frame in 120:
+			rig.skeleton.set_bone_pose_position(0, Vector3(sin(float(frame + 1) / 60.0 * 12.0) * 0.05, 0, 0))
+			await rig.advance(1.0 / 60.0)
+			sum += rig.poses[TIP].origin.distance_to(rig.poses[0].origin + Vector3(0, -BONE_LENGTH * TIP, 0))
+		offsets[limit] = sum / 120.0
+		rig.remove()
+
+	t.check(offsets[0.1] < offsets[0.0] * LOCAL_SPEED_LIMIT_RATIO, "Local movement speed limit 0.1 m/s: the tip is %.4f m off its place, against %.4f m without the limit." % [offsets[0.1], offsets[0.0]])
+
+
+static func _local_rotation_limit(t) -> void:
+	var offsets := {} # 제한마다, b4가 제자리에서 벗어난 평균 거리 (m)
+	for limit in [0.0, 0.5]:
+		var rig := Rig.new(t)
+		rig.simulator.set("gravity/value", 0.0)
+		rig.simulator.set("local_rotation_speed_limit", limit)
+		var sum := 0.0
+		for frame in 120:
+			rig.skeleton.set_bone_pose_rotation(0, Quaternion(Vector3.BACK, sin(float(frame + 1) / 60.0 * 12.0) * 0.3))
+			await rig.advance(1.0 / 60.0)
+			sum += rig.poses[TIP].origin.distance_to(rig.poses[0] * Vector3(0, -BONE_LENGTH * TIP, 0))
+		offsets[limit] = sum / 120.0
+		rig.remove()
+
+	t.check(offsets[0.5] < offsets[0.0] * LOCAL_SPEED_LIMIT_RATIO, "Local rotation speed limit 0.5 rad/s: the tip is %.4f m off its place, against %.4f m without the limit." % [offsets[0.5], offsets[0.0]])
 
 
 # chain 끝이 앞(+Z)으로 5 cm 나간 chain에, root 아래 0.4 m의 knee bone을 sync bone으로 준다.

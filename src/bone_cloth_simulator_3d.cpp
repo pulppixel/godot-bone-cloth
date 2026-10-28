@@ -220,9 +220,7 @@ void BoneClothSimulator3D::_build_links(Skeleton3D *p_skeleton) {
 	}
 }
 
-// sync에 쓸 rest 값을 구한다. root들의 중심과, chain마다 몸 밖을 향하는 수평 방향이다.
-// 방향은 중심에서 chain의 end bone으로 가는 방향에서 위아래(skeleton의 Y축) 성분을 뺀 것이다. 앞 치마는 앞, 옆 치마는 옆을 향한다.
-// 끝이 중심 바로 아래에 있는 chain은 방향이 없어서 sync bone이 있어도 옮기지 않는다.
+// sync에 쓸 rest 값을 구한다.
 void BoneClothSimulator3D::_build_sync(Skeleton3D *p_skeleton) {
 	rest_center = Vector3();
 	int count = 0;
@@ -280,7 +278,7 @@ void BoneClothSimulator3D::_find_chain_collisions(const LocalVector<PosedCollisi
 	}
 }
 
-// 이번 frame에 애니메이션(과 앞선 modifier)이 만든 bone 위치와 회전을 읽는다. tip은 end bone에서 계산한다.
+// 이번 frame에 애니메이션(과 앞선 modifier)이 만든 bone 위치와 회전을 읽는다.
 void BoneClothSimulator3D::_read_pose(Skeleton3D *p_skeleton, Chain &p_chain) {
 	for (Joint &joint : p_chain.joints) {
 		if (joint.bone >= 0) {
@@ -305,10 +303,6 @@ static float sample_curve(const Ref<Curve> &p_curve, float p_rate) {
 	return p_curve.is_valid() && p_curve->get_point_count() > 0 ? p_curve->sample_baked(p_rate) : 1.0f;
 }
 
-// chain 위치마다 값을 다르게 주기 위해, joint의 length_rate 위치에서 읽은 curve 값을 곱한다.
-// sync는 sync bone이 움직인 양 중 joint의 pose를 옮기는 비율이다(1이면 같은 양만큼 옮긴다).
-// 실행 중에 값이나 curve를 바꾸면 바로 반영되도록 매 frame 다시 계산한다.
-// radius와 gravity는 m 단위 값이라 units_per_meter를 곱해 skeleton 단위로 바꾼다.
 void BoneClothSimulator3D::_update_joint_settings(Chain &p_chain) {
 	for (Joint &joint : p_chain.joints) {
 		joint.drag = CLAMP(drag * sample_curve(drag_damping_curve, joint.length_rate), 0.0f, 1.0f);
@@ -320,10 +314,6 @@ void BoneClothSimulator3D::_update_joint_settings(Chain &p_chain) {
 	}
 }
 
-// 모든 chain root의 중심과 회전을 읽는다. 파생 chain의 root는 parent joint를 따라가는 점이라 넣지 않는다.
-// 회전은 root마다 rest에서 회전한 양(pose 회전 * rest 회전의 역)의 평균이다.
-// root bone들은 서로 다른 방향을 향하지만 rest에서 돈 양은 골반이 회전한 양과 거의 같아서, 평균해도 서로 지워지지 않는다.
-// 쿼터니언은 q와 -q가 같은 회전이라, 첫 root의 값과 반대쪽을 향하는 값은 뒤집어서 더한다.
 void BoneClothSimulator3D::_read_center(Skeleton3D *p_skeleton) {
 	Vector3 location_sum;
 	Quaternion rotation_sum(0, 0, 0, 0);
@@ -352,22 +342,31 @@ void BoneClothSimulator3D::_read_center(Skeleton3D *p_skeleton) {
 	}
 }
 
-// sync bone이 움직인 만큼 chain이 따라갈 pose를 옮긴다(root 제외).
-// 움직임은 root들의 중심 기준으로 잰다. 달리며 골반이 흔들리거나 돌아도, 다리가 골반에 대해 움직인 양만 남는다.
-// 그중 chain의 sync_direction 성분만 그쪽으로 움직일 때만 쓴다. 무릎이 앞으로 나오면 앞 치마만 앞으로 가고, 뒤 치마는 그대로.
-// joint마다 sync 값만큼 옮기고, 위 joint에서 bone 길이를 다시 맞춘다(chain이 root를 중심으로 들린다).
-/*
-	예: 왼쪽 무릎이 골반 기준으로 rest보다 20 cm 앞에 있고, sync는 1이다.
-	왼쪽 앞 치마(sync_direction이 앞에서 45도 왼쪽): 무릎의 움직임 중 그 방향 성분 14 cm(20 x cos 45도)만큼 pose를 옮긴다.
-	왼쪽 뒤 치마(sync_direction이 뒤쪽): 무릎이 그 방향으로 가지 않았으므로 그대로.
-*/
+void BoneClothSimulator3D::_update_local_shares(const Vector3 &p_center, const Quaternion &p_center_rotation, const Vector3 &p_move, const Quaternion &p_turn) {
+	local_move_share = 0.0f;
+	local_turn_share = 0.0f;
+
+	if (local_movement_speed_limit > 0.0f) {
+		const float speed = (p_center - (p_turn.xform(step_center) + p_move)).length() / float(STEP) / units_per_meter;
+		if (speed > local_movement_speed_limit) {
+			local_move_share = 1.0f - local_movement_speed_limit / speed;
+		}
+	}
+
+	if (local_rotation_speed_limit > 0.0f) {
+		const float turn_speed = (p_turn * step_center_rotation).normalized().angle_to(p_center_rotation) / float(STEP);
+		if (turn_speed > local_rotation_speed_limit) {
+			local_turn_share = 1.0f - local_rotation_speed_limit / turn_speed;
+		}
+	}
+}
+
 void BoneClothSimulator3D::_apply_sync(Skeleton3D *p_skeleton) {
 	for (Chain &chain : chains) {
 		if (chain.sync_bone < 0 || chain.joints.size() < 2) {
 			continue;
 		}
 
-		// 중심 기준, rest 방향으로 잰 sync bone의 위치와 rest 위치의 차이.
 		const Vector3 location = frame_center_rotation.xform_inv(p_skeleton->get_bone_global_pose(chain.sync_bone).origin - frame_center);
 		const Vector3 rest_location = p_skeleton->get_bone_global_rest(chain.sync_bone).origin - rest_center;
 		const float along = (location - rest_location).dot(chain.sync_direction);
@@ -389,7 +388,7 @@ void BoneClothSimulator3D::_apply_sync(Skeleton3D *p_skeleton) {
 
 // step 1번의 처리 순서.
 void BoneClothSimulator3D::_step(const Vector3 &p_gravity_direction, const Vector3 &p_move, const Quaternion &p_turn, const LocalVector<PosedCollision> &p_collisions) {
-	// root는 몸에 붙은 joint라 물리 계산 없이 pose를 따라간다. 파생된 chain의 root는 _follow_parent_chain에서 옮긴다.
+	// root는 몸에 붙은 joint라 물리 계산 없이 pose를 따라간다.
 	// root_spring_stiffness가 있으면 root도 흔들린다(_move_root).
 	for (Chain &chain : chains) {
 		if (!chain.joints.is_empty() && chain.parent_chain < 0) {
@@ -435,12 +434,13 @@ void BoneClothSimulator3D::_follow_parent_chain(Chain &p_chain) {
 void BoneClothSimulator3D::_move_joint(Joint &r_joint, const Vector3 &p_gravity_direction, const Vector3 &p_move, const Quaternion &p_turn) {
 	const float dt = float(STEP);
 
-	// 중심(root들)이 이번 step에 움직이고 회전한 양 중 share만큼을 joint에 그대로 옮긴다.
-	// share는 root 쪽에서 depth_inertia이고, 끝으로 갈수록 줄어 끝에서 0이다. 허리는 골반을 따라가고 끝단만 흔들린다.
-	const float share = depth_inertia * (1.0f - r_joint.length_rate * r_joint.length_rate);
-	if (share > 0.0f) {
+	// 중심(root들)이 이번 step에 움직이고 회전한 양 중 share만큼을 joint에 그대로 옮긴다 (share는 두 몫을 합친 것).
+	const float depth_share = depth_inertia * (1.0f - r_joint.length_rate * r_joint.length_rate);
+	const float share = local_move_share + (1.0f - local_move_share) * depth_share;
+	const float turn_share = local_turn_share + (1.0f - local_turn_share) * depth_share;
+	if (share > 0.0f || turn_share > 0.0f) {
 		const Vector3 move = center_move * share;
-		const Quaternion turn = Quaternion().slerp(center_turn, share);
+		const Quaternion turn = Quaternion().slerp(center_turn, turn_share);
 		r_joint.location = step_center + turn.xform(r_joint.location - step_center) + move;
 		r_joint.prev_location = step_center + turn.xform(r_joint.prev_location - step_center) + move;
 	}
@@ -462,7 +462,7 @@ void BoneClothSimulator3D::_move_joint(Joint &r_joint, const Vector3 &p_gravity_
 	// 출발, 정지, 방향 전환처럼 skeleton 움직임이 지난 step과 달라진 만큼만 joint 위치에 더한다.
 	// 이 중 share만큼은 중심과 함께 옮긴 것으로 보고 뺀다(root 쪽은 출발, 정지 때도 덜 흔들린다).
 	r_joint.location += (p_move - prev_step_move) * (1.0f - share);
-	r_joint.location += (p_turn.xform(r_joint.prev_location) - prev_step_turn.xform(r_joint.prev_location)) * (1.0f - share);
+	r_joint.location += (p_turn.xform(r_joint.prev_location) - prev_step_turn.xform(r_joint.prev_location)) * (1.0f - turn_share);
 }
 
 // root spring: root도 아래 joint처럼 움직이고, root_spring_stiffness만큼 pose 쪽으로 당긴다. pose에서 root_spring_limit보다 멀어지지 않는다.
@@ -763,6 +763,10 @@ void BoneClothSimulator3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_inertia_smoothing"), &BoneClothSimulator3D::get_inertia_smoothing);
 	ClassDB::bind_method(D_METHOD("set_depth_inertia", "depth_inertia"), &BoneClothSimulator3D::set_depth_inertia);
 	ClassDB::bind_method(D_METHOD("get_depth_inertia"), &BoneClothSimulator3D::get_depth_inertia);
+	ClassDB::bind_method(D_METHOD("set_local_movement_speed_limit", "limit"), &BoneClothSimulator3D::set_local_movement_speed_limit);
+	ClassDB::bind_method(D_METHOD("get_local_movement_speed_limit"), &BoneClothSimulator3D::get_local_movement_speed_limit);
+	ClassDB::bind_method(D_METHOD("set_local_rotation_speed_limit", "limit"), &BoneClothSimulator3D::set_local_rotation_speed_limit);
+	ClassDB::bind_method(D_METHOD("get_local_rotation_speed_limit"), &BoneClothSimulator3D::get_local_rotation_speed_limit);
 	ClassDB::bind_method(D_METHOD("set_movement_speed_limit", "limit"), &BoneClothSimulator3D::set_movement_speed_limit);
 	ClassDB::bind_method(D_METHOD("get_movement_speed_limit"), &BoneClothSimulator3D::get_movement_speed_limit);
 	ClassDB::bind_method(D_METHOD("set_rotation_speed_limit", "limit"), &BoneClothSimulator3D::set_rotation_speed_limit);
@@ -807,6 +811,8 @@ void BoneClothSimulator3D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "inertia", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_inertia", "get_inertia");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "inertia_smoothing", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_inertia_smoothing", "get_inertia_smoothing");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "depth_inertia", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_depth_inertia", "get_depth_inertia");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "local_movement_speed_limit", PROPERTY_HINT_RANGE, "0,20,0.01,or_greater,suffix:m/s"), "set_local_movement_speed_limit", "get_local_movement_speed_limit");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "local_rotation_speed_limit", PROPERTY_HINT_RANGE, "0,1440,0.1,radians_as_degrees,suffix:/s"), "set_local_rotation_speed_limit", "get_local_rotation_speed_limit");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "movement_speed_limit", PROPERTY_HINT_RANGE, "0,20,0.01,or_greater,suffix:m/s"), "set_movement_speed_limit", "get_movement_speed_limit");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "rotation_speed_limit", PROPERTY_HINT_RANGE, "0,1440,0.1,radians_as_degrees,suffix:/s"), "set_rotation_speed_limit", "get_rotation_speed_limit");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "joint_speed_limit", PROPERTY_HINT_RANGE, "0,10,0.01,or_greater,suffix:m/s"), "set_joint_speed_limit", "get_joint_speed_limit");
@@ -1415,6 +1421,22 @@ float BoneClothSimulator3D::get_depth_inertia() const {
 	return depth_inertia;
 }
 
+void BoneClothSimulator3D::set_local_movement_speed_limit(float p_limit) {
+	local_movement_speed_limit = p_limit;
+}
+
+float BoneClothSimulator3D::get_local_movement_speed_limit() const {
+	return local_movement_speed_limit;
+}
+
+void BoneClothSimulator3D::set_local_rotation_speed_limit(float p_limit) {
+	local_rotation_speed_limit = p_limit;
+}
+
+float BoneClothSimulator3D::get_local_rotation_speed_limit() const {
+	return local_rotation_speed_limit;
+}
+
 void BoneClothSimulator3D::set_joint_speed_limit(float p_limit) {
 	joint_speed_limit = p_limit;
 }
@@ -1770,6 +1792,7 @@ void BoneClothSimulator3D::_process_modification_with_delta(double p_delta) {
 			const Quaternion center_rotation = prev_frame_center_rotation.slerp(frame_center_rotation, weight).normalized();
 			center_move = center - step_center;
 			center_turn = (center_rotation * step_center_rotation.inverse()).normalized();
+			_update_local_shares(center, center_rotation, step_move, step_turn);
 
 			_step(skeleton_gravity_direction, step_move, step_turn, collisions);
 

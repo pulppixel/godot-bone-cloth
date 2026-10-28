@@ -46,6 +46,12 @@
 		<member name="link_stiffness" type="float" setter="set_link_stiffness" getter="get_link_stiffness" default="0.0">
 			See [member BoneClothSimulator3D.link_stiffness].
 		</member>
+		<member name="local_movement_speed_limit" type="float" setter="set_local_movement_speed_limit" getter="get_local_movement_speed_limit" default="0.0">
+			See [member BoneClothSimulator3D.local_movement_speed_limit].
+		</member>
+		<member name="local_rotation_speed_limit" type="float" setter="set_local_rotation_speed_limit" getter="get_local_rotation_speed_limit" default="0.0">
+			See [member BoneClothSimulator3D.local_rotation_speed_limit].
+		</member>
 		<member name="movement_speed_limit" type="float" setter="set_movement_speed_limit" getter="get_movement_speed_limit" default="5.0">
 			See [member BoneClothSimulator3D.movement_speed_limit].
 		</member>
