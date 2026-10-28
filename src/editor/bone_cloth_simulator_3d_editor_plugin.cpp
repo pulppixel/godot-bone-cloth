@@ -14,9 +14,10 @@
 using namespace godot;
 
 enum {
-	OPTION_ADD_CHAINS,
+	OPTION_EDIT_CHAINS,
 	OPTION_PRESETS,
 	OPTION_SAVE_PRESET,
+	OPTION_SHOW_RADIUS,
 	OPTION_SHOW_LIMIT_ANGLE,
 };
 
@@ -49,11 +50,13 @@ BoneClothSimulator3DMenu::BoneClothSimulator3DMenu() {
 	presets_menu->connect("about_to_popup", callable_mp(this, &BoneClothSimulator3DMenu::_on_presets_about_to_popup));
 	presets_menu->connect("id_pressed", callable_mp(this, &BoneClothSimulator3DMenu::_on_preset_pressed));
 	PopupMenu *options = get_popup();
-	options->add_item("Add Chains...", OPTION_ADD_CHAINS);
+	options->add_item("Edit Chains...", OPTION_EDIT_CHAINS);
 	options->add_separator();
 	options->add_submenu_node_item("Presets", presets_menu, OPTION_PRESETS);
 	options->add_item("Save Preset...", OPTION_SAVE_PRESET);
 	options->add_separator();
+	options->add_check_item("Show Radius", OPTION_SHOW_RADIUS);
+	options->set_item_checked(options->get_item_index(OPTION_SHOW_RADIUS), EditorInterface::get_singleton()->get_editor_settings()->get_project_metadata("bone_cloth", "show_radius", true));
 	options->add_check_item("Show Limit Angle", OPTION_SHOW_LIMIT_ANGLE);
 	options->set_item_checked(options->get_item_index(OPTION_SHOW_LIMIT_ANGLE), EditorInterface::get_singleton()->get_editor_settings()->get_project_metadata("bone_cloth", "show_limit_angle", false));
 	options->connect("id_pressed", callable_mp(this, &BoneClothSimulator3DMenu::_on_option_pressed));
@@ -68,8 +71,7 @@ BoneClothSimulator3DMenu::BoneClothSimulator3DMenu() {
 
 	// 0: 체크 상자와 bone 이름, 1: 그 bone에서 만들 chain의 크기.
 	chains_dialog = memnew(ConfirmationDialog);
-	chains_dialog->set_title("Add Chains");
-	chains_dialog->set_ok_button_text("Add");
+	chains_dialog->set_title("Edit Chains");
 	chains_dialog->connect("confirmed", callable_mp(this, &BoneClothSimulator3DMenu::_on_chains_confirmed));
 	bones_tree = memnew(Tree);
 	bones_tree->set_columns(2);
@@ -121,35 +123,53 @@ void BoneClothSimulator3DMenu::_fill_bones_tree(BoneClothSimulator3D *p_simulato
 	Skeleton3D *skeleton = p_simulator->get_skeleton();
 
 	PackedInt32Array roots;
-	PackedInt32Array locked;
+	PackedInt32Array in_chain;
 	for (int i = 0; i < p_simulator->get_chain_count(); i++) {
 		const int root = skeleton->find_bone(p_simulator->get_root_bone_name(i));
-		const int end = skeleton->find_bone(p_simulator->get_end_bone_name(i));
-		if (root >= 0) {
-			roots.push_back(root);
+		if (root < 0) {
+			continue;
 		}
-		for (int bone = end >= 0 ? end : root; bone >= 0; bone = skeleton->get_bone_parent(bone)) {
-			locked.push_back(bone);
+		roots.push_back(root);
+		in_chain.push_back(root);
+		for (int bone = skeleton->find_bone(p_simulator->get_end_bone_name(i)); bone >= 0 && bone != root; bone = skeleton->get_bone_parent(bone)) {
+			in_chain.push_back(bone);
+		}
+	}
+
+	top_roots.clear();
+	PackedInt32Array locked;
+	for (int root : roots) {
+		PackedInt32Array above;
+		for (int bone = skeleton->get_bone_parent(root); bone >= 0; bone = skeleton->get_bone_parent(bone)) {
+			above.push_back(bone);
+		}
+		bool is_top = !top_roots.has(root);
+		for (int bone : above) {
+			is_top = is_top && !roots.has(bone);
+		}
+		if (is_top) {
+			top_roots.push_back(root);
+			locked.append_array(above);
 		}
 	}
 
 	TreeItem *tree_root = bones_tree->create_item();
 	const PackedInt32Array top = skeleton->get_parentless_bones();
 	for (int i = 0; i < top.size(); i++) {
-		TreeItem *item = _add_bone_item(skeleton, top[i], tree_root, roots, locked);
+		TreeItem *item = _add_bone_item(skeleton, top[i], tree_root, in_chain, locked, false);
 		item->set_collapsed(i > 0);
 	}
 }
 
 // bone 하나의 줄(예: "Hair1    4 bones, 0.330 m").
-TreeItem *BoneClothSimulator3DMenu::_add_bone_item(Skeleton3D *p_skeleton, int p_bone, TreeItem *p_parent, const PackedInt32Array &p_roots, const PackedInt32Array &p_locked) {
+TreeItem *BoneClothSimulator3DMenu::_add_bone_item(Skeleton3D *p_skeleton, int p_bone, TreeItem *p_parent, const PackedInt32Array &p_in_chain, const PackedInt32Array &p_locked, bool p_covered) {
 	TreeItem *item = bones_tree->create_item(p_parent);
 	item->set_cell_mode(0, TreeItem::CELL_MODE_CHECK);
 	item->set_text(0, p_skeleton->get_bone_name(p_bone));
 	item->set_icon(0, EditorInterface::get_singleton()->get_editor_theme()->get_icon("Bone", "EditorIcons"));
 	item->set_metadata(0, p_bone);
-	item->set_checked(0, p_roots.has(p_bone));
-	item->set_editable(0, !p_locked.has(p_bone));
+	item->set_checked(0, p_covered ? p_in_chain.has(p_bone) : top_roots.has(p_bone));
+	item->set_editable(0, !p_covered && !p_locked.has(p_bone));
 	item->set_collapsed(true);
 
 	LocalVector<Vector2i> chains;
@@ -168,14 +188,14 @@ TreeItem *BoneClothSimulator3DMenu::_add_bone_item(Skeleton3D *p_skeleton, int p
 
 	const PackedInt32Array children = p_skeleton->get_bone_children(p_bone);
 	for (int child : children) {
-		_add_bone_item(p_skeleton, child, item, p_roots, p_locked);
+		_add_bone_item(p_skeleton, child, item, p_in_chain, p_locked, p_covered || item->is_checked(0));
 	}
 	return item;
 }
 
 void BoneClothSimulator3DMenu::_set_covered(TreeItem *p_first, bool p_covered) {
 	for (TreeItem *item = p_first; item; item = item->get_next()) {
-		item->set_checked(0, false);
+		item->set_checked(0, p_covered);
 		item->set_editable(0, !p_covered);
 		_set_covered(item->get_first_child(), p_covered);
 	}
@@ -186,33 +206,85 @@ void BoneClothSimulator3DMenu::_on_bone_edited() {
 	_set_covered(item->get_first_child(), item->is_checked(0));
 }
 
-// 체크한 bone마다 chain을 트리 순서대로 뒤에 붙인다.
+static void add_chains_step(EditorUndoRedoManager *p_undo_redo, Object *p_simulator, const Array &p_chains, bool p_do) {
+	const auto add = [&](const String &p_name, const Variant &p_value) {
+		if (p_do) {
+			p_undo_redo->add_do_property(p_simulator, p_name, p_value);
+		} else {
+			p_undo_redo->add_undo_property(p_simulator, p_name, p_value);
+		}
+	};
+	add("chain_count", 0);
+	add("chain_count", int(p_chains.size()));
+	for (int64_t i = 0; i < p_chains.size(); i++) {
+		const Dictionary values = p_chains[i];
+		const Array keys = values.keys();
+		for (int64_t k = 0; k < keys.size(); k++) {
+			add("chains/" + itos(i) + "/" + String(keys[k]), values[keys[k]]);
+		}
+	}
+}
+
 void BoneClothSimulator3DMenu::_on_chains_confirmed() {
 	BoneClothSimulator3D *simulator = Object::cast_to<BoneClothSimulator3D>(ObjectDB::get_instance(simulator_id));
 	ERR_FAIL_NULL(simulator);
 	Skeleton3D *skeleton = simulator->get_skeleton();
 	ERR_FAIL_NULL(skeleton);
 
-	LocalVector<Vector2i> chains;
+	PackedInt32Array removed;
+	LocalVector<Vector2i> added;
 	for (TreeItem *item = bones_tree->get_root()->get_first_child(); item; item = item->get_next_in_tree()) {
-		if (item->is_checked(0) && item->is_editable(0)) {
-			collect_chains(skeleton, item->get_metadata(0), chains);
+		const int bone = item->get_metadata(0);
+		if (top_roots.has(bone)) {
+			if (!item->is_checked(0)) {
+				removed.push_back(bone);
+			}
+		} else if (item->is_checked(0) && item->is_editable(0)) {
+			collect_chains(skeleton, bone, added);
 		}
 	}
-	if (chains.is_empty()) {
+	if (removed.is_empty() && added.is_empty()) {
 		return;
 	}
 
+	// 지금 chain마다 값을 모은다. "chains/2/end_bone_name"은 old_chains[2]["end_bone_name"]이 된다.
 	const int count = simulator->get_chain_count();
-	EditorUndoRedoManager *undo_redo = EditorInterface::get_singleton()->get_editor_undo_redo();
-	undo_redo->create_action("Add Bone Cloth Chains", UndoRedo::MERGE_DISABLE, simulator);
-	undo_redo->add_do_property(simulator, "chain_count", count + int(chains.size()));
-	for (uint32_t i = 0; i < chains.size(); i++) {
-		const String path = "chains/" + itos(count + int(i)) + "/";
-		undo_redo->add_do_property(simulator, path + String("root_bone_name"), skeleton->get_bone_name(chains[i].x));
-		undo_redo->add_do_property(simulator, path + String("end_bone_name"), skeleton->get_bone_name(chains[i].y));
+	Array old_chains;
+	for (int i = 0; i < count; i++) {
+		old_chains.push_back(Dictionary());
 	}
-	undo_redo->add_undo_property(simulator, "chain_count", count);
+
+	const TypedArray<Dictionary> properties = simulator->get_property_list();
+	for (int64_t i = 0; i < properties.size(); i++) {
+		const Dictionary property = properties[i];
+		const String name = property["name"];
+		if (name.begins_with("chains/") && (int(property["usage"]) & PROPERTY_USAGE_STORAGE)) {
+			Dictionary values = old_chains[name.get_slice("/", 1).to_int()];
+			values[name.substr(name.find("/", 7) + 1)] = simulator->get(name);
+		}
+	}
+
+	Array new_chains;
+	for (int i = 0; i < count; i++) {
+		bool keep = true;
+		for (int bone = skeleton->find_bone(simulator->get_root_bone_name(i)); bone >= 0; bone = skeleton->get_bone_parent(bone)) {
+			keep = keep && !removed.has(bone);
+		}
+		if (keep) {
+			new_chains.push_back(old_chains[i]);
+		}
+	}
+	for (const Vector2i &chain : added) {
+		Dictionary values;
+		values["root_bone_name"] = skeleton->get_bone_name(chain.x);
+		values["end_bone_name"] = skeleton->get_bone_name(chain.y);
+		new_chains.push_back(values);
+	}
+
+	EditorUndoRedoManager *undo_redo = EditorInterface::get_singleton()->get_editor_undo_redo();
+	undo_redo->create_action("Edit Bone Cloth Chains", UndoRedo::MERGE_DISABLE, simulator);
+	add_chains_step(undo_redo, simulator, new_chains, true);
+	add_chains_step(undo_redo, simulator, old_chains, false);
 	undo_redo->commit_action();
 }
 
@@ -268,22 +340,22 @@ void BoneClothSimulator3DMenu::_on_preset_pressed(int p_id) {
 }
 
 void BoneClothSimulator3DMenu::_on_option_pressed(int p_id) {
-	// Show Limit Angle 켜고 끄기. 모든 simulator에 적용하고 프로젝트마다 저장한다.
+	// Show Radius, Show Limit Angle 켜고 끄기. 모든 simulator에 적용하고 프로젝트마다 저장한다.
 	// 선택된 simulator는 매 프레임 다시 그리므로 바로 보인다.
-	if (p_id == OPTION_SHOW_LIMIT_ANGLE) {
+	if (p_id == OPTION_SHOW_RADIUS || p_id == OPTION_SHOW_LIMIT_ANGLE) {
 		PopupMenu *options = get_popup();
-		const int index = options->get_item_index(OPTION_SHOW_LIMIT_ANGLE);
+		const int index = options->get_item_index(p_id);
 		const bool show = !options->is_item_checked(index);
 		options->set_item_checked(index, show);
-		EditorInterface::get_singleton()->get_editor_settings()->set_project_metadata("bone_cloth", "show_limit_angle", show);
+		EditorInterface::get_singleton()->get_editor_settings()->set_project_metadata("bone_cloth", p_id == OPTION_SHOW_RADIUS ? "show_radius" : "show_limit_angle", show);
 		return;
 	}
 
 	BoneClothSimulator3D *simulator = Object::cast_to<BoneClothSimulator3D>(ObjectDB::get_instance(simulator_id));
 	ERR_FAIL_NULL(simulator);
 
-	if (p_id == OPTION_ADD_CHAINS) {
-		ERR_FAIL_NULL_MSG(simulator->get_skeleton(), "Add Chains needs the BoneClothSimulator3D under a Skeleton3D.");
+	if (p_id == OPTION_EDIT_CHAINS) {
+		ERR_FAIL_NULL_MSG(simulator->get_skeleton(), "Edit Chains needs the BoneClothSimulator3D under a Skeleton3D.");
 		_fill_bones_tree(simulator);
 		const float scale = EditorInterface::get_singleton()->get_editor_scale();
 		chains_dialog->popup_centered(Vector2i(Vector2(500.0f, 600.0f) * scale));

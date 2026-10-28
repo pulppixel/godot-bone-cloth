@@ -423,7 +423,8 @@ void BoneClothSimulator3DGizmoPlugin::_redraw(const Ref<EditorNode3DGizmo> &p_gi
 		return;
 	}
 
-	// Show Limit Angle 메뉴의 체크 상태(프로젝트의 에디터 metadata에 저장된다).
+	// Show Radius, Show Limit Angle 메뉴의 체크 상태(프로젝트의 에디터 metadata에 저장된다).
+	const bool show_radius = EditorInterface::get_singleton()->get_editor_settings()->get_project_metadata("bone_cloth", "show_radius", true);
 	const bool show_limit_angle = EditorInterface::get_singleton()->get_editor_settings()->get_project_metadata("bone_cloth", "show_limit_angle", false);
 
 	PackedVector3Array lines;
@@ -434,7 +435,9 @@ void BoneClothSimulator3DGizmoPlugin::_redraw(const Ref<EditorNode3DGizmo> &p_gi
 			const BoneClothSimulator3D::Joint &parent = chain.joints[i - 1];
 			lines.push_back(parent.display_location);
 			lines.push_back(joint.display_location);
-			add_sphere(lines, joint.display_location, joint.radius);
+			if (show_radius) {
+				add_sphere(lines, joint.display_location, joint.radius);
+			}
 
 			const Vector3 pose_vector = joint.current_pose_location - parent.current_pose_location;
 			const float length = pose_vector.length();

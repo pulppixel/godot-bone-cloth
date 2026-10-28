@@ -18,9 +18,10 @@
 
 using namespace godot;
 
-// Add Chains...: skeleton의 bone 트리에서 체크한 bone마다 chain을 넣는다.
+// Edit Chains...: skeleton의 bone 트리에서 체크한 bone마다 chain을 넣고, 체크를 풀면 뺀다.
 // Presets: 프로젝트의 프리셋 파일 목록.
 // Save Preset...: 노드 값을 새 프리셋 파일로 저장한다.
+// Show Radius: joint마다 반지름 구를 그릴지 말지 여부를 선택한다.
 // Show Limit Angle: "각도 제한 원뿔"을 그릴지 말지 여부를 선택한다.
 class BoneClothSimulator3DMenu : public MenuButton {
 	GDCLASS(BoneClothSimulator3DMenu, MenuButton)
@@ -31,9 +32,10 @@ class BoneClothSimulator3DMenu : public MenuButton {
 	EditorFileDialog *save_dialog = nullptr;
 	ConfirmationDialog *chains_dialog = nullptr;
 	Tree *bones_tree = nullptr;
+	PackedInt32Array top_roots;
 
 	void _fill_bones_tree(BoneClothSimulator3D *p_simulator);
-	TreeItem *_add_bone_item(Skeleton3D *p_skeleton, int p_bone, TreeItem *p_parent, const PackedInt32Array &p_roots, const PackedInt32Array &p_locked);
+	TreeItem *_add_bone_item(Skeleton3D *p_skeleton, int p_bone, TreeItem *p_parent, const PackedInt32Array &p_in_chain, const PackedInt32Array &p_locked, bool p_covered);
 	void _set_covered(TreeItem *p_first, bool p_covered);
 	void _on_bone_edited();
 	void _on_chains_confirmed();
