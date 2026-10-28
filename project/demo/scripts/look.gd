@@ -94,6 +94,11 @@ func _add_look(bone: StringName, target: Node3D, forward: SkeletonModifier3D.Bon
 	look.primary_damp_threshold = 0.5
 	look.secondary_damp_threshold = 0.5
 	_skeleton.add_child(look)
+	_skeleton.add_child(look)
+	for child in _skeleton.get_children():
+		if child is BoneClothSimulator3D:
+			_skeleton.move_child(look, child.get_index())
+			break
 	look.target_node = look.get_path_to(target)
 	return look
 
