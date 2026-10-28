@@ -4,6 +4,7 @@ extends SceneTree
 # 막 clone해서 project/.godot이 없으면 먼저 한 번 import한다. 그래야 플러그인을 불러온다:
 #   godot --headless --import --path project
 
+const TestAddChains := preload("res://tests/test_add_chains.gd")
 const TestChain := preload("res://tests/test_chain.gd")
 const TestStage := preload("res://tests/test_stage.gd")
 const TestWarnings := preload("res://tests/test_warnings.gd")
@@ -53,6 +54,7 @@ func _run() -> void:
 
 	if Engine.is_editor_hint():
 		await TestWarnings.run(self)
+		await TestAddChains.run(self)
 		_finish()
 		return
 	

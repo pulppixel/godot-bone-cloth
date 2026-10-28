@@ -8,14 +8,17 @@
 
 #include "editor/bone_cloth_3d_gizmo_plugin.h"
 
+#include <godot_cpp/classes/confirmation_dialog.hpp>
 #include <godot_cpp/classes/editor_file_dialog.hpp>
 #include <godot_cpp/classes/editor_file_system_directory.hpp>
 #include <godot_cpp/classes/editor_plugin.hpp>
 #include <godot_cpp/classes/menu_button.hpp>
 #include <godot_cpp/classes/popup_menu.hpp>
+#include <godot_cpp/classes/tree.hpp>
 
 using namespace godot;
 
+// Add Chains...: skeleton의 bone 트리에서 체크한 bone마다 chain을 넣는다.
 // Presets: 프로젝트의 프리셋 파일 목록.
 // Save Preset...: 노드 값을 새 프리셋 파일로 저장한다.
 // Show Limit Angle: "각도 제한 원뿔"을 그릴지 말지 여부를 선택한다.
@@ -26,7 +29,14 @@ class BoneClothSimulator3DMenu : public MenuButton {
 	PopupMenu *presets_menu = nullptr;
 	PackedStringArray preset_paths;
 	EditorFileDialog *save_dialog = nullptr;
+	ConfirmationDialog *chains_dialog = nullptr;
+	Tree *bones_tree = nullptr;
 
+	void _fill_bones_tree(BoneClothSimulator3D *p_simulator);
+	TreeItem *_add_bone_item(Skeleton3D *p_skeleton, int p_bone, TreeItem *p_parent, const PackedInt32Array &p_roots, const PackedInt32Array &p_locked);
+	void _set_covered(TreeItem *p_first, bool p_covered);
+	void _on_bone_edited();
+	void _on_chains_confirmed();
 	void _find_presets(EditorFileSystemDirectory *p_directory);
 	void _on_presets_about_to_popup();
 	void _on_preset_pressed(int p_id);
