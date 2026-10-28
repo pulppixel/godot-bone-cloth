@@ -38,6 +38,7 @@ class BoneClothPreset : public Resource {
 	float teleport_angle = Math::deg_to_rad(90.0f);
 	float root_spring_stiffness = 0.0f;
 	float root_spring_limit = 0.04f;
+	float root_spring_forward_limit = 0.005f;
 
 protected:
 	static void _bind_methods();
@@ -70,6 +71,7 @@ public:
 		"teleport_angle",
 		"root_spring_stiffness",
 		"root_spring_limit",
+		"root_spring_forward_limit",
 	};
 
 	// curve는 복사본을 넘긴다. 대상 노드의 값을 바꿔도, 이 preset의 값이 바뀌지 않게 할 수 있다.
@@ -122,4 +124,6 @@ public:
 	float get_root_spring_stiffness() const;
 	void set_root_spring_limit(float p_limit);
 	float get_root_spring_limit() const;
+	void set_root_spring_forward_limit(float p_limit);
+	float get_root_spring_forward_limit() const;
 };

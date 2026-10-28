@@ -18,6 +18,7 @@ const SQUEEZE_TOLERANCE := 0.0001 # m
 const REST_OVERLAP_TOLERANCE := 0.0001 # m
 const ROOT_SPRING_LIMIT := 0.03 # m
 const ROOT_SPRING_TOLERANCE := 0.001 # m
+const ROOT_SPRING_FORWARD_LIMIT := 0.005 # m
 const TIME_MONITOR := &"bone_cloth/time"
 const JOINTS_MONITOR := &"bone_cloth/joints"
 
@@ -115,6 +116,7 @@ static func run(t) -> void:
 	await _squeeze(t)
 	await _rest_overlap(t)
 	await _root_spring(t)
+	await _root_spring_forward(t)
 	await _monitors(t)
 
 
@@ -202,8 +204,6 @@ static func _limits_and_lengths(t) -> void:
 	t.check(widest > limit - deg_to_rad(5.0), "Limit angle 30 deg: the bones leaned only %.4f deg, so the limit was not tested." % rad_to_deg(widest))
 
 
-# frame 하나가 5초 걸려도(로딩 멈춤 등) 값이 망가지지 않는다.
-# 캐릭터는 그 frame에 옮기지 않는다. 옮기면 teleport로 처리되어 다른 길을 검사하게 된다.
 static func _long_step(t) -> void:
 	var rig := Rig.new(t)
 	for frame in 30:
@@ -257,8 +257,6 @@ static func _scale(t) -> void:
 
 
 # joint 사이의 bone도 collision 밖으로 밀린다.
-# 구를 b1과 b2 사이 옆에 둔다. 두 joint는 구 중심에서 7.1 cm라 밖에 있고(구 4 cm + joint 2 cm = 6 cm), 그 사이 bone 가운데는 5 cm라 구 안을 지난다.
-# 구는 bone에 붙이지 않는다. bone에 붙은 구는 쉬는 자세에서 이미 겹친 1 cm를 밀지 않는다(_rest_overlap).
 static func _bone_collision(t) -> void:
 	var rig := Rig.new(t)
 	rig.simulator.set("gravity/value", 0.0)
@@ -280,9 +278,6 @@ static func _bone_collision(t) -> void:
 	t.check(depth < BONE_COLLISION_TOLERANCE, "Bone collision: a bone is %.4f m into the sphere." % depth)
 
 
-# depth_inertia만큼 root 근처 joint는 root의 움직임을 그대로 따라간다.
-# root bone(b0)을 skeleton 안에서 좌우로 흔든다(달릴 때 골반이 흔들리는 것처럼). 캐릭터는 움직이지 않는다.
-# root 다음 joint(b1)가 제자리(root에서 rest만큼 아래)에서 벗어난 거리의 평균을 depth_inertia 0과 1에서 비교한다.
 static func _depth_inertia(t) -> void:
 	var offsets := {} # depth_inertia마다, b1이 제자리에서 벗어난 평균 거리 (m)
 	for value in [0.0, 1.0]:
@@ -299,7 +294,6 @@ static func _depth_inertia(t) -> void:
 	t.check(offsets[1.0] < offsets[0.0] * DEPTH_INERTIA_RATIO, "Depth inertia 1: the joint next to the root is %.4f m off its place, against %.4f m at 0." % [offsets[1.0], offsets[0.0]])
 
 
-# depth_inertia만큼 root 근처 joint는 joint_speed_limit에 덜 걸린다(허리 쪽 천이 달릴 때 뒤로 밀리지 않는다).
 static func _depth_speed_limit(t) -> void:
 	var trails := {} # depth_inertia마다, b1이 제자리에서 뒤로 처진 평균 거리 (m)
 	for value in [0.0, 1.0]:
@@ -352,7 +346,6 @@ static func _local_rotation_limit(t) -> void:
 	t.check(offsets[0.5] < offsets[0.0] * LOCAL_SPEED_LIMIT_RATIO, "Local rotation speed limit 0.5 rad/s: the tip is %.4f m off its place, against %.4f m without the limit." % [offsets[0.5], offsets[0.0]])
 
 
-# chain 끝이 앞(+Z)으로 5 cm 나간 chain에, root 아래 0.4 m의 knee bone을 sync bone으로 준다.
 static func _sync_bone(t) -> void:
 	var tips := {} # 경우마다, knee를 옮긴 뒤 끝 bone 위치 (m)
 	var tilt := 0.0 # 앞으로 간 경우, root bone 회전이 가리키는 b1 방향과 실제 b1 방향 사이의 각도 (rad)
@@ -384,7 +377,6 @@ static func _sync_bone(t) -> void:
 	t.check(tips["off"].distance_to(tips["rest"]) < SYNC_TOLERANCE, "Sync value 0: the chain end moves %.5f m." % tips["off"].distance_to(tips["rest"]))
 
 
-# 두 구가 bone b1 ~ b2를 양쪽(+X, -X)에서 1 cm씩 민다.
 static func _squeeze(t) -> void:
 	var rig := Rig.new(t)
 	rig.simulator.set("gravity/value", 0.0)
@@ -403,10 +395,6 @@ static func _squeeze(t) -> void:
 	t.check(largest < SQUEEZE_TOLERANCE, "Squeeze: a chain between two spheres pushing opposite ways moves %.5f m sideways." % largest)
 
 
-# bone에 붙은 구는 쉬는 자세에서 이미 겹친 깊이만큼은 밀지 않는다.
-# 구를 b0에 붙여 _bone_collision과 같은 자리에 둔다. 쉬는 자세에서 bone b1 ~ b2가 구에 1 cm 들어가 있다.
-# 그대로 두면 chain은 밀리지 않는다. b1의 pose를 구 쪽(+X)으로 0.3 rad 돌리면 bone이 더 들어가려 하지만, 1 cm까지만 들어간다.
-# stiffness는 0.2다. 1이면 bone 길이를 맞추는 마지막 단계가 joint를 pose 쪽으로 도로 당겨서, bone에 붙지 않은 구에도 0.9 cm 들어간다.
 static func _rest_overlap(t) -> void:
 	var center := Vector3(0.05, -0.15, 0.0)
 	var depths := {} # 경우마다, bone이 구에 들어간 가장 깊은 거리 (m)
@@ -438,7 +426,7 @@ static func _rest_overlap(t) -> void:
 	t.check(absf(depths["bent"] - depths["rest"]) < BONE_COLLISION_TOLERANCE, "Rest overlap: bent toward the sphere, a bone is %.4f m in, %.4f m at rest." % [depths["bent"], depths["rest"]])
 
 
-# root spring이 있으면 root bone(b0)도 흔들린다. pose에서 root_spring_limit보다 멀어지지 않고, 캐릭터가 멈추면 pose로 돌아온다.
+# root spring이 있으면 root bone(b0)도 흔들린다.
 static func _root_spring(t) -> void:
 	var moved := {} # stiffness마다, 움직이는 동안 root가 pose에서 가장 멀리 간 거리 (m)
 	var settled := {} # stiffness마다, 멈추고 2초 뒤 root가 pose에서 떨어진 거리 (m)
@@ -461,14 +449,30 @@ static func _root_spring(t) -> void:
 	t.check(settled[0.15] < ROOT_SPRING_TOLERANCE, "Root spring: 2 s after the character stops, the root is %.5f m off its pose." % settled[0.15])
 
 
-# Debugger의 Monitors 탭에 나오는 값. 두 chain이 도는 동안, Joints는 두 chain의 joint 수(b0 ~ b4와 끝 joint, 6개씩)의 합이고, Time은 0보다 크다.
+static func _root_spring_forward(t) -> void:
+	var rig := Rig.new(t)
+	rig.simulator.set("root_spring_stiffness", 0.15)
+	rig.simulator.set("root_spring_limit", ROOT_SPRING_LIMIT)
+	rig.simulator.set("root_spring_forward_limit", ROOT_SPRING_FORWARD_LIMIT)
+	var down := 0.0 # root가 pose보다 아래(bone 방향)로 간 가장 큰 거리 (m)
+	var up := 0.0 # root가 pose보다 위로 간 가장 큰 거리 (m)
+	for frame in 120:
+		rig.character.position = Vector3(0, sin(float(frame + 1) / 60.0 * 12.0) * 0.1, 0)
+		await rig.advance(1.0 / 60.0)
+		down = maxf(down, -rig.poses[0].origin.y)
+		up = maxf(up, rig.poses[0].origin.y)
+	rig.remove()
+
+	t.check(down < ROOT_SPRING_FORWARD_LIMIT + LENGTH_TOLERANCE, "Root spring forward limit: the root moves %.4f m along its bone (limit %.3f m)." % [down, ROOT_SPRING_FORWARD_LIMIT])
+	t.check(up > ROOT_SPRING_FORWARD_LIMIT * 2.0, "Root spring forward limit: the root moves only %.4f m against its bone." % up)
+
+
 static func _monitors(t) -> void:
 	if not (Performance.has_custom_monitor(TIME_MONITOR) and Performance.has_custom_monitor(JOINTS_MONITOR)):
 		t.check(false, "Monitors: the plugin has not added %s and %s." % [TIME_MONITOR, JOINTS_MONITOR])
 		return
 
 	var rigs: Array[Rig] = [Rig.new(t), Rig.new(t)]
-	# 앞의 테스트들이 더한 값은 한 번 읽어서 비운다.
 	Performance.get_custom_monitor(TIME_MONITOR)
 	Performance.get_custom_monitor(JOINTS_MONITOR)
 	for frame in 10:

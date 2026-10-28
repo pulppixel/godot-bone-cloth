@@ -53,6 +53,8 @@ void BoneClothPreset::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_root_spring_stiffness"), &BoneClothPreset::get_root_spring_stiffness);
 	ClassDB::bind_method(D_METHOD("set_root_spring_limit", "limit"), &BoneClothPreset::set_root_spring_limit);
 	ClassDB::bind_method(D_METHOD("get_root_spring_limit"), &BoneClothPreset::get_root_spring_limit);
+	ClassDB::bind_method(D_METHOD("set_root_spring_forward_limit", "limit"), &BoneClothPreset::set_root_spring_forward_limit);
+	ClassDB::bind_method(D_METHOD("get_root_spring_forward_limit"), &BoneClothPreset::get_root_spring_forward_limit);
 
 	// 이름과 범위(hint)를 BoneClothSimulator3D와 맞춘다.
 	// 값을 이름으로 복사하고, preset을 열면 node와 같은 슬라이더로 보인다.
@@ -83,6 +85,7 @@ void BoneClothPreset::_bind_methods() {
 	ADD_GROUP("Root Spring", "root_spring_");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "root_spring_stiffness", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_root_spring_stiffness", "get_root_spring_stiffness");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "root_spring_limit", PROPERTY_HINT_RANGE, "0,0.2,0.001,or_greater,suffix:m"), "set_root_spring_limit", "get_root_spring_limit");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "root_spring_forward_limit", PROPERTY_HINT_RANGE, "0,0.2,0.001,or_greater,suffix:m"), "set_root_spring_forward_limit", "get_root_spring_forward_limit");
 }
 
 Variant BoneClothPreset::copy_value(const Variant &p_value) {
@@ -305,4 +308,13 @@ void BoneClothPreset::set_root_spring_limit(float p_limit) {
 
 float BoneClothPreset::get_root_spring_limit() const {
 	return root_spring_limit;
+}
+
+void BoneClothPreset::set_root_spring_forward_limit(float p_limit) {
+	root_spring_forward_limit = p_limit;
+	emit_changed();
+}
+
+float BoneClothPreset::get_root_spring_forward_limit() const {
+	return root_spring_forward_limit;
 }

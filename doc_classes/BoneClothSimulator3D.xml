@@ -6,7 +6,7 @@
 	<description>
 		This [SkeletonModifier3D] sways hair, skirts, capes and tails, and returns them toward the animated pose.
 		Each chain runs from [method set_root_bone_name] down to [method set_end_bone_name]. The root bone follows the pose and the bones below it are simulated. A chain whose root bone is in an earlier chain branches from it; list the trunk before its branches.
-		With [member root_spring_stiffness] above [code]0.0[/code], the root bone sways too: it moves with the character like the bones below it, without gravity, is pulled back toward the pose and stays within [member root_spring_limit] of it, and the node writes its position as well as its rotation. Use it for a part that moves as a lump around its bone, such as a breast, where turning the bone about its head moves the surface too little.
+		With [member root_spring_stiffness] above [code]0.0[/code], the root bone sways too: it moves with the character like the bones below it, without gravity, is pulled back toward the pose and stays within [member root_spring_limit] of it ([member root_spring_forward_limit] along its bone), and the node writes its position as well as its rotation. Use it for a part that moves as a lump around its bone, such as a breast, where turning the bone about its head moves the surface too little.
 		With [member link_mode] set, neighboring chains are linked at every depth. The links keep the joints at their rest distance and collide as lines, so a collision cannot pass between two chains.
 		A chain with a sync bone ([method set_sync_bone_name]) moves its pose with that bone, such as a skirt following the knees.
 		The values apply to every chain. Each damping curve scales its value along the chains, from [code]0.0[/code] at the root to [code]1.0[/code] at the farthest tip. Use a separate node for parts that need other values.
@@ -331,6 +331,9 @@
 		</member>
 		<member name="radius/value" type="float" setter="set_radius" getter="get_radius" default="0.03">
 			The radius of each joint against the collisions. A bone or a link uses the average radius of its two joints. Higher values keep the chain farther from the collisions.
+		</member>
+		<member name="root_spring_forward_limit" type="float" setter="set_root_spring_forward_limit" getter="get_root_spring_forward_limit" default="0.005">
+			How far the root bone can move from the pose along its bone, toward the next joint, in meters. For a breast that is out of the body: moving far that way makes the breast look stretched forward when the character stops. The other directions keep [member root_spring_limit]. Has no effect when [member root_spring_stiffness] is [code]0.0[/code].
 		</member>
 		<member name="root_spring_limit" type="float" setter="set_root_spring_limit" getter="get_root_spring_limit" default="0.04">
 			How far the root bone can move from the pose, in meters. Has no effect when [member root_spring_stiffness] is [code]0.0[/code].

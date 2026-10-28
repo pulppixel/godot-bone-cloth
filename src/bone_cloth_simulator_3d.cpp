@@ -394,7 +394,7 @@ void BoneClothSimulator3D::_step(const Vector3 &p_gravity_direction, const Vecto
 		if (!chain.joints.is_empty() && chain.parent_chain < 0) {
 			Joint &root = chain.joints[0];
 			if (root_spring_stiffness > 0.0f) {
-				_move_root(root, p_move, p_turn);
+				_move_root(chain, p_move, p_turn);
 				continue;
 			}
 
@@ -459,25 +459,26 @@ void BoneClothSimulator3D::_move_joint(Joint &r_joint, const Vector3 &p_gravity_
 	r_joint.location += velocity * dt;
 
 	// 캐릭터가 등속도로 달리는 동안에는 천이 뒤로 밀리지 않게 한다.
-	// 출발, 정지, 방향 전환처럼 skeleton 움직임이 지난 step과 달라진 만큼만 joint 위치에 더한다.
-	// 이 중 share만큼은 중심과 함께 옮긴 것으로 보고 뺀다(root 쪽은 출발, 정지 때도 덜 흔들린다).
 	r_joint.location += (p_move - prev_step_move) * (1.0f - share);
 	r_joint.location += (p_turn.xform(r_joint.prev_location) - prev_step_turn.xform(r_joint.prev_location)) * (1.0f - turn_share);
 }
 
-// root spring: root도 아래 joint처럼 움직이고, root_spring_stiffness만큼 pose 쪽으로 당긴다. pose에서 root_spring_limit보다 멀어지지 않는다.
-// gravity는 주지 않는다. 주면 서 있을 때도 root가 pose 아래로 처져서 모델 모양이 바뀐다.
-// 거리를 자르면 다음 step의 속도(위치의 차이)도 같이 줄어서, 한계에 닿은 root가 벽에 부딪힌 듯 떨지 않는다.
-/*
-	예: 가슴 bone 하나로 된 chain(root = end bone, 끝에 tip).
-	달리며 몸이 오르내리면 가슴 bone이 조금 늦게 따라갔다가 pose로 돌아온다(위치).
-	tip은 지금처럼 root를 따라가며 bone을 돌린다(회전). 가슴은 위치와 회전이 같이 흔들린다.
-*/
-void BoneClothSimulator3D::_move_root(Joint &r_root, const Vector3 &p_move, const Quaternion &p_turn) {
-	_move_joint(r_root, Vector3(), p_move, p_turn);
+void BoneClothSimulator3D::_move_root(Chain &r_chain, const Vector3 &p_move, const Quaternion &p_turn) {
+	Joint &root = r_chain.joints[0];
+	_move_joint(root, Vector3(), p_move, p_turn);
 
-	const Vector3 offset = (r_root.location - r_root.pose_location) * (1.0f - root_spring_stiffness);
-	r_root.location = r_root.pose_location + offset.limit_length(root_spring_limit * units_per_meter);
+	Vector3 offset = ((root.location - root.pose_location) * (1.0f - root_spring_stiffness)).limit_length(root_spring_limit * units_per_meter);
+
+	// joint가 root 하나뿐이면 bone 방향이 없어서 root_spring_limit만 쓴다.
+	if (r_chain.joints.size() > 1) {
+		const Vector3 forward = (r_chain.joints[1].pose_location - root.pose_location).normalized();
+		const float along = offset.dot(forward);
+		const float forward_limit = root_spring_forward_limit * units_per_meter;
+		if (along > forward_limit) {
+			offset -= forward * (along - forward_limit);
+		}
+	}
+	root.location = root.pose_location + offset;
 }
 
 // root 아래 joint를 움직인다(_move_joint). 그리고 stiffness만큼 pose 쪽으로 당긴다.
@@ -781,6 +782,8 @@ void BoneClothSimulator3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_root_spring_stiffness"), &BoneClothSimulator3D::get_root_spring_stiffness);
 	ClassDB::bind_method(D_METHOD("set_root_spring_limit", "limit"), &BoneClothSimulator3D::set_root_spring_limit);
 	ClassDB::bind_method(D_METHOD("get_root_spring_limit"), &BoneClothSimulator3D::get_root_spring_limit);
+	ClassDB::bind_method(D_METHOD("set_root_spring_forward_limit", "limit"), &BoneClothSimulator3D::set_root_spring_forward_limit);
+	ClassDB::bind_method(D_METHOD("get_root_spring_forward_limit"), &BoneClothSimulator3D::get_root_spring_forward_limit);
 
 	ClassDB::bind_method(D_METHOD("reset"), &BoneClothSimulator3D::reset);
 
@@ -823,6 +826,7 @@ void BoneClothSimulator3D::_bind_methods() {
 	ADD_GROUP("Root Spring", "root_spring_");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "root_spring_stiffness", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_root_spring_stiffness", "get_root_spring_stiffness");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "root_spring_limit", PROPERTY_HINT_RANGE, "0,0.2,0.001,or_greater,suffix:m"), "set_root_spring_limit", "get_root_spring_limit");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "root_spring_forward_limit", PROPERTY_HINT_RANGE, "0,0.2,0.001,or_greater,suffix:m"), "set_root_spring_forward_limit", "get_root_spring_forward_limit");
 	ADD_GROUP("", "");
 
 	// inspector에서 chains/N/... property를 Chains 목록 하나로 묶는다(항목 추가, 삭제 버튼).
@@ -1491,6 +1495,14 @@ void BoneClothSimulator3D::set_root_spring_limit(float p_limit) {
 
 float BoneClothSimulator3D::get_root_spring_limit() const {
 	return root_spring_limit;
+}
+
+void BoneClothSimulator3D::set_root_spring_forward_limit(float p_limit) {
+	root_spring_forward_limit = p_limit;
+}
+
+float BoneClothSimulator3D::get_root_spring_forward_limit() const {
+	return root_spring_forward_limit;
 }
 
 void BoneClothSimulator3D::reset() {

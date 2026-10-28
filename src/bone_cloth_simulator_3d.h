@@ -189,6 +189,7 @@ private:
 	// root가 pose에서 벗어나 흔들리게 하는 스프링(예: 가슴). 0이면 root는 pose에 고정이다.
 	float root_spring_stiffness = 0.0f;
 	float root_spring_limit = 0.04f;
+	float root_spring_forward_limit = 0.005f;
 
 	// inspector의 길이 값(m)에 곱해서 skeleton 단위로 바꾸는 배율. 매 frame _get_units_per_meter로 구한다.
 	// 예: Armature의 scale이 0.01인 cm rig는 100이다(radius 0.03 m -> skeleton 단위 3).
@@ -239,7 +240,7 @@ private:
 	void _step(const Vector3 &p_gravity_direction, const Vector3 &p_move, const Quaternion &p_turn, const LocalVector<PosedCollision> &p_collisions);
 	void _follow_parent_chain(Chain &p_chain);
 	void _move_joint(Joint &r_joint, const Vector3 &p_gravity_direction, const Vector3 &p_move, const Quaternion &p_turn);
-	void _move_root(Joint &r_root, const Vector3 &p_move, const Quaternion &p_turn);
+	void _move_root(Chain &r_chain, const Vector3 &p_move, const Quaternion &p_turn);
 	void _simulate(Chain &p_chain, const Vector3 &p_gravity_direction, const Vector3 &p_move, const Quaternion &p_turn);
 	void _solve_links();
 	void _collide_segment(Joint &r_a, Joint &r_b, float p_radius, const LocalVector<PosedCollision> &p_collisions, const LocalVector<bool> &p_collides_a, const LocalVector<bool> &p_collides_b);
@@ -346,6 +347,8 @@ public:
 	float get_root_spring_stiffness() const;
 	void set_root_spring_limit(float p_limit);
 	float get_root_spring_limit() const;
+	void set_root_spring_forward_limit(float p_limit);
+	float get_root_spring_forward_limit() const;
 
 	void reset();
 	float get_units_per_meter() const;

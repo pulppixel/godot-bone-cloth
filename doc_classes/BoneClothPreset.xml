@@ -61,6 +61,9 @@
 		<member name="radius/value" type="float" setter="set_radius" getter="get_radius" default="0.03">
 			See [member BoneClothSimulator3D.radius/value].
 		</member>
+		<member name="root_spring_forward_limit" type="float" setter="set_root_spring_forward_limit" getter="get_root_spring_forward_limit" default="0.005">
+			See [member BoneClothSimulator3D.root_spring_forward_limit].
+		</member>
 		<member name="root_spring_limit" type="float" setter="set_root_spring_limit" getter="get_root_spring_limit" default="0.04">
 			See [member BoneClothSimulator3D.root_spring_limit].
 		</member>
