@@ -7,6 +7,19 @@
 [ext_resource type="Script" uid="uid://csfpwv81biimb" path="res://demo/scripts/look.gd" id="5_nhxe8"]
 [ext_resource type="Script" uid="uid://olte1161ncgj" path="res://demo/scripts/feet.gd" id="6_m6ahk"]
 
+[sub_resource type="Curve" id="Curve_hair_limit"]
+_data = [Vector2(0, 0.2), 0.0, 0.8000001, 1, 1, Vector2(1, 1), 0.8000001, 0.0, 1, 1]
+point_count = 2
+
+[sub_resource type="Curve" id="Curve_bangs_stiffness"]
+_limits = [0.0, 2.0, 0.0, 1.0]
+_data = [Vector2(0, 2), 0.0, -1.0, 1, 1, Vector2(1, 1), -1.0, 0.0, 1, 1]
+point_count = 2
+
+[sub_resource type="Curve" id="Curve_bangs_limit"]
+_data = [Vector2(0, 0.05), 0.0, 0.08333333, 1, 1, Vector2(0.6, 0.1), 0.08333333, 2.2500002, 1, 1, Vector2(1, 1), 2.2500002, 0.0, 1, 1]
+point_count = 3
+
 [node name="victoria" unique_id=1265756670 instance=ExtResource("1_7vg0e")]
 
 [node name="GeneralSkeleton" parent="." index="0" unique_id=2129559619]
@@ -89,6 +102,280 @@ chains/1/sync_bone_name = ""
 chains/1/sync_bone = -1
 chains/1/enable_all_child_collisions = true
 chains/1/exclude_collision_count = 0
+
+[node name="Hair" type="BoneClothSimulator3D" parent="GeneralSkeleton" index="4" unique_id=1727653590]
+link_mode = 1
+link_stiffness = 0.3
+drag/value = 0.2
+stiffness/value = 0.08
+limit_angle/value = 0.7853982
+limit_angle/damping_curve = SubResource("Curve_hair_limit")
+gravity/value = 2.0
+depth_inertia = 1.0
+local_movement_speed_limit = 1.0
+local_rotation_speed_limit = 6.2831855
+joint_speed_limit = 0.0
+chain_count = 9
+chains/0/root_bone_name = "HairJoint-b85bb5b7-315c-492a-9740-2f11385833c2"
+chains/0/root_bone = 40
+chains/0/end_bone_name = "HairJoint-f811ac3e-6c8f-4892-b663-aa8a3dc9e8a0"
+chains/0/end_bone = 44
+chains/0/extend_end_bone = true
+chains/0/end_bone/direction = 6
+chains/0/end_bone/length = 0.1
+chains/0/sync_bone_name = ""
+chains/0/sync_bone = -1
+chains/0/enable_all_child_collisions = true
+chains/0/exclude_collision_count = 0
+chains/1/root_bone_name = "HairJoint-0dc35a8c-7cd6-4b6a-8997-86eb6bf8cc3f"
+chains/1/root_bone = 65
+chains/1/end_bone_name = "HairJoint-d61d1d0e-d3ec-4b5f-ac21-9cdad051b0ac"
+chains/1/end_bone = 69
+chains/1/extend_end_bone = true
+chains/1/end_bone/direction = 6
+chains/1/end_bone/length = 0.1
+chains/1/sync_bone_name = ""
+chains/1/sync_bone = -1
+chains/1/enable_all_child_collisions = true
+chains/1/exclude_collision_count = 0
+chains/2/root_bone_name = "HairJoint-53f4b4f4-1f4a-47ab-a24d-6ab46cddd1cc"
+chains/2/root_bone = 60
+chains/2/end_bone_name = "HairJoint-4c7556de-d351-432c-9f53-388775b974ae"
+chains/2/end_bone = 64
+chains/2/extend_end_bone = true
+chains/2/end_bone/direction = 6
+chains/2/end_bone/length = 0.1
+chains/2/sync_bone_name = ""
+chains/2/sync_bone = -1
+chains/2/enable_all_child_collisions = true
+chains/2/exclude_collision_count = 0
+chains/3/root_bone_name = "HairJoint-fed97e5b-fbc6-45ec-b03b-83829af3787c"
+chains/3/root_bone = 70
+chains/3/end_bone_name = "HairJoint-185bd754-b183-442b-9b4e-5111ddac458d"
+chains/3/end_bone = 74
+chains/3/extend_end_bone = true
+chains/3/end_bone/direction = 6
+chains/3/end_bone/length = 0.1
+chains/3/sync_bone_name = ""
+chains/3/sync_bone = -1
+chains/3/enable_all_child_collisions = true
+chains/3/exclude_collision_count = 0
+chains/4/root_bone_name = "HairJoint-67552399-c278-4fd7-8bab-517b7d50f4c7"
+chains/4/root_bone = 23
+chains/4/end_bone_name = "HairJoint-3ad69e76-2c00-4dca-8a53-396381bcd6a0"
+chains/4/end_bone = 28
+chains/4/extend_end_bone = true
+chains/4/end_bone/direction = 6
+chains/4/end_bone/length = 0.1
+chains/4/sync_bone_name = ""
+chains/4/sync_bone = -1
+chains/4/enable_all_child_collisions = true
+chains/4/exclude_collision_count = 0
+chains/5/root_bone_name = "HairJoint-7382322b-fa65-4363-a83b-4e1bf4b726ae"
+chains/5/root_bone = 75
+chains/5/end_bone_name = "HairJoint-c748966c-7f5e-4efa-b7ee-9431d3130ca8"
+chains/5/end_bone = 79
+chains/5/extend_end_bone = true
+chains/5/end_bone/direction = 6
+chains/5/end_bone/length = 0.1
+chains/5/sync_bone_name = ""
+chains/5/sync_bone = -1
+chains/5/enable_all_child_collisions = true
+chains/5/exclude_collision_count = 0
+chains/6/root_bone_name = "HairJoint-2aec25be-2b11-4f67-b472-0a02ef80ebf1"
+chains/6/root_bone = 55
+chains/6/end_bone_name = "HairJoint-867ac01f-89a7-4298-9cfc-2b374f12c624"
+chains/6/end_bone = 59
+chains/6/extend_end_bone = true
+chains/6/end_bone/direction = 6
+chains/6/end_bone/length = 0.1
+chains/6/sync_bone_name = ""
+chains/6/sync_bone = -1
+chains/6/enable_all_child_collisions = true
+chains/6/exclude_collision_count = 0
+chains/7/root_bone_name = "HairJoint-4f1ba944-3780-426f-9370-274fc88ed6b6"
+chains/7/root_bone = 50
+chains/7/end_bone_name = "HairJoint-3b4359eb-e9b4-456f-98e9-5eeb649ab9aa"
+chains/7/end_bone = 54
+chains/7/extend_end_bone = true
+chains/7/end_bone/direction = 6
+chains/7/end_bone/length = 0.1
+chains/7/sync_bone_name = ""
+chains/7/sync_bone = -1
+chains/7/enable_all_child_collisions = true
+chains/7/exclude_collision_count = 0
+chains/8/root_bone_name = "HairJoint-c6b7b433-9a35-4e47-a05d-f0b467d92f65"
+chains/8/root_bone = 45
+chains/8/end_bone_name = "HairJoint-92e78379-d81f-4803-b67c-edb067a92320"
+chains/8/end_bone = 49
+chains/8/extend_end_bone = true
+chains/8/end_bone/direction = 6
+chains/8/end_bone/length = 0.1
+chains/8/sync_bone_name = ""
+chains/8/sync_bone = -1
+chains/8/enable_all_child_collisions = true
+chains/8/exclude_collision_count = 0
+
+[node name="Head" type="BoneClothCollisionSphere3D" parent="GeneralSkeleton/Hair" index="0" unique_id=34143077]
+bone_name = "Head"
+bone = 18
+position_offset = Vector3(0, 0.101, -0.013)
+rotation_offset = Quaternion(0, 0, 0, 1)
+
+[node name="Neck" type="BoneClothCollisionSphere3D" parent="GeneralSkeleton/Hair" index="1" unique_id=1045488848]
+radius = 0.05
+bone_name = "Neck"
+bone = 17
+position_offset = Vector3(0, 0.028, 0.017)
+rotation_offset = Quaternion(0, 0, 0, 1)
+
+[node name="Chest" type="BoneClothCollisionSphere3D" parent="GeneralSkeleton/Hair" index="2" unique_id=1645849201]
+bone_name = "UpperChest"
+bone = 12
+position_offset = Vector3(0, 0.003, 0.01)
+rotation_offset = Quaternion(0, 0, 0, 1)
+
+[node name="Blades" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/Hair" index="3" unique_id=1091435785]
+radius = 0.07
+height = 0.24
+bone_name = "UpperChest"
+bone = 12
+position_offset = Vector3(0, 0.06, -0.028)
+rotation_offset = Quaternion(0, 0, 0.7071068, 0.7071068)
+
+[node name="UpperArms" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/Hair" index="4" unique_id=2108480455]
+radius = 0.07
+height = 0.249
+bone_name = "LeftUpperArm"
+bone = 81
+mirror_bone_name = "RightUpperArm"
+mirror_bone = 111
+position_offset = Vector3(0, 0.075, 0)
+rotation_offset = Quaternion(0, 0, 0, 1)
+
+[node name="Back" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/Hair" index="5" unique_id=54102908]
+radius = 0.065
+height = 0.28
+bone_name = "Chest"
+bone = 11
+position_offset = Vector3(0, 0, -0.05)
+rotation_offset = Quaternion(0, 0, 0.7071068, 0.7071068)
+
+[node name="Ponytail" type="BoneClothSimulator3D" parent="GeneralSkeleton" index="5" unique_id=901450798]
+drag/value = 0.2
+stiffness/value = 0.08
+limit_angle/value = 0.7853982
+limit_angle/damping_curve = SubResource("Curve_hair_limit")
+gravity/value = 5.0
+local_movement_speed_limit = 3.0
+local_rotation_speed_limit = 6.2831855
+joint_speed_limit = 0.0
+chain_count = 1
+chains/0/root_bone_name = "HairJoint-a6af3118-6834-473c-9834-551cbb99f08d"
+chains/0/root_bone = 31
+chains/0/end_bone_name = "HairJoint-a2d8e0ef-5e61-49ff-a5b6-e64134a0f005"
+chains/0/end_bone = 35
+chains/0/extend_end_bone = true
+chains/0/end_bone/direction = 6
+chains/0/end_bone/length = 0.1
+chains/0/sync_bone_name = ""
+chains/0/sync_bone = -1
+chains/0/enable_all_child_collisions = true
+chains/0/exclude_collision_count = 0
+
+[node name="Head" type="BoneClothCollisionSphere3D" parent="GeneralSkeleton/Ponytail" index="0" unique_id=1444709581]
+bone_name = "Head"
+bone = 18
+position_offset = Vector3(0, 0.101, -0.013)
+rotation_offset = Quaternion(0, 0, 0, 1)
+
+[node name="Neck" type="BoneClothCollisionSphere3D" parent="GeneralSkeleton/Ponytail" index="1" unique_id=918259136]
+radius = 0.05
+bone_name = "Neck"
+bone = 17
+position_offset = Vector3(0, 0.028, 0.017)
+rotation_offset = Quaternion(0, 0, 0, 1)
+
+[node name="Chest" type="BoneClothCollisionSphere3D" parent="GeneralSkeleton/Ponytail" index="2" unique_id=2059563005]
+bone_name = "UpperChest"
+bone = 12
+position_offset = Vector3(0, 0.003, 0.01)
+rotation_offset = Quaternion(0, 0, 0, 1)
+
+[node name="Blades" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/Ponytail" index="3" unique_id=933094693]
+radius = 0.07
+height = 0.24
+bone_name = "UpperChest"
+bone = 12
+position_offset = Vector3(0, 0.06, -0.028)
+rotation_offset = Quaternion(0, 0, 0.7071068, 0.7071068)
+
+[node name="UpperArms" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/Ponytail" index="4" unique_id=1485205111]
+radius = 0.07
+height = 0.249
+bone_name = "LeftUpperArm"
+bone = 81
+mirror_bone_name = "RightUpperArm"
+mirror_bone = 111
+position_offset = Vector3(0, 0.075, 0)
+rotation_offset = Quaternion(0, 0, 0, 1)
+
+[node name="Back" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/Ponytail" index="5" unique_id=1514073371]
+radius = 0.065
+height = 0.28
+bone_name = "Chest"
+bone = 11
+position_offset = Vector3(0, 0, -0.05)
+rotation_offset = Quaternion(0, 0, 0.7071068, 0.7071068)
+
+[node name="Bangs" type="BoneClothSimulator3D" parent="GeneralSkeleton" index="6" unique_id=574685755]
+drag/value = 0.135
+stiffness/value = 0.035
+stiffness/damping_curve = SubResource("Curve_bangs_stiffness")
+radius/value = 0.02
+limit_angle/value = 1.0471976
+limit_angle/damping_curve = SubResource("Curve_bangs_limit")
+joint_speed_limit = 0.0
+chain_count = 3
+chains/0/root_bone_name = "HairJoint-fecd3229-35d1-4312-a499-aad5098d5327"
+chains/0/root_bone = 29
+chains/0/end_bone_name = "HairJoint-575a29c7-2f5d-4018-9431-064e776489d7"
+chains/0/end_bone = 30
+chains/0/extend_end_bone = true
+chains/0/end_bone/direction = 6
+chains/0/end_bone/length = 0.1
+chains/0/sync_bone_name = ""
+chains/0/sync_bone = -1
+chains/0/enable_all_child_collisions = true
+chains/0/exclude_collision_count = 0
+chains/1/root_bone_name = "HairJoint-3ad3d66a-1af9-4a64-b650-147a2e1ad77f"
+chains/1/root_bone = 38
+chains/1/end_bone_name = "HairJoint-907b4ebf-3a75-4bab-8be1-75c1faf3bcc3"
+chains/1/end_bone = 39
+chains/1/extend_end_bone = true
+chains/1/end_bone/direction = 6
+chains/1/end_bone/length = 0.1
+chains/1/sync_bone_name = ""
+chains/1/sync_bone = -1
+chains/1/enable_all_child_collisions = true
+chains/1/exclude_collision_count = 0
+chains/2/root_bone_name = "HairJoint-1fb69ba0-a051-4abe-9b56-27c3d6d316ca"
+chains/2/root_bone = 36
+chains/2/end_bone_name = "HairJoint-e326f268-959c-4845-a3ff-1ea52a4eee46"
+chains/2/end_bone = 37
+chains/2/extend_end_bone = true
+chains/2/end_bone/direction = 6
+chains/2/end_bone/length = 0.1
+chains/2/sync_bone_name = ""
+chains/2/sync_bone = -1
+chains/2/enable_all_child_collisions = true
+chains/2/exclude_collision_count = 0
+
+[node name="Head" type="BoneClothCollisionSphere3D" parent="GeneralSkeleton/Bangs" index="0" unique_id=1678954387]
+bone_name = "Head"
+bone = 18
+position_offset = Vector3(0.0006649089, 0.10048855, -0.034873575)
+rotation_offset = Quaternion(-0.014577932, 0.00010962488, -0.001713427, 0.9998923)
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="." index="3" unique_id=571714125]
 libraries/demo_motions = ExtResource("2_k5vep")

@@ -13,6 +13,8 @@ const REACH_OUT := 105.0
 const MOVE_REACH := 45.0
 const AHEAD := 3.0
 const MOVING := 0.3
+const WALK_PITCH := -15.0
+const RUN_PITCH := -21.0
 
 const PURSUIT := 6.0
 const SACCADE_TRIGGER := 3.0
@@ -130,7 +132,7 @@ func _process(delta: float) -> void:
 		goal = _direction(camera.global_position - eyes)
 		distance = eyes.distance_to(camera.global_position)
 	elif stepping:
-		goal = Vector2(_direction(_body.velocity).x, 0.0)
+		goal = Vector2(_direction(_body.velocity).x, deg_to_rad(WALK_PITCH if walking else RUN_PITCH))
 	else:
 		goal = Vector2(facing, 0.0)
 	goal.x = _clamp_to_reach(angle_difference(facing, goal.x), REACH_OUT if _at_camera else (MOVE_REACH if stepping else REACH))

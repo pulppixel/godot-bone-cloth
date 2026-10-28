@@ -27,15 +27,15 @@ point_count = 3
 [node name="shino" unique_id=1067818726 instance=ExtResource("1_py2mv")]
 
 [node name="GeneralSkeleton" parent="." index="0" unique_id=1568887277]
-bones/3/position = Vector3(0.0050413245, 0.893449, -0.08798158)
-bones/3/rotation = Quaternion(-0.046912584, -0.115885, -0.005479549, 0.9921391)
-bones/5/rotation = Quaternion(0.08653972, 0.00011103359, 0.00025703863, 0.9962484)
-bones/6/rotation = Quaternion(0.08653965, 0.0003157859, 0.00025048552, 0.99624836)
-bones/11/rotation = Quaternion(-0.086539745, -0.00021371215, -0.00026266626, 0.99624836)
-bones/12/rotation = Quaternion(0.07046059, 0.095553175, 0.009782076, 0.9928793)
-bones/80/rotation = Quaternion(0.48982298, 0.5258223, 0.52711177, -0.45358312)
-bones/81/rotation = Quaternion(-0.05486308, 0.8188207, -0.57133794, 0.009786029)
-bones/83/rotation = Quaternion(0.179664, -0.6581483, 0.17609794, 0.70961356)
+bones/3/position = Vector3(-0.0022195496, 0.8936461, -0.08821021)
+bones/3/rotation = Quaternion(-0.047369972, -0.11588244, -0.005532974, 0.99211735)
+bones/5/rotation = Quaternion(0.08863179, 0.00011157407, 0.00025593778, 0.9960644)
+bones/6/rotation = Quaternion(0.088631734, 0.00031749895, 0.00024936043, 0.9960644)
+bones/11/rotation = Quaternion(-0.08863167, -0.00021485589, -0.00026178133, 0.9960644)
+bones/12/rotation = Quaternion(0.07668411, 0.095649906, 0.008781527, 0.99241805)
+bones/80/rotation = Quaternion(0.48827812, 0.5263465, 0.5266306, -0.45519695)
+bones/81/rotation = Quaternion(-0.060875174, 0.8178874, -0.5720652, 0.0097984765)
+bones/83/rotation = Quaternion(0.18655871, -0.6527403, 0.18039699, 0.71174634)
 bones/85/rotation = Quaternion(0.09913024, 0.70686626, 0.0629003, 0.69753635)
 bones/86/rotation = Quaternion(0.6295969, -4.0978193e-08, -4.61936e-06, 0.77692205)
 bones/87/rotation = Quaternion(0.62334186, 2.9802322e-08, -4.261732e-06, 0.78194946)
@@ -52,9 +52,9 @@ bones/100/rotation = Quaternion(0.6228982, -0.023505477, -4.5001498e-06, 0.78194
 bones/102/rotation = Quaternion(-0.123819165, 0.7195233, 0.2018354, 0.65285325)
 bones/103/rotation = Quaternion(0.18180694, 0.11012423, 0.060063303, 0.9753006)
 bones/104/rotation = Quaternion(0.5994299, 0.27396563, 0.19463211, 0.7264606)
-bones/106/rotation = Quaternion(0.54201907, -0.4739739, -0.47515687, -0.5057571)
-bones/107/rotation = Quaternion(0.093080096, 0.8253352, -0.55683666, -0.0095375115)
-bones/109/rotation = Quaternion(0.29257742, 0.54134, -0.20432286, 0.7613158)
+bones/106/rotation = Quaternion(0.54050314, -0.4743148, -0.47485697, -0.5073389)
+bones/107/rotation = Quaternion(0.09267292, 0.8252666, -0.5570062, -0.009540393)
+bones/109/rotation = Quaternion(0.29264274, 0.54111207, -0.20423199, 0.76147705)
 bones/111/rotation = Quaternion(0.12024976, -0.69903094, -0.056890074, 0.702609)
 bones/112/rotation = Quaternion(0.6295971, 3.7252903e-08, 4.172325e-06, 0.7769218)
 bones/113/rotation = Quaternion(0.62334144, 1.825392e-07, 4.470348e-06, 0.7819497)
@@ -71,13 +71,13 @@ bones/126/rotation = Quaternion(0.6228987, 0.02350526, 4.1723247e-06, 0.7819493)
 bones/128/rotation = Quaternion(-0.12381923, -0.7195234, -0.2018356, 0.6528533)
 bones/129/rotation = Quaternion(0.18180703, -0.11012423, -0.060063303, 0.97530067)
 bones/130/rotation = Quaternion(0.5994302, -0.2739653, -0.19463223, 0.7264605)
-bones/132/rotation = Quaternion(-0.00078543246, 0.12366588, 0.98594975, -0.11229138)
-bones/140/rotation = Quaternion(0.01706894, 0.98123425, -0.15580395, 0.112308264)
-bones/142/rotation = Quaternion(-0.09491325, 0.7269605, -0.68006176, 0.00600524)
+bones/132/rotation = Quaternion(-0.00080491824, 0.117353246, 0.98639977, -0.11507934)
+bones/140/rotation = Quaternion(0.015589836, 0.98320013, -0.1428096, 0.112604916)
+bones/142/rotation = Quaternion(-0.098122135, 0.73056656, -0.67568773, 0.009517785)
 bones/143/rotation = Quaternion(4.664862e-08, 1, 5.9604645e-08, 2.7766912e-08)
-bones/145/rotation = Quaternion(0.00083105086, -0.1083865, 0.9869828, 0.11881414)
-bones/153/rotation = Quaternion(-0.032262314, 0.9284432, -0.0900711, -0.3589425)
-bones/155/rotation = Quaternion(0.17175908, 0.64310884, -0.7462613, -0.001954266)
+bones/145/rotation = Quaternion(0.0007922992, -0.10975967, 0.9874823, 0.11327359)
+bones/153/rotation = Quaternion(-0.031193357, 0.9285144, -0.087165415, -0.35956964)
+bones/155/rotation = Quaternion(0.16948158, 0.6417932, -0.74791545, -0.00022407621)
 bones/156/rotation = Quaternion(-6.703263e-08, 1, 8.940697e-08, 2.1454163e-09)
 
 [node name="Skirt" type="BoneClothSimulator3D" parent="GeneralSkeleton" index="3" unique_id=198064974]
@@ -163,7 +163,7 @@ mirror_bone_name = "RightUpperLeg"
 mirror_bone = 145
 position_offset = Vector3(0, 0.11, 0)
 rotation_offset = Quaternion(0, 0, 0, 1)
-transform = Transform3D(-0.9593764, 0.13875592, -0.24564973, -0.21815827, -0.91695577, 0.33406445, -0.17889652, 0.37408406, 0.9099764, 0.09561371, 0.75259584, -0.030168548)
+transform = Transform3D(-0.9581278, 0.14680716, -0.24584317, -0.22376163, -0.91959155, 0.32292795, -0.17866714, 0.3644165, 0.9139358, 0.08922998, 0.752502, -0.03142474)
 
 [node name="Hair" type="BoneClothSimulator3D" parent="GeneralSkeleton" index="4" unique_id=1167566283]
 link_mode = 1
@@ -270,7 +270,7 @@ bone_name = "Head"
 bone = 12
 position_offset = Vector3(0, 0.101, -0.013)
 rotation_offset = Quaternion(0, 0, 0, 1)
-transform = Transform3D(0.99780136, -0.056735665, -0.03425695, 0.048128016, 0.9756435, -0.21401723, 0.045564994, 0.21189797, 0.976229, -0.003902262, 1.4822376, -0.06410196)
+transform = Transform3D(0.9978115, -0.05709456, -0.033351168, 0.047956854, 0.97214085, -0.2294389, 0.045521736, 0.22733738, 0.97275144, -0.011530664, 1.4822758, -0.06137129)
 
 [node name="Neck" type="BoneClothCollisionSphere3D" parent="GeneralSkeleton/Hair" index="1" unique_id=21520274]
 radius = 0.05
@@ -278,14 +278,14 @@ bone_name = "Neck"
 bone = 11
 position_offset = Vector3(0, 0.028, 0.017)
 rotation_offset = Quaternion(0, 0, 0, 1)
-transform = Transform3D(0.9731805, -0.018614352, -0.2292885, 0.00052189035, 0.99689686, -0.07871607, 0.23004225, 0.07648529, 0.9701704, 0.0003133854, 1.334683, -0.06891644)
+transform = Transform3D(0.97318083, -0.019364767, -0.22922474, 0.00052076945, 0.99663347, -0.08198406, 0.23004064, 0.079665974, 0.96991473, -0.0072321557, 1.3348614, -0.06793791)
 
 [node name="Chest" type="BoneClothCollisionSphere3D" parent="GeneralSkeleton/Hair" index="2" unique_id=2061560169]
 bone_name = "UpperChest"
 bone = 6
 position_offset = Vector3(0, 0.003, 0.01)
 rotation_offset = Quaternion(0, 0, 0, 1)
-transform = Transform3D(0.97325706, -0.058345143, -0.22218584, 0.0011104426, 0.9683917, -0.24943179, 0.22971605, 0.24251452, 0.9425589, 0.0016028087, 1.1891966, -0.07371628)
+transform = Transform3D(0.97325724, -0.060004227, -0.22174248, 0.0011097601, 0.96649927, -0.25666693, 0.22971503, 0.2495569, 0.94071907, -0.0057183867, 1.1893351, -0.07368833)
 
 [node name="Blades" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/Hair" index="3" unique_id=1270584044]
 radius = 0.07
@@ -294,7 +294,7 @@ bone_name = "UpperChest"
 bone = 6
 position_offset = Vector3(0, 0.06, -0.028)
 rotation_offset = Quaternion(0, 0, 0.7071068, 0.7071068)
-transform = Transform3D(-0.058345143, -0.97325706, -0.22218584, 0.9683917, -0.0011104426, -0.24943179, 0.24251452, -0.22971605, 0.9425589, 0.006720197, 1.2538732, -0.09571019)
+transform = Transform3D(-0.060004227, -0.97325724, -0.22174248, 0.96649927, -0.0011097601, -0.25666693, 0.2495569, -0.22971503, 0.94071907, -0.00071241404, 1.2541789, -0.09521091)
 
 [node name="UpperArms" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/Hair" index="4" unique_id=724888505]
 radius = 0.07
@@ -305,7 +305,7 @@ mirror_bone_name = "RightUpperArm"
 mirror_bone = 107
 position_offset = Vector3(0, 0.075, 0)
 rotation_offset = Quaternion(0, 0, 0, 1)
-transform = Transform3D(0.23059832, 0.359853, -0.90406317, 0.2624646, -0.91766894, -0.2983221, -0.9369827, -0.16849199, -0.30606163, 0.13370125, 1.190453, -0.0665146)
+transform = Transform3D(0.22007954, 0.36601084, -0.9042132, 0.2785886, -0.9119174, -0.3013229, -0.93485504, -0.18558845, -0.3026607, 0.12678447, 1.1913884, -0.067196116)
 
 [node name="Back" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/Hair" index="5" unique_id=1843609027]
 radius = 0.065
@@ -314,7 +314,7 @@ bone_name = "Chest"
 bone = 5
 position_offset = Vector3(0, 0, -0.05)
 rotation_offset = Quaternion(0, 0, 0.7071068, 0.7071068)
-transform = Transform3D(-0.018620834, -0.9731332, -0.22948848, 0.9968969, -0.0005122977, -0.07871645, 0.076484025, -0.23024212, 0.97012305, 0.014640168, 1.0658057, -0.12856835)
+transform = Transform3D(-0.019371124, -0.9731333, -0.22942586, 0.9966335, -0.0005103521, -0.081984095, 0.07966438, -0.23024161, 0.96986717, 0.007411951, 1.0661737, -0.12893529)
 
 [node name="Bangs" type="BoneClothSimulator3D" parent="GeneralSkeleton" index="5" unique_id=812319659]
 drag/value = 0.135
@@ -408,7 +408,7 @@ bone_name = "Head"
 bone = 12
 position_offset = Vector3(0.0006649089, 0.10048855, -0.034873575)
 rotation_offset = Quaternion(-0.014577932, 0.00010962488, -0.001713427, 0.9998923)
-transform = Transform3D(0.99799585, -0.052296758, -0.035627775, 0.044817816, 0.98162717, -0.185471, 0.04467274, 0.18350255, 0.9820037, -0.0024604755, 1.486452, -0.085533656)
+transform = Transform3D(0.99800706, -0.05268187, -0.03473284, 0.044661272, 0.97857493, -0.20098828, 0.044577114, 0.19903654, 0.9789776, -0.010108501, 1.4868292, -0.082734846)
 
 [node name="Bust" type="BoneClothSimulator3D" parent="GeneralSkeleton" index="6" unique_id=731140793]
 drag/value = 0.3
