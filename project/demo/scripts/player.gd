@@ -5,7 +5,7 @@ enum State { GROUND, AIR }
 
 
 const WALK := 1.064
-const SPRINT := 7.844
+const RUN := 5.844
 
 
 const STOP_SPEED := 0.2
@@ -13,7 +13,7 @@ const SHARP_TURN := deg_to_rad(140.0)
 
 @export_group("Speed")
 @export var walk_speed := WALK
-@export var run_speed := SPRINT
+@export var run_speed := RUN
 @export var acceleration := 20.0
 @export var deceleration := 25.0
 
@@ -49,6 +49,7 @@ var _step_speed := 0.0
 var _ground_normal := Vector3.UP
 var _skin_y := 0.0
 var _rig_y := 0.0
+var _feet: Node
 
 @onready var _skin: Node3D = $Skin
 @onready var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
@@ -61,6 +62,7 @@ func _ready() -> void:
 
 func use(character: Node3D) -> void:
 	_tree = character.get_node("AnimationTree")
+	_feet = character.get_node("Feet")
 	_skeleton = character.find_children("*", "Skeleton3D", true, false)[0]
 	_scale = _skeleton.motion_scale
 	_left_foot = _skeleton.find_bone(&"LeftFoot")
@@ -82,7 +84,8 @@ func _process(_delta: float) -> void:
 func _physics_process(delta: float) -> void:
 	var input := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
 	var direction := Basis(Vector3.UP, camera_rig.rotation.y) * Vector3(input.x, 0.0, input.y)
-	var top_speed := (run_speed if Input.is_action_pressed("run") else walk_speed) * _scale
+	var pace: float = _feet.get(&"pace")
+	var top_speed := (run_speed if Input.is_action_pressed("run") else walk_speed) * _scale * pace
 	var turned := _steer(direction, top_speed, delta)
 	
 	if state == State.GROUND and Input.is_action_just_pressed("jump"):
@@ -117,7 +120,7 @@ func _physics_process(delta: float) -> void:
 	
 	var facing := Vector3(velocity.x, 0.0, velocity.z) if speed > STOP_SPEED else direction
 	_turn_skin(facing, delta)
-	_tree.set("parameters/Move/blend_position", speed / _scale)
+	_tree.set("parameters/Move/blend_position", speed / _scale / pace)
 	
 	var lean_target := clampf(-turned / delta * speed / turn_grip, -1.0, 1.0)
 	_lean = lerpf(_lean, lean_target, 1.0 - exp(-delta / lean_time))
