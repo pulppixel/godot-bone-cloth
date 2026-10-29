@@ -13,6 +13,15 @@ const FOOT_GROUND := 2
 const TREAD_REACH := 0.6
 const MIN_EXTENSION := 0.2
 const MAX_OFFSET := 0.5
+const SAMPLES := 60
+const LIFTED := 0.04
+const SUPPORT := 0.05
+const SHIFT := 0.3
+const STEP := 0.02
+const EDGE := 0.02
+const SWEEP := 6
+const MARGIN := 0.04
+const SLIDE := 2.0
 
 var _skeleton: Skeleton3D
 var _body: CharacterBody3D
@@ -24,6 +33,16 @@ var _foot: Array[Vector2] = [Vector2.ZERO, Vector2.ZERO]
 var _hip := Vector2.ZERO
 var _floor_y := NAN
 var _foot_basis: Array[Basis] = [Basis(), Basis()]
+var _tree: AnimationTree
+var _move: AnimationNodeBlendSpace1D
+var _cycles := []
+var _phase := 0.0
+var _height_from: Array[float] = [NAN, NAN]
+var _offset: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]
+var _offset_from: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]
+var _offset_to: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]
+var _shift: Array[float] = [NAN, NAN]
+var _progress: Array[float] = [0.0, 0.0]
 
 
 class FootGround extends SkeletonModifier3D:
@@ -47,6 +66,8 @@ func _ready() -> void:
 	while node != null and node is not CharacterBody3D:
 		node = node.get_parent()
 	_body = node
+	_tree = parent.get_node("AnimationTree")
+	_move = (_tree.tree_root as AnimationNodeBlendTree).get_node(&"Move")
 	_hips = _skeleton.find_bone(&"Hips")
 	for leg in LEGS:
 		_bones.append(leg.map(func(bone: StringName) -> int: return _skeleton.find_bone(bone)))
@@ -56,6 +77,11 @@ func _ready() -> void:
 		add_child(pole)
 		_targets.append(target)
 		_poles.append(pole)
+	
+	var player: AnimationPlayer = parent.get_node("AnimationPlayer")
+	for i in _move.get_blend_point_count():
+		var clip := _move.get_blend_point_node(i) as AnimationNodeAnimation
+		_cycles.append(_analyze(player.get_animation(clip.animation)))
 	
 	var ground := FootGround.new()
 	ground.name = "FootGround"
@@ -79,6 +105,123 @@ func _ready() -> void:
 	_skeleton.move_child(restore, 2)
 
 
+func _analyze(anim: Animation) -> Array:
+	var legs := []
+	for i in LEGS.size():
+		var ankle_rest := _skeleton.get_bone_global_rest(_bones[i][2]).origin.y
+		var toes_rest := _skeleton.get_bone_global_rest(_bones[i][3]).origin.y
+		var ankles: Array[Vector3] = []
+		var toes: Array[Vector3] = []
+		var low: Array[float] = []
+		var high := 0.0
+		var middle := 0.0
+		for s in SAMPLES:
+			var t := anim.length * s / SAMPLES
+			ankles.append(_clip_bone(anim, _bones[i][2], t))
+			toes.append(_clip_bone(anim, _bones[i][3], t))
+			var heel := ankles[s].y - ankle_rest
+			var toe := toes[s].y - toes_rest
+			low.append(minf(heel, toe))
+			high = maxf(high, maxf(heel, toe))
+			middle += (ankles[s].z + toes[s].z) * 0.5 / SAMPLES
+		var span := 0.0
+		for s in SAMPLES:
+			span = maxf(span, absf((ankles[s].z + toes[s].z) * 0.5 - middle))
+		var stance := 0
+		var best := INF
+		for s in SAMPLES:
+			var heel := ankles[s].y - ankle_rest
+			var toe := toes[s].y - toes_rest
+			var cost := maxf(heel, toe) / high + absf((ankles[s].z + toes[s].z) * 0.5 - middle) / span
+			if cost < best:
+				best = cost
+				stance = s
+		var off := stance
+		while low[off % SAMPLES] < LIFTED:
+			off += 1
+		var strike := stance + SAMPLES
+		while low[(strike - 1) % SAMPLES] < LIFTED:
+			strike -= 1
+		legs.append({
+			"stance": float(stance) / SAMPLES,
+			"off": float(off - stance) / SAMPLES,
+			"strike": float(strike - stance) / SAMPLES,
+			"off_z": ankles[off % SAMPLES].z,
+			"strike_z": ankles[strike % SAMPLES].z,
+			"off_ankle": ankles[off % SAMPLES],
+			"off_toes": toes[off % SAMPLES],
+			"strike_ankle": ankles[strike % SAMPLES],
+			"strike_toes": toes[strike % SAMPLES],
+		})
+	return legs
+
+
+func _clip_bone(anim: Animation, bone: int, time: float) -> Vector3:
+	var chain: Array[int] = []
+	while bone >= 0:
+		chain.push_front(bone)
+		bone = _skeleton.get_bone_parent(bone)
+	var pose := Transform3D()
+	for b in chain:
+		var rest := _skeleton.get_bone_rest(b)
+		var path := NodePath("%GeneralSkeleton:" + _skeleton.get_bone_name(b))
+		var position := rest.origin
+		var rotation := rest.basis.get_rotation_quaternion()
+		var track := anim.find_track(path, Animation.TYPE_POSITION_3D)
+		if track >= 0:
+			position = anim.position_track_interpolate(track, time) * _skeleton.motion_scale
+		track = anim.find_track(path, Animation.TYPE_ROTATION_3D)
+		if track >= 0:
+			rotation = anim.rotation_track_interpolate(track, time)
+		pose = pose * Transform3D(Basis(rotation), position)
+	return pose.origin
+
+
+func _cycle(delta: float) -> Array:
+	if _tree.get("parameters/State/current_state") != &"move":
+		return []
+	var length: float = _tree.get("parameters/Move/current_length")
+	if length <= 0.0:
+		return []
+	var clip := _move.get_blend_point_node(0) as AnimationNodeAnimation
+	var half := clip.start_offset / clip.timeline_length if clip.use_custom_timeline else 0.0
+	var phase := fposmod(_tree.get("parameters/Move/current_position") / length + half, 1.0)
+	var advance := fposmod(phase - _phase, 1.0)
+	_phase = phase
+	if advance > 0.0 and advance < 0.5 and delta > 0.0:
+		length = delta / advance
+	var at: float = _tree.get("parameters/Move/blend_position")
+	var weights := []
+	for p in _move.get_blend_point_count():
+		weights.append(0.0)
+	var count := _move.get_blend_point_count()
+	if at <= _move.get_blend_point_position(0):
+		weights[0] = 1.0
+	elif at >= _move.get_blend_point_position(count - 1):
+		weights[count - 1] = 1.0
+	else:
+		for p in count - 1:
+			var a := _move.get_blend_point_position(p)
+			var b := _move.get_blend_point_position(p + 1)
+			if at >= a and at <= b:
+				weights[p + 1] = (at - a) / (b - a)
+				weights[p] = 1.0 - weights[p + 1]
+	var legs := []
+	for i in LEGS.size():
+		var leg := {"stance": 0.0, "off": 0.0, "strike": 0.0, "off_z": 0.0, "strike_z": 0.0, "off_ankle": Vector3.ZERO, "off_toes": Vector3.ZERO, "strike_ankle": Vector3.ZERO, "strike_toes": Vector3.ZERO}
+		var first: float = _cycles[0][i].stance
+		for p in count:
+			var w: float = weights[p]
+			var c: Dictionary = _cycles[p][i]
+			leg.stance += w * (first + wrapf(c.stance - first, -0.5, 0.5))
+			for key in ["off", "strike", "off_z", "strike_z", "off_ankle", "off_toes", "strike_ankle", "strike_toes"]:
+				leg[key] += w * c[key]
+		leg.time = fposmod(phase - leg.stance, 1.0)
+		leg.length = length
+		legs.append(leg)
+	return legs
+
+
 func _ground(delta: float) -> void:
 	var space := _skeleton.global_transform
 	var floor_y := space.origin.y
@@ -89,12 +232,58 @@ func _ground(delta: float) -> void:
 		moved = floor_y - _floor_y
 	_floor_y = floor_y
 	
+	var cycle := _cycle(delta) if grounded else []
+	var heights := [floor_y, floor_y]
+	var flights := [0.0, 0.0]
 	for i in LEGS.size():
 		var ankle := space * _skeleton.get_bone_global_pose(_bones[i][2]).origin
 		var toes := space * _skeleton.get_bone_global_pose(_bones[i][3]).origin
-		var forward := ((toes - ankle) * Vector3(1, 0, 1)).normalized()
+		if not grounded:
+			_height_from[i] = NAN
+			continue
+		var swinging: bool = not cycle.is_empty() and cycle[i].time > cycle[i].off and cycle[i].time < cycle[i].strike
+		if not swinging or is_nan(_height_from[i]):
+			
+			_offset_from[i] = _offset[i]
+			_offset_to[i] = _offset[i]
+			_shift[i] = NAN
+			_progress[i] = 0.0
+			var under := _ground_at(ankle + _offset[i], toes + _offset[i], floor_y, TREAD_REACH)
+			heights[i] = under
+			_height_from[i] = under
+			continue
+		
+		var leg: Dictionary = cycle[i]
+		var velocity: Vector3 = _body.velocity * Vector3(1, 0, 1)
+		var next := _height_from[i]
+		if velocity.length() > 0.1:
+			var footprint := _footprint(space, leg, velocity, floor_y, 0.0 if is_nan(_shift[i]) else _shift[i])
+			_shift[i] = footprint[0]
+			_offset_to[i] = velocity.normalized() * footprint[0]
+			next = footprint[1]
+		var z := _skeleton.get_bone_global_pose(_bones[i][2]).origin.z
+		var s := maxf(_progress[i], clampf(inverse_lerp(leg.off_z, leg.strike_z, z), 0.0, 1.0))
+		_progress[i] = s
+		_offset[i] = _offset[i].move_toward(_offset_from[i].lerp(_offset_to[i], s), SLIDE * delta)
+		
+		var arc := absf(next - _height_from[i]) / PI
+		heights[i] = lerpf(_height_from[i], next, s) + arc * sin(PI * s)
+		flights[i] = sin(PI * (leg.time - leg.off) / (leg.strike - leg.off))
+	
+	if not cycle.is_empty():
+		var total := 0.0
+		var support := 0.0
+		for i in LEGS.size():
+			var w := (cos(TAU * cycle[i].time) + 1.0) * 0.5 + SUPPORT
+			total += w
+			support += w * heights[i]
+		support /= total
+		for i in LEGS.size():
+			heights[i] = maxf(heights[i], lerpf(heights[i], support, flights[i]))
+	
+	for i in LEGS.size():
 		if grounded:
-			lift[i] = maxf(_floor_under(ankle - forward * HEEL, floor_y), _floor_under(toes + forward * TIP, floor_y)) - floor_y
+			lift[i] = heights[i] - floor_y
 		_foot[i] = _spring(_carried(_foot[i], lift[i], moved), lift[i], FOOT_SPRING, delta)
 	
 	var hip_target := _pelvis(space)
@@ -104,7 +293,7 @@ func _ground(delta: float) -> void:
 		var hip := space * _skeleton.get_bone_global_pose(_bones[i][0]).origin
 		var knee := space * _skeleton.get_bone_global_pose(_bones[i][1]).origin
 		var ankle := space * _skeleton.get_bone_global_pose(_bones[i][2]).origin
-		var target := ankle + Vector3.UP * _foot[i].x
+		var target := ankle + _offset[i] + Vector3.UP * _foot[i].x
 		var reach := _reach(hip, knee, ankle)
 		var from_hip := target - (hip + Vector3.UP * _hip.x)
 		if from_hip.length() > reach:
@@ -126,6 +315,48 @@ func _ground(delta: float) -> void:
 	_skeleton.set_bone_pose_position(_hips, pose + up)
 
 
+func _footprint(space: Transform3D, leg: Dictionary, velocity: Vector3, floor_y: float, prefer: float) -> Array:
+	var dir := velocity.normalized()
+	var at_strike: Vector3 = space.origin + velocity * leg.length * (leg.strike - leg.time)
+	var at_off: Vector3 = space.origin + velocity * leg.length * (1.0 + leg.off - leg.time)
+	var heel_strike: Vector3 = at_strike + space.basis * leg.strike_ankle - dir * HEEL
+	var origin := heel_strike * Vector3(1, 0, 1)
+	var heel := [0.0, (at_off + space.basis * leg.off_ankle - dir * HEEL - heel_strike).dot(dir)]
+	var toe := [(at_strike + space.basis * leg.strike_toes + dir * TIP - heel_strike).dot(dir), (at_off + space.basis * leg.off_toes + dir * TIP - heel_strike).dot(dir)]
+	var first := minf(heel[0], heel[1]) - SHIFT - MARGIN
+	var last := maxf(toe[0], toe[1]) + SHIFT + MARGIN
+	var count := int(ceil((last - first) / STEP)) + 1
+	var heights: Array[float] = []
+	for k in count:
+		heights.append(_floor_under(origin + dir * (first + k * STEP), floor_y, TREAD_REACH + last))
+	var limit := int(round(SHIFT / STEP))
+	var order: Array[int] = []
+	for n in range(-limit, limit + 1):
+		order.append(n)
+	order.sort_custom(func(x: int, y: int) -> bool: return absf(x * STEP - prefer) < absf(y * STEP - prefer))
+	var fallback := [0.0, NAN]
+	for n in order:
+		var d := n * STEP
+		var low := INF
+		var high := -INF
+		for t in SWEEP:
+			var f := float(t) / (SWEEP - 1)
+			for m in [-MARGIN, 0.0, MARGIN]:
+				var h := maxf(heights[int(round((lerpf(heel[0], heel[1], f) + d + m - first) / STEP))], heights[int(round((lerpf(toe[0], toe[1], f) + d + m - first) / STEP))])
+				low = minf(low, h)
+				high = maxf(high, h)
+		if is_nan(fallback[1]):
+			fallback = [d, high]
+		if high - low <= EDGE:
+			return [d, high]
+	return fallback
+
+
+func _ground_at(ankle: Vector3, toes: Vector3, floor_y: float, reach: float) -> float:
+	var forward := ((toes - ankle) * Vector3(1, 0, 1)).normalized()
+	return maxf(_floor_under(ankle - forward * HEEL, floor_y, reach), _floor_under(toes + forward * TIP, floor_y, reach))
+
+
 func _carried(state: Vector2, target: float, moved: float) -> Vector2:
 	if signf(target - state.x) == -signf(moved):
 		state.x = move_toward(state.x, target, absf(moved))
@@ -143,7 +374,7 @@ func _pelvis(space: Transform3D) -> float:
 		var ankle_local := _skeleton.get_bone_global_pose(_bones[i][2]).origin
 		var toes_local := _skeleton.get_bone_global_pose(_bones[i][3]).origin
 		var ankle := space * ankle_local
-		var target := ankle + Vector3.UP * _foot[i].x
+		var target := ankle + _offset[i] + Vector3.UP * _foot[i].x
 		var want := hip.distance_to(ankle)
 		var full := hip.distance_to(knee) + knee.distance_to(ankle)
 		var h := Vector2(target.x - hip.x, target.z - hip.z).length()
@@ -180,8 +411,8 @@ func _restore() -> void:
 		_skeleton.set_bone_pose_rotation(foot, local.get_rotation_quaternion())
 
 
-func _floor_under(point: Vector3, floor_y: float) -> float:
-	var hit := _ray(point, floor_y, TREAD_REACH, FOOT_GROUND)
+func _floor_under(point: Vector3, floor_y: float, reach := TREAD_REACH) -> float:
+	var hit := _ray(point, floor_y, reach, FOOT_GROUND)
 	if hit.is_empty():
 		hit = _ray(point, floor_y, REACH, _body.collision_mask)
 	if hit.is_empty() or hit.normal.y < 0.7:
