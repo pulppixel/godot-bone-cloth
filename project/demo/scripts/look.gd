@@ -3,8 +3,8 @@ extends Node
 
 const BODY := [
 	[&"UpperChest", Vector2(25.0, 10.0), 0.7],
-	[&"Neck", Vector2(35.0, 15.0), 0.7],
-	[&"Head", Vector2(45.0, 20.0), 0.85],
+	[&"Neck", Vector2(35.0, 30.0), 0.7],
+	[&"Head", Vector2(45.0, 30.0), 0.85],
 ]
 const EYE_LIMIT := Vector2(10.0, 10.0)
 const HEAD_FOLLOW := 3.5
@@ -116,7 +116,8 @@ func _process(delta: float) -> void:
 	# 1
 	var camera := get_viewport().get_camera_3d()
 	var stepping := _speed() > MOVING
-	var walking := stepping and float(_tree.get("parameters/Move/blend_position")) < RUN_FROM
+	var clip_speed := float(_tree.get("parameters/Move/blend_position")) * float(_tree.get("parameters/MoveRate/scale"))
+	var walking := stepping and clip_speed < RUN_FROM
 	var sees := camera != null and _within(camera.global_position - eyes, REACH_OUT if _at_camera else REACH)
 	if not walking:
 		_walk_glance = false

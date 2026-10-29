@@ -80,7 +80,7 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	_time += delta
 	var state: StringName = _tree.get("parameters/State/current_state")
-	var speed: float = _tree.get("parameters/Move/blend_position")
+	var speed: float = _tree.get("parameters/Move/blend_position") * _tree.get("parameters/MoveRate/scale")
 	if state == &"land" and _last_state != &"land":
 		_land_time = _time
 	_last_state = state
