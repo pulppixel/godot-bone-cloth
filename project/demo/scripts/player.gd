@@ -15,6 +15,7 @@ const EXIT_FROM := 0.95
 const EXIT_AT := 0.45
 const EXIT_WINDOW := 0.075
 const EXIT_STOP := 0.45
+const EXIT_GRACE := 0.2
 const FLAT_AHEAD := 3.0
 const FLAT_RISE := 0.03
 
@@ -23,7 +24,7 @@ const FLAT_RISE := 0.03
 @export var run_speed := RUN
 @export var acceleration := 20.0
 @export var deceleration := 25.0
-@export var run_brake := 2.5
+@export var run_brake := 6.0
 
 @export_group("Turn")
 @export var turn_speed_deg := 360.0
@@ -66,6 +67,8 @@ var _clip_length := 0.0
 var _stop_decel := 0.0
 var _brake := 0.0
 var _after_enter := false
+var _since_top := INF
+var _exit_pending := false
 
 @onready var _skin: Node3D = $Skin
 @onready var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
@@ -112,7 +115,12 @@ func _physics_process(delta: float) -> void:
 		_request(&"start")
 	var turned := 0.0
 	var clip_now := Vector2(velocity.x, velocity.z).length() / _scale
-	var exit_wait := state == State.GROUND and _anim == &"move" and direction.is_zero_approx() and clip_now >= EXIT_FROM * run_speed and _flat_ahead(Vector3(velocity.x, 0.0, velocity.z).normalized())
+	_since_top = 0.0 if clip_now >= EXIT_FROM * run_speed else _since_top + delta
+	if state != State.GROUND or _anim != &"move" or not direction.is_zero_approx():
+		_exit_pending = false
+	elif not _exit_pending and _since_top <= EXIT_GRACE and _flat_ahead(Vector3(velocity.x, 0.0, velocity.z).normalized()):
+		_exit_pending = true
+	var exit_wait := _exit_pending
 	if _anim == &"start":
 		_clip_time += delta
 		var yaw := atan2(direction.x, direction.z) if not direction.is_zero_approx() else _skin.rotation.y
@@ -128,7 +136,7 @@ func _physics_process(delta: float) -> void:
 		velocity.z = flat.z
 	elif not exit_wait:
 		var braking := state == State.GROUND and _anim == &"move" and direction.is_zero_approx() and clip_now > 0.0
-		_brake = run_brake if braking and clip_now > walk_speed else deceleration
+		_brake = run_brake if braking and clip_now > walk_speed + 0.01 else deceleration
 		turned = _steer(direction, top_speed, delta)
 	
 	if state == State.GROUND and Input.is_action_just_pressed("jump"):

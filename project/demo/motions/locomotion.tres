@@ -21,11 +21,11 @@ animation = &"demo_motions/Jump"
 
 [sub_resource type="AnimationNodeTransition" id="AnimationNodeTransition_f62kf"]
 input_0/name = "loop"
-input_0/auto_advance = true
+input_0/auto_advance = false
 input_0/break_loop_at_end = false
 input_0/reset = true
 input_1/name = "enter"
-input_1/auto_advance = false
+input_1/auto_advance = true
 input_1/break_loop_at_end = false
 input_1/reset = true
 
@@ -82,11 +82,11 @@ blend_point_1/name = &"demo_motions_Sprint"
 
 [sub_resource type="AnimationNodeTransition" id="AnimationNodeTransition_kbd4f"]
 input_0/name = "still"
-input_0/auto_advance = true
+input_0/auto_advance = false
 input_0/break_loop_at_end = false
 input_0/reset = true
 input_1/name = "exit"
-input_1/auto_advance = false
+input_1/auto_advance = true
 input_1/break_loop_at_end = false
 input_1/reset = true
 
@@ -121,7 +121,7 @@ input_4/break_loop_at_end = false
 input_4/reset = true
 
 [resource]
-graph_offset = Vector2(-90.83236, -417.8069)
+graph_offset = Vector2(367.28137, -342.83765)
 nodes/output/position = Vector2(2346.6667, -106.666664)
 nodes/Idle/node = SubResource("AnimationNodeAnimation_jx6rg")
 nodes/Idle/position = Vector2(520, -680)
