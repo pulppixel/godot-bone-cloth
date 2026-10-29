@@ -38,9 +38,6 @@ animation = &"demo_motions/Jog_Fwd_LeanR"
 [sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_m1lne"]
 animation = &"demo_motions/Walk"
 
-[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_0bo5f"]
-animation = &"demo_motions/Jog_Fwd"
-
 [sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_tumy4"]
 animation = &"demo_motions/Sprint"
 
@@ -51,12 +48,11 @@ sync_mode = 2
 blend_point_0/node = SubResource("AnimationNodeAnimation_m1lne")
 blend_point_0/pos = 1.06
 blend_point_0/name = &"demo_motions_Walk"
-blend_point_1/node = SubResource("AnimationNodeAnimation_0bo5f")
-blend_point_1/pos = 5.84
-blend_point_1/name = &"demo_motions_Jog_Fwd"
-blend_point_2/node = SubResource("AnimationNodeAnimation_tumy4")
-blend_point_2/pos = 9.0
-blend_point_2/name = &"demo_motions_Sprint"
+blend_point_1/node = SubResource("AnimationNodeAnimation_tumy4")
+blend_point_1/pos = 9.0
+blend_point_1/name = &"demo_motions_Sprint"
+
+[sub_resource type="AnimationNodeTimeScale" id="AnimationNodeTimeScale_8yaut"]
 
 [sub_resource type="AnimationNodeBlend3" id="AnimationNodeBlend3_7jeql"]
 
@@ -84,11 +80,12 @@ input_4/break_loop_at_end = false
 input_4/reset = true
 
 [resource]
+graph_offset = Vector2(-116.838524, -105.33793)
 nodes/output/position = Vector2(1613.3334, -400)
 nodes/Idle/node = SubResource("AnimationNodeAnimation_jx6rg")
 nodes/Idle/position = Vector2(480, -373.33334)
 nodes/Move/node = SubResource("AnimationNodeBlendSpace1D_g8oy1")
-nodes/Move/position = Vector2(346.66666, 26.666666)
+nodes/Move/position = Vector2(213.33333, 53.333332)
 nodes/JumpStart/node = SubResource("AnimationNodeAnimation_i76fu")
 nodes/JumpStart/position = Vector2(600, 413.33334)
 nodes/Fall/node = SubResource("AnimationNodeAnimation_g8oy1")
@@ -117,4 +114,6 @@ nodes/IdleMirror/node = SubResource("AnimationNodeAnimation_awgyb")
 nodes/IdleMirror/position = Vector2(426.66666, -186.66667)
 nodes/IdleFoot/node = SubResource("AnimationNodeBlend2_8yaut")
 nodes/IdleFoot/position = Vector2(800, -386.66666)
-node_connections = [&"output", 0, &"State", &"State", 0, &"IdleFoot", &"State", 1, &"Lean", &"State", 2, &"JumpStart", &"State", 3, &"Fall", &"State", 4, &"Land", &"Side", 0, &"LeanL", &"Side", 1, &"LeanJog", &"Side", 2, &"LeanR", &"LeanOnly", 0, &"Side", &"LeanOnly", 1, &"LeanBase", &"LeanPhase", 0, &"LeanOnly", &"Lean", 0, &"Move", &"Lean", 1, &"LeanPhase", &"IdleFoot", 0, &"Idle", &"IdleFoot", 1, &"IdleMirror"]
+nodes/MoveRate/node = SubResource("AnimationNodeTimeScale_8yaut")
+nodes/MoveRate/position = Vector2(440, 13.333333)
+node_connections = [&"output", 0, &"State", &"State", 0, &"IdleFoot", &"State", 1, &"Lean", &"State", 2, &"JumpStart", &"State", 3, &"Fall", &"State", 4, &"Land", &"Side", 0, &"LeanL", &"Side", 1, &"LeanJog", &"Side", 2, &"LeanR", &"LeanOnly", 0, &"Side", &"LeanOnly", 1, &"LeanBase", &"LeanPhase", 0, &"LeanOnly", &"Lean", 0, &"MoveRate", &"Lean", 1, &"LeanPhase", &"IdleFoot", 0, &"Idle", &"IdleFoot", 1, &"IdleMirror", &"MoveRate", 0, &"Move"]

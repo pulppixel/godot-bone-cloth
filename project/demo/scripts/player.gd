@@ -43,6 +43,7 @@ var _scale := 1.0
 var _anim := &"idle"
 var _lean := 0.0
 var _lean_length := 1.0
+var _sprint_at := 0.0
 var _half := 0.0
 var _step_offset := 0.0
 var _step_speed := 0.0
@@ -70,6 +71,8 @@ func use(character: Node3D) -> void:
 	_tree.set("parameters/Lean/add_amount", 1.0)
 	var player: AnimationPlayer = character.get_node("AnimationPlayer")
 	_lean_length = player.get_animation(&"demo_motions/Jog_Fwd_LeanR").length
+	var move: AnimationNodeBlendSpace1D = (_tree.tree_root as AnimationNodeBlendTree).get_node(&"Move")
+	_sprint_at = move.get_blend_point_position(1)
 
 func _process(_delta: float) -> void:
 	var length: float = _tree.get("parameters/Move/current_length")
@@ -117,7 +120,12 @@ func _physics_process(delta: float) -> void:
 	
 	var facing := Vector3(velocity.x, 0.0, velocity.z) if speed > STOP_SPEED else direction
 	_turn_skin(facing, delta)
-	_tree.set("parameters/Move/blend_position", speed / _scale)
+	var clip := speed / _scale
+	var rate := 1.0
+	if clip > walk_speed:
+		rate = clip / lerpf(walk_speed, _sprint_at, clampf(inverse_lerp(walk_speed, run_speed, clip), 0.0, 1.0))
+	_tree.set("parameters/MoveRate/scale", rate)
+	_tree.set("parameters/Move/blend_position", clip / rate)
 	
 	var lean_target := clampf(-turned / delta * speed / turn_grip, -1.0, 1.0)
 	_lean = lerpf(_lean, lean_target, 1.0 - exp(-delta / lean_time))
