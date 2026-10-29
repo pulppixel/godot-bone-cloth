@@ -127,9 +127,8 @@ func _ground(delta: float) -> void:
 
 
 func _carried(state: Vector2, target: float, moved: float) -> Vector2:
-	var carried := state.x - moved
-	if absf(carried - target) < absf(state.x - target):
-		state.x = carried
+	if signf(target - state.x) == -signf(moved):
+		state.x = move_toward(state.x, target, absf(moved))
 	return state
 
 
