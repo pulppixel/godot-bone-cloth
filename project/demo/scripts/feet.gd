@@ -75,6 +75,9 @@ func _ready() -> void:
 		_bones.append(leg.map(func(bone: StringName) -> int: return _skeleton.find_bone(bone)))
 		var target := Node3D.new()
 		var pole := Node3D.new()
+		for marker in [target, pole]:
+			marker.visible = false
+			marker.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 		add_child(target)
 		add_child(pole)
 		_targets.append(target)
@@ -225,7 +228,7 @@ func _cycle(delta: float) -> Array:
 
 
 func _ground(delta: float) -> void:
-	var space := _skeleton.global_transform
+	var space := _skeleton.get_global_transform_interpolated()
 	var floor_y := space.origin.y
 	var grounded := _body.is_on_floor()
 	var lift := [0.0, 0.0]

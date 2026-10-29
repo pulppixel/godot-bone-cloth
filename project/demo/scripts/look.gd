@@ -65,6 +65,9 @@ func _ready() -> void:
 	_body = node
 	_head_target = Node3D.new()
 	_eye_target = Node3D.new()
+	for marker in [_head_target, _eye_target]:
+		marker.visible = false
+		marker.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	add_child(_head_target)
 	add_child(_eye_target)
 	for part in BODY:
@@ -115,10 +118,11 @@ func _process(delta: float) -> void:
 	
 	# 1
 	var camera := get_viewport().get_camera_3d()
+	var camera_at := camera.get_global_transform_interpolated().origin if camera != null else Vector3.ZERO
 	var stepping := _speed() > MOVING
 	var clip_speed := float(_tree.get("parameters/Move/blend_position")) * float(_tree.get("parameters/MoveRate/scale"))
 	var walking := stepping and clip_speed < RUN_FROM
-	var sees := camera != null and _within(camera.global_position - eyes, REACH_OUT if _at_camera else REACH)
+	var sees := camera != null and _within(camera_at - eyes, REACH_OUT if _at_camera else REACH)
 	if not walking:
 		_walk_glance = false
 		_next_walk_glance = _time + randf_range(WALK_AHEAD_TIME.x, WALK_AHEAD_TIME.y)
@@ -130,8 +134,8 @@ func _process(delta: float) -> void:
 	var goal := Vector2.ZERO
 	var distance := AHEAD
 	if _at_camera:
-		goal = _direction(camera.global_position - eyes)
-		distance = eyes.distance_to(camera.global_position)
+		goal = _direction(camera_at - eyes)
+		distance = eyes.distance_to(camera_at)
 	elif stepping:
 		goal = Vector2(_direction(_body.velocity).x, deg_to_rad(WALK_PITCH if walking else RUN_PITCH))
 	else:
@@ -219,5 +223,5 @@ func _facing() -> float:
 
 
 func _eye_height_point() -> Vector3:
-	var head := _skeleton.global_transform * _skeleton.get_bone_global_pose(_skeleton.find_bone(&"Head"))
+	var head := _skeleton.get_global_transform_interpolated() * _skeleton.get_bone_global_pose(_skeleton.find_bone(&"Head"))
 	return head.origin + Vector3(0.0, 0.06, 0.0)
