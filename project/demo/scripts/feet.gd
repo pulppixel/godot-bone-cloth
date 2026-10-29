@@ -183,7 +183,7 @@ func _clip_bone(anim: Animation, bone: int, time: float) -> Vector3:
 
 
 func _cycle(delta: float) -> Array:
-	if _tree.get("parameters/State/current_state") != &"move":
+	if _tree.get("parameters/State/current_state") != &"move" or _tree.get("parameters/Gait/current_state") != &"loop":
 		return []
 	var length: float = _tree.get("parameters/Move/current_length")
 	if length <= 0.0:
@@ -291,6 +291,8 @@ func _ground(delta: float) -> void:
 		var knee := space * _skeleton.get_bone_global_pose(_bones[i][1]).origin
 		var ankle := space * _skeleton.get_bone_global_pose(_bones[i][2]).origin
 		var target := ankle + _offset[i] + Vector3.UP * _foot[i].x
+		if grounded and cycle.is_empty():
+			target.y = maxf(target.y, heights[i] + _skeleton.get_bone_global_rest(_bones[i][2]).origin.y * space.basis.get_scale().y)
 		var reach := _reach(hip, knee, ankle)
 		var from_hip := target - (hip + Vector3.UP * _hip.x)
 		if from_hip.length() > reach:

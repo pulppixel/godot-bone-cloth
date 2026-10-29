@@ -10,12 +10,20 @@ const RUN := 5.844
 
 const STOP_SPEED := 0.2
 const SHARP_TURN := deg_to_rad(140.0)
+const START_CONE := deg_to_rad(45.0)
+const EXIT_FROM := 0.95
+const EXIT_AT := 0.45
+const EXIT_WINDOW := 0.075
+const EXIT_STOP := 0.45
+const FLAT_AHEAD := 3.0
+const FLAT_RISE := 0.03
 
 @export_group("Speed")
 @export var walk_speed := WALK
 @export var run_speed := RUN
 @export var acceleration := 20.0
 @export var deceleration := 25.0
+@export var run_brake := 2.5
 
 @export_group("Turn")
 @export var turn_speed_deg := 360.0
@@ -50,6 +58,14 @@ var _step_speed := 0.0
 var _ground_normal := Vector3.UP
 var _skin_y := 0.0
 var _rig_y := 0.0
+var _enter: Animation
+var _enter_root := -1
+var _exit_length := 0.0
+var _clip_time := 0.0
+var _clip_length := 0.0
+var _stop_decel := 0.0
+var _brake := 0.0
+var _after_enter := false
 
 @onready var _skin: Node3D = $Skin
 @onready var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
@@ -67,12 +83,18 @@ func use(character: Node3D) -> void:
 	_left_foot = _skeleton.find_bone(&"LeftFoot")
 	_right_foot = _skeleton.find_bone(&"RightFoot")
 	_tree.set("parameters/State/transition_request", _anim)
+	_tree.set("parameters/Gait/transition_request", &"loop")
+	_tree.set("parameters/Rest/transition_request", &"still")
 	_tree.set("parameters/LeanOnly/sub_amount", 1.0)
 	_tree.set("parameters/Lean/add_amount", 1.0)
 	var player: AnimationPlayer = character.get_node("AnimationPlayer")
 	_lean_length = player.get_animation(&"demo_motions/Jog_Fwd_LeanR").length
 	var move: AnimationNodeBlendSpace1D = (_tree.tree_root as AnimationNodeBlendTree).get_node(&"Move")
 	_sprint_at = move.get_blend_point_position(1)
+	_tree.root_motion_track = ^"%GeneralSkeleton:Root"
+	_enter = player.get_animation(&"demo_motions/Sprint_Enter")
+	_enter_root = _enter.find_track(^"%GeneralSkeleton:Root", Animation.TYPE_POSITION_3D)
+	_exit_length = player.get_animation(&"demo_motions/Sprint_Exit").length
 
 func _process(_delta: float) -> void:
 	var length: float = _tree.get("parameters/Move/current_length")
@@ -83,10 +105,31 @@ func _process(_delta: float) -> void:
 
 
 func _physics_process(delta: float) -> void:
-	var input := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
+	var input := Input.get_vector("move_left", "move_right", "move_forward", "move_back").normalized()
 	var direction := Basis(Vector3.UP, camera_rig.rotation.y) * Vector3(input.x, 0.0, input.y)
 	var top_speed := (run_speed if Input.is_action_pressed("run") else walk_speed) * _scale
-	var turned := _steer(direction, top_speed, delta)
+	if _can_start(direction):
+		_request(&"start")
+	var turned := 0.0
+	var clip_now := Vector2(velocity.x, velocity.z).length() / _scale
+	var exit_wait := state == State.GROUND and _anim == &"move" and direction.is_zero_approx() and clip_now >= EXIT_FROM * run_speed and _flat_ahead(Vector3(velocity.x, 0.0, velocity.z).normalized())
+	if _anim == &"start":
+		_clip_time += delta
+		var yaw := atan2(direction.x, direction.z) if not direction.is_zero_approx() else _skin.rotation.y
+		var along := _enter_speed(_clip_time) * _scale
+		velocity.x = sin(yaw) * along
+		velocity.z = cos(yaw) * along
+	elif _anim == &"stop":
+		_clip_time += delta
+		var flat := Vector3(velocity.x, 0.0, velocity.z)
+		var slower := move_toward(flat.length(), 0.0, _stop_decel * delta)
+		flat = flat.normalized() * slower if slower > 0.0 else Vector3.ZERO
+		velocity.x = flat.x
+		velocity.z = flat.z
+	elif not exit_wait:
+		var braking := state == State.GROUND and _anim == &"move" and direction.is_zero_approx() and clip_now > 0.0
+		_brake = run_brake if braking and clip_now > walk_speed else deceleration
+		turned = _steer(direction, top_speed, delta)
 	
 	if state == State.GROUND and Input.is_action_just_pressed("jump"):
 		velocity.y = sqrt(2.0 * _gravity * jump_height)
@@ -111,6 +154,21 @@ func _physics_process(delta: float) -> void:
 		state = State.GROUND
 		_tree.set("parameters/IdleFoot/blend_amount", 0.0)
 		_request(&"move" if pressing else &"land")
+	elif state == State.GROUND and _anim == &"start":
+		if not pressing:
+			_request(&"idle")
+		elif _clip_time >= _clip_length:
+			_anim = &"move"
+			_after_enter = true
+	elif state == State.GROUND and _anim == &"stop":
+		if pressing:
+			_request(&"move")
+		elif _clip_time >= _clip_length:
+			_anim = &"idle"
+	elif exit_wait:
+		var foot := _exit_foot()
+		if foot >= 0:
+			_stop(foot, speed)
 	elif state == State.GROUND and (pressing or (speed > STOP_SPEED and _anim != &"land")):
 		_request(&"move")
 	elif state == State.GROUND and _anim != &"land":
@@ -121,8 +179,12 @@ func _physics_process(delta: float) -> void:
 	var facing := Vector3(velocity.x, 0.0, velocity.z) if speed > STOP_SPEED else direction
 	_turn_skin(facing, delta)
 	var clip := speed / _scale
+	if _after_enter and (clip >= run_speed or _anim != &"move" or direction.is_zero_approx() or not Input.is_action_pressed("run")):
+		_after_enter = false
 	var rate := 1.0
-	if clip > walk_speed:
+	if _after_enter:
+		rate = clip / _sprint_at
+	elif clip > walk_speed:
 		rate = clip / lerpf(walk_speed, _sprint_at, clampf(inverse_lerp(walk_speed, run_speed, clip), 0.0, 1.0))
 	_tree.set("parameters/MoveRate/scale", rate)
 	_tree.set("parameters/Move/blend_position", clip / rate)
@@ -132,13 +194,75 @@ func _physics_process(delta: float) -> void:
 	_tree.set("parameters/Side/blend_amount", _lean)
 
 
+# anim: idle, move, start(Enter), stop(Exit), jump_start, fall, land.
 func _request(anim: StringName) -> void:
 	if anim == _anim:
 		return
-	if anim == &"move":
+	if anim == &"move" or anim == &"start":
 		_start_foot()
+	var state := anim
+	if anim == &"start":
+		state = &"move"
+		_tree.set("parameters/EnterFoot/blend_amount", _tree.get("parameters/IdleFoot/blend_amount"))
+		_tree.set("parameters/Gait/transition_request", &"enter")
+		_clip_time = 0.0
+		_clip_length = _enter.length
+	elif anim == &"move":
+		_tree.set("parameters/Gait/transition_request", &"loop")
+	elif anim == &"stop":
+		state = &"idle"
+		_tree.set("parameters/Rest/transition_request", &"exit")
+	elif anim == &"idle":
+		_tree.set("parameters/Rest/transition_request", &"still")
 	_anim = anim
-	_tree.set("parameters/State/transition_request", anim)
+	_tree.set("parameters/State/transition_request", state)
+
+
+func _can_start(direction: Vector3) -> bool:
+	if state != State.GROUND or not is_on_floor() or _anim != &"idle" or direction.is_zero_approx():
+		return false
+	if Vector2(velocity.x, velocity.z).length() > STOP_SPEED or not Input.is_action_pressed("run"):
+		return false
+	return absf(angle_difference(_skin.rotation.y, atan2(direction.x, direction.z))) <= START_CONE and _flat_ahead(direction)
+
+
+func _enter_speed(t: float) -> float:
+	var h := 1.0 / 60.0
+	var at := clampf(t, h, _enter.length - h)
+	var a := _enter.position_track_interpolate(_enter_root, at - h)
+	var b := _enter.position_track_interpolate(_enter_root, at + h)
+	return (b.z - a.z) / (2.0 * h)
+
+
+func _exit_foot() -> int:
+	var length: float = _tree.get("parameters/Move/current_length")
+	if length <= 0.0:
+		return -1
+	var phase := fposmod(float(_tree.get("parameters/Move/current_position")) / length + _half, 1.0)
+	for foot in 2:
+		if absf(angle_difference(TAU * phase, TAU * (EXIT_AT + 0.5 * foot))) <= TAU * EXIT_WINDOW:
+			return foot
+	return -1
+
+
+func _flat_ahead(dir: Vector3) -> bool:
+	var space := get_world_3d().direct_space_state
+	for k in range(0, int(FLAT_AHEAD / 0.5) + 1):
+		var from := global_position + dir * (0.5 * k) + Vector3.UP * 0.6
+		var query := PhysicsRayQueryParameters3D.create(from, from + Vector3.DOWN * 1.2, collision_mask, [get_rid()])
+		var hit := space.intersect_ray(query)
+		if hit.is_empty() or absf(hit.position.y - global_position.y) > FLAT_RISE:
+			return false
+	return true
+
+
+func _stop(foot: int, speed: float) -> void:
+	_tree.set("parameters/ExitFoot/blend_amount", float(foot))
+	_tree.set("parameters/IdleFoot/blend_amount", float(foot))
+	_clip_time = 0.0
+	_clip_length = _exit_length
+	_stop_decel = speed / EXIT_STOP
+	_request(&"stop")
 
 
 func _start_foot() -> void:
@@ -167,7 +291,7 @@ func _steer(direction: Vector3, top_speed: float, delta: float) -> float:
 	var wanted := direction.length() * top_speed
 	var turned := 0.0
 	if direction.is_zero_approx():
-		speed = move_toward(speed, 0.0, deceleration * delta)
+		speed = move_toward(speed, 0.0, _brake * delta)
 	elif speed < STOP_SPEED:
 		yaw = target
 		speed = move_toward(speed, _aligned(yaw) * wanted, acceleration * delta)
