@@ -50,10 +50,14 @@ size = Vector2(2000, 2000)
 [sub_resource type="BoxShape3D" id="BoxShape3D_4efso"]
 size = Vector3(2000, 1, 2000)
 
-[node name="Stage" type="Node3D" unique_id=287086239 node_paths=PackedStringArray("characters", "player")]
+[node name="Stage" type="Node3D" unique_id=287086239 node_paths=PackedStringArray("characters", "player", "character_buttons", "cloth_button", "time_slider", "time_value")]
 script = ExtResource("1_vknmp")
 characters = [NodePath("Player/Skin/shino"), NodePath("Player/Skin/victoria")]
 player = NodePath("Player")
+character_buttons = [NodePath("CanvasLayer/Panel/Column/Rows/Characters/Shino"), NodePath("CanvasLayer/Panel/Column/Rows/Characters/Victoria")]
+cloth_button = NodePath("CanvasLayer/Panel/Column/Rows/Cloth")
+time_slider = NodePath("CanvasLayer/Panel/Column/Rows/Time/Slider")
+time_value = NodePath("CanvasLayer/Panel/Column/Rows/Time/Value")
 
 [node name="Player" type="CharacterBody3D" parent="." unique_id=1170255093 node_paths=PackedStringArray("camera_rig")]
 floor_snap_length = 0.3
@@ -134,3 +138,92 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1.48)
 
 [node name="Stairs2" parent="." unique_id=969629693 instance=ExtResource("13_chd14")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0, 0, 15.5)
+
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=1159000478]
+
+[node name="Panel" type="PanelContainer" parent="CanvasLayer" unique_id=798988651]
+offset_left = 16.0
+offset_top = 16.0
+offset_right = 56.0
+offset_bottom = 56.0
+
+[node name="Column" type="VBoxContainer" parent="CanvasLayer/Panel" unique_id=1229383877]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="CanvasLayer/Panel/Column" unique_id=2073736199]
+layout_mode = 2
+text = "BoneCloth Demo"
+
+[node name="Rows" type="GridContainer" parent="CanvasLayer/Panel/Column" unique_id=1329713950]
+layout_mode = 2
+columns = 2
+
+[node name="CharacterLabel" type="Label" parent="CanvasLayer/Panel/Column/Rows" unique_id=358696795]
+layout_mode = 2
+
+[node name="Characters" type="HBoxContainer" parent="CanvasLayer/Panel/Column/Rows" unique_id=411622186]
+layout_mode = 2
+
+[node name="Shino" type="Button" parent="CanvasLayer/Panel/Column/Rows/Characters" unique_id=1161347795]
+layout_mode = 2
+focus_mode = 0
+toggle_mode = true
+text = "Shino"
+
+[node name="Victoria" type="Button" parent="CanvasLayer/Panel/Column/Rows/Characters" unique_id=2068495410]
+layout_mode = 2
+focus_mode = 0
+toggle_mode = true
+text = "Victoria"
+
+[node name="ClothLabel" type="Label" parent="CanvasLayer/Panel/Column/Rows" unique_id=1567420338]
+layout_mode = 2
+
+[node name="Cloth" type="CheckButton" parent="CanvasLayer/Panel/Column/Rows" unique_id=749642738]
+layout_mode = 2
+focus_mode = 0
+
+[node name="TimeLabel" type="Label" parent="CanvasLayer/Panel/Column/Rows" unique_id=486645697]
+layout_mode = 2
+
+[node name="Time" type="HBoxContainer" parent="CanvasLayer/Panel/Column/Rows" unique_id=1506712476]
+layout_mode = 2
+
+[node name="Slider" type="HSlider" parent="CanvasLayer/Panel/Column/Rows/Time" unique_id=1474898483]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+size_flags_vertical = 4
+focus_mode = 0
+max_value = 1.0
+step = 0.1
+value = 1.0
+
+[node name="Value" type="Label" parent="CanvasLayer/Panel/Column/Rows/Time" unique_id=1477933140]
+layout_mode = 2
+text = "1.0x"
+
+[node name="HSeparator" type="HSeparator" parent="CanvasLayer/Panel/Column" unique_id=944233233]
+layout_mode = 2
+
+[node name="Keys" type="HBoxContainer" parent="CanvasLayer/Panel/Column" unique_id=1870848957]
+layout_mode = 2
+
+[node name="Names" type="Label" parent="CanvasLayer/Panel/Column/Keys" unique_id=1424777217]
+layout_mode = 2
+text = "Move
+Run
+Jump
+Look
+Zoom
+Time
+Character"
+
+[node name="Help" type="Label" parent="CanvasLayer/Panel/Column/Keys" unique_id=1864533745]
+layout_mode = 2
+text = "WASD or arrows
+Shift
+Space
+Mouse after a click, Esc frees it
+Wheel
+, and .
+1, 2 (3, 4 with BoneCloth off)"

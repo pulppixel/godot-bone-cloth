@@ -79,6 +79,9 @@ func _ready() -> void:
 
 
 func use(character: Node3D) -> void:
+	if _anim == &"stop":
+		_anim = &"idle"
+		velocity = Vector3(0.0, velocity.y, 0.0)
 	_tree = character.get_node("AnimationTree")
 	_skeleton = character.find_children("*", "Skeleton3D", true, false)[0]
 	_scale = _skeleton.motion_scale
@@ -103,6 +106,9 @@ func _process(_delta: float) -> void:
 
 
 func _physics_process(delta: float) -> void:
+	if delta <= 0.0:
+		return
+	
 	var input := Input.get_vector("move_left", "move_right", "move_forward", "move_back").normalized()
 	var direction := Basis(Vector3.UP, camera_rig.rotation.y) * Vector3(input.x, 0.0, input.y)
 	_run_off = 0.0 if Input.is_action_pressed("run") else _run_off + delta
