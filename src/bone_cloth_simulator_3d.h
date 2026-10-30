@@ -35,14 +35,14 @@ private:
 		Vector3 location;
 		Vector3 prev_location;
 
-		// 이번 step에서 joint가 따라갈 pose 위치. prev_pose_location(지난 frame)과 current_pose_location(이번 frame) 사이를 보간한다.
-		// step은 천을 한 번 계산하는 단위다(1/60초 분량). frame마다 0~4번 돈다.
+		// 이번 step에서 joint가 따라갈 pose 위치.
+		// step은 천을 한 번 계산하는 단위다(1/60초 분량).
 		Vector3 pose_location;
 		Vector3 prev_pose_location;
 		Vector3 current_pose_location;
 
-		// 이번 frame에 애니메이션(과 앞선 modifier)이 만든 위치. current_pose_location은 여기에 sync로 옮긴 양을 더한 위치다.
-		// bone 회전은 이 위치를 기준으로 구한다. 그래야 sync로 기운 만큼 mesh도 기운다.
+		// 이번 frame에 애니메이션(과 앞선 modifier)이 만든 위치.
+		// bone 회전은 이 위치를 기준으로 구한다.
 		Vector3 animated_location;
 
 		// skeleton이 rest 자세일 때의 위치.
@@ -52,7 +52,7 @@ private:
 		Vector3 display_location;
 		Basis pose_basis;
 
-		// 파생 chain의 root가 이 joint다. 파생 chain마다 방향이 달라 회전 하나로 맞출 수 없으므로, pose 회전을 그대로 둔다.
+		// 파생 chain의 root가 이 joint다.
 		bool branched = false;
 
 		// chain 안에서 joint의 위치. (root: 0 ~ 가장 먼 끝 점: 1)
@@ -66,9 +66,8 @@ private:
 		float gravity = 0.0f;
 		float sync = 0.0f;
 
-		// 이번 step에 collision이 이 joint를 밀 양.
-		Vector3 collision_push;
-		int collision_count = 0;
+		// 이번 step(또는 화면 위치 계산)에 collision마다 이 joint를 민 양.
+		LocalVector<Vector3> collision_pushes;
 	};
 
 	struct Chain {
@@ -243,9 +242,10 @@ private:
 	void _move_root(Chain &r_chain, const Vector3 &p_move, const Quaternion &p_turn);
 	void _simulate(Chain &p_chain, const Vector3 &p_gravity_direction, const Vector3 &p_move, const Quaternion &p_turn);
 	void _solve_links();
-	void _collide_segment(Joint &r_a, Joint &r_b, float p_radius, const LocalVector<PosedCollision> &p_collisions, const LocalVector<bool> &p_collides_a, const LocalVector<bool> &p_collides_b);
-	void _collide(const LocalVector<PosedCollision> &p_collisions);
+	void _collide_segment(Joint &r_a, Joint &r_b, float p_radius, const LocalVector<PosedCollision> &p_collisions, const LocalVector<bool> &p_collides_a, const LocalVector<bool> &p_collides_b, Vector3 Joint::*p_field);
+	void _collide(const LocalVector<PosedCollision> &p_collisions, Vector3 Joint::*p_field);
 	void _restore_limits_and_lengths(Chain &p_chain);
+	void _restore_lengths(Chain &p_chain, Vector3 Joint::*p_field, Vector3 Joint::*p_pose_field);
 	void _update_display(Chain &p_chain, float p_follow);
 	void _write_rotations(Skeleton3D *p_skeleton, const Chain &p_chain);
 

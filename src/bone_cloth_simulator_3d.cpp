@@ -409,12 +409,31 @@ void BoneClothSimulator3D::_step(const Vector3 &p_gravity_direction, const Vecto
 	}
 
 	_solve_links();
-	_collide(p_collisions);
+	_collide(p_collisions, &Joint::location);
 	_solve_links();
 
 	for (Chain &chain : chains) {
 		_follow_parent_chain(chain);
 		_restore_limits_and_lengths(chain);
+	}
+
+	_collide(p_collisions, &Joint::location);
+	_solve_links();
+
+	for (Chain &chain : chains) {
+		_follow_parent_chain(chain);
+		_restore_lengths(chain, &Joint::location, &Joint::pose_location);
+	}
+}
+
+// bone 길이만 다시 맞춘다(각도 제한은 빼고).
+void BoneClothSimulator3D::_restore_lengths(Chain &p_chain, Vector3 Joint::*p_field, Vector3 Joint::*p_pose_field) {
+	for (uint32_t i = 1; i < p_chain.joints.size(); i++) {
+		Joint &joint = p_chain.joints[i];
+		const Joint &parent = p_chain.joints[i - 1];
+		const Vector3 pose_vector = joint.*p_pose_field - parent.*p_pose_field;
+		const Vector3 offset = joint.*p_field - parent.*p_field;
+		joint.*p_field = parent.*p_field + (offset.is_zero_approx() ? pose_vector : offset.normalized() * pose_vector.length());
 	}
 }
 
@@ -518,68 +537,75 @@ void BoneClothSimulator3D::_solve_links() {
 	}
 }
 
-// 선분 하나(r_a ~ r_b)를 collision 밖으로 밀 양을 구해서, 두 joint의 collision_push에 더한다(여기서 옮기지는 않는다).
-// collision마다 같은 시작 위치에서 민다. 민 양을 collision 개수로 평균 내고, 민 방향이 얼마나 같은지(0 ~ 1)를 곱한다.
+// 한 joint를 민 양들을 하나로 합친다.
+static Vector3 combine_pushes(const LocalVector<Vector3> &p_pushes) {
+	Vector3 direction_sum;
+	int count = 0;
+	for (const Vector3 &push : p_pushes) {
+		if (!push.is_zero_approx()) {
+			direction_sum += push.normalized();
+			count++;
+		}
+	}
+
+	if (count == 0 || direction_sum.is_zero_approx()) {
+		return Vector3();
+	}
+
+	const float agreement = MIN((direction_sum / float(count)).length(), 1.0f);
+	const Vector3 direction = direction_sum.normalized();
+	float magnitude = 0.0f;
+	for (const Vector3 &push : p_pushes) {
+		magnitude = MAX(magnitude, push.dot(direction));
+	}
+
+	return direction * magnitude * agreement;
+}
+
+// 선분 하나(r_a ~ r_b)를 collision 밖으로 밀 양을 구해서, 두 joint의 collision_pushes에 더한다(여기서 옮기지는 않는다).
+// collision마다 같은 시작 위치에서 민다. 합치는 것은 combine_pushes.
 //
 //     손 -->  |치마|  <-- 허벅지
 //
 // 위처럼 두 collision이 반대로 밀면 두 방향이 서로 지워져 선분은 거의 움직이지 않는다.
-// 하나씩 차례로 밀면 마지막 collision이 이기고, 다음 step에는 반대쪽이 이겨서 치마가 튄다.
-// 두 joint의 chain이 모두 쓰는 collision만 민다(한쪽 chain에서 뺀 collision이 link를 거쳐 그 chain을 밀지 않게).
-void BoneClothSimulator3D::_collide_segment(Joint &r_a, Joint &r_b, float p_radius, const LocalVector<PosedCollision> &p_collisions, const LocalVector<bool> &p_collides_a, const LocalVector<bool> &p_collides_b) {
-	Vector3 push_a;
-	Vector3 push_b;
-	Vector3 direction_sum;
-	int count = 0;
+void BoneClothSimulator3D::_collide_segment(Joint &r_a, Joint &r_b, float p_radius, const LocalVector<PosedCollision> &p_collisions, const LocalVector<bool> &p_collides_a, const LocalVector<bool> &p_collides_b, Vector3 Joint::*p_field) {
+	const Vector3 &location_a = r_a.*p_field;
+	const Vector3 &location_b = r_b.*p_field;
 	for (uint32_t c = 0; c < p_collisions.size(); c++) {
 		if (!p_collides_a[c] || !p_collides_b[c]) {
 			continue;
 		}
 
-		Vector3 a = r_a.location;
-		Vector3 b = r_b.location;
+		Vector3 a = location_a;
+		Vector3 b = location_b;
 		p_collisions[c].collision->collide_segment(a, b, p_radius, p_collisions[c].mirror);
-		if (a == r_a.location && b == r_b.location) {
+		if (a == location_a && b == location_b) {
 			continue;
 		}
 
 		const float rest_depth = p_collisions[c].collision->get_rest_depth(r_a.rest_location, r_b.rest_location, p_radius, p_collisions[c].mirror);
 		if (rest_depth > 0.0f) {
-			a = r_a.location;
-			b = r_b.location;
+			a = location_a;
+			b = location_b;
 			p_collisions[c].collision->collide_segment(a, b, p_radius - rest_depth, p_collisions[c].mirror);
 		}
 
-		const Vector3 moved = (a - r_a.location) + (b - r_b.location);
+		const Vector3 moved = (a - location_a) + (b - location_b);
 		if (moved.is_zero_approx()) {
 			continue;
 		}
 
-		push_a += a - r_a.location;
-		push_b += b - r_b.location;
-		direction_sum += moved.normalized();
-		count++;
+		r_a.collision_pushes.push_back(a - location_a);
+		r_b.collision_pushes.push_back(b - location_b);
 	}
-
-	if (count == 0) {
-		return;
-	}
-
-	// 민 방향이 모두 같으면 1, 서로 반대면 0에 가깝다.
-	const float agreement = MIN((direction_sum / float(count)).length(), 1.0f);
-	const float scale = agreement / float(count);
-	r_a.collision_push += push_a * scale;
-	r_a.collision_count++;
-	r_b.collision_push += push_b * scale;
-	r_b.collision_count++;
 }
 
 // collision이 천을 몸 밖으로 민다. root는 옮기지 않는다(pose나 parent chain을 따라간다).
-void BoneClothSimulator3D::_collide(const LocalVector<PosedCollision> &p_collisions) {
+// p_field: 미는 위치(location 또는 display_location).
+void BoneClothSimulator3D::_collide(const LocalVector<PosedCollision> &p_collisions, Vector3 Joint::*p_field) {
 	for (Chain &chain : chains) {
 		for (Joint &joint : chain.joints) {
-			joint.collision_push = Vector3();
-			joint.collision_count = 0;
+			joint.collision_pushes.clear();
 		}
 	}
 
@@ -587,7 +613,7 @@ void BoneClothSimulator3D::_collide(const LocalVector<PosedCollision> &p_collisi
 		for (uint32_t i = 1; i < chain.joints.size(); i++) {
 			Joint &parent = chain.joints[i - 1];
 			Joint &joint = chain.joints[i];
-			_collide_segment(parent, joint, (parent.radius + joint.radius) * 0.5f, p_collisions, chain.collides, chain.collides);
+			_collide_segment(parent, joint, (parent.radius + joint.radius) * 0.5f, p_collisions, chain.collides, chain.collides, p_field);
 		}
 	}
 
@@ -596,15 +622,13 @@ void BoneClothSimulator3D::_collide(const LocalVector<PosedCollision> &p_collisi
 		Chain &chain_b = chains[link.chain_b];
 		Joint &joint_a = chain_a.joints[link.depth];
 		Joint &joint_b = chain_b.joints[link.depth];
-		_collide_segment(joint_a, joint_b, (joint_a.radius + joint_b.radius) * 0.5f, p_collisions, chain_a.collides, chain_b.collides);
+		_collide_segment(joint_a, joint_b, (joint_a.radius + joint_b.radius) * 0.5f, p_collisions, chain_a.collides, chain_b.collides, p_field);
 	}
 
 	for (Chain &chain : chains) {
 		for (uint32_t i = 1; i < chain.joints.size(); i++) {
 			Joint &joint = chain.joints[i];
-			if (joint.collision_count > 0) {
-				joint.location += joint.collision_push / float(joint.collision_count);
-			}
+			joint.*p_field += combine_pushes(joint.collision_pushes);
 		}
 	}
 }
@@ -645,8 +669,6 @@ void BoneClothSimulator3D::_restore_limits_and_lengths(Chain &p_chain) {
 }
 
 // step이 frame보다 드물 때(슬로 모션, 60Hz보다 빠른 모니터) joint가 멈췄다 튀지 않고 매 frame 움직이게 한다.
-// 지난 step의 이동으로 다음 step 위치를 예측하고, 이번 frame 시간 비율만큼 그쪽으로 옮긴다.
-// 예측은 실제와 다를 수 있으므로, 화면 위치에도 root부터 각도 제한과 bone 길이를 다시 맞춘다.
 void BoneClothSimulator3D::_update_display(Chain &p_chain, float p_follow) {
 	// root spring이 root를 pose에서 옮긴 만큼(location - pose_location)을 이번 frame의 pose에 더한다. 스프링이 없으면 0.
 	Joint &root = p_chain.joints[0];
@@ -654,26 +676,12 @@ void BoneClothSimulator3D::_update_display(Chain &p_chain, float p_follow) {
 
 	for (uint32_t i = 1; i < p_chain.joints.size(); i++) {
 		Joint &joint = p_chain.joints[i];
-		const Joint &parent = p_chain.joints[i - 1];
 		const Vector3 next_location = joint.location + (joint.location - joint.prev_location);
 		joint.display_location = joint.display_location.lerp(next_location, p_follow);
-
-		const Vector3 pose_vector = joint.current_pose_location - parent.current_pose_location;
-		Vector3 offset = joint.display_location - parent.display_location;
-		if (limit_angle > 0.0f) {
-			offset = limit_to_cone(offset, pose_vector, joint.limit_angle);
-		}
-
-		joint.display_location = parent.display_location + offset.normalized() * pose_vector.length();
 	}
 }
 
 // frame의 마지막 단계. joint 위치를 bone 회전으로 바꿔 skeleton에 넣는다(mesh는 bone 회전으로 움직인다).
-// bone 위치는 joint의 화면 위치다. root spring이 있으면 root bone은 위치도 바뀐다.
-// bone마다 위 bone이 돈 만큼 먼저 돌고, 남은 각만큼 더 돌아서 아래 joint를 향한다.
-// pose 방향에서 바로 돌리면, 머리카락이 머리 위로 넘어갈 때(180도 근처) bone이 frame마다 비틀린다.
-// pose 방향은 sync로 옮기기 전, 애니메이션의 방향이다. pose_basis가 그 방향의 회전이기 때문이다.
-// root부터 차례로 넣어야 한다(set_bone_global_pose가 부모 bone의 pose를 쓴다).
 void BoneClothSimulator3D::_write_rotations(Skeleton3D *p_skeleton, const Chain &p_chain) {
 	Quaternion turn; // 위 bone들이 pose보다 더 회전한 양. 처음은 회전 없음.
 	for (uint32_t i = p_chain.parent_chain >= 0 ? 2 : 1; i < p_chain.joints.size(); i++) {
@@ -1819,12 +1827,18 @@ void BoneClothSimulator3D::_process_modification_with_delta(double p_delta) {
 		const double spent = teleported ? 1.0 : (step_count * STEP + dropped) / elapsed;
 		prev_skeleton_transform = prev_skeleton_transform.interpolate_with(skeleton_transform, float(spent));
 
-		// 화면 위치를 예측 위치 쪽으로 얼마나 옮길지 계산.
-		// 지난 frame부터 다음 step까지 걸리는 시간 중 이번 frame이 쓴 비율이다.
+		// 화면 위치를 예측 위치 쪽으로 얼마나 옮길지 계산한다.
 		const float follow = float(p_delta / (STEP - step_time + p_delta));
 		for (Chain &chain : chains) {
 			if (!chain.joints.is_empty()) {
 				_update_display(chain, follow);
+			}
+		}
+
+		_collide(collisions, &Joint::display_location);
+		for (Chain &chain : chains) {
+			if (!chain.joints.is_empty()) {
+				_restore_lengths(chain, &Joint::display_location, &Joint::current_pose_location);
 			}
 		}
 	}
