@@ -28,7 +28,7 @@ const STYLES := {
 const FADE := {"idle": 0.35, "thought": 0.4, "walk": 0.25, "run": 0.25, "jump_start": 0.08, "fall": 0.15, "impact": 0.06, "relief": 0.3}
 
 const WALK_SPEED := 1.064
-const RUN_SPEED := 5.844
+const RUN_SPEED := 7.65
 
 const IMPACT_TIME := 0.12
 const RELIEF_TIME := 0.8

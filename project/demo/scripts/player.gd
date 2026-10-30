@@ -5,7 +5,7 @@ enum State { GROUND, AIR }
 
 
 const WALK := 1.064
-const RUN := 5.844
+const RUN := 7.65
 
 
 const STOP_SPEED := 0.2
@@ -22,9 +22,9 @@ const FLAT_RISE := 0.03
 @export_group("Speed")
 @export var walk_speed := WALK
 @export var run_speed := RUN
-@export var acceleration := 6.0
+@export var acceleration := 12.0
 @export var deceleration := 25.0
-@export var run_brake := 6.0
+@export var run_brake := 12.0
 @export var walk_down := 14.0
 
 @export_group("Turn")
