@@ -20,6 +20,8 @@ const PURSUIT := 6.0
 const SACCADE_TRIGGER := 3.0
 const SACCADE_BASE := 0.025
 const SACCADE_PER_DEGREE := 0.0024
+const SACCADE_LATENCY := 0.125
+const CROSSING := Vector2(0.04, 0.18)
 const BLINK_SHIFT := 15.0
 const MUTUAL_TIME := Vector2(2.0, 5.0)
 const GLANCE_CHANCE := 0.35
@@ -52,6 +54,8 @@ var _move_start := 0.0
 var _move_time := 0.0
 var _glance := Vector2.ZERO
 var _next_glance := 0.0
+var _last_wanted := Vector2.ZERO
+var _saccade_at := -1.0
 
 
 func _ready() -> void:
@@ -168,9 +172,12 @@ func _process(delta: float) -> void:
 	var wanted := goal + _glance
 	var moving := _time - _move_start < _move_time
 	if not moving:
+		var last := _pursuit
 		_pursuit = _rotate_toward(_pursuit, wanted, 1.0 - exp(-PURSUIT * delta))
-		var off := rad_to_deg(_vector(_pursuit, 0.0).angle_to(_vector(wanted, 0.0)))
-		if off > SACCADE_TRIGGER:
+		if _saccade_at < 0.0 and delta > 0.0 and _wants_saccade(wanted, last, delta):
+			_saccade_at = _time + SACCADE_LATENCY
+		if _saccade_at >= 0.0 and _time >= _saccade_at:
+			_saccade_at = -1.0
 			var shift := rad_to_deg(_vector(_eye, 0.0).angle_to(_vector(wanted, 0.0)))
 			_from = _eye
 			_pursuit = wanted
@@ -181,6 +188,25 @@ func _process(delta: float) -> void:
 	var t := clampf((_time - _move_start) / _move_time, 0.0, 1.0) if _move_time > 0.0 else 1.0
 	_eye = _rotate_toward(_from, _pursuit, t)
 	_eye_target.global_position = eyes + _vector(_eye, facing) * distance
+	_last_wanted = wanted
+
+
+func _wants_saccade(wanted: Vector2, last: Vector2, delta: float) -> bool:
+	if rad_to_deg(_vector(_pursuit, 0.0).angle_to(_vector(wanted, 0.0))) <= SACCADE_TRIGGER:
+		return false
+	var error := _difference(_pursuit, wanted)
+	# slip(보려는 곳이 도는 속도 - 눈이 도는 속도, 라디안/초)
+	var slip := (_difference(_last_wanted, wanted) - _difference(last, _pursuit)) / delta
+	var closing := -slip.dot(error.normalized())
+	if closing <= 0.0:
+		return true
+	var crossing := error.length() / closing
+	return crossing < CROSSING.x or crossing > CROSSING.y
+
+
+# 방향 from에서 to까지의 차이(라디안).
+func _difference(from: Vector2, to: Vector2) -> Vector2:
+	return Vector2(angle_difference(from.x, to.x), to.y - from.y)
 
 
 func _rotate_toward(from: Vector2, to: Vector2, weight: float) -> Vector2:
