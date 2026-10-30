@@ -5,9 +5,20 @@
 [ext_resource type="PackedScene" uid="uid://dsjd8kwsev3q7" path="res://demo/characters/shino.tscn" id="3_whp8a"]
 [ext_resource type="PackedScene" uid="uid://b0nb0eek5tvfs" path="res://demo/characters/victoria.tscn" id="4_nlnu4"]
 [ext_resource type="Script" uid="uid://devckjxwpb5us" path="res://demo/scripts/camera_rig.gd" id="9_lb125"]
+[ext_resource type="Theme" uid="uid://dum5ltf2wvd6b" path="res://demo/ui/demo_theme.tres" id="9_nlnu4"]
 [ext_resource type="Material" uid="uid://bwho858lr0623" path="res://demo/stage/floor.tres" id="10_3d2ym"]
+[ext_resource type="Texture2D" uid="uid://43ak7efp6nmr" path="res://demo/ui/keys/keyboard_w_outline.png" id="10_s2avu"]
+[ext_resource type="Texture2D" uid="uid://4cdx83myc26q" path="res://demo/ui/keys/keyboard_a_outline.png" id="11_chd14"]
 [ext_resource type="MeshLibrary" uid="uid://cyqygeretjs7t" path="res://demo/stage/block_lib.meshlib" id="11_g7ck0"]
+[ext_resource type="Texture2D" uid="uid://rvhy4q3py6hl" path="res://demo/ui/keys/keyboard_s_outline.png" id="12_s2bi8"]
+[ext_resource type="Texture2D" uid="uid://c2d32r6j00kl3" path="res://demo/ui/keys/keyboard_d_outline.png" id="13_awah3"]
 [ext_resource type="PackedScene" path="res://demo/stage/stairs.tscn" id="13_chd14"]
+[ext_resource type="Texture2D" uid="uid://d1phktve4owui" path="res://demo/ui/keys/keyboard_shift_icon_outline.png" id="14_s2bi8"]
+[ext_resource type="Texture2D" uid="uid://bgjubw3qbppbb" path="res://demo/ui/keys/keyboard_space_icon_outline.png" id="15_awah3"]
+[ext_resource type="Texture2D" uid="uid://2jifiy5s4572" path="res://demo/ui/keys/mouse_move.png" id="16_as1by"]
+[ext_resource type="Texture2D" uid="uid://c0mydlwuhfugi" path="res://demo/ui/keys/mouse_scroll_outline.png" id="17_6jfhx"]
+[ext_resource type="Texture2D" uid="uid://cbog7f1qgnaot" path="res://demo/ui/keys/keyboard_1_outline.png" id="18_lb125"]
+[ext_resource type="Texture2D" uid="uid://173yvgydhqv5" path="res://demo/ui/keys/keyboard_2_outline.png" id="19_3d2ym"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_i76fu"]
 radius = 0.25
@@ -142,24 +153,32 @@ transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0, 0
 [node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=1159000478]
 
 [node name="Panel" type="PanelContainer" parent="CanvasLayer" unique_id=798988651]
-offset_left = 16.0
-offset_top = 16.0
-offset_right = 56.0
-offset_bottom = 56.0
+offset_left = 24.0
+offset_top = 20.0
+offset_right = 185.0
+offset_bottom = 133.0
+theme = ExtResource("9_nlnu4")
 
 [node name="Column" type="VBoxContainer" parent="CanvasLayer/Panel" unique_id=1229383877]
 layout_mode = 2
+theme_override_constants/separation = 6
 
 [node name="Title" type="Label" parent="CanvasLayer/Panel/Column" unique_id=2073736199]
+self_modulate = Color(1, 1, 1, 0.5019608)
 layout_mode = 2
-text = "BoneCloth Demo"
+theme_override_font_sizes/font_size = 12
+text = "BONECLOTH DEMO"
 
 [node name="Rows" type="GridContainer" parent="CanvasLayer/Panel/Column" unique_id=1329713950]
 layout_mode = 2
+theme_override_constants/h_separation = 14
 columns = 2
 
 [node name="CharacterLabel" type="Label" parent="CanvasLayer/Panel/Column/Rows" unique_id=358696795]
+self_modulate = Color(1, 1, 1, 0.6)
 layout_mode = 2
+text = "Character"
+vertical_alignment = 1
 
 [node name="Characters" type="HBoxContainer" parent="CanvasLayer/Panel/Column/Rows" unique_id=411622186]
 layout_mode = 2
@@ -169,25 +188,35 @@ layout_mode = 2
 focus_mode = 0
 toggle_mode = true
 text = "Shino"
+flat = true
 
 [node name="Victoria" type="Button" parent="CanvasLayer/Panel/Column/Rows/Characters" unique_id=2068495410]
 layout_mode = 2
 focus_mode = 0
 toggle_mode = true
 text = "Victoria"
+flat = true
 
 [node name="ClothLabel" type="Label" parent="CanvasLayer/Panel/Column/Rows" unique_id=1567420338]
+self_modulate = Color(1, 1, 1, 0.6)
 layout_mode = 2
+text = "BoneCloth"
+vertical_alignment = 1
 
 [node name="Cloth" type="CheckButton" parent="CanvasLayer/Panel/Column/Rows" unique_id=749642738]
 layout_mode = 2
+size_flags_horizontal = 0
 focus_mode = 0
 
 [node name="TimeLabel" type="Label" parent="CanvasLayer/Panel/Column/Rows" unique_id=486645697]
+self_modulate = Color(1, 1, 1, 0.6)
 layout_mode = 2
+text = "Time"
+vertical_alignment = 1
 
 [node name="Time" type="HBoxContainer" parent="CanvasLayer/Panel/Column/Rows" unique_id=1506712476]
 layout_mode = 2
+theme_override_constants/separation = 10
 
 [node name="Slider" type="HSlider" parent="CanvasLayer/Panel/Column/Rows/Time" unique_id=1474898483]
 custom_minimum_size = Vector2(120, 0)
@@ -202,28 +231,139 @@ value = 1.0
 layout_mode = 2
 text = "1.0x"
 
-[node name="HSeparator" type="HSeparator" parent="CanvasLayer/Panel/Column" unique_id=944233233]
+[node name="Prompts" type="HBoxContainer" parent="CanvasLayer" unique_id=255855788]
+anchors_preset = -1
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = -54.0
+offset_right = 40.0
+offset_bottom = -20.0
+grow_vertical = 0
+theme = ExtResource("9_nlnu4")
+
+[node name="W" type="TextureRect" parent="CanvasLayer/Prompts" unique_id=77433307]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+texture = ExtResource("10_s2avu")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="A" type="TextureRect" parent="CanvasLayer/Prompts" unique_id=535532070]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+texture = ExtResource("11_chd14")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="S" type="TextureRect" parent="CanvasLayer/Prompts" unique_id=110653386]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+texture = ExtResource("12_s2bi8")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="D" type="TextureRect" parent="CanvasLayer/Prompts" unique_id=445287018]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+texture = ExtResource("13_awah3")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Move" type="Label" parent="CanvasLayer/Prompts" unique_id=1396098930]
+self_modulate = Color(1, 1, 1, 0.7490196)
+layout_mode = 2
+text = "Move"
+vertical_alignment = 1
+
+[node name="Gap1" type="Control" parent="CanvasLayer/Prompts" unique_id=1934208626]
+custom_minimum_size = Vector2(18, 0)
 layout_mode = 2
 
-[node name="Keys" type="HBoxContainer" parent="CanvasLayer/Panel/Column" unique_id=1870848957]
+[node name="Shift" type="TextureRect" parent="CanvasLayer/Prompts" unique_id=470028885]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+texture = ExtResource("14_s2bi8")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Run" type="Label" parent="CanvasLayer/Prompts" unique_id=487363856]
+self_modulate = Color(1, 1, 1, 0.7490196)
+layout_mode = 2
+text = "Run"
+vertical_alignment = 1
+
+[node name="Gap2" type="Control" parent="CanvasLayer/Prompts" unique_id=1353038590]
+custom_minimum_size = Vector2(18, 0)
 layout_mode = 2
 
-[node name="Names" type="Label" parent="CanvasLayer/Panel/Column/Keys" unique_id=1424777217]
+[node name="Space" type="TextureRect" parent="CanvasLayer/Prompts" unique_id=574622261]
+custom_minimum_size = Vector2(28, 28)
 layout_mode = 2
-text = "Move
-Run
-Jump
-Look
-Zoom
-Time
-Character"
+texture = ExtResource("15_awah3")
+expand_mode = 1
+stretch_mode = 5
 
-[node name="Help" type="Label" parent="CanvasLayer/Panel/Column/Keys" unique_id=1864533745]
+[node name="Jump" type="Label" parent="CanvasLayer/Prompts" unique_id=135097679]
+self_modulate = Color(1, 1, 1, 0.7490196)
 layout_mode = 2
-text = "WASD or arrows
-Shift
-Space
-Mouse after a click, Esc frees it
-Wheel
-, and .
-1, 2 (3, 4 with BoneCloth off)"
+text = "Jump"
+vertical_alignment = 1
+
+[node name="Gap3" type="Control" parent="CanvasLayer/Prompts" unique_id=31362993]
+custom_minimum_size = Vector2(18, 0)
+layout_mode = 2
+
+[node name="Mouse" type="TextureRect" parent="CanvasLayer/Prompts" unique_id=1379816369]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+texture = ExtResource("16_as1by")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Look" type="Label" parent="CanvasLayer/Prompts" unique_id=1372874066]
+self_modulate = Color(1, 1, 1, 0.7490196)
+layout_mode = 2
+text = "Look"
+vertical_alignment = 1
+
+[node name="Gap4" type="Control" parent="CanvasLayer/Prompts" unique_id=1765592215]
+custom_minimum_size = Vector2(18, 0)
+layout_mode = 2
+
+[node name="Wheel" type="TextureRect" parent="CanvasLayer/Prompts" unique_id=109819468]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+texture = ExtResource("17_6jfhx")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Zoom" type="Label" parent="CanvasLayer/Prompts" unique_id=658183901]
+self_modulate = Color(1, 1, 1, 0.7490196)
+layout_mode = 2
+text = "Zoom"
+vertical_alignment = 1
+
+[node name="Gap5" type="Control" parent="CanvasLayer/Prompts" unique_id=1265470180]
+custom_minimum_size = Vector2(18, 0)
+layout_mode = 2
+
+[node name="Key1" type="TextureRect" parent="CanvasLayer/Prompts" unique_id=1022332238]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+texture = ExtResource("18_lb125")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Key2" type="TextureRect" parent="CanvasLayer/Prompts" unique_id=1121568027]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+texture = ExtResource("19_3d2ym")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Character" type="Label" parent="CanvasLayer/Prompts" unique_id=1745022766]
+self_modulate = Color(1, 1, 1, 0.7490196)
+layout_mode = 2
+text = "Character"
+vertical_alignment = 1

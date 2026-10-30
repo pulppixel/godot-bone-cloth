@@ -31,12 +31,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	
 	var index := key.physical_keycode - KEY_1
-	if index >= 0 and index < characters.size() * 2:
+	if index >= 0 and index < characters.size():
 		_show(index)
 
 
 func _show(index: int) -> void:
-	_choose(index % characters.size(), index < characters.size())
+	_choose(index, _cloth)
 
 
 func _choose(character: int, cloth: bool) -> void:
