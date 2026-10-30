@@ -269,14 +269,14 @@ func _steer(direction: Vector3, top_speed: float, delta: float) -> float:
 		yaw = target
 		speed = move_toward(speed, _aligned(yaw) * wanted, acceleration * delta)
 	elif absf(angle_difference(yaw, target)) > SHARP_TURN:
-		var change := walk_down if speed > wanted else acceleration
-		speed = move_toward(speed, _aligned(yaw) * wanted, change * delta)
+		speed = move_toward(speed, 0.0, deceleration * delta)
 	else:
 		var rate := minf(turn_grip / speed, deg_to_rad(turn_speed_deg))
 		var to := rotate_toward(yaw, target, rate * delta)
 		turned = angle_difference(yaw, to)
 		yaw = to
-		speed = move_toward(speed, _aligned(yaw) * wanted, acceleration * delta)
+		var change := walk_down if speed > wanted else acceleration
+		speed = move_toward(speed, _aligned(yaw) * wanted, change * delta)
 	velocity.x = sin(yaw) * speed
 	velocity.z = cos(yaw) * speed
 	return turned
