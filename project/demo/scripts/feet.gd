@@ -183,7 +183,7 @@ func _clip_bone(anim: Animation, bone: int, time: float) -> Vector3:
 
 
 func _cycle(delta: float) -> Array:
-	if _tree.get("parameters/State/current_state") != &"move" or _tree.get("parameters/Gait/current_state") != &"loop":
+	if _tree.get("parameters/State/current_state") != &"move":
 		return []
 	var length: float = _tree.get("parameters/Move/current_length")
 	if length <= 0.0:

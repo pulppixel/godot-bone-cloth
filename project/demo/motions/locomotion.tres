@@ -1,13 +1,5 @@
 [gd_resource type="AnimationNodeBlendTree" format=3 uid="uid://bcsixpyfun3ks"]
 
-[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_8yaut"]
-animation = &"demo_motions/Sprint_Enter"
-
-[sub_resource type="AnimationNodeBlend2" id="AnimationNodeBlend2_c0e7a"]
-
-[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_1loei"]
-animation = &"demo_motions/Sprint_Enter_Mirror"
-
 [sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_7jeql"]
 animation = &"demo_motions/Sprint_Exit"
 
@@ -18,16 +10,6 @@ animation = &"demo_motions/Sprint_Exit_Mirror"
 
 [sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_g8oy1"]
 animation = &"demo_motions/Jump"
-
-[sub_resource type="AnimationNodeTransition" id="AnimationNodeTransition_f62kf"]
-input_0/name = "loop"
-input_0/auto_advance = false
-input_0/break_loop_at_end = false
-input_0/reset = true
-input_1/name = "enter"
-input_1/auto_advance = true
-input_1/break_loop_at_end = false
-input_1/reset = true
 
 [sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_jx6rg"]
 animation = &"demo_motions/Idle"
@@ -121,12 +103,12 @@ input_4/break_loop_at_end = false
 input_4/reset = true
 
 [resource]
-graph_offset = Vector2(367.28137, -342.83765)
-nodes/output/position = Vector2(2346.6667, -106.666664)
+graph_offset = Vector2(-72.38489, -240.85664)
+nodes/output/position = Vector2(2480, -133.33333)
 nodes/Idle/node = SubResource("AnimationNodeAnimation_jx6rg")
 nodes/Idle/position = Vector2(520, -680)
 nodes/Move/node = SubResource("AnimationNodeBlendSpace1D_g8oy1")
-nodes/Move/position = Vector2(200, 146.66667)
+nodes/Move/position = Vector2(600, 146.66667)
 nodes/JumpStart/node = SubResource("AnimationNodeAnimation_i76fu")
 nodes/JumpStart/position = Vector2(1213.3334, 320)
 nodes/Fall/node = SubResource("AnimationNodeAnimation_g8oy1")
@@ -134,43 +116,35 @@ nodes/Fall/position = Vector2(1253.3334, 586.6667)
 nodes/Land/node = SubResource("AnimationNodeAnimation_uis2a")
 nodes/Land/position = Vector2(1240, 826.6667)
 nodes/State/node = SubResource("AnimationNodeTransition_jx6rg")
-nodes/State/position = Vector2(1906.6666, -133.33333)
+nodes/State/position = Vector2(1946.6666, -173.33333)
 nodes/LeanL/node = SubResource("AnimationNodeAnimation_c0e7a")
-nodes/LeanL/position = Vector2(-453.33334, 333.33334)
+nodes/LeanL/position = Vector2(-53.333332, 333.33334)
 nodes/LeanJog/node = SubResource("AnimationNodeAnimation_v7bdu")
-nodes/LeanJog/position = Vector2(-413.33334, 506.66666)
+nodes/LeanJog/position = Vector2(-26.666666, 533.3333)
 nodes/LeanR/node = SubResource("AnimationNodeAnimation_v4n3t")
-nodes/LeanR/position = Vector2(-466.66666, 680)
+nodes/LeanR/position = Vector2(-80, 733.3333)
 nodes/LeanBase/node = SubResource("AnimationNodeAnimation_s0yji")
-nodes/LeanBase/position = Vector2(-26.666666, 626.6667)
+nodes/LeanBase/position = Vector2(373.33334, 653.3333)
 nodes/Side/node = SubResource("AnimationNodeBlend3_7jeql")
-nodes/Side/position = Vector2(26.666666, 333.33334)
+nodes/Side/position = Vector2(426.66666, 333.33334)
 nodes/LeanOnly/node = SubResource("AnimationNodeSub2_awgyb")
-nodes/LeanOnly/position = Vector2(346.66666, 386.66666)
+nodes/LeanOnly/position = Vector2(746.6667, 386.66666)
 nodes/LeanPhase/node = SubResource("AnimationNodeTimeSeek_1loei")
-nodes/LeanPhase/position = Vector2(600, 280)
+nodes/LeanPhase/position = Vector2(1000, 280)
 nodes/Lean/node = SubResource("AnimationNodeAdd2_8yaut")
-nodes/Lean/position = Vector2(853.3333, 80)
+nodes/Lean/position = Vector2(1320, 0)
 nodes/IdleMirror/node = SubResource("AnimationNodeAnimation_awgyb")
 nodes/IdleMirror/position = Vector2(466.66666, -493.33334)
 nodes/IdleFoot/node = SubResource("AnimationNodeBlend2_8yaut")
 nodes/IdleFoot/position = Vector2(840, -693.3333)
 nodes/MoveRate/node = SubResource("AnimationNodeTimeScale_8yaut")
-nodes/MoveRate/position = Vector2(426.66666, 106.666664)
-nodes/Enter/node = SubResource("AnimationNodeAnimation_8yaut")
-nodes/Enter/position = Vector2(546.6667, 613.3333)
-nodes/EnterMirror/node = SubResource("AnimationNodeAnimation_1loei")
-nodes/EnterMirror/position = Vector2(506.66666, 813.3333)
-nodes/EnterFoot/node = SubResource("AnimationNodeBlend2_c0e7a")
-nodes/EnterFoot/position = Vector2(906.6667, 506.66666)
-nodes/Gait/node = SubResource("AnimationNodeTransition_f62kf")
-nodes/Gait/position = Vector2(1333.3334, -80)
-nodes/Exit/node = SubResource("AnimationNodeAnimation_7jeql")
-nodes/Exit/position = Vector2(466.66666, -266.66666)
+nodes/MoveRate/position = Vector2(826.6667, 106.666664)
+nodes/Rest/node = SubResource("AnimationNodeTransition_kbd4f")
+nodes/Rest/position = Vector2(1333.3334, -573.3333)
 nodes/ExitMirror/node = SubResource("AnimationNodeAnimation_ngaoh")
 nodes/ExitMirror/position = Vector2(413.33334, -80)
 nodes/ExitFoot/node = SubResource("AnimationNodeBlend2_6bjqp")
 nodes/ExitFoot/position = Vector2(853.3333, -306.66666)
-nodes/Rest/node = SubResource("AnimationNodeTransition_kbd4f")
-nodes/Rest/position = Vector2(1333.3334, -573.3333)
-node_connections = [&"output", 0, &"State", &"State", 0, &"Rest", &"State", 1, &"Gait", &"State", 2, &"JumpStart", &"State", 3, &"Fall", &"State", 4, &"Land", &"Side", 0, &"LeanL", &"Side", 1, &"LeanJog", &"Side", 2, &"LeanR", &"LeanOnly", 0, &"Side", &"LeanOnly", 1, &"LeanBase", &"LeanPhase", 0, &"LeanOnly", &"Lean", 0, &"MoveRate", &"Lean", 1, &"LeanPhase", &"IdleFoot", 0, &"Idle", &"IdleFoot", 1, &"IdleMirror", &"MoveRate", 0, &"Move", &"EnterFoot", 0, &"Enter", &"EnterFoot", 1, &"EnterMirror", &"Gait", 0, &"Lean", &"Gait", 1, &"EnterFoot", &"ExitFoot", 0, &"Exit", &"ExitFoot", 1, &"ExitMirror", &"Rest", 0, &"IdleFoot", &"Rest", 1, &"ExitFoot"]
+nodes/Exit/node = SubResource("AnimationNodeAnimation_7jeql")
+nodes/Exit/position = Vector2(466.66666, -266.66666)
+node_connections = [&"output", 0, &"State", &"State", 0, &"Rest", &"State", 1, &"Lean", &"State", 2, &"JumpStart", &"State", 3, &"Fall", &"State", 4, &"Land", &"Side", 0, &"LeanL", &"Side", 1, &"LeanJog", &"Side", 2, &"LeanR", &"LeanOnly", 0, &"Side", &"LeanOnly", 1, &"LeanBase", &"LeanPhase", 0, &"LeanOnly", &"Lean", 0, &"MoveRate", &"Lean", 1, &"LeanPhase", &"IdleFoot", 0, &"Idle", &"IdleFoot", 1, &"IdleMirror", &"MoveRate", 0, &"Move", &"Rest", 0, &"IdleFoot", &"Rest", 1, &"ExitFoot", &"ExitFoot", 0, &"Exit", &"ExitFoot", 1, &"ExitMirror"]
