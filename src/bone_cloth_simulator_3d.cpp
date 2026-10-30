@@ -628,7 +628,19 @@ void BoneClothSimulator3D::_collide(const LocalVector<PosedCollision> &p_collisi
 	for (Chain &chain : chains) {
 		for (uint32_t i = 1; i < chain.joints.size(); i++) {
 			Joint &joint = chain.joints[i];
-			joint.*p_field += combine_pushes(joint.collision_pushes);
+			const Vector3 push = combine_pushes(joint.collision_pushes);
+			if (p_field == &Joint::location && !push.is_zero_approx()) {
+				const Vector3 normal = push.normalized();
+				Vector3 velocity = joint.location - joint.prev_location;
+				const float into = velocity.dot(normal);
+				if (into < 0.0f) {
+					velocity -= normal * into;
+				}
+				joint.location += push;
+				joint.prev_location = joint.location - velocity;
+			} else {
+				joint.*p_field += push;
+			}
 		}
 	}
 }

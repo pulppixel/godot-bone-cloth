@@ -25,6 +25,7 @@ const FLAT_RISE := 0.03
 @export var acceleration := 6.0
 @export var deceleration := 25.0
 @export var run_brake := 6.0
+@export var walk_down := 14.0
 
 @export_group("Turn")
 @export var turn_speed_deg := 360.0
@@ -268,7 +269,8 @@ func _steer(direction: Vector3, top_speed: float, delta: float) -> float:
 		yaw = target
 		speed = move_toward(speed, _aligned(yaw) * wanted, acceleration * delta)
 	elif absf(angle_difference(yaw, target)) > SHARP_TURN:
-		speed = move_toward(speed, 0.0, deceleration * delta)
+		var change := walk_down if speed > wanted else acceleration
+		speed = move_toward(speed, _aligned(yaw) * wanted, change * delta)
 	else:
 		var rate := minf(turn_grip / speed, deg_to_rad(turn_speed_deg))
 		var to := rotate_toward(yaw, target, rate * delta)

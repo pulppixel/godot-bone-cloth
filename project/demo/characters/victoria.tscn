@@ -193,18 +193,7 @@ position_offset = Vector3(0, 0.06, -0.028)
 rotation_offset = Quaternion(0, 0, 0.7071068, 0.7071068)
 transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, -0.00048713936, 1.3660861, -0.009767443)
 
-[node name="UpperArms" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/Hair" index="4" unique_id=2108480455]
-radius = 0.07
-height = 0.249
-bone_name = "LeftUpperArm"
-bone = 81
-mirror_bone_name = "RightUpperArm"
-mirror_bone = 111
-position_offset = Vector3(0, 0.075, 0)
-rotation_offset = Quaternion(0, 0, 0, 1)
-transform = Transform3D(0, 1, 0, 0, 0, -1, -1, 0, 0, 0.18319319, 1.3784809, -0.0038465261)
-
-[node name="Back" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/Hair" index="5" unique_id=54102908]
+[node name="Back" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/Hair" index="4" unique_id=54102908]
 radius = 0.065
 height = 0.28
 bone_name = "Chest"
@@ -266,18 +255,7 @@ position_offset = Vector3(0, 0.06, -0.028)
 rotation_offset = Quaternion(0, 0, 0.7071068, 0.7071068)
 transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, -0.00048713936, 1.3660861, -0.009767443)
 
-[node name="UpperArms" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/Ponytail" index="4" unique_id=1485205111]
-radius = 0.07
-height = 0.249
-bone_name = "LeftUpperArm"
-bone = 81
-mirror_bone_name = "RightUpperArm"
-mirror_bone = 111
-position_offset = Vector3(0, 0.075, 0)
-rotation_offset = Quaternion(0, 0, 0, 1)
-transform = Transform3D(0, 1, 0, 0, 0, -1, -1, 0, 0, 0.18319319, 1.3784809, -0.0038465261)
-
-[node name="Back" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/Ponytail" index="5" unique_id=1514073371]
+[node name="Back" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/Ponytail" index="4" unique_id=1514073371]
 radius = 0.065
 height = 0.28
 bone_name = "Chest"
