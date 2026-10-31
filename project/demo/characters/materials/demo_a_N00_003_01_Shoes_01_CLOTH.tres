@@ -1,0 +1,89 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://b2kwvmy1jjjjj"]
+
+[ext_resource type="Shader" uid="uid://bta78oqjbb6g6" path="res://demo/shaders/mtoon/mtoon_outline_cutout.gdshader" id="1_o8dtd"]
+[ext_resource type="Texture2D" uid="uid://cs2fy1ibldsft" path="res://demo/characters/demo_a_Shader_NoneNormal.png" id="2_22wpo"]
+[ext_resource type="Texture2D" uid="uid://bawmemmo2qnfx" path="res://demo/characters/demo_a_Shader_NoneBlack.png" id="3_soicl"]
+[ext_resource type="Texture2D" uid="uid://c02qjhdrafhyg" path="res://demo/characters/demo_a__18.png" id="4_usqo5"]
+[ext_resource type="Texture2D" uid="uid://ium2nxedusp1" path="res://demo/characters/demo_a_MatcapWarp.png" id="5_hiyuc"]
+[ext_resource type="Shader" uid="uid://dwlpyba606kl" path="res://demo/shaders/mtoon/mtoon_cutout_cull_off.gdshader" id="6_l07q7"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_vwwn8"]
+resource_name = "N00_003_01_Shoes_01_CLOTH_Outline"
+render_priority = 0
+shader = ExtResource("1_o8dtd")
+shader_parameter/_AlphaCutoutEnable = 1.0
+shader_parameter/_Cutoff = 0.5
+shader_parameter/_Color = Color(1, 1, 1, 1)
+shader_parameter/_ShadeColor = Color(0.93333334, 0.92941177, 0.9411765, 1)
+shader_parameter/_MainTex = ExtResource("4_usqo5")
+shader_parameter/_MainTex_ST = Vector4(1, 1, 0, 0)
+shader_parameter/_ShadeTexture = ExtResource("4_usqo5")
+shader_parameter/_BumpScale = 1.0
+shader_parameter/_BumpMap = ExtResource("2_22wpo")
+shader_parameter/_ReceiveShadowRate = 1.0
+shader_parameter/_ShadingGradeRate = 1.0
+shader_parameter/_ShadeShift = 0.0
+shader_parameter/_ShadeToony = 0.9
+shader_parameter/_LightColorAttenuation = 0.0
+shader_parameter/_IndirectLightIntensity = 0.1
+shader_parameter/_RimColor = Color(0, 0, 0, 1)
+shader_parameter/_RimLightingMix = 0.0
+shader_parameter/_RimFresnelPower = 100.0
+shader_parameter/_RimLift = 0.1
+shader_parameter/_MatcapColor = Color(1, 1, 1, 1)
+shader_parameter/_SphereAdd = ExtResource("5_hiyuc")
+shader_parameter/_EmissionColor = Color(0, 0, 0, 1)
+shader_parameter/_EmissionMultiplier = 1.0
+shader_parameter/_EmissionMap = ExtResource("3_soicl")
+shader_parameter/_OutlineWidthMode = 1.0
+shader_parameter/_OutlineWidth = 0.08
+shader_parameter/_OutlineScaledMaxDistance = 1.0
+shader_parameter/_OutlineColorMode = 0.0
+shader_parameter/_OutlineColor = Color(0.2745098, 0.090196066, 0.12549016, 1)
+shader_parameter/_OutlineLightingMix = 1.0
+shader_parameter/_UvAnimScrollX = 0.0
+shader_parameter/_UvAnimRotation = 0.0
+shader_parameter/_UvAnimScrollY = 0.0
+shader_parameter/_DebugMode = 0.0
+shader_parameter/_MToonVersion = 34.0
+
+[resource]
+resource_name = "N00_003_01_Shoes_01_CLOTH"
+render_priority = 0
+next_pass = SubResource("ShaderMaterial_vwwn8")
+shader = ExtResource("6_l07q7")
+shader_parameter/_AlphaCutoutEnable = 1.0
+shader_parameter/_Cutoff = 0.5
+shader_parameter/_Color = Color(1, 1, 1, 1)
+shader_parameter/_ShadeColor = Color(0.93333334, 0.92941177, 0.9411765, 1)
+shader_parameter/_MainTex = ExtResource("4_usqo5")
+shader_parameter/_MainTex_ST = Vector4(1, 1, 0, 0)
+shader_parameter/_ShadeTexture = ExtResource("4_usqo5")
+shader_parameter/_BumpScale = 1.0
+shader_parameter/_BumpMap = ExtResource("2_22wpo")
+shader_parameter/_ReceiveShadowRate = 1.0
+shader_parameter/_ShadingGradeRate = 1.0
+shader_parameter/_ShadeShift = 0.0
+shader_parameter/_ShadeToony = 0.9
+shader_parameter/_LightColorAttenuation = 0.0
+shader_parameter/_IndirectLightIntensity = 0.1
+shader_parameter/_RimColor = Color(0, 0, 0, 1)
+shader_parameter/_RimLightingMix = 0.0
+shader_parameter/_RimFresnelPower = 100.0
+shader_parameter/_RimLift = 0.1
+shader_parameter/_MatcapColor = Color(1, 1, 1, 1)
+shader_parameter/_SphereAdd = ExtResource("5_hiyuc")
+shader_parameter/_EmissionColor = Color(0, 0, 0, 1)
+shader_parameter/_EmissionMultiplier = 1.0
+shader_parameter/_EmissionMap = ExtResource("3_soicl")
+shader_parameter/_OutlineWidthMode = 1.0
+shader_parameter/_OutlineWidth = 0.08
+shader_parameter/_OutlineScaledMaxDistance = 1.0
+shader_parameter/_OutlineColorMode = 0.0
+shader_parameter/_OutlineColor = Color(0.2745098, 0.090196066, 0.12549016, 1)
+shader_parameter/_OutlineLightingMix = 1.0
+shader_parameter/_UvAnimScrollX = 0.0
+shader_parameter/_UvAnimRotation = 0.0
+shader_parameter/_UvAnimScrollY = 0.0
+shader_parameter/_DebugMode = 0.0
+shader_parameter/_MToonVersion = 34.0

@@ -1,0 +1,92 @@
+[gd_resource type="ShaderMaterial" format=3]
+
+[ext_resource type="Shader" path="res://demo/shaders/mtoon/mtoon_outline_cutout.gdshader" id="1_3x7dh"]
+[ext_resource type="Texture2D" path="res://demo/characters/demo_c__05.png" id="2_cl6te"]
+[ext_resource type="Texture2D" path="res://demo/characters/demo_c_Shader_NoneBlack.png" id="3_xg5hd"]
+[ext_resource type="Texture2D" path="res://demo/characters/demo_c__04.png" id="4_01esl"]
+[ext_resource type="Texture2D" path="res://demo/characters/demo_c_N00_000_00_Face_00_out.png" id="5_0luid"]
+[ext_resource type="Texture2D" path="res://demo/characters/demo_c_MatcapWarp.png" id="6_0jubl"]
+[ext_resource type="Shader" path="res://demo/shaders/mtoon/mtoon_cutout_cull_off.gdshader" id="7_3mg0m"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_x57rl"]
+resource_name = "N00_000_00_Face_00_SKIN_Outline"
+render_priority = 0
+shader = ExtResource("1_3x7dh")
+shader_parameter/_AlphaCutoutEnable = 1.0
+shader_parameter/_Cutoff = 0.5
+shader_parameter/_Color = Color(1, 1, 1, 1)
+shader_parameter/_ShadeColor = Color(1, 1, 1, 1)
+shader_parameter/_MainTex = ExtResource("4_01esl")
+shader_parameter/_MainTex_ST = Vector4(1, 1, 0, 0)
+shader_parameter/_ShadeTexture = ExtResource("4_01esl")
+shader_parameter/_BumpScale = 1.0
+shader_parameter/_BumpMap = ExtResource("2_cl6te")
+shader_parameter/_ReceiveShadowRate = 1.0
+shader_parameter/_ShadingGradeRate = 1.0
+shader_parameter/_ShadeShift = -0.9
+shader_parameter/_ShadeToony = 0.0
+shader_parameter/_LightColorAttenuation = 0.0
+shader_parameter/_IndirectLightIntensity = 0.1
+shader_parameter/_RimColor = Color(0, 0, 0, 1)
+shader_parameter/_RimLightingMix = 0.0
+shader_parameter/_RimFresnelPower = 7.999984
+shader_parameter/_RimLift = 0.1
+shader_parameter/_MatcapColor = Color(1, 1, 1, 1)
+shader_parameter/_SphereAdd = ExtResource("6_0jubl")
+shader_parameter/_EmissionColor = Color(0, 0, 0, 1)
+shader_parameter/_EmissionMultiplier = 1.0
+shader_parameter/_EmissionMap = ExtResource("3_xg5hd")
+shader_parameter/_OutlineWidthMode = 1.0
+shader_parameter/_OutlineWidthTexture = ExtResource("5_0luid")
+shader_parameter/_OutlineWidth = 0.102877818
+shader_parameter/_OutlineScaledMaxDistance = 4.63
+shader_parameter/_OutlineColorMode = 0.0
+shader_parameter/_OutlineColor = Color(0.2745098, 0.090196066, 0.12549016, 1)
+shader_parameter/_OutlineLightingMix = 1.0
+shader_parameter/_UvAnimScrollX = 0.0
+shader_parameter/_UvAnimRotation = 0.0
+shader_parameter/_UvAnimScrollY = 0.0
+shader_parameter/_DebugMode = 0.0
+shader_parameter/_MToonVersion = 34.0
+
+[resource]
+resource_name = "N00_000_00_Face_00_SKIN"
+render_priority = 0
+next_pass = SubResource("ShaderMaterial_x57rl")
+shader = ExtResource("7_3mg0m")
+shader_parameter/_AlphaCutoutEnable = 1.0
+shader_parameter/_Cutoff = 0.5
+shader_parameter/_Color = Color(1, 1, 1, 1)
+shader_parameter/_ShadeColor = Color(1, 1, 1, 1)
+shader_parameter/_MainTex = ExtResource("4_01esl")
+shader_parameter/_MainTex_ST = Vector4(1, 1, 0, 0)
+shader_parameter/_ShadeTexture = ExtResource("4_01esl")
+shader_parameter/_BumpScale = 1.0
+shader_parameter/_BumpMap = ExtResource("2_cl6te")
+shader_parameter/_ReceiveShadowRate = 1.0
+shader_parameter/_ShadingGradeRate = 1.0
+shader_parameter/_ShadeShift = -0.9
+shader_parameter/_ShadeToony = 0.0
+shader_parameter/_LightColorAttenuation = 0.0
+shader_parameter/_IndirectLightIntensity = 0.1
+shader_parameter/_RimColor = Color(0, 0, 0, 1)
+shader_parameter/_RimLightingMix = 0.0
+shader_parameter/_RimFresnelPower = 7.999984
+shader_parameter/_RimLift = 0.1
+shader_parameter/_MatcapColor = Color(1, 1, 1, 1)
+shader_parameter/_SphereAdd = ExtResource("6_0jubl")
+shader_parameter/_EmissionColor = Color(0, 0, 0, 1)
+shader_parameter/_EmissionMultiplier = 1.0
+shader_parameter/_EmissionMap = ExtResource("3_xg5hd")
+shader_parameter/_OutlineWidthMode = 1.0
+shader_parameter/_OutlineWidthTexture = ExtResource("5_0luid")
+shader_parameter/_OutlineWidth = 0.102877818
+shader_parameter/_OutlineScaledMaxDistance = 4.63
+shader_parameter/_OutlineColorMode = 0.0
+shader_parameter/_OutlineColor = Color(0.2745098, 0.090196066, 0.12549016, 1)
+shader_parameter/_OutlineLightingMix = 1.0
+shader_parameter/_UvAnimScrollX = 0.0
+shader_parameter/_UvAnimRotation = 0.0
+shader_parameter/_UvAnimScrollY = 0.0
+shader_parameter/_DebugMode = 0.0
+shader_parameter/_MToonVersion = 34.0

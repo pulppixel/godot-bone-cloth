@@ -1,0 +1,46 @@
+[gd_resource type="ShaderMaterial" format=3]
+
+[ext_resource type="Shader" path="res://demo/shaders/mtoon/mtoon_cutout.gdshader" id="1_frslq"]
+[ext_resource type="Texture2D" path="res://demo/characters/demo_d_Shader_NoneNormal.png" id="2_7847m"]
+[ext_resource type="Texture2D" path="res://demo/characters/demo_d_Shader_NoneBlack.png" id="3_i4jdl"]
+[ext_resource type="Texture2D" path="res://demo/characters/demo_d__06.png" id="4_7vtfd"]
+
+[resource]
+resource_name = "N00_000_00_EyeWhite_00_EYE"
+render_priority = 0
+shader = ExtResource("1_frslq")
+shader_parameter/_AlphaCutoutEnable = 1.0
+shader_parameter/_Cutoff = 0.5
+shader_parameter/_Color = Color(1, 1, 1, 1)
+shader_parameter/_ShadeColor = Color(1, 1, 1, 1)
+shader_parameter/_MainTex = ExtResource("4_7vtfd")
+shader_parameter/_MainTex_ST = Vector4(1, 1, 0, 0)
+shader_parameter/_ShadeTexture = ExtResource("4_7vtfd")
+shader_parameter/_BumpScale = 1.0
+shader_parameter/_BumpMap = ExtResource("2_7847m")
+shader_parameter/_ReceiveShadowRate = 1.0
+shader_parameter/_ShadingGradeRate = 1.0
+shader_parameter/_ShadeShift = -0.8
+shader_parameter/_ShadeToony = 0.9
+shader_parameter/_LightColorAttenuation = 0.0
+shader_parameter/_IndirectLightIntensity = 0.1
+shader_parameter/_RimColor = Color(0, 0, 0, 1)
+shader_parameter/_RimLightingMix = 0.0
+shader_parameter/_RimFresnelPower = 100.0
+shader_parameter/_RimLift = 0.1
+shader_parameter/_MatcapColor = Color(1, 1, 1, 1)
+shader_parameter/_SphereAdd = ExtResource("3_i4jdl")
+shader_parameter/_EmissionColor = Color(0, 0, 0, 1)
+shader_parameter/_EmissionMultiplier = 1.0
+shader_parameter/_EmissionMap = ExtResource("3_i4jdl")
+shader_parameter/_OutlineWidthMode = 0.0
+shader_parameter/_OutlineWidth = 0.06
+shader_parameter/_OutlineScaledMaxDistance = 1.0
+shader_parameter/_OutlineColorMode = 1.0
+shader_parameter/_OutlineColor = Color(0.2745098, 0.090196066, 0.12549016, 1)
+shader_parameter/_OutlineLightingMix = 1.0
+shader_parameter/_UvAnimScrollX = 0.0
+shader_parameter/_UvAnimRotation = 0.0
+shader_parameter/_UvAnimScrollY = 0.0
+shader_parameter/_DebugMode = 0.0
+shader_parameter/_MToonVersion = 34.0
