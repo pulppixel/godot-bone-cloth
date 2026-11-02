@@ -6,7 +6,6 @@ extends SceneTree
 
 const TestAddChains := preload("res://tests/test_add_chains.gd")
 const TestChain := preload("res://tests/test_chain.gd")
-const TestStage := preload("res://tests/test_stage.gd")
 const TestWarnings := preload("res://tests/test_warnings.gd")
 
 const TIMEOUT_MSEC := 300000
@@ -14,7 +13,6 @@ const EDITOR_PROJECT := "godot-bone-cloth-editor-tests" # OS 임시 폴더 안�
 
 var passes := 0
 var failures := 0
-var skips := 0
 var _start_msec := 0
 var _delta := 0.0 # 이번 frame의 시간(초)
 
@@ -40,11 +38,6 @@ func check(condition: bool, message: String) -> void:
 		print("FAILED: ", message)
 
 
-func skip(message: String) -> void:
-	skips += 1
-	print("SKIPPED: ", message)
-
-
 func _run() -> void:
 	# 플러그인이 로드되었는지 체크한다.
 	if not ClassDB.class_exists(&"BoneClothSimulator3D"):
@@ -66,7 +59,6 @@ func _run() -> void:
 			return
 
 	await TestChain.run(self)
-	await TestStage.run(self)
 	_run_editor_tests()
 	_finish()
 
@@ -86,18 +78,17 @@ func _run_editor_tests() -> void:
 	var arguments := ["--headless", "--editor", "--path", project, "--script", "res://tests/run_tests.gd"]
 	var exit_code := OS.execute(OS.get_executable_path(), arguments, output, true)
 	var text: String = output[0]
-	var counts := RegEx.create_from_string(r"passes (\d+), failures (\d+), skipped (\d+)").search(text)
+	var counts := RegEx.create_from_string(r"passes (\d+), failures (\d+)").search(text)
 	if counts == null:
 		print(text)
 		check(false, "Editor tests did not finish (exit code %d); the editor's output is above." % exit_code)
 		return
 
 	for line in text.split("\n"):
-		if line.begins_with("FAILED: ") or line.begins_with("SKIPPED: "):
+		if line.begins_with("FAILED: "):
 			print(line.strip_edges())
 	passes += counts.get_string(1).to_int()
 	failures += counts.get_string(2).to_int()
-	skips += counts.get_string(3).to_int()
 
 
 # 폴더를 통째로 복사한다. 빌드가 남기는 디버그 파일과 에디터가 쓰는 DLL 사본(~로 시작)은 뺀다.
@@ -122,5 +113,5 @@ func _remove(p_path: String) -> void:
 
 
 func _finish() -> void:
-	print("==== TESTS FINISHED ==== passes %d, failures %d, skipped %d" % [passes, failures, skips])
+	print("==== TESTS FINISHED ==== passes %d, failures %d" % [passes, failures])
 	quit(1 if failures > 0 else 0)

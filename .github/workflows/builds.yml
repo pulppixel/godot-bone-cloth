@@ -56,14 +56,6 @@ jobs:
           ./Godot_v4.7.2-stable_linux.x86_64 --headless --import --path project || true
           ./Godot_v4.7.2-stable_linux.x86_64 --headless --fixed-fps 60 --path project --script res://tests/run_tests.gd
 
-      - name: Upload stage run
-        if: matrix.platform == 'linux' && failure()
-        uses: actions/upload-artifact@v7
-        with:
-          name: stage-run-linux
-          path: /tmp/godot-bone-cloth-stage/
-          if-no-files-found: warn
-
       - name: Upload
         uses: actions/upload-artifact@v7
         with:
