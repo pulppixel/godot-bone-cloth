@@ -59,13 +59,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
-## VRoid Studio sample characters
-
-The demo characters `project/demo/characters/demo_a.glb` to `demo_d.glb` are four of VRoid Studio 2.16's sample models
-(VRoidPreset), by pixiv VRoid Project, edited in VRoid Studio by pulppixel, exported as VRM 0.0 and converted to glb. They are not covered by this
-repository's MIT License. Their conditions of use:
-https://vroid.pixiv.help/hc/en-us/articles/4402394424089
-
-Among them: anyone may use, edit and redistribute the models, for profit or not, without credit; the models and their
-images must not be redistributed for a fee, nor with their "Redistribution and alteration" condition set to CC0.

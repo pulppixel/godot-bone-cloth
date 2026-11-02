@@ -30,11 +30,11 @@ parameters/Rest/transition_request = ""
 parameters/Rest/current_index = -1
 parameters/ExitFoot/blend_amount = 0.0
 
-[node name="Face" type="Node" parent="." index="4" unique_id=1398417822]
+[node name="Expression" type="Node" parent="." index="3" unique_id=1398417822]
 script = ExtResource("4_v3es4")
 
-[node name="Look" type="Node" parent="." index="5" unique_id=2145760326]
+[node name="Look" type="Node" parent="." index="4" unique_id=2145760326]
 script = ExtResource("5_5wp2e")
 
-[node name="Feet" type="Node" parent="." index="6" unique_id=787645807]
+[node name="Feet" type="Node" parent="." index="5" unique_id=787645807]
 script = ExtResource("6_33lnd")
