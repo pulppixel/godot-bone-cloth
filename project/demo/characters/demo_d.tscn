@@ -147,32 +147,32 @@ chains/3/root_bone_name = "J_Sec_Hair1_09"
 chains/3/end_bone_name = "J_Sec_Hair5_09"
 
 [node name="Head" type="BoneClothCollisionSphere3D" parent="GeneralSkeleton/BackHair"]
-radius = 0.095
+radius = 0.092
 bone_name = "Head"
-position_offset = Vector3(0, 0.095, -0.014)
+position_offset = Vector3(0, 0.092, -0.013)
 
 [node name="Neck" type="BoneClothCollisionSphere3D" parent="GeneralSkeleton/BackHair"]
-radius = 0.063
+radius = 0.054
 bone_name = "Neck"
-position_offset = Vector3(0, 0.038, 0.016)
+position_offset = Vector3(0, 0.032, 0.014)
 
 [node name="Chest" type="BoneClothCollisionSphere3D" parent="GeneralSkeleton/BackHair"]
-radius = 0.126
+radius = 0.108
 bone_name = "UpperChest"
-position_offset = Vector3(0, 0, 0.013)
+position_offset = Vector3(0, 0, 0.011)
 
 [node name="Blades" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/BackHair"]
-radius = 0.089
-height = 0.304
+radius = 0.076
+height = 0.26
 bone_name = "UpperChest"
-position_offset = Vector3(0, 0.082, -0.013)
+position_offset = Vector3(0, 0.07, -0.011)
 rotation_offset = Quaternion(0, 0, 0.70710677, 0.70710677)
 
 [node name="Back" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/BackHair"]
-radius = 0.082
-height = 0.353
+radius = 0.07
+height = 0.302
 bone_name = "Chest"
-position_offset = Vector3(0, 0, -0.063)
+position_offset = Vector3(0, 0, -0.054)
 rotation_offset = Quaternion(0, 0, 0.70710677, 0.70710677)
 
 [node name="Bangs" type="BoneClothSimulator3D" parent="GeneralSkeleton"]
@@ -200,9 +200,9 @@ chains/6/root_bone_name = "J_Sec_Hair1_07"
 chains/6/end_bone_name = "J_Sec_Hair3_07"
 
 [node name="Head" type="BoneClothCollisionSphere3D" parent="GeneralSkeleton/Bangs"]
-radius = 0.095
+radius = 0.092
 bone_name = "Head"
-position_offset = Vector3(0, 0.095, -0.014)
+position_offset = Vector3(0, 0.092, -0.013)
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="." index="1" unique_id=1795837948]
 libraries/demo_motions = ExtResource("2_1uydd")
