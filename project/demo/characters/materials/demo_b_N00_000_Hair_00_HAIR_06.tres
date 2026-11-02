@@ -1,11 +1,11 @@
-[gd_resource type="ShaderMaterial" format=3]
+[gd_resource type="ShaderMaterial" format=3 uid="uid://gixb86d6ssvt"]
 
-[ext_resource type="Shader" path="res://demo/shaders/mtoon/mtoon_outline_cutout.gdshader" id="1_p4ya5"]
-[ext_resource type="Texture2D" path="res://demo/characters/demo_b_N00_000_Hair_00_nml.png" id="2_k1510"]
-[ext_resource type="Texture2D" path="res://demo/characters/demo_b__26.png" id="3_2bt0d"]
-[ext_resource type="Texture2D" path="res://demo/characters/demo_b__25.png" id="4_ambtk"]
-[ext_resource type="Texture2D" path="res://demo/characters/demo_b_MatcapWarp.png" id="5_ios3e"]
-[ext_resource type="Shader" path="res://demo/shaders/mtoon/mtoon_cutout_cull_off.gdshader" id="6_77n7w"]
+[ext_resource type="Shader" uid="uid://bta78oqjbb6g6" path="res://demo/shaders/mtoon/mtoon_outline_cutout.gdshader" id="1_p4ya5"]
+[ext_resource type="Texture2D" uid="uid://bnedwghua56h5" path="res://demo/characters/demo_b_N00_000_Hair_00_nml.png" id="2_k1510"]
+[ext_resource type="Texture2D" uid="uid://dgphvyjpyhp10" path="res://demo/characters/demo_b__26.png" id="3_2bt0d"]
+[ext_resource type="Texture2D" uid="uid://dierveih76w5c" path="res://demo/characters/demo_b__25.png" id="4_ambtk"]
+[ext_resource type="Texture2D" uid="uid://doy1n77cng5wn" path="res://demo/characters/demo_b_MatcapWarp.png" id="5_ios3e"]
+[ext_resource type="Shader" uid="uid://dwlpyba606kl" path="res://demo/shaders/mtoon/mtoon_cutout_cull_off.gdshader" id="6_77n7w"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_hqq7k"]
 resource_name = "N00_000_Hair_00_HAIR_06_Outline"

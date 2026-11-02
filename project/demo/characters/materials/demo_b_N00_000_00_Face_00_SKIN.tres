@@ -1,12 +1,12 @@
-[gd_resource type="ShaderMaterial" format=3]
+[gd_resource type="ShaderMaterial" format=3 uid="uid://bqgrjkvqwn777"]
 
-[ext_resource type="Shader" path="res://demo/shaders/mtoon/mtoon_outline_cutout.gdshader" id="1_xtthl"]
-[ext_resource type="Texture2D" path="res://demo/characters/demo_b__05.png" id="2_skoa1"]
-[ext_resource type="Texture2D" path="res://demo/characters/demo_b_Shader_NoneBlack.png" id="3_xvuse"]
-[ext_resource type="Texture2D" path="res://demo/characters/demo_b__04.png" id="4_b6cdr"]
-[ext_resource type="Texture2D" path="res://demo/characters/demo_b_N00_000_00_Face_00_out.png" id="5_pjh7x"]
-[ext_resource type="Texture2D" path="res://demo/characters/demo_b_MatcapWarp.png" id="6_riske"]
-[ext_resource type="Shader" path="res://demo/shaders/mtoon/mtoon_cutout_cull_off.gdshader" id="7_6s084"]
+[ext_resource type="Shader" uid="uid://bta78oqjbb6g6" path="res://demo/shaders/mtoon/mtoon_outline_cutout.gdshader" id="1_xtthl"]
+[ext_resource type="Texture2D" uid="uid://cyrofs02kjhdr" path="res://demo/characters/demo_b__05.png" id="2_skoa1"]
+[ext_resource type="Texture2D" uid="uid://ce8tw5o0ru6i8" path="res://demo/characters/demo_b_Shader_NoneBlack.png" id="3_xvuse"]
+[ext_resource type="Texture2D" uid="uid://nflahy8ioy56" path="res://demo/characters/demo_b__04.png" id="4_b6cdr"]
+[ext_resource type="Texture2D" uid="uid://dkwhj3s08h5ho" path="res://demo/characters/demo_b_N00_000_00_Face_00_out.png" id="5_pjh7x"]
+[ext_resource type="Texture2D" uid="uid://doy1n77cng5wn" path="res://demo/characters/demo_b_MatcapWarp.png" id="6_riske"]
+[ext_resource type="Shader" uid="uid://dwlpyba606kl" path="res://demo/shaders/mtoon/mtoon_cutout_cull_off.gdshader" id="7_6s084"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_hndam"]
 resource_name = "N00_000_00_Face_00_SKIN_Outline"
