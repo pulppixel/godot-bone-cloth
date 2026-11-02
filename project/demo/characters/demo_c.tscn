@@ -32,32 +32,104 @@ limit_angle/value = 1.3089969
 limit_angle/damping_curve = SubResource("Curve_skirt_limit")
 depth_inertia = 0.7
 movement_speed_limit = 4.0
-chain_count = 6
-chains/0/root_bone_name = "J_Sec_L_SkirtBack_01"
-chains/0/end_bone_name = "J_Sec_L_SkirtBack_end_01"
+chain_count = 30
+chains/0/root_bone_name = "J_Sec_L_SkirtBack1_01"
+chains/0/end_bone_name = "J_Sec_L_SkirtBack2_end_01"
 chains/0/extend_end_bone = false
-chains/1/root_bone_name = "J_Sec_L_SkirtFront_01"
-chains/1/end_bone_name = "J_Sec_L_SkirtFront_end_01"
+chains/1/root_bone_name = "J_Sec_L_SkirtFront1_01"
+chains/1/end_bone_name = "J_Sec_L_SkirtFront2_end_01"
 chains/1/extend_end_bone = false
-chains/2/root_bone_name = "J_Sec_L_SkirtSide_01"
-chains/2/end_bone_name = "J_Sec_L_SkirtSide_end_01"
+chains/2/root_bone_name = "J_Sec_L_SkirtSide1_01"
+chains/2/end_bone_name = "J_Sec_L_SkirtSide2_end_01"
 chains/2/extend_end_bone = false
-chains/3/root_bone_name = "J_Sec_R_SkirtBack_01"
-chains/3/end_bone_name = "J_Sec_R_SkirtBack_end_01"
+chains/3/root_bone_name = "J_Sec_R_SkirtBack1_01"
+chains/3/end_bone_name = "J_Sec_R_SkirtBack2_end_01"
 chains/3/extend_end_bone = false
-chains/4/root_bone_name = "J_Sec_R_SkirtFront_01"
-chains/4/end_bone_name = "J_Sec_R_SkirtFront_end_01"
+chains/4/root_bone_name = "J_Sec_R_SkirtFront1_01"
+chains/4/end_bone_name = "J_Sec_R_SkirtFront2_end_01"
 chains/4/extend_end_bone = false
-chains/5/root_bone_name = "J_Sec_R_SkirtSide_01"
-chains/5/end_bone_name = "J_Sec_R_SkirtSide_end_01"
+chains/5/root_bone_name = "J_Sec_R_SkirtSide1_01"
+chains/5/end_bone_name = "J_Sec_R_SkirtSide2_end_01"
 chains/5/extend_end_bone = false
+chains/6/root_bone_name = "J_Sec_L_SkirtBack1_02"
+chains/6/end_bone_name = "J_Sec_L_SkirtBack2_end_02"
+chains/6/extend_end_bone = false
+chains/7/root_bone_name = "J_Sec_L_SkirtFront1_02"
+chains/7/end_bone_name = "J_Sec_L_SkirtFront2_end_02"
+chains/7/extend_end_bone = false
+chains/8/root_bone_name = "J_Sec_L_SkirtSide1_02"
+chains/8/end_bone_name = "J_Sec_L_SkirtSide2_end_02"
+chains/8/extend_end_bone = false
+chains/9/root_bone_name = "J_Sec_R_SkirtBack1_02"
+chains/9/end_bone_name = "J_Sec_R_SkirtBack2_end_02"
+chains/9/extend_end_bone = false
+chains/10/root_bone_name = "J_Sec_R_SkirtFront1_02"
+chains/10/end_bone_name = "J_Sec_R_SkirtFront2_end_02"
+chains/10/extend_end_bone = false
+chains/11/root_bone_name = "J_Sec_R_SkirtSide1_02"
+chains/11/end_bone_name = "J_Sec_R_SkirtSide2_end_02"
+chains/11/extend_end_bone = false
+chains/12/root_bone_name = "J_Sec_L_SkirtBack1_03"
+chains/12/end_bone_name = "J_Sec_L_SkirtBack2_end_03"
+chains/12/extend_end_bone = false
+chains/13/root_bone_name = "J_Sec_L_SkirtFront1_03"
+chains/13/end_bone_name = "J_Sec_L_SkirtFront2_end_03"
+chains/13/extend_end_bone = false
+chains/14/root_bone_name = "J_Sec_L_SkirtSide1_03"
+chains/14/end_bone_name = "J_Sec_L_SkirtSide2_end_03"
+chains/14/extend_end_bone = false
+chains/15/root_bone_name = "J_Sec_R_SkirtBack1_03"
+chains/15/end_bone_name = "J_Sec_R_SkirtBack2_end_03"
+chains/15/extend_end_bone = false
+chains/16/root_bone_name = "J_Sec_R_SkirtFront1_03"
+chains/16/end_bone_name = "J_Sec_R_SkirtFront2_end_03"
+chains/16/extend_end_bone = false
+chains/17/root_bone_name = "J_Sec_R_SkirtSide1_03"
+chains/17/end_bone_name = "J_Sec_R_SkirtSide2_end_03"
+chains/17/extend_end_bone = false
+chains/18/root_bone_name = "J_Sec_L_SkirtBack1_04"
+chains/18/end_bone_name = "J_Sec_L_SkirtBack2_end_04"
+chains/18/extend_end_bone = false
+chains/19/root_bone_name = "J_Sec_L_SkirtFront1_04"
+chains/19/end_bone_name = "J_Sec_L_SkirtFront2_end_04"
+chains/19/extend_end_bone = false
+chains/20/root_bone_name = "J_Sec_L_SkirtSide1_04"
+chains/20/end_bone_name = "J_Sec_L_SkirtSide2_end_04"
+chains/20/extend_end_bone = false
+chains/21/root_bone_name = "J_Sec_R_SkirtBack1_04"
+chains/21/end_bone_name = "J_Sec_R_SkirtBack2_end_04"
+chains/21/extend_end_bone = false
+chains/22/root_bone_name = "J_Sec_R_SkirtFront1_04"
+chains/22/end_bone_name = "J_Sec_R_SkirtFront2_end_04"
+chains/22/extend_end_bone = false
+chains/23/root_bone_name = "J_Sec_R_SkirtSide1_04"
+chains/23/end_bone_name = "J_Sec_R_SkirtSide2_end_04"
+chains/23/extend_end_bone = false
+chains/24/root_bone_name = "J_Sec_L_SkirtBack1_05"
+chains/24/end_bone_name = "J_Sec_L_SkirtBack2_end_05"
+chains/24/extend_end_bone = false
+chains/25/root_bone_name = "J_Sec_L_SkirtFront1_05"
+chains/25/end_bone_name = "J_Sec_L_SkirtFront2_end_05"
+chains/25/extend_end_bone = false
+chains/26/root_bone_name = "J_Sec_L_SkirtSide1_05"
+chains/26/end_bone_name = "J_Sec_L_SkirtSide2_end_05"
+chains/26/extend_end_bone = false
+chains/27/root_bone_name = "J_Sec_R_SkirtBack1_05"
+chains/27/end_bone_name = "J_Sec_R_SkirtBack2_end_05"
+chains/27/extend_end_bone = false
+chains/28/root_bone_name = "J_Sec_R_SkirtFront1_05"
+chains/28/end_bone_name = "J_Sec_R_SkirtFront2_end_05"
+chains/28/extend_end_bone = false
+chains/29/root_bone_name = "J_Sec_R_SkirtSide1_05"
+chains/29/end_bone_name = "J_Sec_R_SkirtSide2_end_05"
+chains/29/extend_end_bone = false
 
 [node name="Thighs" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/Skirt"]
-radius = 0.076
-height = 0.358
+radius = 0.081
+height = 0.383
 bone_name = "LeftUpperLeg"
 mirror_bone_name = "RightUpperLeg"
-position_offset = Vector3(0, 0.103, 0)
+position_offset = Vector3(0, 0.111, 0)
 
 [node name="Coat" type="BoneClothSimulator3D" parent="GeneralSkeleton"]
 drag/value = 0.15
@@ -66,7 +138,7 @@ limit_angle/value = 0.7853982
 limit_angle/damping_curve = SubResource("Curve_skirt_limit")
 depth_inertia = 0.7
 movement_speed_limit = 4.0
-chain_count = 6
+chain_count = 12
 chains/0/root_bone_name = "J_Sec_L_CoatSkirtBack_01"
 chains/0/end_bone_name = "J_Sec_L_CoatSkirtBack_end_01"
 chains/0/extend_end_bone = false
@@ -85,98 +157,72 @@ chains/4/extend_end_bone = false
 chains/5/root_bone_name = "J_Sec_R_CoatSkirtSide1_01"
 chains/5/end_bone_name = "J_Sec_R_CoatSkirtSide2_end_01"
 chains/5/extend_end_bone = false
+chains/6/root_bone_name = "J_Sec_L_CoatSkirtBack_02"
+chains/6/end_bone_name = "J_Sec_L_CoatSkirtBack_end_02"
+chains/6/extend_end_bone = false
+chains/7/root_bone_name = "J_Sec_L_CoatSkirtFront_02"
+chains/7/end_bone_name = "J_Sec_L_CoatSkirtFront_end_02"
+chains/7/extend_end_bone = false
+chains/8/root_bone_name = "J_Sec_L_CoatSkirtSide1_02"
+chains/8/end_bone_name = "J_Sec_L_CoatSkirtSide2_end_02"
+chains/8/extend_end_bone = false
+chains/9/root_bone_name = "J_Sec_R_CoatSkirtBack_02"
+chains/9/end_bone_name = "J_Sec_R_CoatSkirtBack_end_02"
+chains/9/extend_end_bone = false
+chains/10/root_bone_name = "J_Sec_R_CoatSkirtFront_02"
+chains/10/end_bone_name = "J_Sec_R_CoatSkirtFront_end_02"
+chains/10/extend_end_bone = false
+chains/11/root_bone_name = "J_Sec_R_CoatSkirtSide1_02"
+chains/11/end_bone_name = "J_Sec_R_CoatSkirtSide2_end_02"
+chains/11/extend_end_bone = false
 
 [node name="BackHair" type="BoneClothSimulator3D" parent="GeneralSkeleton"]
 link_mode = 1
-link_stiffness = 0.3
 drag/value = 0.2
-stiffness/value = 0.08
-limit_angle/value = 0.7853982
-limit_angle/damping_curve = SubResource("Curve_hair_limit")
-gravity/value = 2.0
-depth_inertia = 1.0
-local_movement_speed_limit = 1.0
-local_rotation_speed_limit = 6.2831855
-joint_speed_limit = 0.0
-chain_count = 4
-chains/0/root_bone_name = "J_Sec_Hair1_02"
-chains/0/end_bone_name = "J_Sec_Hair3_02"
-chains/1/root_bone_name = "J_Sec_Hair1_04"
-chains/1/end_bone_name = "J_Sec_Hair4_04"
-chains/2/root_bone_name = "J_Sec_Hair1_06"
-chains/2/end_bone_name = "J_Sec_Hair4_06"
-chains/3/root_bone_name = "J_Sec_Hair1_03"
-chains/3/end_bone_name = "J_Sec_Hair3_03"
-
-[node name="Head" type="BoneClothCollisionSphere3D" parent="GeneralSkeleton/BackHair"]
-radius = 0.097
-bone_name = "Head"
-position_offset = Vector3(0, 0.097, -0.014)
-
-[node name="Neck" type="BoneClothCollisionSphere3D" parent="GeneralSkeleton/BackHair"]
-radius = 0.047
-bone_name = "Neck"
-position_offset = Vector3(0, 0.028, 0.012)
-
-[node name="Chest" type="BoneClothCollisionSphere3D" parent="GeneralSkeleton/BackHair"]
-radius = 0.093
-bone_name = "UpperChest"
-position_offset = Vector3(0, 0, 0.009)
-
-[node name="Blades" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/BackHair"]
-radius = 0.065
-height = 0.224
-bone_name = "UpperChest"
-position_offset = Vector3(0, 0.061, -0.009)
-rotation_offset = Quaternion(0, 0, 0.70710677, 0.70710677)
-
-[node name="Back" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/BackHair"]
-radius = 0.06
-height = 0.26
-bone_name = "Chest"
-position_offset = Vector3(0, 0, -0.047)
-rotation_offset = Quaternion(0, 0, 0.70710677, 0.70710677)
-
-[node name="Tail" type="BoneClothSimulator3D" parent="GeneralSkeleton"]
-drag/value = 0.2
-stiffness/value = 0.08
-limit_angle/value = 0.7853982
+stiffness/value = 0.02
+radius/value = 0.05
+limit_angle/value = 1.3089969
 limit_angle/damping_curve = SubResource("Curve_hair_limit")
 gravity/value = 5.0
 local_movement_speed_limit = 3.0
 local_rotation_speed_limit = 6.2831855
 joint_speed_limit = 0.0
-chain_count = 1
-chains/0/root_bone_name = "J_Sec_Hair1_05"
-chains/0/end_bone_name = "J_Sec_Hair6_05"
+chain_count = 4
+chains/0/root_bone_name = "J_Sec_Hair1_04"
+chains/0/end_bone_name = "J_Sec_Hair3_04"
+chains/1/root_bone_name = "J_Sec_Hair1_02"
+chains/1/end_bone_name = "J_Sec_Hair5_02"
+chains/2/root_bone_name = "J_Sec_Hair1_01"
+chains/2/end_bone_name = "J_Sec_Hair5_01"
+chains/3/root_bone_name = "J_Sec_Hair1_03"
+chains/3/end_bone_name = "J_Sec_Hair3_03"
 
-[node name="Head" type="BoneClothCollisionSphere3D" parent="GeneralSkeleton/Tail"]
-radius = 0.097
+[node name="Head" type="BoneClothCollisionSphere3D" parent="GeneralSkeleton/BackHair"]
+radius = 0.089
 bone_name = "Head"
-position_offset = Vector3(0, 0.097, -0.014)
+position_offset = Vector3(0, 0.089, -0.013)
 
-[node name="Neck" type="BoneClothCollisionSphere3D" parent="GeneralSkeleton/Tail"]
-radius = 0.047
+[node name="Neck" type="BoneClothCollisionSphere3D" parent="GeneralSkeleton/BackHair"]
+radius = 0.05
 bone_name = "Neck"
-position_offset = Vector3(0, 0.028, 0.012)
+position_offset = Vector3(0, 0.03, 0.013)
 
-[node name="Chest" type="BoneClothCollisionSphere3D" parent="GeneralSkeleton/Tail"]
-radius = 0.093
+[node name="Chest" type="BoneClothCollisionSphere3D" parent="GeneralSkeleton/BackHair"]
 bone_name = "UpperChest"
-position_offset = Vector3(0, 0, 0.009)
+position_offset = Vector3(0, 0, 0.01)
 
-[node name="Blades" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/Tail"]
-radius = 0.065
-height = 0.224
+[node name="Blades" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/BackHair"]
+radius = 0.07
+height = 0.24
 bone_name = "UpperChest"
-position_offset = Vector3(0, 0.061, -0.009)
+position_offset = Vector3(0, 0.065, -0.01)
 rotation_offset = Quaternion(0, 0, 0.70710677, 0.70710677)
 
-[node name="Back" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/Tail"]
-radius = 0.06
-height = 0.26
+[node name="Back" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/BackHair"]
+radius = 0.065
+height = 0.28
 bone_name = "Chest"
-position_offset = Vector3(0, 0, -0.047)
+position_offset = Vector3(0, 0, -0.05)
 rotation_offset = Quaternion(0, 0, 0.70710677, 0.70710677)
 
 [node name="Bangs" type="BoneClothSimulator3D" parent="GeneralSkeleton"]
@@ -187,18 +233,38 @@ radius/value = 0.02
 limit_angle/value = 1.0471976
 limit_angle/damping_curve = SubResource("Curve_bangs_limit")
 joint_speed_limit = 0.0
-chain_count = 3
-chains/0/root_bone_name = "J_Sec_Hair1_01"
-chains/0/end_bone_name = "J_Sec_Hair2_01"
-chains/1/root_bone_name = "J_Sec_Hair1_07"
-chains/1/end_bone_name = "J_Sec_Hair3_07"
-chains/2/root_bone_name = "J_Sec_Hair1_08"
-chains/2/end_bone_name = "J_Sec_Hair3_08"
+chain_count = 7
+chains/0/root_bone_name = "J_Sec_Hair1_07"
+chains/0/end_bone_name = "J_Sec_Hair3_07"
+chains/1/root_bone_name = "J_Sec_Hair1_08"
+chains/1/end_bone_name = "J_Sec_Hair3_08"
+chains/2/root_bone_name = "J_Sec_Hair1_05"
+chains/2/end_bone_name = "J_Sec_Hair3_05"
+chains/3/root_bone_name = "J_Sec_Hair1_09"
+chains/3/end_bone_name = "J_Sec_Hair3_09"
+chains/4/root_bone_name = "J_Sec_Hair1_06"
+chains/4/end_bone_name = "J_Sec_Hair3_06"
+chains/5/root_bone_name = "J_Sec_Hair1_11"
+chains/5/end_bone_name = "J_Sec_Hair3_11"
+chains/6/root_bone_name = "J_Sec_Hair1_10"
+chains/6/end_bone_name = "J_Sec_Hair3_10"
 
 [node name="Head" type="BoneClothCollisionSphere3D" parent="GeneralSkeleton/Bangs"]
-radius = 0.097
+radius = 0.089
 bone_name = "Head"
-position_offset = Vector3(0, 0.097, -0.014)
+position_offset = Vector3(0, 0.089, -0.013)
+
+[node name="FoxTail" type="BoneClothSimulator3D" parent="GeneralSkeleton"]
+drag/value = 0.2
+stiffness/value = 0.1
+limit_angle/value = 0.7853982
+local_movement_speed_limit = 3.0
+local_rotation_speed_limit = 6.2831855
+joint_speed_limit = 0.0
+chain_count = 1
+chains/0/root_bone_name = "J_Opt_C_FoxTail1_01"
+chains/0/end_bone_name = "J_Opt_C_FoxTail5_end_01"
+chains/0/extend_end_bone = false
 
 [node name="Bust" type="BoneClothSimulator3D" parent="GeneralSkeleton"]
 drag/value = 0.45
