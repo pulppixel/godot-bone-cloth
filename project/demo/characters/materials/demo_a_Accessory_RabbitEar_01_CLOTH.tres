@@ -3,7 +3,7 @@
 [ext_resource type="Shader" path="res://demo/shaders/mtoon/mtoon_cutout_cull_off.gdshader" id="1_pclb1"]
 [ext_resource type="Texture2D" path="res://demo/characters/demo_a_Shader_NoneNormal.png" id="2_e4wp2"]
 [ext_resource type="Texture2D" path="res://demo/characters/demo_a_Shader_NoneBlack.png" id="3_m0h24"]
-[ext_resource type="Texture2D" path="res://demo/characters/demo_a__21.png" id="4_7oe0t"]
+[ext_resource type="Texture2D" path="res://demo/characters/demo_a__17.png" id="4_7oe0t"]
 
 [resource]
 resource_name = "Accessory_RabbitEar_01_CLOTH"

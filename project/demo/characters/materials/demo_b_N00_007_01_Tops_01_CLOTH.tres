@@ -1,11 +1,11 @@
-[gd_resource type="ShaderMaterial" format=3 uid="uid://db4gvv13y6oju"]
+[gd_resource type="ShaderMaterial" format=3]
 
-[ext_resource type="Shader" uid="uid://bta78oqjbb6g6" path="res://demo/shaders/mtoon/mtoon_outline_cutout.gdshader" id="1_r0qjn"]
-[ext_resource type="Texture2D" uid="uid://ckqx1tvfa6hgl" path="res://demo/characters/demo_b_Shader_NoneNormal.png" id="2_bsysm"]
-[ext_resource type="Texture2D" uid="uid://ce8tw5o0ru6i8" path="res://demo/characters/demo_b_Shader_NoneBlack.png" id="3_4w7k1"]
-[ext_resource type="Texture2D" uid="uid://bssog7631pelt" path="res://demo/characters/demo_b__16.png" id="4_hr5ws"]
-[ext_resource type="Texture2D" uid="uid://doy1n77cng5wn" path="res://demo/characters/demo_b_MatcapWarp.png" id="5_iq7ot"]
-[ext_resource type="Shader" uid="uid://dwlpyba606kl" path="res://demo/shaders/mtoon/mtoon_cutout_cull_off.gdshader" id="6_3k805"]
+[ext_resource type="Shader" path="res://demo/shaders/mtoon/mtoon_outline_cutout.gdshader" id="1_r0qjn"]
+[ext_resource type="Texture2D" path="res://demo/characters/demo_b_Shader_NoneNormal.png" id="2_bsysm"]
+[ext_resource type="Texture2D" path="res://demo/characters/demo_b_Shader_NoneBlack.png" id="3_4w7k1"]
+[ext_resource type="Texture2D" path="res://demo/characters/demo_b__13.png" id="4_hr5ws"]
+[ext_resource type="Texture2D" path="res://demo/characters/demo_b_MatcapWarp.png" id="5_iq7ot"]
+[ext_resource type="Shader" path="res://demo/shaders/mtoon/mtoon_cutout_cull_off.gdshader" id="6_3k805"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_xmpw8"]
 resource_name = "N00_007_01_Tops_01_CLOTH_Outline"
@@ -14,7 +14,7 @@ shader = ExtResource("1_r0qjn")
 shader_parameter/_AlphaCutoutEnable = 1.0
 shader_parameter/_Cutoff = 0.5
 shader_parameter/_Color = Color(1, 1, 1, 1)
-shader_parameter/_ShadeColor = Color(0.9686608, 0.9282999, 0.9148463, 1)
+shader_parameter/_ShadeColor = Color(1, 1, 1, 1)
 shader_parameter/_MainTex = ExtResource("4_hr5ws")
 shader_parameter/_MainTex_ST = Vector4(1, 1, 0, 0)
 shader_parameter/_ShadeTexture = ExtResource("4_hr5ws")
@@ -22,13 +22,13 @@ shader_parameter/_BumpScale = 1.0
 shader_parameter/_BumpMap = ExtResource("2_bsysm")
 shader_parameter/_ReceiveShadowRate = 1.0
 shader_parameter/_ShadingGradeRate = 1.0
-shader_parameter/_ShadeShift = 0.0
-shader_parameter/_ShadeToony = 0.9
+shader_parameter/_ShadeShift = -1.0
+shader_parameter/_ShadeToony = 1.0
 shader_parameter/_LightColorAttenuation = 0.0
 shader_parameter/_IndirectLightIntensity = 0.1
 shader_parameter/_RimColor = Color(0, 0, 0, 1)
 shader_parameter/_RimLightingMix = 0.0
-shader_parameter/_RimFresnelPower = 100.0
+shader_parameter/_RimFresnelPower = 7.999984
 shader_parameter/_RimLift = 0.1
 shader_parameter/_MatcapColor = Color(1, 1, 1, 1)
 shader_parameter/_SphereAdd = ExtResource("5_iq7ot")
@@ -36,7 +36,7 @@ shader_parameter/_EmissionColor = Color(0, 0, 0, 1)
 shader_parameter/_EmissionMultiplier = 1.0
 shader_parameter/_EmissionMap = ExtResource("3_4w7k1")
 shader_parameter/_OutlineWidthMode = 1.0
-shader_parameter/_OutlineWidth = 0.05
+shader_parameter/_OutlineWidth = 0.1279469
 shader_parameter/_OutlineScaledMaxDistance = 1.0
 shader_parameter/_OutlineColorMode = 0.0
 shader_parameter/_OutlineColor = Color(0.2745098, 0.090196066, 0.12549016, 1)
@@ -55,7 +55,7 @@ shader = ExtResource("6_3k805")
 shader_parameter/_AlphaCutoutEnable = 1.0
 shader_parameter/_Cutoff = 0.5
 shader_parameter/_Color = Color(1, 1, 1, 1)
-shader_parameter/_ShadeColor = Color(0.9686608, 0.9282999, 0.9148463, 1)
+shader_parameter/_ShadeColor = Color(1, 1, 1, 1)
 shader_parameter/_MainTex = ExtResource("4_hr5ws")
 shader_parameter/_MainTex_ST = Vector4(1, 1, 0, 0)
 shader_parameter/_ShadeTexture = ExtResource("4_hr5ws")
@@ -63,13 +63,13 @@ shader_parameter/_BumpScale = 1.0
 shader_parameter/_BumpMap = ExtResource("2_bsysm")
 shader_parameter/_ReceiveShadowRate = 1.0
 shader_parameter/_ShadingGradeRate = 1.0
-shader_parameter/_ShadeShift = 0.0
-shader_parameter/_ShadeToony = 0.9
+shader_parameter/_ShadeShift = -1.0
+shader_parameter/_ShadeToony = 1.0
 shader_parameter/_LightColorAttenuation = 0.0
 shader_parameter/_IndirectLightIntensity = 0.1
 shader_parameter/_RimColor = Color(0, 0, 0, 1)
 shader_parameter/_RimLightingMix = 0.0
-shader_parameter/_RimFresnelPower = 100.0
+shader_parameter/_RimFresnelPower = 7.999984
 shader_parameter/_RimLift = 0.1
 shader_parameter/_MatcapColor = Color(1, 1, 1, 1)
 shader_parameter/_SphereAdd = ExtResource("5_iq7ot")
@@ -77,7 +77,7 @@ shader_parameter/_EmissionColor = Color(0, 0, 0, 1)
 shader_parameter/_EmissionMultiplier = 1.0
 shader_parameter/_EmissionMap = ExtResource("3_4w7k1")
 shader_parameter/_OutlineWidthMode = 1.0
-shader_parameter/_OutlineWidth = 0.05
+shader_parameter/_OutlineWidth = 0.1279469
 shader_parameter/_OutlineScaledMaxDistance = 1.0
 shader_parameter/_OutlineColorMode = 0.0
 shader_parameter/_OutlineColor = Color(0.2745098, 0.090196066, 0.12549016, 1)

@@ -251,13 +251,13 @@ chains/23/enable_all_child_collisions = true
 chains/23/exclude_collision_count = 0
 
 [node name="Thighs" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/Skirt" index="0" unique_id=873784829]
-radius = 0.085
-height = 0.4
+radius = 0.088
+height = 0.415
 bone_name = "LeftUpperLeg"
 bone = 125
 mirror_bone_name = "RightUpperLeg"
 mirror_bone = 161
-position_offset = Vector3(0, 0.115, 0)
+position_offset = Vector3(0, 0.119, 0)
 rotation_offset = Quaternion(0, 0, 0, 1)
 transform = Transform3D(-1, 0, 0, 0, -1, 0, 0, 0, 1, 0.08272511, 0.84309053, -0.0002089641)
 
@@ -330,44 +330,44 @@ chains/4/enable_all_child_collisions = true
 chains/4/exclude_collision_count = 0
 
 [node name="Head" type="BoneClothCollisionSphere3D" parent="GeneralSkeleton/BackHair" index="0" unique_id=1897290495]
-radius = 0.097
+radius = 0.101
 bone_name = "Head"
 bone = 42
-position_offset = Vector3(0, 0.097, -0.014)
+position_offset = Vector3(0, 0.101, -0.014)
 rotation_offset = Quaternion(0, 0, 0, 1)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.6419509e-16, 1.611559, -0.01051112)
 
 [node name="Neck" type="BoneClothCollisionSphere3D" parent="GeneralSkeleton/BackHair" index="1" unique_id=539553205]
-radius = 0.052
+radius = 0.054
 bone_name = "Neck"
 bone = 41
-position_offset = Vector3(0, 0.031, 0.014)
+position_offset = Vector3(0, 0.033, 0.014)
 rotation_offset = Quaternion(0, 0, 0, 1)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.2754905e-16, 1.4749174, 0.017488882)
 
 [node name="Chest" type="BoneClothCollisionSphere3D" parent="GeneralSkeleton/BackHair" index="2" unique_id=1539592397]
-radius = 0.104
+radius = 0.109
 bone_name = "UpperChest"
 bone = 36
-position_offset = Vector3(0, 0, 0.01)
+position_offset = Vector3(0, 0, 0.011)
 rotation_offset = Quaternion(0, 0, 0, 1)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.0309721e-17, 1.2930739, 0.014035452)
 
 [node name="Blades" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/BackHair" index="3" unique_id=242437273]
-radius = 0.073
-height = 0.25
+radius = 0.076
+height = 0.26
 bone_name = "UpperChest"
 bone = 36
-position_offset = Vector3(0, 0.068, -0.01)
+position_offset = Vector3(0, 0.071, -0.011)
 rotation_offset = Quaternion(0, 0, 0.70710677, 0.70710677)
 transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, -1.0309721e-17, 1.3610739, -0.0059645474)
 
 [node name="Back" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/BackHair" index="4" unique_id=307511189]
-radius = 0.068
-height = 0.291
+radius = 0.071
+height = 0.305
 bone_name = "Chest"
 bone = 35
-position_offset = Vector3(0, 0, -0.052)
+position_offset = Vector3(0, 0, -0.054)
 rotation_offset = Quaternion(0, 0, 0.70710677, 0.70710677)
 transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, 2.32516e-17, 1.176256, -0.032055043)
 
@@ -437,10 +437,10 @@ chains/4/enable_all_child_collisions = true
 chains/4/exclude_collision_count = 0
 
 [node name="Head" type="BoneClothCollisionSphere3D" parent="GeneralSkeleton/Bangs" index="0" unique_id=988347240]
-radius = 0.097
+radius = 0.101
 bone_name = "Head"
 bone = 42
-position_offset = Vector3(0, 0.097, -0.014)
+position_offset = Vector3(0, 0.101, -0.014)
 rotation_offset = Quaternion(0, 0, 0, 1)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.6419509e-16, 1.611559, -0.01051112)
 
@@ -471,6 +471,19 @@ chains/1/sync_bone_name = ""
 chains/1/sync_bone = -1
 chains/1/enable_all_child_collisions = true
 chains/1/exclude_collision_count = 0
+
+[node name="Ears" type="BoneClothSimulator3D" parent="GeneralSkeleton"]
+drag/value = 0.2
+stiffness/value = 0.1
+limit_angle/value = 0.5235988
+joint_speed_limit = 0.0
+chain_count = 2
+chains/0/root_bone_name = "J_Opt_L_RabbitEar2_01"
+chains/0/end_bone_name = "J_Opt_L_RabbitEar2_end_01"
+chains/0/extend_end_bone = false
+chains/1/root_bone_name = "J_Opt_R_RabbitEar2_01"
+chains/1/end_bone_name = "J_Opt_R_RabbitEar2_end_01"
+chains/1/extend_end_bone = false
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="." index="1" unique_id=260542559]
 libraries/demo_motions = ExtResource("2_btxln")

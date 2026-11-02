@@ -3,10 +3,9 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dlcvv21lbrjbo"
-path.s3tc="res://.godot/imported/demo_d__06.png-c4569bf51ca58de4d3af3d7b40dd9cfd.s3tc.ctex"
+path="res://.godot/imported/demo_d__06.png-c4569bf51ca58de4d3af3d7b40dd9cfd.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
-"vram_texture": true
+"vram_texture": false
 }
 generator_parameters={
 "md5": "5d7dc42c23418d7cf302a693bad2078d"
@@ -15,11 +14,11 @@ generator_parameters={
 [deps]
 
 source_file="res://demo/characters/demo_d__06.png"
-dest_files=["res://.godot/imported/demo_d__06.png-c4569bf51ca58de4d3af3d7b40dd9cfd.s3tc.ctex"]
+dest_files=["res://.godot/imported/demo_d__06.png-c4569bf51ca58de4d3af3d7b40dd9cfd.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0
@@ -41,4 +40,4 @@ process/normal_map_invert_y=false
 process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
-detect_3d/compress_to=0
+detect_3d/compress_to=1

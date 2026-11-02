@@ -1,11 +1,11 @@
-[gd_resource type="ShaderMaterial" format=3 uid="uid://cxf1uv8os00p3"]
+[gd_resource type="ShaderMaterial" format=3]
 
-[ext_resource type="Shader" uid="uid://bta78oqjbb6g6" path="res://demo/shaders/mtoon/mtoon_outline_cutout.gdshader" id="1_hbk7u"]
-[ext_resource type="Texture2D" uid="uid://cst67yqa8gvfs" path="res://demo/characters/demo_d_Shader_NoneNormal.png" id="2_in1g5"]
-[ext_resource type="Texture2D" uid="uid://bouvm7xm3obm4" path="res://demo/characters/demo_d_Shader_NoneBlack.png" id="3_b4ylx"]
-[ext_resource type="Texture2D" uid="uid://chb2p6olp7rua" path="res://demo/characters/demo_d__20.png" id="4_fi3vc"]
-[ext_resource type="Texture2D" uid="uid://clv8bgk3h813p" path="res://demo/characters/demo_d_MatcapWarp.png" id="5_do858"]
-[ext_resource type="Shader" uid="uid://dwlpyba606kl" path="res://demo/shaders/mtoon/mtoon_cutout_cull_off.gdshader" id="6_85ju0"]
+[ext_resource type="Shader" path="res://demo/shaders/mtoon/mtoon_outline_cutout.gdshader" id="1_hbk7u"]
+[ext_resource type="Texture2D" path="res://demo/characters/demo_d_Shader_NoneNormal.png" id="2_in1g5"]
+[ext_resource type="Texture2D" path="res://demo/characters/demo_d_Shader_NoneBlack.png" id="3_b4ylx"]
+[ext_resource type="Texture2D" path="res://demo/characters/demo_d__20.png" id="4_fi3vc"]
+[ext_resource type="Texture2D" path="res://demo/characters/demo_d_MatcapWarp.png" id="5_do858"]
+[ext_resource type="Shader" path="res://demo/shaders/mtoon/mtoon_cutout_cull_off.gdshader" id="6_85ju0"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_uqk5s"]
 resource_name = "N00_008_01_Shoes_01_CLOTH_02_Outline"
