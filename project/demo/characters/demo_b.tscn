@@ -1,0 +1,40 @@
+[gd_scene format=3 uid="uid://bliaa1wwgsb4k"]
+
+[ext_resource type="PackedScene" uid="uid://diwk1aet4ejqh" path="res://demo/characters/demo_b.glb" id="1_33odx"]
+[ext_resource type="AnimationLibrary" uid="uid://du4gfb65gvyby" path="res://demo/motions/demo_motions.glb" id="2_qp24x"]
+[ext_resource type="AnimationNodeBlendTree" uid="uid://bcsixpyfun3ks" path="res://demo/motions/locomotion.tres" id="3_nlaw8"]
+[ext_resource type="Script" uid="uid://b31tfi6s47b4q" path="res://demo/scripts/face.gd" id="4_88qwm"]
+[ext_resource type="Script" uid="uid://csfpwv81biimb" path="res://demo/scripts/look.gd" id="5_v1ao1"]
+[ext_resource type="Script" uid="uid://olte1161ncgj" path="res://demo/scripts/feet.gd" id="6_lp7at"]
+
+[node name="demo_b" unique_id=1425030462 instance=ExtResource("1_33odx")]
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." index="1" unique_id=1297176024]
+libraries/demo_motions = ExtResource("2_qp24x")
+
+[node name="AnimationTree" type="AnimationTree" parent="." index="2" unique_id=567663201]
+tree_root = ExtResource("3_nlaw8")
+anim_player = NodePath("../AnimationPlayer")
+parameters/Move/blend_position = 0.0
+parameters/State/current_state = ""
+parameters/State/transition_request = ""
+parameters/State/current_index = -1
+parameters/Side/blend_amount = 0.0
+parameters/LeanOnly/sub_amount = 0.0
+parameters/LeanPhase/seek_request = -1.0
+parameters/Lean/add_amount = 0.0
+parameters/IdleFoot/blend_amount = 0.0
+parameters/MoveRate/scale = 1.0
+parameters/Rest/current_state = ""
+parameters/Rest/transition_request = ""
+parameters/Rest/current_index = -1
+parameters/ExitFoot/blend_amount = 0.0
+
+[node name="Face" type="Node" parent="." index="4" unique_id=1076000046]
+script = ExtResource("4_88qwm")
+
+[node name="Look" type="Node" parent="." index="5" unique_id=579590211]
+script = ExtResource("5_v1ao1")
+
+[node name="Feet" type="Node" parent="." index="6" unique_id=336779075]
+script = ExtResource("6_lp7at")

@@ -2,8 +2,10 @@
 
 [ext_resource type="Script" uid="uid://77lvhsp7nagn" path="res://demo/scripts/character_switch.gd" id="1_vknmp"]
 [ext_resource type="Script" uid="uid://bh2u8ukcbg5tf" path="res://demo/scripts/player.gd" id="2_r7osq"]
-[ext_resource type="PackedScene" uid="uid://dsjd8kwsev3q7" path="res://demo/characters/shino.tscn" id="3_whp8a"]
-[ext_resource type="PackedScene" uid="uid://b0nb0eek5tvfs" path="res://demo/characters/victoria.tscn" id="4_nlnu4"]
+[ext_resource type="PackedScene" uid="uid://sakuljmrlru" path="res://demo/characters/demo_a.tscn" id="3_g7ck0"]
+[ext_resource type="PackedScene" uid="uid://bliaa1wwgsb4k" path="res://demo/characters/demo_b.tscn" id="4_jnkic"]
+[ext_resource type="PackedScene" uid="uid://duxidmeawsgit" path="res://demo/characters/demo_c.tscn" id="5_tlscf"]
+[ext_resource type="PackedScene" uid="uid://bh0xbr36h5l55" path="res://demo/characters/demo_d.tscn" id="6_u37yy"]
 [ext_resource type="Script" uid="uid://devckjxwpb5us" path="res://demo/scripts/camera_rig.gd" id="9_lb125"]
 [ext_resource type="Theme" uid="uid://dum5ltf2wvd6b" path="res://demo/ui/demo_theme.tres" id="9_nlnu4"]
 [ext_resource type="Material" uid="uid://bwho858lr0623" path="res://demo/stage/floor.tres" id="10_3d2ym"]
@@ -63,9 +65,9 @@ size = Vector3(2000, 1, 2000)
 
 [node name="Stage" type="Node3D" unique_id=287086239 node_paths=PackedStringArray("characters", "player", "character_buttons", "cloth_button", "time_slider", "time_value")]
 script = ExtResource("1_vknmp")
-characters = [NodePath("Player/Skin/shino"), NodePath("Player/Skin/victoria")]
+characters = [NodePath("Player/Skin/demo_a"), NodePath("Player/Skin/demo_b"), NodePath("Player/Skin/demo_c"), NodePath("Player/Skin/demo_d")]
 player = NodePath("Player")
-character_buttons = [NodePath("CanvasLayer/Panel/Column/Rows/Characters/Shino"), NodePath("CanvasLayer/Panel/Column/Rows/Characters/Victoria")]
+character_buttons = [NodePath("CanvasLayer/Panel/Column/Rows/Characters/A"), NodePath("CanvasLayer/Panel/Column/Rows/Characters/B"), NodePath("CanvasLayer/Panel/Column/Rows/Characters/C"), NodePath("CanvasLayer/Panel/Column/Rows/Characters/D")]
 cloth_button = NodePath("CanvasLayer/Panel/Column/Rows/Cloth")
 time_slider = NodePath("CanvasLayer/Panel/Column/Rows/Time/Slider")
 time_value = NodePath("CanvasLayer/Panel/Column/Rows/Time/Value")
@@ -81,9 +83,15 @@ shape = SubResource("CapsuleShape3D_i76fu")
 
 [node name="Skin" type="Node3D" parent="Player" unique_id=2051496143]
 
-[node name="shino" parent="Player/Skin" unique_id=1067818726 instance=ExtResource("3_whp8a")]
+[node name="demo_a" parent="Player/Skin" unique_id=468153633 instance=ExtResource("3_g7ck0")]
 
-[node name="victoria" parent="Player/Skin" unique_id=1265756670 instance=ExtResource("4_nlnu4")]
+[node name="demo_b" parent="Player/Skin" unique_id=1425030462 instance=ExtResource("4_jnkic")]
+visible = false
+
+[node name="demo_c" parent="Player/Skin" unique_id=234296301 instance=ExtResource("5_tlscf")]
+visible = false
+
+[node name="demo_d" parent="Player/Skin" unique_id=783295312 instance=ExtResource("6_u37yy")]
 visible = false
 
 [node name="CameraRig" type="Node3D" parent="Player" unique_id=272568532]
@@ -183,18 +191,32 @@ vertical_alignment = 1
 [node name="Characters" type="HBoxContainer" parent="CanvasLayer/Panel/Column/Rows" unique_id=411622186]
 layout_mode = 2
 
-[node name="Shino" type="Button" parent="CanvasLayer/Panel/Column/Rows/Characters" unique_id=1161347795]
+[node name="A" type="Button" parent="CanvasLayer/Panel/Column/Rows/Characters" unique_id=1161347795]
 layout_mode = 2
 focus_mode = 0
 toggle_mode = true
-text = "Shino"
+text = "A"
 flat = true
 
-[node name="Victoria" type="Button" parent="CanvasLayer/Panel/Column/Rows/Characters" unique_id=2068495410]
+[node name="B" type="Button" parent="CanvasLayer/Panel/Column/Rows/Characters" unique_id=2068495410]
 layout_mode = 2
 focus_mode = 0
 toggle_mode = true
-text = "Victoria"
+text = "B"
+flat = true
+
+[node name="C" type="Button" parent="CanvasLayer/Panel/Column/Rows/Characters" unique_id=1266907680]
+layout_mode = 2
+focus_mode = 0
+toggle_mode = true
+text = "C"
+flat = true
+
+[node name="D" type="Button" parent="CanvasLayer/Panel/Column/Rows/Characters" unique_id=1551174658]
+layout_mode = 2
+focus_mode = 0
+toggle_mode = true
+text = "D"
 flat = true
 
 [node name="ClothLabel" type="Label" parent="CanvasLayer/Panel/Column/Rows" unique_id=1567420338]

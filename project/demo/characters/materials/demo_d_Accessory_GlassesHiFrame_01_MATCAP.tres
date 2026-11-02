@@ -1,10 +1,10 @@
-[gd_resource type="ShaderMaterial" format=3]
+[gd_resource type="ShaderMaterial" format=3 uid="uid://cog5umd4l1erj"]
 
-[ext_resource type="Shader" path="res://demo/shaders/mtoon/mtoon_outline_cutout.gdshader" id="1_x6g0c"]
-[ext_resource type="Texture2D" path="res://demo/characters/demo_d_Shader_NoneBlack.png" id="2_no7lt"]
-[ext_resource type="Texture2D" path="res://demo/characters/demo_d__21.png" id="3_88133"]
-[ext_resource type="Texture2D" path="res://demo/characters/demo_d__22.png" id="4_r73y3"]
-[ext_resource type="Shader" path="res://demo/shaders/mtoon/mtoon_cutout_cull_off.gdshader" id="5_hmt5m"]
+[ext_resource type="Shader" uid="uid://bta78oqjbb6g6" path="res://demo/shaders/mtoon/mtoon_outline_cutout.gdshader" id="1_x6g0c"]
+[ext_resource type="Texture2D" uid="uid://bouvm7xm3obm4" path="res://demo/characters/demo_d_Shader_NoneBlack.png" id="2_no7lt"]
+[ext_resource type="Texture2D" uid="uid://brcff5g56gfjj" path="res://demo/characters/demo_d__21.png" id="3_88133"]
+[ext_resource type="Texture2D" uid="uid://cpow3n7nqvbx0" path="res://demo/characters/demo_d__22.png" id="4_r73y3"]
+[ext_resource type="Shader" uid="uid://dwlpyba606kl" path="res://demo/shaders/mtoon/mtoon_cutout_cull_off.gdshader" id="5_hmt5m"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_4jcnk"]
 resource_name = "Accessory_GlassesHiFrame_01_MATCAP_Outline"
