@@ -21,6 +21,8 @@
 [ext_resource type="Texture2D" uid="uid://c0mydlwuhfugi" path="res://demo/ui/keys/mouse_scroll_outline.png" id="17_6jfhx"]
 [ext_resource type="Texture2D" uid="uid://cbog7f1qgnaot" path="res://demo/ui/keys/keyboard_1_outline.png" id="18_lb125"]
 [ext_resource type="Texture2D" uid="uid://173yvgydhqv5" path="res://demo/ui/keys/keyboard_2_outline.png" id="19_3d2ym"]
+[ext_resource type="Texture2D" uid="uid://04lqnp5qyr0h" path="res://demo/ui/keys/keyboard_3_outline.png" id="22_tlscf"]
+[ext_resource type="Texture2D" uid="uid://byuia2fb5a0r" path="res://demo/ui/keys/keyboard_4_outline.png" id="23_u37yy"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_i76fu"]
 radius = 0.25
@@ -387,12 +389,14 @@ stretch_mode = 5
 [node name="Key3" type="TextureRect" parent="CanvasLayer/Prompts" unique_id=1598410129]
 custom_minimum_size = Vector2(28, 28)
 layout_mode = 2
+texture = ExtResource("22_tlscf")
 expand_mode = 1
 stretch_mode = 5
 
 [node name="Key4" type="TextureRect" parent="CanvasLayer/Prompts" unique_id=1187584062]
 custom_minimum_size = Vector2(28, 28)
 layout_mode = 2
+texture = ExtResource("23_u37yy")
 expand_mode = 1
 stretch_mode = 5
 
