@@ -445,12 +445,13 @@ rotation_offset = Quaternion(0, 0, 0, 1)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.6419509e-16, 1.611559, -0.01051112)
 
 [node name="Bust" type="BoneClothSimulator3D" parent="GeneralSkeleton" parent_id_path=PackedInt32Array(570007486) index="6" unique_id=1588807226]
-drag/value = 0.3
-stiffness/value = 0.25
+drag/value = 0.45
+stiffness/value = 0.45
 radius/value = 0.05
 limit_angle/value = 0.5235988
 joint_speed_limit = 0.0
 root_spring_stiffness = 0.15
+root_spring_limit = 0.02
 chain_count = 2
 chains/0/root_bone_name = "J_Sec_L_Bust1"
 chains/0/root_bone = 37
