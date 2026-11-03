@@ -174,8 +174,8 @@ rotation_offset = Quaternion(0, 0, 0.70710677, 0.70710677)
 transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, 2.2762402e-17, 1.1706066, -0.030830175)
 
 [node name="Shoulder" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/BackHair" index="5" unique_id=60161742]
-radius = 0.055
-height = 0.23
+radius = 0.035
+height = 0.19
 bone_name = "LeftUpperArm"
 bone = 73
 mirror_bone_name = "RightUpperArm"
@@ -185,8 +185,8 @@ rotation_offset = Quaternion(0, 0, 0, 1)
 transform = Transform3D(0, 1, 0, 0, 0, -1, -1, 0, 0, 0.25536144, 1.3881736, 0.0013040495)
 
 [node name="Collar" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/BackHair" index="6" unique_id=1340641040]
-radius = 0.06
-height = 0.23
+radius = 0.04
+height = 0.19
 bone_name = "LeftShoulder"
 bone = 72
 mirror_bone_name = "RightShoulder"
@@ -196,7 +196,7 @@ rotation_offset = Quaternion(0, 0, 0, 1)
 transform = Transform3D(0, 1, 0, 0, 0, 1, 1, 0, 0, 0.07850662, 1.4008478, 0.0049291216)
 
 [node name="Bust" type="BoneClothCollisionSphere3D" parent="GeneralSkeleton/BackHair" index="7" unique_id=1496278864]
-radius = 0.093
+radius = 0.058
 bone_name = "J_Sec_L_Bust1"
 bone = 5
 mirror_bone_name = "J_Sec_R_Bust1"
@@ -282,8 +282,8 @@ rotation_offset = Quaternion(0, 0, 0.70710677, 0.70710677)
 transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, 2.2762402e-17, 1.1706066, -0.030830175)
 
 [node name="Shoulder" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/SideHair" index="5" unique_id=1437609233]
-radius = 0.055
-height = 0.23
+radius = 0.035
+height = 0.19
 bone_name = "LeftUpperArm"
 bone = 73
 mirror_bone_name = "RightUpperArm"
@@ -293,8 +293,8 @@ rotation_offset = Quaternion(0, 0, 0, 1)
 transform = Transform3D(0, 1, 0, 0, 0, -1, -1, 0, 0, 0.25536144, 1.3881736, 0.0013040495)
 
 [node name="Collar" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/SideHair" index="6" unique_id=1521215953]
-radius = 0.06
-height = 0.23
+radius = 0.04
+height = 0.19
 bone_name = "LeftShoulder"
 bone = 72
 mirror_bone_name = "RightShoulder"
@@ -304,7 +304,7 @@ rotation_offset = Quaternion(0, 0, 0, 1)
 transform = Transform3D(0, 1, 0, 0, 0, 1, 1, 0, 0, 0.07850662, 1.4008478, 0.0049291216)
 
 [node name="Bust" type="BoneClothCollisionSphere3D" parent="GeneralSkeleton/SideHair" index="7" unique_id=1667197506]
-radius = 0.093
+radius = 0.058
 bone_name = "J_Sec_L_Bust1"
 bone = 5
 mirror_bone_name = "J_Sec_R_Bust1"
