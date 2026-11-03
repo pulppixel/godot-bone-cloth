@@ -1,0 +1,17 @@
+[gd_resource type="BoneClothPreset" format=3 uid="uid://cj6h02hq3mju1"]
+
+[sub_resource type="Curve" id="Curve_6lddl"]
+_data = [Vector2(0, 0.2), 0.0, 0.8000001, 1, 1, Vector2(1, 1), 0.8000001, 0.0, 1, 1]
+point_count = 2
+
+[resource]
+drag/value = 0.2
+stiffness/value = 0.02
+radius/value = 0.05
+limit_angle/value = 1.3089969
+limit_angle/damping_curve = SubResource("Curve_6lddl")
+limit_angle/stiffness = 0.66
+gravity/value = 5.0
+local_movement_speed_limit = 3.0
+local_rotation_speed_limit = 6.2831855
+joint_speed_limit = 1.5
