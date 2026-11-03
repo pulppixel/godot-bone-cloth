@@ -317,6 +317,12 @@
 		<member name="link_mode" type="int" setter="set_link_mode" getter="get_link_mode" enum="BoneClothSimulator3D.LinkMode" default="0">
 			How the chains are linked, in list order. A branch that starts below its trunk's root is not linked.
 		</member>
+		<member name="link_spacing/damping_curve" type="Curve" setter="set_link_spacing_damping_curve" getter="get_link_spacing_damping_curve">
+			The curve that scales [member link_spacing/value] along the chains. If not set, the scale is [code]1.0[/code]. For long hair, start it at [code]0.0[/code] and raise it to [code]1.0[/code] past the middle of the chains, so the part lying on the shoulders and the back is left to the collisions.
+		</member>
+		<member name="link_spacing/value" type="float" setter="set_link_spacing" getter="get_link_spacing" default="0.0">
+			How strongly the links keep neighboring chains apart, from [code]0.0[/code] to [code]1.0[/code]. A link whose two joints come closer than the sum of their radii ([member radius/value]) pushes them apart; it never pulls them together. Long hair then keeps gaps between its strands as it swings, instead of its tips meeting in one point. A joint that a collision pushes is not moved toward that collision. [code]0.0[/code] disables it. Has no effect when [member link_mode] is [constant LINK_MODE_NONE].
+		</member>
 		<member name="link_split" type="bool" setter="set_link_split_enabled" getter="is_link_split_enabled" default="false">
 			If [code]true[/code], a collision does not push a link whose two joints lie on opposite sides of it, so the linked chains part around the collision instead of lying over it as one sheet, as long hair parts over a shoulder, some strands down the chest and the rest down the back. The bones of the chains are still pushed. Leave it [code]false[/code] for skirts and capes, where the links keep a leg or an arm from slipping between the chains. Has no effect when [member link_mode] is [constant LINK_MODE_NONE].
 		</member>

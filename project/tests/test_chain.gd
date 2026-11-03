@@ -118,6 +118,7 @@ static func run(t) -> void:
 	await _rest_overlap(t)
 	await _rest_overlap_off(t)
 	await _link_split(t)
+	await _link_spacing(t)
 	await _root_spring(t)
 	await _root_spring_forward(t)
 	await _monitors(t)
@@ -521,6 +522,48 @@ static func _link_split(t) -> void:
 
 	t.check(nearest[false] > 0.03, "Link split off: a link across a sphere stays %.4f m from its center." % nearest[false])
 	t.check(nearest[true] < 0.02, "Link split: a link across a sphere is pushed out to %.4f m from its center." % nearest[true])
+
+
+# link_spacing: 두 chain이 2 cm 떨어져 매달려 있다. joint 반지름이 2 cm라서 반지름 합(4 cm)보다 가깝다.
+#   r +-- a0 - a1 - a2   (x -0.01)
+#     +-- c0 - c1 - c2   (x 0.01)
+# 끄면 두 끝은 2 cm 그대로, 켜면 반지름 합 쪽으로 벌어진다.
+static func _link_spacing(t) -> void:
+	var gap := {} # 경우마다, 60 frame 뒤 두 끝(a2, c2) 사이의 거리 (m)
+	for spacing in [0.0, 1.0]:
+		var skeleton := Skeleton3D.new()
+		t.root.add_child(skeleton)
+		skeleton.add_bone("r")
+		for side in [["a", -0.01], ["c", 0.01]]:
+			for i in 3:
+				var bone := skeleton.add_bone("%s%d" % [side[0], i])
+				skeleton.set_bone_parent(bone, 0 if i == 0 else bone - 1)
+				skeleton.set_bone_rest(bone, Transform3D(Basis(), Vector3(side[1], 0, 0) if i == 0 else Vector3(0, -BONE_LENGTH, 0)))
+				skeleton.set_bone_pose(bone, skeleton.get_bone_rest(bone))
+		skeleton.modifier_callback_mode_process = Skeleton3D.MODIFIER_CALLBACK_MODE_PROCESS_MANUAL
+		var simulator: Node = ClassDB.instantiate("BoneClothSimulator3D")
+		skeleton.add_child(simulator)
+		simulator.set("chain_count", 2)
+		simulator.set("chains/0/root_bone_name", "a0")
+		simulator.set("chains/0/end_bone_name", "a2")
+		simulator.set("chains/1/root_bone_name", "c0")
+		simulator.set("chains/1/end_bone_name", "c2")
+		simulator.set("link_mode", 1)
+		simulator.set("link_spacing/value", spacing)
+		simulator.set("stiffness/value", 0.05)
+		simulator.set("radius/value", 0.02)
+		var tips: Array[Vector3] = [Vector3(), Vector3()] # a2, c2 (skeleton 공간)
+		skeleton.skeleton_updated.connect(func() -> void:
+			tips[0] = skeleton.get_bone_global_pose(3).origin
+			tips[1] = skeleton.get_bone_global_pose(6).origin)
+		for frame in 60:
+			skeleton.advance(1.0 / 60.0)
+			await t.process_frame
+		gap[spacing] = tips[0].distance_to(tips[1])
+		skeleton.free()
+
+	t.check(absf(gap[0.0] - 0.02) < 0.001, "Link spacing off: two chains 2 cm apart stay %.4f m apart." % gap[0.0])
+	t.check(gap[1.0] > 0.03, "Link spacing: two chains 2 cm apart with 2 cm joints are pushed %.4f m apart." % gap[1.0])
 
 
 # root spring이 있으면 root bone(b0)도 흔들린다.

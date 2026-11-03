@@ -16,6 +16,8 @@ class BoneClothPreset : public Resource {
 	// 기본값은 BoneClothSimulator3D와 같다.
 	float link_stiffness = 0.0f;
 	bool link_split = false;
+	float link_spacing = 0.0f;
+	Ref<Curve> link_spacing_damping_curve;
 	float drag = 0.1f;
 	Ref<Curve> drag_damping_curve;
 	float stiffness = 0.05f;
@@ -52,6 +54,8 @@ public:
 	static constexpr const char *VALUES[] = {
 		"link_stiffness",
 		"link_split",
+		"link_spacing/value",
+		"link_spacing/damping_curve",
 		"drag/value",
 		"drag/damping_curve",
 		"stiffness/value",
@@ -86,6 +90,10 @@ public:
 	float get_link_stiffness() const;
 	void set_link_split_enabled(bool p_enabled);
 	bool is_link_split_enabled() const;
+	void set_link_spacing(float p_spacing);
+	float get_link_spacing() const;
+	void set_link_spacing_damping_curve(const Ref<Curve> &p_curve);
+	Ref<Curve> get_link_spacing_damping_curve() const;
 	void set_drag(float p_drag);
 	float get_drag() const;
 	void set_drag_damping_curve(const Ref<Curve> &p_curve);

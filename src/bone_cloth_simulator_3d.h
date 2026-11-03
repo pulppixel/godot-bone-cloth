@@ -65,6 +65,7 @@ private:
 		float limit_angle = 0.0f;
 		float gravity = 0.0f;
 		float sync = 0.0f;
+		float spacing = 0.0f;
 
 		// 이번 step(또는 화면 위치 계산)에 collision마다 이 joint를 민 양.
 		LocalVector<Vector3> collision_pushes;
@@ -180,6 +181,8 @@ private:
 	LinkMode link_mode = LINK_MODE_NONE;
 	float link_stiffness = 0.0f;
 	bool link_split = false;
+	float link_spacing = 0.0f;
+	Ref<Curve> link_spacing_damping_curve;
 	float drag = 0.1f;
 	Ref<Curve> drag_damping_curve;
 	float stiffness = 0.05f;
@@ -263,6 +266,7 @@ private:
 	void _move_root(Chain &r_chain, const Vector3 &p_move, const Quaternion &p_turn);
 	void _simulate(Chain &p_chain, const Vector3 &p_gravity_direction, const Vector3 &p_move, const Quaternion &p_turn);
 	void _solve_links();
+	void _space_links();
 	void _collide_segment(Joint &r_a, Joint &r_b, float p_radius, const LocalVector<PosedCollision> &p_collisions, const LocalVector<bool> &p_collides_a, const LocalVector<bool> &p_collides_b, Vector3 Joint::*p_field, bool p_split);
 	void _collide(const LocalVector<PosedCollision> &p_collisions, Vector3 Joint::*p_field);
 	void _restore_limits_and_lengths(Chain &p_chain);
@@ -330,6 +334,10 @@ public:
 	float get_link_stiffness() const;
 	void set_link_split_enabled(bool p_enabled);
 	bool is_link_split_enabled() const;
+	void set_link_spacing(float p_spacing);
+	float get_link_spacing() const;
+	void set_link_spacing_damping_curve(const Ref<Curve> &p_curve);
+	Ref<Curve> get_link_spacing_damping_curve() const;
 	void set_drag(float p_drag);
 	float get_drag() const;
 	void set_drag_damping_curve(const Ref<Curve> &p_curve);

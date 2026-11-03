@@ -12,6 +12,10 @@
 _data = [Vector2(0, 0.2), 0.0, 0.8000001, 1, 1, Vector2(1, 1), 0.8000001, 0.0, 1, 1]
 point_count = 2
 
+[sub_resource type="Curve" id="Curve_hair_spacing"]
+_data = [Vector2(0, 0), 0.0, 0.0, 0, 1, Vector2(0.5, 0), 0.0, 10.0, 1, 1, Vector2(0.6, 1), 10.0, 0.0, 1, 1, Vector2(1, 1), 0.0, 0.0, 1, 0]
+point_count = 4
+
 [sub_resource type="Curve" id="Curve_bangs_stiffness"]
 _limits = [0.0, 2.0, 0.0, 1.0]
 _data = [Vector2(0, 2), 0.0, -1.0, 1, 1, Vector2(1, 1), -1.0, 0.0, 1, 1]
@@ -55,6 +59,8 @@ chains/1/exclude_collision_count = 0
 [node name="BackHair" type="BoneClothSimulator3D" parent="GeneralSkeleton" parent_id_path=PackedInt32Array(1565448554) index="4" unique_id=1523706013]
 link_mode = 1
 link_split = true
+link_spacing/value = 1.0
+link_spacing/damping_curve = SubResource("Curve_hair_spacing")
 drag/value = 0.2
 stiffness/value = 0.02
 radius/value = 0.035

@@ -9,6 +9,10 @@ void BoneClothPreset::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_link_stiffness"), &BoneClothPreset::get_link_stiffness);
 	ClassDB::bind_method(D_METHOD("set_link_split_enabled", "enabled"), &BoneClothPreset::set_link_split_enabled);
 	ClassDB::bind_method(D_METHOD("is_link_split_enabled"), &BoneClothPreset::is_link_split_enabled);
+	ClassDB::bind_method(D_METHOD("set_link_spacing", "spacing"), &BoneClothPreset::set_link_spacing);
+	ClassDB::bind_method(D_METHOD("get_link_spacing"), &BoneClothPreset::get_link_spacing);
+	ClassDB::bind_method(D_METHOD("set_link_spacing_damping_curve", "curve"), &BoneClothPreset::set_link_spacing_damping_curve);
+	ClassDB::bind_method(D_METHOD("get_link_spacing_damping_curve"), &BoneClothPreset::get_link_spacing_damping_curve);
 	ClassDB::bind_method(D_METHOD("set_drag", "drag"), &BoneClothPreset::set_drag);
 	ClassDB::bind_method(D_METHOD("get_drag"), &BoneClothPreset::get_drag);
 	ClassDB::bind_method(D_METHOD("set_drag_damping_curve", "curve"), &BoneClothPreset::set_drag_damping_curve);
@@ -66,6 +70,8 @@ void BoneClothPreset::_bind_methods() {
 	// 값을 이름으로 복사하고, preset을 열면 node와 같은 슬라이더로 보인다.
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "link_stiffness", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_link_stiffness", "get_link_stiffness");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "link_split"), "set_link_split_enabled", "is_link_split_enabled");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "link_spacing/value", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_link_spacing", "get_link_spacing");
+	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "link_spacing/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_link_spacing_damping_curve", "get_link_spacing_damping_curve");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "drag/value", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_drag", "get_drag");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "drag/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_drag_damping_curve", "get_drag_damping_curve");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "stiffness/value", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_stiffness", "get_stiffness");
@@ -118,6 +124,24 @@ void BoneClothPreset::set_link_split_enabled(bool p_enabled) {
 
 bool BoneClothPreset::is_link_split_enabled() const {
 	return link_split;
+}
+
+void BoneClothPreset::set_link_spacing(float p_spacing) {
+	link_spacing = p_spacing;
+	emit_changed();
+}
+
+float BoneClothPreset::get_link_spacing() const {
+	return link_spacing;
+}
+
+void BoneClothPreset::set_link_spacing_damping_curve(const Ref<Curve> &p_curve) {
+	link_spacing_damping_curve = p_curve;
+	emit_changed();
+}
+
+Ref<Curve> BoneClothPreset::get_link_spacing_damping_curve() const {
+	return link_spacing_damping_curve;
 }
 
 void BoneClothPreset::set_drag(float p_drag) {

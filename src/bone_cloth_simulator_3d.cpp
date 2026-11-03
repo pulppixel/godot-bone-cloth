@@ -19,6 +19,9 @@ static constexpr int MAX_STEPS = 4;
 // link의 부드러움 정도 (사실상 거의 늘어나지 않는다. 세기는 link_stiffness로 정할 수 있다).
 static constexpr float LINK_COMPLIANCE = 1e-9f;
 
+// link_spacing이 미는 힘이 다 차는 거리. 반지름 합의 30%만큼 더 가까워지면 다 민다.
+static constexpr float LINK_SPACING_RAMP = 0.3f;
+
 // Debugger > Monitors 탭의 Bone Cloth 값 하나(시간 또는 joint 수).
 struct MonitorSum {
 	std::atomic<uint64_t> sum = 0;
@@ -310,6 +313,7 @@ void BoneClothSimulator3D::_update_joint_settings(Chain &p_chain) {
 		joint.limit_angle = MAX(limit_angle * sample_curve(limit_angle_damping_curve, joint.length_rate), 0.0f);
 		joint.gravity = gravity * sample_curve(gravity_damping_curve, joint.length_rate) * units_per_meter;
 		joint.sync = MAX(sync * sample_curve(sync_damping_curve, joint.length_rate), 0.0f);
+		joint.spacing = CLAMP(link_spacing * sample_curve(link_spacing_damping_curve, joint.length_rate), 0.0f, 1.0f);
 	}
 }
 
@@ -514,6 +518,7 @@ void BoneClothSimulator3D::_simulate(Chain &p_chain, const Vector3 &p_gravity_di
 // XPBD: 위치를 직접 업데이트하여 거리를 맞추는 계산법
 // link와 rest의 거리의 차이를 구하고, 그 차이의 절반씩 두 joint를 서로 밀고 당긴다.
 void BoneClothSimulator3D::_solve_links() {
+	_space_links();
 	if (link_stiffness <= 0.0f) {
 		return;
 	}
@@ -559,6 +564,47 @@ static Vector3 combine_pushes(const LocalVector<Vector3> &p_pushes) {
 	}
 
 	return direction * magnitude * agreement;
+}
+
+// collision에 밀린 joint는 그 collision 쪽으로는 옮기지 않는다. 몸 표면을 따라 미끄러지는 몫만 남긴다.
+static Vector3 slide_on_contact(const LocalVector<Vector3> &p_pushes, const Vector3 &p_move) {
+	const Vector3 push = combine_pushes(p_pushes);
+	if (push.is_zero_approx()) {
+		return p_move;
+	}
+
+	const Vector3 normal = push.normalized();
+	return p_move - normal * MIN(p_move.dot(normal), 0.0f);
+}
+
+// 이웃한 두 가닥이 두 joint의 반지름 합보다 가까워지면 떼어 놓는다. 멀어지는 것은 그대로 둔다.
+/*
+	예: 긴 머리, 달리기.
+	가닥들이 같이 뒤로 날리면서 끝이 한 점으로 모인다(붓처럼). 실제 머리카락은 가닥끼리 밀어내서 덩어리 사이에 틈이 남는다.
+	어깨 위에 누운 쪽(chain의 위쪽)은 몸이 모양을 잡으므로, 보통 curve로 끝 쪽에만 준다.
+*/
+void BoneClothSimulator3D::_space_links() {
+	if (link_spacing <= 0.0f) {
+		return;
+	}
+
+	for (const Link &link : links) {
+		Joint &joint_a = chains[link.chain_a].joints[link.depth];
+		Joint &joint_b = chains[link.chain_b].joints[link.depth];
+		const float strength = (joint_a.spacing + joint_b.spacing) * 0.5f;
+		const float spacing = joint_a.radius + joint_b.radius;
+		const Vector3 delta = joint_b.location - joint_a.location;
+		const float distance = delta.length();
+		if (strength <= 0.0f || distance <= 0.0f || distance >= spacing) {
+			continue;
+		}
+
+		// 반지름 합에 막 들어왔을 때는 약하게, 더 가까워질수록 세게 민다. 한 번에 밀면 가닥이 떨린다.
+		const float ramp = MIN((1.0f - distance / spacing) / LINK_SPACING_RAMP, 1.0f);
+		const Vector3 correction = delta / distance * ((distance - spacing) * ramp * strength * 0.5f);
+		joint_a.location += slide_on_contact(joint_a.collision_pushes, correction);
+		joint_b.location += slide_on_contact(joint_b.collision_pushes, -correction);
+	}
 }
 
 // 선분 하나(r_a ~ r_b)를 collision 밖으로 밀 양을 구해서, 두 joint의 collision_pushes에 더한다(여기서 옮기지는 않는다).
@@ -769,6 +815,10 @@ void BoneClothSimulator3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_link_stiffness"), &BoneClothSimulator3D::get_link_stiffness);
 	ClassDB::bind_method(D_METHOD("set_link_split_enabled", "enabled"), &BoneClothSimulator3D::set_link_split_enabled);
 	ClassDB::bind_method(D_METHOD("is_link_split_enabled"), &BoneClothSimulator3D::is_link_split_enabled);
+	ClassDB::bind_method(D_METHOD("set_link_spacing", "spacing"), &BoneClothSimulator3D::set_link_spacing);
+	ClassDB::bind_method(D_METHOD("get_link_spacing"), &BoneClothSimulator3D::get_link_spacing);
+	ClassDB::bind_method(D_METHOD("set_link_spacing_damping_curve", "curve"), &BoneClothSimulator3D::set_link_spacing_damping_curve);
+	ClassDB::bind_method(D_METHOD("get_link_spacing_damping_curve"), &BoneClothSimulator3D::get_link_spacing_damping_curve);
 
 	ClassDB::bind_method(D_METHOD("set_drag", "drag"), &BoneClothSimulator3D::set_drag);
 	ClassDB::bind_method(D_METHOD("get_drag"), &BoneClothSimulator3D::get_drag);
@@ -834,6 +884,8 @@ void BoneClothSimulator3D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "link_mode", PROPERTY_HINT_ENUM, "None,Sequential,Loop"), "set_link_mode", "get_link_mode");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "link_stiffness", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_link_stiffness", "get_link_stiffness");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "link_split"), "set_link_split_enabled", "is_link_split_enabled");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "link_spacing/value", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_link_spacing", "get_link_spacing");
+	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "link_spacing/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_link_spacing_damping_curve", "get_link_spacing_damping_curve");
 
 	// chain 위치마다 값을 다르게 주기 위해 값마다 curve가 있다(<name>/value, <name>/damping_curve).
 	// stiffness는 step마다 joint를 pose 쪽으로 당기는 비율이다(0에서 1).
@@ -1045,7 +1097,7 @@ void BoneClothSimulator3D::_get_property_list(List<PropertyInfo> *p_list) const 
 
 // inspector에 노출할 지 말 지 여부를 여기서 최종적으로 정한다.
 void BoneClothSimulator3D::_validate_property(PropertyInfo &p_property) const {
-	if (link_mode == LINK_MODE_NONE && (p_property.name == StringName("link_stiffness") || p_property.name == StringName("link_split"))) {
+	if (link_mode == LINK_MODE_NONE && (p_property.name == StringName("link_stiffness") || p_property.name == StringName("link_split") || String(p_property.name).begins_with("link_spacing/"))) {
 		p_property.usage = PROPERTY_USAGE_NO_EDITOR;
 	}
 }
@@ -1349,6 +1401,22 @@ void BoneClothSimulator3D::set_link_split_enabled(bool p_enabled) {
 
 bool BoneClothSimulator3D::is_link_split_enabled() const {
 	return link_split;
+}
+
+void BoneClothSimulator3D::set_link_spacing(float p_spacing) {
+	link_spacing = p_spacing;
+}
+
+float BoneClothSimulator3D::get_link_spacing() const {
+	return link_spacing;
+}
+
+void BoneClothSimulator3D::set_link_spacing_damping_curve(const Ref<Curve> &p_curve) {
+	link_spacing_damping_curve = p_curve;
+}
+
+Ref<Curve> BoneClothSimulator3D::get_link_spacing_damping_curve() const {
+	return link_spacing_damping_curve;
 }
 
 void BoneClothSimulator3D::set_drag(float p_drag) {

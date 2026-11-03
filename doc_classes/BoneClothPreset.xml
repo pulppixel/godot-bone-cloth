@@ -46,6 +46,12 @@
 		<member name="limit_angle/value" type="float" setter="set_limit_angle" getter="get_limit_angle" default="0.0">
 			See [member BoneClothSimulator3D.limit_angle/value].
 		</member>
+		<member name="link_spacing/damping_curve" type="Curve" setter="set_link_spacing_damping_curve" getter="get_link_spacing_damping_curve">
+			See [member BoneClothSimulator3D.link_spacing/damping_curve].
+		</member>
+		<member name="link_spacing/value" type="float" setter="set_link_spacing" getter="get_link_spacing" default="0.0">
+			See [member BoneClothSimulator3D.link_spacing/value].
+		</member>
 		<member name="link_split" type="bool" setter="set_link_split_enabled" getter="is_link_split_enabled" default="false">
 			See [member BoneClothSimulator3D.link_split].
 		</member>
