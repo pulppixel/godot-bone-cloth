@@ -1,5 +1,6 @@
 extends Node3D
 
+const TIME_STEP := 0.1
 @export var mouse_deg_per_px := 0.15
 @export var stick_deg_per_sec := 150.0
 @export var pitch_min_deg := -60.0
@@ -32,16 +33,16 @@ func _unhandled_input(event: InputEvent) -> void:
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	elif event is InputEventKey and event.pressed and not event.echo:
 		if event.physical_keycode == KEY_COMMA:
-			_set_time_scale(Engine.time_scale - 0.1)
+			_set_time_scale(Engine.time_scale - TIME_STEP)
 		elif event.physical_keycode == KEY_PERIOD:
-			_set_time_scale(Engine.time_scale + 0.1)
+			_set_time_scale(Engine.time_scale + TIME_STEP)
 
 
 func _process(_delta: float) -> void:
 	var now := Time.get_ticks_usec()
 	var real_delta := (now - _last_ticks) / 1000000.0
 	_last_ticks = now
-
+	
 	var look := Input.get_vector("look_left", "look_right", "look_up", "look_down")
 	_turn(look * stick_deg_per_sec * real_delta)
 
@@ -53,5 +54,5 @@ func _turn(degrees: Vector2) -> void:
 
 
 func _set_time_scale(value: float) -> void:
-	Engine.time_scale = snappedf(clampf(value, 0.0, 1.0), 0.1)
+	Engine.time_scale = snappedf(clampf(value, 0.0, 1.0), TIME_STEP)
 	print("Time Scale ", Engine.time_scale)

@@ -11,14 +11,22 @@ const RUN := 7.65
 
 const STOP_SPEED := 0.2
 const SHARP_TURN := deg_to_rad(140.0)
+const SPEED_SLACK := 0.01
+
 const EXIT_FROM := 0.95
 const EXIT_AT := 0.45
 const EXIT_WINDOW := 0.25
 const EXIT_STOP := 0.45
 const EXIT_GRACE := 0.2
-const FLAT_AHEAD := 3.0
 const EXIT_AFTER := 2.0
+
+const FLAT_AHEAD := 3.0
+const FLAT_STEP := 0.5
+const FLAT_RAY_UP := 0.6
+const FLAT_RAY_DOWN := 1.2
 const FLAT_RISE := 0.03
+const GROUND_RAY_UP := 0.3
+const GROUND_RAY_DOWN := 0.6
 
 @export_group("Speed")
 @export var walk_speed := WALK
@@ -69,7 +77,7 @@ var _run_off := INF
 
 class Stop:
 	var time := 0.0
-	var decel := 0.0 # 감속 (m/s^2).
+	var decel := 0.0
 
 
 func _ready() -> void:
@@ -112,7 +120,7 @@ func _physics_process(delta: float) -> void:
 	elif not exit_wait:
 		var clip_now := Vector2(velocity.x, velocity.z).length() / _scale
 		var braking := not _airborne() and _anim == Anim.MOVE and direction.is_zero_approx() and clip_now > 0.0
-		_brake = run_brake if braking and clip_now > walk_speed + 0.01 else deceleration
+		_brake = run_brake if braking and clip_now > walk_speed + SPEED_SLACK else deceleration
 		turned = _steer(direction, top_speed, delta)
 	
 	if not _airborne() and Input.is_action_just_pressed("jump"):
@@ -138,7 +146,7 @@ func _airborne() -> bool:
 func _watch_exit(direction: Vector3, delta: float) -> bool:
 	var clip_now := Vector2(velocity.x, velocity.z).length() / _scale
 	_since_top = 0.0 if clip_now >= EXIT_FROM * run_speed else _since_top + delta
-	if _anim != Anim.MOVE or clip_now <= walk_speed + 0.01:
+	if _anim != Anim.MOVE or clip_now <= walk_speed + SPEED_SLACK:
 		_run_time = 0.0
 	elif not direction.is_zero_approx():
 		_run_time += delta
@@ -236,9 +244,9 @@ func _exit_foot() -> int:
 
 func _flat_ahead(dir: Vector3) -> bool:
 	var space := get_world_3d().direct_space_state
-	for k in range(0, int(FLAT_AHEAD / 0.5) + 1):
-		var from := global_position + dir * (0.5 * k) + Vector3.UP * 0.6
-		var query := PhysicsRayQueryParameters3D.create(from, from + Vector3.DOWN * 1.2, collision_mask, [get_rid()])
+	for k in range(0, int(FLAT_AHEAD / FLAT_STEP) + 1):
+		var from := global_position + dir * (FLAT_STEP * k) + Vector3.UP * FLAT_RAY_UP
+		var query := PhysicsRayQueryParameters3D.create(from, from + Vector3.DOWN * FLAT_RAY_DOWN, collision_mask, [get_rid()])
 		var hit := space.intersect_ray(query)
 		if hit.is_empty() or absf(hit.position.y - global_position.y) > FLAT_RISE:
 			return false
@@ -297,8 +305,8 @@ func _absorb_step(moved: Vector3) -> void:
 
 
 func _ground() -> Vector3:
-	var from := global_position + Vector3.UP * 0.3
-	var query := PhysicsRayQueryParameters3D.create(from, from + Vector3.DOWN * 0.6, collision_mask, [get_rid()])
+	var from := global_position + Vector3.UP * GROUND_RAY_UP
+	var query := PhysicsRayQueryParameters3D.create(from, from + Vector3.DOWN * GROUND_RAY_DOWN, collision_mask, [get_rid()])
 	var hit := get_world_3d().direct_space_state.intersect_ray(query)
 	if hit.is_empty() or hit.normal.y < cos(floor_max_angle):
 		return Vector3.UP

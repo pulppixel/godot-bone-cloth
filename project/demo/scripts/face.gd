@@ -31,7 +31,7 @@ const FADE := {"idle": 0.35, "thought": 0.4, "walk": 0.25, "run": 0.25, "jump_st
 
 const WALK_SPEED := 1.064
 const RUN_SPEED := 7.65
-
+const RUN_FACE_FROM := 0.5
 const IMPACT_TIME := 0.12
 const RELIEF_TIME := 0.8
 const THOUGHT_EVERY := Vector2(4.0, 8.0)
@@ -86,14 +86,13 @@ func _process(delta: float) -> void:
 	if state == &"land" and _last_state != &"land":
 		_land_time = _time
 	_last_state = state
-
-	# 1. 상태 얼굴을 고른다.
+	
 	var key := String(state) if STYLES[style].has(String(state)) else "idle"
 	var since_land := _time - _land_time
-	var run := 0.0 # 달리기 얼굴의 비율 (0 걷기, 1 달리기)
+	var run := 0.0
 	if state == &"move":
 		run = clampf((speed - WALK_SPEED) / (RUN_SPEED - WALK_SPEED), 0.0, 1.0)
-		key = "run" if run >= 0.5 else "walk"
+		key = "run" if run >= RUN_FACE_FROM else "walk"
 	elif (state == &"land" or state == &"idle") and since_land < IMPACT_TIME:
 		key = "impact"
 	elif (state == &"land" or state == &"idle") and since_land < IMPACT_TIME + RELIEF_TIME:
@@ -106,8 +105,7 @@ func _process(delta: float) -> void:
 	if key != _key:
 		_key = key
 		_request_blink()
-
-	# 2. 지금 얼굴을 그 얼굴 쪽으로 옮긴다.
+	
 	var faces: Dictionary = STYLES[style]
 	var target: Dictionary = {}
 	if key == "walk" or key == "run":
@@ -120,13 +118,11 @@ func _process(delta: float) -> void:
 	var step: float = delta / FADE[key]
 	for shape in _weights:
 		_weights[shape] = move_toward(_weights[shape], target.get(shape, 0.0), step)
-
-	# 3. 호흡을 더한다.
+	
 	var values := _weights.duplicate()
 	var breath := 0.5 - 0.5 * cos(TAU * _time / BREATH_PERIOD)
 	values["Fcl_MTH_A"] += run * lerpf(BREATH.x, BREATH.y, breath)
-
-	# 4. 눈 깜빡임을 더한다.
+	
 	if _time >= _next_blink:
 		_blink_start = _time
 		_next_blink = _time + randf_range(BLINK_EVERY.x, BLINK_EVERY.y)
@@ -134,7 +130,7 @@ func _process(delta: float) -> void:
 	for shape in EYE_CLOSERS:
 		closed += values.get(shape, 0.0)
 	values["Fcl_EYE_Close"] += _blink_amount(_time - _blink_start) * (1.0 - clampf(closed, 0.0, 1.0))
-
+	
 	for shape in values:
 		_face.set_blend_shape_value(_shapes[shape], clampf(values[shape], 0.0, 1.0))
 

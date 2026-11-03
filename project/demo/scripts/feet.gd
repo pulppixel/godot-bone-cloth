@@ -18,6 +18,7 @@ const MAX_OFFSET := 0.5
 const SAMPLES := 60
 const LIFTED := 0.04
 const SUPPORT := 0.05
+const MOVING := 0.1
 const SHIFT := 0.3
 const STEP := 0.02
 const EDGE := 0.02
@@ -26,6 +27,9 @@ const MARGIN := 0.04
 const SLIDE := 2.0
 const HEEL_LIFT := 0.5
 const HORIZONTAL := 0.1
+const POLE_OUT := 0.5
+const FLOOR_NORMAL := 0.7
+const STRETCH := 0.5
 
 var _skeleton: Skeleton3D
 var _hips := -1
@@ -33,39 +37,39 @@ var _legs: Array[Leg] = []
 var _hip := Vector2.ZERO
 var _floor_y := NAN
 var _skin: CharacterSkin
-var _cycles := [] # clip마다 Array[Cycle] (다리마다 하나)
+var _cycles := []
 var _phase := 0.0
 
 
 class Leg:
-	var upper := -1 # 허벅지 본
-	var lower := -1 # 정강이 본
-	var ankle := -1 # 발 본
-	var toes := -1 # 발가락 본
-	var target: Node3D # TwoBoneIK3D가 발을 보낼 자리
-	var pole: Node3D # 무릎이 향할 자리
-	var lift := Vector2.ZERO # 발을 들어 올린 높이와 그 속도 (스프링)
-	var ankle_basis := Basis() # IK 전의 발 방향. IK 뒤에 되돌린다
-	var planted := false # 디딘 발인지
-	var offset := Vector3.ZERO # 발자국을 앞뒤로 옮긴 만큼 (지금)
-	var offset_from := Vector3.ZERO # 이번 걸음에서 옮기기 시작한 값
-	var offset_to := Vector3.ZERO # 이번 걸음에서 옮겨 갈 값
-	var shift := NAN # 발자국이 고른 앞뒤 거리 (m). NAN이면 아직 안 골랐다
-	var progress := 0.0 # 이번 걸음에서 발이 앞으로 나아간 비율 (0 ~ 1)
+	var upper := -1
+	var lower := -1
+	var ankle := -1
+	var toes := -1
+	var target: Node3D
+	var pole: Node3D
+	var lift := Vector2.ZERO
+	var ankle_basis := Basis()
+	var planted := false
+	var offset := Vector3.ZERO
+	var offset_from := Vector3.ZERO
+	var offset_to := Vector3.ZERO
+	var shift := NAN
+	var progress := 0.0
 
 
 class Cycle:
-	var stance := 0.0 # 발이 바닥에 가장 평평하게 놓인 때
-	var off := 0.0 # stance 뒤 발이 떨어질 때 (stance 기준)
-	var strike := 0.0 # 발이 다시 닿을 때 (stance 기준)
-	var off_z := 0.0 # 떨어질 때 발목의 앞뒤 위치
-	var strike_z := 0.0 # 닿을 때 발목의 앞뒤 위치
+	var stance := 0.0
+	var off := 0.0
+	var strike := 0.0
+	var off_z := 0.0
+	var strike_z := 0.0
 	var off_ankle := Vector3.ZERO
 	var off_toes := Vector3.ZERO
 	var strike_ankle := Vector3.ZERO
 	var strike_toes := Vector3.ZERO
-	var time := 0.0 # 지금 주기 안의 위치 (stance 기준).
-	var length := 0.0 # 주기 한 바퀴의 초.
+	var time := 0.0
+	var length := 0.0
 
 
 class FootGround extends SkeletonModifier3D:
@@ -291,7 +295,7 @@ func _swing(leg: Leg, cycle: Cycle, space: Transform3D, floor_y: float, delta: f
 		leg.planted = true
 		return 0.0
 	var velocity: Vector3 = _skin.body.velocity * Vector3(1, 0, 1)
-	if velocity.length() > 0.1:
+	if velocity.length() > MOVING:
 		leg.shift = _footprint(space, cycle, velocity, floor_y, 0.0 if is_nan(leg.shift) else leg.shift)
 		leg.offset_to = velocity.normalized() * leg.shift
 	var z := _skeleton.get_bone_global_pose(leg.ankle).origin.z
@@ -318,11 +322,10 @@ func _aim(leg: Leg, space: Transform3D, height: float, p_standing: bool) -> void
 	var thigh_x := space.basis * _skeleton.get_bone_global_pose(leg.upper).basis.x
 	var axis := thigh_x * signf(_skeleton.get_bone_global_rest(leg.upper).basis.x.x)
 	var out := line.cross(axis).normalized()
-	leg.pole.global_position = (root + target) * 0.5 + out * 0.5
+	leg.pole.global_position = (root + target) * 0.5 + out * POLE_OUT
 	leg.ankle_basis = _skeleton.get_bone_global_pose(leg.ankle).basis
 
 
-# 골반 스프링의 높이만큼 Hips 본을 올리거나 내린다.
 func _raise_hips(space: Transform3D) -> void:
 	var pose := _skeleton.get_bone_pose_position(_hips)
 	var parent := _skeleton.get_bone_parent(_hips)
@@ -436,7 +439,7 @@ func _rise_to(hip: Vector3, target: Vector3, h: float, r: float) -> float:
 func _reach(hip: Vector3, knee: Vector3, ankle: Vector3) -> float:
 	var desired := hip.distance_to(ankle)
 	var full := hip.distance_to(knee) + knee.distance_to(ankle)
-	return desired + 0.5 * (full - desired)
+	return desired + STRETCH * (full - desired)
 
 
 func _restore() -> void:
@@ -450,7 +453,7 @@ func _floor_under(point: Vector3, floor_y: float, reach := TREAD_REACH) -> float
 	var hit := _ray(point, floor_y, reach, FOOT_GROUND)
 	if hit.is_empty():
 		hit = _ray(point, floor_y, REACH, _skin.body.collision_mask)
-	if hit.is_empty() or hit.normal.y < 0.7:
+	if hit.is_empty() or hit.normal.y < FLOOR_NORMAL:
 		return floor_y
 	return hit.position.y
 

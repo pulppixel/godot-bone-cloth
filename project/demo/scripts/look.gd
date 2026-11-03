@@ -11,14 +11,19 @@ const BODY := [
 	[&"Head", Vector2(45.0, 30.0), 0.85],
 ]
 const EYE_LIMIT := Vector2(10.0, 10.0)
+const DAMP := 0.5
 const HEAD_FOLLOW := 3.5
+const CHEST_FOLLOW := 2.0
 const REACH := 90.0
 const REACH_OUT := 105.0
 const MOVE_REACH := 45.0
+const BEHIND := 150.0
 const AHEAD := 3.0
+const EYE_ABOVE_HEAD := 0.06
 const MOVING := 0.3
 const WALK_PITCH := -15.0
 const RUN_PITCH := -21.0
+const RUN_FROM := 3.454
 
 const PURSUIT := 6.0
 const SACCADE_TRIGGER := 3.0
@@ -30,7 +35,9 @@ const BLINK_SHIFT := 15.0
 const MUTUAL_TIME := Vector2(2.0, 5.0)
 const GLANCE_CHANCE := 0.35
 const GLANCE_TIME := Vector2(0.2, 0.6)
-const RUN_FROM := 3.454
+const GLANCE_SCALE := 6.9
+const GLANCE_RANGE := 15.0
+const GLANCE_NORM := 15.7
 const WALK_AHEAD_TIME := Vector2(3.0, 6.0)
 const WALK_GLANCE_TIME := Vector2(0.4, 1.0)
 const HAND_OVER := 3.0
@@ -96,8 +103,8 @@ func _add_look(bone: StringName, target: Node3D, forward: SkeletonModifier3D.Bon
 	look.symmetry_limitation = true
 	look.primary_limit_angle = deg_to_rad(limit.x * 2.0)
 	look.secondary_limit_angle = deg_to_rad(limit.y * 2.0)
-	look.primary_damp_threshold = 0.5
-	look.secondary_damp_threshold = 0.5
+	look.primary_damp_threshold = DAMP
+	look.secondary_damp_threshold = DAMP
 	_skeleton.add_child(look)
 	for child in _skeleton.get_children():
 		if child is BoneClothSimulator3D:
@@ -148,7 +155,7 @@ func _process(delta: float) -> void:
 	var state: StringName = _skin.state
 	var to_clip := state == &"land" or ((state == &"jump_start" or state == &"fall") and _skin.body.velocity.y < 0.0)
 	_weight = move_toward(_weight, 0.0 if to_clip else 1.0, delta * HAND_OVER)
-	_chest_weight = move_toward(_chest_weight, BODY[0][2] if not stepping else 0.0, delta * 2.0)
+	_chest_weight = move_toward(_chest_weight, BODY[0][2] if not stepping else 0.0, delta * CHEST_FOLLOW)
 	for i in _looks.size():
 		var base: float = 1.0 if i >= BODY.size() else (_chest_weight if i == 0 else BODY[i][2])
 		_looks[i].influence = base * _weight
@@ -191,7 +198,6 @@ func _wants_saccade(wanted: Vector2, last: Vector2, delta: float) -> bool:
 	if rad_to_deg(_vector(_pursuit, 0.0).angle_to(_vector(wanted, 0.0))) <= SACCADE_TRIGGER:
 		return false
 	var error := _difference(_pursuit, wanted)
-	# slip(보려는 곳이 도는 속도 - 눈이 도는 속도, 라디안/초)
 	var slip := (_difference(_last_wanted, wanted) - _difference(last, _pursuit)) / delta
 	var closing := -slip.dot(error.normalized())
 	if closing <= 0.0:
@@ -200,7 +206,6 @@ func _wants_saccade(wanted: Vector2, last: Vector2, delta: float) -> bool:
 	return crossing < CROSSING.x or crossing > CROSSING.y
 
 
-# 방향 from에서 to까지의 차이(라디안).
 func _difference(from: Vector2, to: Vector2) -> Vector2:
 	return Vector2(angle_difference(from.x, to.x), to.y - from.y)
 
@@ -211,7 +216,7 @@ func _rotate_toward(from: Vector2, to: Vector2, weight: float) -> Vector2:
 
 func _clamp_to_reach(off: float, limit: float) -> float:
 	var reach := deg_to_rad(limit)
-	if absf(off) > deg_to_rad(150.0):
+	if absf(off) > deg_to_rad(BEHIND):
 		off = _turn * absf(off)
 	return clampf(off, -reach, reach)
 
@@ -234,7 +239,7 @@ func _speed() -> float:
 
 
 func _glance_offset() -> Vector2:
-	var size := deg_to_rad(minf(-6.9 * log(randf_range(0.01, 15.0) / 15.7), EYE_LIMIT.x))
+	var size := deg_to_rad(minf(-GLANCE_SCALE * log(randf_range(0.01, GLANCE_RANGE) / GLANCE_NORM), EYE_LIMIT.x))
 	var directions := [Vector2(1.0, 0.0), Vector2(-1.0, 0.0), Vector2(0.0, 0.5), Vector2(0.0, -0.5)]
 	return directions[randi() % directions.size()] * size
 
@@ -246,4 +251,4 @@ func _facing() -> float:
 
 func _eye_height_point() -> Vector3:
 	var head := _skeleton.get_global_transform_interpolated() * _skeleton.get_bone_global_pose(_skeleton.find_bone(&"Head"))
-	return head.origin + Vector3(0.0, 0.06, 0.0)
+	return head.origin + Vector3(0.0, EYE_ABOVE_HEAD, 0.0)
