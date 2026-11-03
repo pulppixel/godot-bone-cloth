@@ -62,7 +62,7 @@ var _next_blink := 0.0
 
 func _ready() -> void:
 	_skin = get_parent() as CharacterSkin
-	_face = get_parent().find_child("Face", true, false)
+	_face = _skin.face
 	for key in STYLES[style]:
 		for shape in STYLES[style][key]:
 			_shapes[shape] = -1
@@ -71,7 +71,7 @@ func _ready() -> void:
 	for shape in _shapes:
 		_shapes[shape] = _face.find_blend_shape_by_name(shape)
 		if _shapes[shape] < 0:
-			push_error("%s: 얼굴에 blend shape %s가 없다." % [get_parent().name, shape])
+			push_error("%s: 얼굴에 blend shape %s가 없다." % [_skin.name, shape])
 			set_process(false)
 			return
 		_weights[shape] = 0.0

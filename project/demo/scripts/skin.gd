@@ -1,6 +1,10 @@
 extends Node3D
 
 
+const Feet := preload("res://demo/scripts/feet.gd")
+const Look := preload("res://demo/scripts/look.gd")
+const Face := preload("res://demo/scripts/face.gd")
+
 const STATE := &"parameters/State/transition_request"
 const STATE_NOW := &"parameters/State/current_state"
 const REST := &"parameters/Rest/transition_request"
@@ -19,6 +23,12 @@ const EXIT_FOOT := &"parameters/ExitFoot/blend_amount"
 var tree: AnimationTree
 var skeleton: Skeleton3D
 var move: AnimationNodeBlendSpace1D
+var face: MeshInstance3D
+var body: CharacterBody3D
+@onready var feet: Feet = $Feet
+@onready var look: Look = $Look
+@onready var expression: Face = $Expression
+
 # 기울기 clip(Jog_Fwd_LeanR)의 길이.
 @onready var lean_length: float = tree.get_animation(&"demo_motions/Jog_Fwd_LeanR").length
 # Sprint_Exit clip의 길이.
@@ -38,11 +48,13 @@ func _enter_tree() -> void:
 	tree = $AnimationTree
 	skeleton = find_children("*", "Skeleton3D", true, false)[0]
 	move = (tree.tree_root as AnimationNodeBlendTree).get_node(&"Move")
+	face = find_child("Face", true, false)
 
 
 func _ready() -> void:
 	tree.set(LEAN_ONLY, 1.0)
 	tree.set(LEAN_ADD, 1.0)
+	look.glanced.connect(expression.blink)
 
 
 # state를 바꾼다.
@@ -89,12 +101,12 @@ func seek_lean(p_phase: float) -> void:
 func start_cycle(p_right_foot: bool) -> void:
 	half = 0.5 if p_right_foot else 0.0
 	for i in move.get_blend_point_count():
-		var clip := move.get_blend_point_node(i) as AnimationNodeAnimation
-		var length := tree.get_animation(clip.animation).length
-		clip.use_custom_timeline = true
-		clip.timeline_length = length
-		clip.loop_mode = Animation.LOOP_LINEAR
-		clip.start_offset = length * half
+		var node := move.get_blend_point_node(i) as AnimationNodeAnimation
+		var length := tree.get_animation(node.animation).length
+		node.use_custom_timeline = true
+		node.timeline_length = length
+		node.loop_mode = Animation.LOOP_LINEAR
+		node.start_offset = length * half
 
 
 # 걸음 주기의 길이(초).

@@ -2,6 +2,9 @@ extends Node
 const CharacterSkin := preload("res://demo/scripts/skin.gd")
 
 
+signal glanced
+
+
 const BODY := [
 	[&"UpperChest", Vector2(25.0, 10.0), 0.7],
 	[&"Neck", Vector2(35.0, 30.0), 0.7],
@@ -33,8 +36,6 @@ const WALK_GLANCE_TIME := Vector2(0.4, 1.0)
 const HAND_OVER := 3.0
 
 var _skeleton: Skeleton3D
-var _body: CharacterBody3D
-var _expression: Node
 var _skin: CharacterSkin
 var _looks: Array[LookAtModifier3D] = []
 var _chest_weight := 0.0
@@ -60,14 +61,8 @@ var _saccade_at := -1.0
 
 
 func _ready() -> void:
-	var parent := get_parent()
-	_skeleton = parent.find_children("*", "Skeleton3D", true, false)[0]
-	_expression = parent.get_node_or_null("Expression")
-	_skin = parent as CharacterSkin
-	var node := parent
-	while node != null and node is not CharacterBody3D:
-		node = node.get_parent()
-	_body = node
+	_skin = get_parent() as CharacterSkin
+	_skeleton = _skin.skeleton
 	_head_target = Node3D.new()
 	_eye_target = Node3D.new()
 	for marker in [_head_target, _eye_target]:
@@ -142,7 +137,7 @@ func _process(delta: float) -> void:
 		goal = _direction(camera_at - eyes)
 		distance = eyes.distance_to(camera_at)
 	elif stepping:
-		goal = Vector2(_direction(_body.velocity).x, deg_to_rad(WALK_PITCH if walking else RUN_PITCH))
+		goal = Vector2(_direction(_skin.body.velocity).x, deg_to_rad(WALK_PITCH if walking else RUN_PITCH))
 	else:
 		goal = Vector2(facing, 0.0)
 	goal.x = _clamp_to_reach(angle_difference(facing, goal.x), REACH_OUT if _at_camera else (MOVE_REACH if stepping else REACH))
@@ -151,7 +146,7 @@ func _process(delta: float) -> void:
 	_head = _rotate_toward(_head, goal, 1.0 - exp(-HEAD_FOLLOW * delta))
 	_head_target.global_position = eyes + _vector(_head, facing) * distance
 	var state: StringName = _skin.state
-	var to_clip := state == &"land" or ((state == &"jump_start" or state == &"fall") and _body.velocity.y < 0.0)
+	var to_clip := state == &"land" or ((state == &"jump_start" or state == &"fall") and _skin.body.velocity.y < 0.0)
 	_weight = move_toward(_weight, 0.0 if to_clip else 1.0, delta * HAND_OVER)
 	_chest_weight = move_toward(_chest_weight, BODY[0][2] if not stepping else 0.0, delta * 2.0)
 	for i in _looks.size():
@@ -184,8 +179,8 @@ func _process(delta: float) -> void:
 			_pursuit = wanted
 			_move_start = _time
 			_move_time = SACCADE_BASE + SACCADE_PER_DEGREE * shift
-			if shift > BLINK_SHIFT and _expression != null:
-				_expression.call(&"blink")
+			if shift > BLINK_SHIFT:
+				glanced.emit()
 	var t := clampf((_time - _move_start) / _move_time, 0.0, 1.0) if _move_time > 0.0 else 1.0
 	_eye = _rotate_toward(_from, _pursuit, t)
 	_eye_target.global_position = eyes + _vector(_eye, facing) * distance
@@ -235,7 +230,7 @@ func _vector(d: Vector2, facing: float) -> Vector3:
 
 
 func _speed() -> float:
-	return Vector2(_body.velocity.x, _body.velocity.z).length() if _body != null else 0.0
+	return Vector2(_skin.body.velocity.x, _skin.body.velocity.z).length() if _skin.body != null else 0.0
 
 
 func _glance_offset() -> Vector2:
@@ -245,7 +240,7 @@ func _glance_offset() -> Vector2:
 
 
 func _facing() -> float:
-	var z := (get_parent() as Node3D).global_basis.z
+	var z := _skin.global_basis.z
 	return atan2(z.x, z.z)
 
 

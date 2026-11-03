@@ -28,7 +28,6 @@ const HEEL_LIFT := 0.5
 const HORIZONTAL := 0.1
 
 var _skeleton: Skeleton3D
-var _body: CharacterBody3D
 var _hips := -1
 var _bones := []
 var _targets: Array[Node3D] = []
@@ -47,29 +46,24 @@ var _offset_to: Array[Vector3] = [Vector3.ZERO, Vector3.ZERO]
 var _shift: Array[float] = [NAN, NAN]
 var _progress: Array[float] = [0.0, 0.0]
 
-
+# IK 앞뒤에서 feet.gd의 메서드를 부르는 modifiers.
 class FootGround extends SkeletonModifier3D:
-	var feet: Node
+	var ground: Callable
 
 	func _process_modification_with_delta(delta: float) -> void:
-		feet.call(&"_ground", delta)
+		ground.call(delta)
 
 
 class FootRestore extends SkeletonModifier3D:
-	var feet: Node
+	var restore: Callable
 
 	func _process_modification_with_delta(_delta: float) -> void:
-		feet.call(&"_restore")
+		restore.call()
 
 
 func _ready() -> void:
-	var parent := get_parent()
-	_skeleton = parent.find_children("*", "Skeleton3D", true, false)[0]
-	var node := parent
-	while node != null and node is not CharacterBody3D:
-		node = node.get_parent()
-	_body = node
-	_skin = parent as CharacterSkin
+	_skin = get_parent() as CharacterSkin
+	_skeleton = _skin.skeleton
 	_hips = _skeleton.find_bone(&"Hips")
 	for leg in LEGS:
 		_bones.append(leg.map(func(bone: StringName) -> int: return _skeleton.find_bone(bone)))
@@ -88,12 +82,12 @@ func _ready() -> void:
 	
 	var ground := FootGround.new()
 	ground.name = "FootGround"
-	ground.feet = self
+	ground.ground = _ground
 	var ik := TwoBoneIK3D.new()
 	ik.name = "FootIK"
 	var restore := FootRestore.new()
 	restore.name = "FootRestore"
-	restore.feet = self
+	restore.restore = _restore
 	for modifier in [ground, ik, restore]:
 		_skeleton.add_child(modifier)
 	ik.setting_count = LEGS.size()
@@ -212,7 +206,7 @@ func _cycle(delta: float) -> Array:
 func _ground(delta: float) -> void:
 	var space := _skeleton.get_global_transform_interpolated()
 	var floor_y := space.origin.y
-	var grounded := _body.is_on_floor()
+	var grounded := _skin.body.is_on_floor()
 	var lift := [0.0, 0.0]
 	var moved := 0.0
 	if grounded and not is_nan(_floor_y):
@@ -238,7 +232,7 @@ func _ground(delta: float) -> void:
 			_planted[i] = true
 		else:
 			var leg: Dictionary = cycle[i]
-			var velocity: Vector3 = _body.velocity * Vector3(1, 0, 1)
+			var velocity: Vector3 = _skin.body.velocity * Vector3(1, 0, 1)
 			if velocity.length() > 0.1:
 				_shift[i] = _footprint(space, leg, velocity, floor_y, 0.0 if is_nan(_shift[i]) else _shift[i])
 				_offset_to[i] = velocity.normalized() * _shift[i]
@@ -414,7 +408,7 @@ func _restore() -> void:
 func _floor_under(point: Vector3, floor_y: float, reach := TREAD_REACH) -> float:
 	var hit := _ray(point, floor_y, reach, FOOT_GROUND)
 	if hit.is_empty():
-		hit = _ray(point, floor_y, REACH, _body.collision_mask)
+		hit = _ray(point, floor_y, REACH, _skin.body.collision_mask)
 	if hit.is_empty() or hit.normal.y < 0.7:
 		return floor_y
 	return hit.position.y
@@ -423,7 +417,7 @@ func _floor_under(point: Vector3, floor_y: float, reach := TREAD_REACH) -> float
 func _ray(point: Vector3, floor_y: float, reach: float, mask: int) -> Dictionary:
 	var from := Vector3(point.x, floor_y + reach, point.z)
 	var to := Vector3(point.x, floor_y - reach, point.z)
-	var query := PhysicsRayQueryParameters3D.create(from, to, mask, [_body.get_rid()])
+	var query := PhysicsRayQueryParameters3D.create(from, to, mask, [_skin.body.get_rid()])
 	return _skeleton.get_world_3d().direct_space_state.intersect_ray(query)
 
 

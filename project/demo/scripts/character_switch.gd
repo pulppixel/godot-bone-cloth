@@ -1,4 +1,6 @@
 extends Node3D
+const Player := preload("res://demo/scripts/player.gd")
+const CharacterSkin := preload("res://demo/scripts/skin.gd")
 
 
 @export var characters: Array[Node3D] = []
@@ -13,6 +15,8 @@ var _cloth := true
 
 
 func _ready() -> void:
+	for character in characters:
+		(character as CharacterSkin).body = player
 	for i in character_buttons.size():
 		character_buttons[i].pressed.connect(func() -> void: _choose(i, _cloth))
 	cloth_button.toggled.connect(func(on: bool) -> void: _choose(_character, on))
@@ -54,4 +58,4 @@ func _choose(character: int, cloth: bool) -> void:
 			simulator.reset()
 		simulator.active = cloth
 	if changed:
-		player.call(&"use", characters[character])
+		(player as Player).use(characters[character])
