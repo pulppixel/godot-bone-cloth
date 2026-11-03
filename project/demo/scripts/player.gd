@@ -190,7 +190,7 @@ func _transition(pressing: bool, speed: float, exit_wait: bool) -> void:
 		elif _stop.time >= _character.exit_length:
 			_anim = Anim.IDLE
 			_stop = null
-	elif exit_wait:
+	elif exit_wait and not _airborne():
 		var foot := _exit_foot()
 		if foot >= 0:
 			_enter_stop(foot, speed)
@@ -221,7 +221,7 @@ func _enter(anim: Anim) -> void:
 		_character.start_cycle(_character.idle_foot_right())
 	if anim == Anim.STOP:
 		_character.rest(&"exit")
-	elif anim == Anim.IDLE:
+	else:
 		_character.rest(&"still")
 	_anim = anim
 	_character.request(TREE_STATE[anim])
