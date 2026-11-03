@@ -6,7 +6,7 @@
 [ext_resource type="Script" uid="uid://b31tfi6s47b4q" path="res://demo/scripts/face.gd" id="4_88qwm"]
 [ext_resource type="Script" uid="uid://csfpwv81biimb" path="res://demo/scripts/look.gd" id="5_v1ao1"]
 [ext_resource type="Script" uid="uid://olte1161ncgj" path="res://demo/scripts/feet.gd" id="6_lp7at"]
-[ext_resource type="Script" path="res://demo/scripts/skin.gd" id="7_skin"]
+[ext_resource type="Script" uid="uid://bvpypg2ii06px" path="res://demo/scripts/skin.gd" id="7_skin"]
 
 [sub_resource type="Curve" id="Curve_skirt_limit"]
 _data = [Vector2(0, 0.5), 0.0, 0.5, 1, 1, Vector2(1, 1), 0.5, 0.0, 1, 1]
@@ -28,7 +28,7 @@ point_count = 3
 [node name="demo_b" unique_id=1425030462 instance=ExtResource("1_33odx")]
 script = ExtResource("7_skin")
 
-[node name="Coat" type="BoneClothSimulator3D" parent="GeneralSkeleton"]
+[node name="Coat" type="BoneClothSimulator3D" parent="GeneralSkeleton" parent_id_path=PackedInt32Array(596540004) index="3" unique_id=1571360981]
 drag/value = 0.15
 stiffness/value = 0.15
 limit_angle/value = 0.7853982
@@ -37,25 +37,61 @@ depth_inertia = 0.7
 movement_speed_limit = 4.0
 chain_count = 6
 chains/0/root_bone_name = "J_Sec_L_CoatSkirtBack_01"
+chains/0/root_bone = 112
 chains/0/end_bone_name = "J_Sec_L_CoatSkirtBack_end_01"
+chains/0/end_bone = 113
 chains/0/extend_end_bone = false
+chains/0/sync_bone_name = ""
+chains/0/sync_bone = -1
+chains/0/enable_all_child_collisions = true
+chains/0/exclude_collision_count = 0
 chains/1/root_bone_name = "J_Sec_L_CoatSkirtFront_01"
+chains/1/root_bone = 114
 chains/1/end_bone_name = "J_Sec_L_CoatSkirtFront_end_01"
+chains/1/end_bone = 115
 chains/1/extend_end_bone = false
+chains/1/sync_bone_name = ""
+chains/1/sync_bone = -1
+chains/1/enable_all_child_collisions = true
+chains/1/exclude_collision_count = 0
 chains/2/root_bone_name = "J_Sec_L_CoatSkirtSide1_01"
+chains/2/root_bone = 116
 chains/2/end_bone_name = "J_Sec_L_CoatSkirtSide2_end_01"
+chains/2/end_bone = 118
 chains/2/extend_end_bone = false
+chains/2/sync_bone_name = ""
+chains/2/sync_bone = -1
+chains/2/enable_all_child_collisions = true
+chains/2/exclude_collision_count = 0
 chains/3/root_bone_name = "J_Sec_R_CoatSkirtBack_01"
+chains/3/root_bone = 123
 chains/3/end_bone_name = "J_Sec_R_CoatSkirtBack_end_01"
+chains/3/end_bone = 124
 chains/3/extend_end_bone = false
+chains/3/sync_bone_name = ""
+chains/3/sync_bone = -1
+chains/3/enable_all_child_collisions = true
+chains/3/exclude_collision_count = 0
 chains/4/root_bone_name = "J_Sec_R_CoatSkirtFront_01"
+chains/4/root_bone = 125
 chains/4/end_bone_name = "J_Sec_R_CoatSkirtFront_end_01"
+chains/4/end_bone = 126
 chains/4/extend_end_bone = false
+chains/4/sync_bone_name = ""
+chains/4/sync_bone = -1
+chains/4/enable_all_child_collisions = true
+chains/4/exclude_collision_count = 0
 chains/5/root_bone_name = "J_Sec_R_CoatSkirtSide1_01"
+chains/5/root_bone = 127
 chains/5/end_bone_name = "J_Sec_R_CoatSkirtSide2_end_01"
+chains/5/end_bone = 129
 chains/5/extend_end_bone = false
+chains/5/sync_bone_name = ""
+chains/5/sync_bone = -1
+chains/5/enable_all_child_collisions = true
+chains/5/exclude_collision_count = 0
 
-[node name="Bust" type="BoneClothSimulator3D" parent="GeneralSkeleton"]
+[node name="Bust" type="BoneClothSimulator3D" parent="GeneralSkeleton" parent_id_path=PackedInt32Array(596540004) index="4" unique_id=2001629724]
 drag/value = 0.45
 stiffness/value = 0.25
 radius/value = 0.05
@@ -65,13 +101,25 @@ root_spring_stiffness = 0.45
 root_spring_limit = 0.02
 chain_count = 2
 chains/0/root_bone_name = "J_Sec_L_Bust1"
+chains/0/root_bone = 5
 chains/0/end_bone_name = "J_Sec_L_Bust2"
+chains/0/end_bone = 6
 chains/0/extend_end_bone = false
+chains/0/sync_bone_name = ""
+chains/0/sync_bone = -1
+chains/0/enable_all_child_collisions = true
+chains/0/exclude_collision_count = 0
 chains/1/root_bone_name = "J_Sec_R_Bust1"
+chains/1/root_bone = 7
 chains/1/end_bone_name = "J_Sec_R_Bust2"
+chains/1/end_bone = 8
 chains/1/extend_end_bone = false
+chains/1/sync_bone_name = ""
+chains/1/sync_bone = -1
+chains/1/enable_all_child_collisions = true
+chains/1/exclude_collision_count = 0
 
-[node name="BackHair" type="BoneClothSimulator3D" parent="GeneralSkeleton"]
+[node name="BackHair" type="BoneClothSimulator3D" parent="GeneralSkeleton" parent_id_path=PackedInt32Array(596540004) index="5" unique_id=1523706013]
 link_mode = 1
 drag/value = 0.2
 stiffness/value = 0.02
@@ -84,68 +132,147 @@ local_rotation_speed_limit = 6.2831855
 joint_speed_limit = 1.5
 chain_count = 6
 chains/0/root_bone_name = "J_Sec_Hair1_01"
+chains/0/root_bone = 13
 chains/0/end_bone_name = "J_Sec_Hair7_01"
+chains/0/end_bone = 19
+chains/0/extend_end_bone = true
+chains/0/end_bone/direction = 6
+chains/0/end_bone/length = 0.1
+chains/0/sync_bone_name = ""
+chains/0/sync_bone = -1
+chains/0/enable_all_child_collisions = true
+chains/0/exclude_collision_count = 0
 chains/1/root_bone_name = "J_Sec_Hair1_02"
+chains/1/root_bone = 20
 chains/1/end_bone_name = "J_Sec_Hair6_02"
+chains/1/end_bone = 25
+chains/1/extend_end_bone = true
+chains/1/end_bone/direction = 6
+chains/1/end_bone/length = 0.1
+chains/1/sync_bone_name = ""
+chains/1/sync_bone = -1
+chains/1/enable_all_child_collisions = true
+chains/1/exclude_collision_count = 0
 chains/2/root_bone_name = "J_Sec_Hair1_03"
+chains/2/root_bone = 26
 chains/2/end_bone_name = "J_Sec_Hair6_03"
+chains/2/end_bone = 31
+chains/2/extend_end_bone = true
+chains/2/end_bone/direction = 6
+chains/2/end_bone/length = 0.1
+chains/2/sync_bone_name = ""
+chains/2/sync_bone = -1
+chains/2/enable_all_child_collisions = true
+chains/2/exclude_collision_count = 0
 chains/3/root_bone_name = "J_Sec_Hair1_04"
+chains/3/root_bone = 32
 chains/3/end_bone_name = "J_Sec_Hair6_04"
+chains/3/end_bone = 37
+chains/3/extend_end_bone = true
+chains/3/end_bone/direction = 6
+chains/3/end_bone/length = 0.1
+chains/3/sync_bone_name = ""
+chains/3/sync_bone = -1
+chains/3/enable_all_child_collisions = true
+chains/3/exclude_collision_count = 0
 chains/4/root_bone_name = "J_Sec_Hair1_05"
+chains/4/root_bone = 38
 chains/4/end_bone_name = "J_Sec_Hair6_05"
+chains/4/end_bone = 43
+chains/4/extend_end_bone = true
+chains/4/end_bone/direction = 6
+chains/4/end_bone/length = 0.1
+chains/4/sync_bone_name = ""
+chains/4/sync_bone = -1
+chains/4/enable_all_child_collisions = true
+chains/4/exclude_collision_count = 0
 chains/5/root_bone_name = "J_Sec_Hair1_06"
+chains/5/root_bone = 44
 chains/5/end_bone_name = "J_Sec_Hair6_06"
+chains/5/end_bone = 49
+chains/5/extend_end_bone = true
+chains/5/end_bone/direction = 6
+chains/5/end_bone/length = 0.1
+chains/5/sync_bone_name = ""
+chains/5/sync_bone = -1
+chains/5/enable_all_child_collisions = true
+chains/5/exclude_collision_count = 0
 
-[node name="Head" type="BoneClothCollisionSphere3D" parent="GeneralSkeleton/BackHair"]
+[node name="Head" type="BoneClothCollisionSphere3D" parent="GeneralSkeleton/BackHair" index="0" unique_id=620861061]
 radius = 0.093
 bone_name = "Head"
+bone = 10
 position_offset = Vector3(0, 0.093, -0.013)
+rotation_offset = Quaternion(0, 0, 0, 1)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8.74266e-16, 1.6034672, -0.008863403)
 
-[node name="Neck" type="BoneClothCollisionSphere3D" parent="GeneralSkeleton/BackHair"]
+[node name="Neck" type="BoneClothCollisionSphere3D" parent="GeneralSkeleton/BackHair" index="1" unique_id=866964817]
 radius = 0.05
 bone_name = "Neck"
+bone = 9
 position_offset = Vector3(0, 0.03, 0.013)
+rotation_offset = Quaternion(0, 0, 0, 1)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.2486547e-16, 1.4603645, 0.017136587)
 
-[node name="Chest" type="BoneClothCollisionSphere3D" parent="GeneralSkeleton/BackHair"]
+[node name="Chest" type="BoneClothCollisionSphere3D" parent="GeneralSkeleton/BackHair" index="2" unique_id=1096591619]
 radius = 0.101
 bone_name = "UpperChest"
+bone = 4
 position_offset = Vector3(0, 0, 0.01)
+rotation_offset = Quaternion(0, 0, 0, 1)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.0092811e-17, 1.284558, 0.014664974)
 
-[node name="Blades" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/BackHair"]
+[node name="Blades" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/BackHair" index="3" unique_id=441182055]
 radius = 0.071
 height = 0.242
 bone_name = "UpperChest"
+bone = 4
 position_offset = Vector3(0, 0.066, -0.01)
 rotation_offset = Quaternion(0, 0, 0.70710677, 0.70710677)
+transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, -1.0092811e-17, 1.350558, -0.0053350255)
 
-[node name="Back" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/BackHair"]
+[node name="Back" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/BackHair" index="4" unique_id=314264427]
 radius = 0.066
 height = 0.283
 bone_name = "Chest"
+bone = 3
 position_offset = Vector3(0, 0, -0.051)
 rotation_offset = Quaternion(0, 0, 0.70710677, 0.70710677)
+transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, 2.2762402e-17, 1.1706066, -0.030830175)
 
-[node name="Shoulder" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/BackHair"]
+[node name="Shoulder" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/BackHair" index="5" unique_id=60161742]
 radius = 0.055
 height = 0.23
 bone_name = "LeftUpperArm"
+bone = 73
 mirror_bone_name = "RightUpperArm"
+mirror_bone = 92
 position_offset = Vector3(0, 0.14, 0)
+rotation_offset = Quaternion(0, 0, 0, 1)
+transform = Transform3D(0, 1, 0, 0, 0, -1, -1, 0, 0, 0.25536144, 1.3881736, 0.0013040495)
 
-[node name="Collar" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/BackHair"]
+[node name="Collar" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/BackHair" index="6" unique_id=1340641040]
 radius = 0.06
 height = 0.23
 bone_name = "LeftShoulder"
+bone = 72
 mirror_bone_name = "RightShoulder"
+mirror_bone = 91
 position_offset = Vector3(0, 0.055, 0)
+rotation_offset = Quaternion(0, 0, 0, 1)
+transform = Transform3D(0, 1, 0, 0, 0, 1, 1, 0, 0, 0.07850662, 1.4008478, 0.0049291216)
 
-[node name="Bust" type="BoneClothCollisionSphere3D" parent="GeneralSkeleton/BackHair"]
+[node name="Bust" type="BoneClothCollisionSphere3D" parent="GeneralSkeleton/BackHair" index="7" unique_id=1496278864]
 radius = 0.093
 bone_name = "J_Sec_L_Bust1"
+bone = 5
 mirror_bone_name = "J_Sec_R_Bust1"
+mirror_bone = 7
 position_offset = Vector3(0.011, -0.002, 0.022)
+rotation_offset = Quaternion(0, 0, 0, 1)
+transform = Transform3D(-0.99999976, -8.0019884e-17, -1.1218724e-17, -8.001988e-17, 0.96144617, 0.2749932, -1.1218727e-17, 0.27499324, -0.9614459, 0.046253234, 1.261219, 0.051057108)
 
-[node name="SideHair" type="BoneClothSimulator3D" parent="GeneralSkeleton"]
+[node name="SideHair" type="BoneClothSimulator3D" parent="GeneralSkeleton" parent_id_path=PackedInt32Array(596540004) index="6" unique_id=1487933093]
 drag/value = 0.2
 stiffness/value = 0.02
 radius/value = 0.05
@@ -157,60 +284,103 @@ local_rotation_speed_limit = 6.2831855
 joint_speed_limit = 0.0
 chain_count = 2
 chains/0/root_bone_name = "J_Sec_Hair1_07"
+chains/0/root_bone = 50
 chains/0/end_bone_name = "J_Sec_Hair5_07"
+chains/0/end_bone = 54
+chains/0/extend_end_bone = true
+chains/0/end_bone/direction = 6
+chains/0/end_bone/length = 0.1
+chains/0/sync_bone_name = ""
+chains/0/sync_bone = -1
+chains/0/enable_all_child_collisions = true
+chains/0/exclude_collision_count = 0
 chains/1/root_bone_name = "J_Sec_Hair1_08"
+chains/1/root_bone = 55
 chains/1/end_bone_name = "J_Sec_Hair5_08"
+chains/1/end_bone = 59
+chains/1/extend_end_bone = true
+chains/1/end_bone/direction = 6
+chains/1/end_bone/length = 0.1
+chains/1/sync_bone_name = ""
+chains/1/sync_bone = -1
+chains/1/enable_all_child_collisions = true
+chains/1/exclude_collision_count = 0
 
-[node name="Head" type="BoneClothCollisionSphere3D" parent="GeneralSkeleton/SideHair"]
+[node name="Head" type="BoneClothCollisionSphere3D" parent="GeneralSkeleton/SideHair" index="0" unique_id=264554078]
 radius = 0.093
 bone_name = "Head"
+bone = 10
 position_offset = Vector3(0, 0.093, -0.013)
+rotation_offset = Quaternion(0, 0, 0, 1)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8.74266e-16, 1.6034672, -0.008863403)
 
-[node name="Neck" type="BoneClothCollisionSphere3D" parent="GeneralSkeleton/SideHair"]
+[node name="Neck" type="BoneClothCollisionSphere3D" parent="GeneralSkeleton/SideHair" index="1" unique_id=1195955072]
 radius = 0.05
 bone_name = "Neck"
+bone = 9
 position_offset = Vector3(0, 0.03, 0.013)
+rotation_offset = Quaternion(0, 0, 0, 1)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.2486547e-16, 1.4603645, 0.017136587)
 
-[node name="Chest" type="BoneClothCollisionSphere3D" parent="GeneralSkeleton/SideHair"]
+[node name="Chest" type="BoneClothCollisionSphere3D" parent="GeneralSkeleton/SideHair" index="2" unique_id=205908118]
 radius = 0.101
 bone_name = "UpperChest"
+bone = 4
 position_offset = Vector3(0, 0, 0.01)
+rotation_offset = Quaternion(0, 0, 0, 1)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.0092811e-17, 1.284558, 0.014664974)
 
-[node name="Blades" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/SideHair"]
+[node name="Blades" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/SideHair" index="3" unique_id=956420028]
 radius = 0.071
 height = 0.242
 bone_name = "UpperChest"
+bone = 4
 position_offset = Vector3(0, 0.066, -0.01)
 rotation_offset = Quaternion(0, 0, 0.70710677, 0.70710677)
+transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, -1.0092811e-17, 1.350558, -0.0053350255)
 
-[node name="Back" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/SideHair"]
+[node name="Back" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/SideHair" index="4" unique_id=1755468802]
 radius = 0.066
 height = 0.283
 bone_name = "Chest"
+bone = 3
 position_offset = Vector3(0, 0, -0.051)
 rotation_offset = Quaternion(0, 0, 0.70710677, 0.70710677)
+transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, 2.2762402e-17, 1.1706066, -0.030830175)
 
-[node name="Shoulder" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/SideHair"]
+[node name="Shoulder" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/SideHair" index="5" unique_id=1437609233]
 radius = 0.055
 height = 0.23
 bone_name = "LeftUpperArm"
+bone = 73
 mirror_bone_name = "RightUpperArm"
+mirror_bone = 92
 position_offset = Vector3(0, 0.14, 0)
+rotation_offset = Quaternion(0, 0, 0, 1)
+transform = Transform3D(0, 1, 0, 0, 0, -1, -1, 0, 0, 0.25536144, 1.3881736, 0.0013040495)
 
-[node name="Collar" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/SideHair"]
+[node name="Collar" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/SideHair" index="6" unique_id=1521215953]
 radius = 0.06
 height = 0.23
 bone_name = "LeftShoulder"
+bone = 72
 mirror_bone_name = "RightShoulder"
+mirror_bone = 91
 position_offset = Vector3(0, 0.055, 0)
+rotation_offset = Quaternion(0, 0, 0, 1)
+transform = Transform3D(0, 1, 0, 0, 0, 1, 1, 0, 0, 0.07850662, 1.4008478, 0.0049291216)
 
-[node name="Bust" type="BoneClothCollisionSphere3D" parent="GeneralSkeleton/SideHair"]
+[node name="Bust" type="BoneClothCollisionSphere3D" parent="GeneralSkeleton/SideHair" index="7" unique_id=1667197506]
 radius = 0.093
 bone_name = "J_Sec_L_Bust1"
+bone = 5
 mirror_bone_name = "J_Sec_R_Bust1"
+mirror_bone = 7
 position_offset = Vector3(0.011, -0.002, 0.022)
+rotation_offset = Quaternion(0, 0, 0, 1)
+transform = Transform3D(-0.99999976, -8.0019884e-17, -1.1218724e-17, -8.001988e-17, 0.96144617, 0.2749932, -1.1218727e-17, 0.27499324, -0.9614459, 0.046253234, 1.261219, 0.051057108)
 
-[node name="Bangs" type="BoneClothSimulator3D" parent="GeneralSkeleton"]
+[node name="Bangs" type="BoneClothSimulator3D" parent="GeneralSkeleton" parent_id_path=PackedInt32Array(596540004) index="7" unique_id=1036091408]
 drag/value = 0.135
 stiffness/value = 0.035
 stiffness/damping_curve = SubResource("Curve_bangs_stiffness")
@@ -220,18 +390,57 @@ limit_angle/damping_curve = SubResource("Curve_bangs_limit")
 joint_speed_limit = 0.0
 chain_count = 4
 chains/0/root_bone_name = "J_Sec_Hair1_09"
+chains/0/root_bone = 60
 chains/0/end_bone_name = "J_Sec_Hair3_09"
+chains/0/end_bone = 62
+chains/0/extend_end_bone = true
+chains/0/end_bone/direction = 6
+chains/0/end_bone/length = 0.1
+chains/0/sync_bone_name = ""
+chains/0/sync_bone = -1
+chains/0/enable_all_child_collisions = true
+chains/0/exclude_collision_count = 0
 chains/1/root_bone_name = "J_Sec_Hair1_10"
+chains/1/root_bone = 63
 chains/1/end_bone_name = "J_Sec_Hair3_10"
+chains/1/end_bone = 65
+chains/1/extend_end_bone = true
+chains/1/end_bone/direction = 6
+chains/1/end_bone/length = 0.1
+chains/1/sync_bone_name = ""
+chains/1/sync_bone = -1
+chains/1/enable_all_child_collisions = true
+chains/1/exclude_collision_count = 0
 chains/2/root_bone_name = "J_Sec_Hair1_11"
+chains/2/root_bone = 66
 chains/2/end_bone_name = "J_Sec_Hair3_11"
+chains/2/end_bone = 68
+chains/2/extend_end_bone = true
+chains/2/end_bone/direction = 6
+chains/2/end_bone/length = 0.1
+chains/2/sync_bone_name = ""
+chains/2/sync_bone = -1
+chains/2/enable_all_child_collisions = true
+chains/2/exclude_collision_count = 0
 chains/3/root_bone_name = "J_Sec_Hair1_12"
+chains/3/root_bone = 69
 chains/3/end_bone_name = "J_Sec_Hair3_12"
+chains/3/end_bone = 71
+chains/3/extend_end_bone = true
+chains/3/end_bone/direction = 6
+chains/3/end_bone/length = 0.1
+chains/3/sync_bone_name = ""
+chains/3/sync_bone = -1
+chains/3/enable_all_child_collisions = true
+chains/3/exclude_collision_count = 0
 
-[node name="Head" type="BoneClothCollisionSphere3D" parent="GeneralSkeleton/Bangs"]
+[node name="Head" type="BoneClothCollisionSphere3D" parent="GeneralSkeleton/Bangs" index="0" unique_id=1632669455]
 radius = 0.093
 bone_name = "Head"
+bone = 10
 position_offset = Vector3(0, 0.093, -0.013)
+rotation_offset = Quaternion(0, 0, 0, 1)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8.74266e-16, 1.6034672, -0.008863403)
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="." index="1" unique_id=1297176024]
 libraries/demo_motions = ExtResource("2_qp24x")
