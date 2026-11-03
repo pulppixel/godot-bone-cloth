@@ -1,13 +1,13 @@
 extends CharacterBody3D
+
 const CharacterSkin := preload("res://demo/scripts/skin.gd")
 
 
-enum State { GROUND, AIR }
-
+enum Anim { IDLE, MOVE, STOP, JUMP_START, FALL, LAND }
+const TREE_STATE: Array[StringName] = [&"idle", &"move", &"idle", &"jump_start", &"fall", &"land"]
 
 const WALK := 1.064
 const RUN := 7.65
-
 
 const STOP_SPEED := 0.2
 const SHARP_TURN := deg_to_rad(140.0)
@@ -44,23 +44,19 @@ const FLAT_RISE := 0.03
 
 @export var camera_rig: Node3D
 
-var state := State.GROUND
-
 var _character: CharacterSkin
 var _skeleton: Skeleton3D
 var _left_foot := -1
 var _right_foot := -1
 var _scale := 1.0
-var _anim := &"idle"
+var _anim := Anim.IDLE
+var _stop: Stop
 var _lean := 0.0
 var _step_offset := 0.0
 var _step_speed := 0.0
 var _ground_normal := Vector3.UP
 var _skin_y := 0.0
 var _rig_y := 0.0
-var _clip_time := 0.0
-var _clip_length := 0.0
-var _stop_decel := 0.0
 var _brake := 0.0
 var _since_top := INF
 var _exit_pending := false
@@ -71,22 +67,29 @@ var _run_off := INF
 @onready var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
 
 
+class Stop:
+	var time := 0.0
+	var decel := 0.0 # 감속 (m/s^2).
+
+
 func _ready() -> void:
 	_skin_y = _skin.position.y
 	_rig_y = camera_rig.position.y
 
 
 func use(character: Node3D) -> void:
-	if _anim == &"stop":
-		_anim = &"idle"
+	if _anim == Anim.STOP:
+		_anim = Anim.IDLE
+		_stop = null
 		velocity = Vector3(0.0, velocity.y, 0.0)
 	_character = character as CharacterSkin
 	_skeleton = _character.skeleton
 	_scale = _skeleton.motion_scale
 	_left_foot = _skeleton.find_bone(&"LeftFoot")
 	_right_foot = _skeleton.find_bone(&"RightFoot")
-	_character.request(_anim)
+	_character.request(TREE_STATE[_anim])
 	_character.rest(&"still")
+
 
 func _process(_delta: float) -> void:
 	if _character.cycle_length() <= 0.0:
@@ -102,71 +105,94 @@ func _physics_process(delta: float) -> void:
 	var direction := Basis(Vector3.UP, camera_rig.rotation.y) * Vector3(input.x, 0.0, input.y)
 	_run_off = 0.0 if Input.is_action_pressed("run") else _run_off + delta
 	var top_speed := (run_speed if _run_off <= EXIT_GRACE else walk_speed) * _scale
+	var exit_wait := _watch_exit(direction, delta)
 	var turned := 0.0
-	var clip_now := Vector2(velocity.x, velocity.z).length() / _scale
-	_since_top = 0.0 if clip_now >= EXIT_FROM * run_speed else _since_top + delta
-	if _anim != &"move" or clip_now <= walk_speed + 0.01:
-		_run_time = 0.0
-	elif not direction.is_zero_approx():
-		_run_time += delta
-	if state != State.GROUND or _anim != &"move" or not direction.is_zero_approx():
-		_exit_pending = false
-	elif not _exit_pending and _since_top <= EXIT_GRACE and _run_time >= EXIT_AFTER and _flat_ahead(Vector3(velocity.x, 0.0, velocity.z).normalized()):
-		_exit_pending = true
-	var exit_wait := _exit_pending
-	if _anim == &"stop":
-		_clip_time += delta
-		var flat := Vector3(velocity.x, 0.0, velocity.z)
-		var slower := move_toward(flat.length(), 0.0, _stop_decel * delta)
-		flat = flat.normalized() * slower if slower > 0.0 else Vector3.ZERO
-		velocity.x = flat.x
-		velocity.z = flat.z
+	if _anim == Anim.STOP:
+		_decelerate(delta)
 	elif not exit_wait:
-		var braking := state == State.GROUND and _anim == &"move" and direction.is_zero_approx() and clip_now > 0.0
+		var clip_now := Vector2(velocity.x, velocity.z).length() / _scale
+		var braking := not _airborne() and _anim == Anim.MOVE and direction.is_zero_approx() and clip_now > 0.0
 		_brake = run_brake if braking and clip_now > walk_speed + 0.01 else deceleration
 		turned = _steer(direction, top_speed, delta)
 	
-	if state == State.GROUND and Input.is_action_just_pressed("jump"):
+	if not _airborne() and Input.is_action_just_pressed("jump"):
 		velocity.y = sqrt(2.0 * _gravity * jump_height)
-		state = State.AIR
-		_request(&"jump_start")
-	elif state == State.AIR:
+		_enter(Anim.JUMP_START)
+	elif _airborne():
 		velocity.y = maxf(velocity.y - _gravity * delta, -max_fall_speed)
-	var grounded := state == State.GROUND and is_on_floor()
+	_slide(delta)
+	
+	var pressing := not direction.is_zero_approx()
+	var speed := Vector2(velocity.x, velocity.z).length()
+	_transition(pressing, speed, exit_wait)
+
+	var facing := Vector3(velocity.x, 0.0, velocity.z) if speed > STOP_SPEED else direction
+	_turn_skin(facing, delta)
+	_animate(speed, turned, delta)
+
+
+func _airborne() -> bool:
+	return _anim == Anim.JUMP_START or _anim == Anim.FALL
+
+
+func _watch_exit(direction: Vector3, delta: float) -> bool:
+	var clip_now := Vector2(velocity.x, velocity.z).length() / _scale
+	_since_top = 0.0 if clip_now >= EXIT_FROM * run_speed else _since_top + delta
+	if _anim != Anim.MOVE or clip_now <= walk_speed + 0.01:
+		_run_time = 0.0
+	elif not direction.is_zero_approx():
+		_run_time += delta
+	if _airborne() or _anim != Anim.MOVE or not direction.is_zero_approx():
+		_exit_pending = false
+	elif not _exit_pending and _since_top <= EXIT_GRACE and _run_time >= EXIT_AFTER and _flat_ahead(Vector3(velocity.x, 0.0, velocity.z).normalized()):
+		_exit_pending = true
+	return _exit_pending
+
+
+func _decelerate(delta: float) -> void:
+	_stop.time += delta
+	var flat := Vector3(velocity.x, 0.0, velocity.z)
+	var slower := move_toward(flat.length(), 0.0, _stop.decel * delta)
+	flat = flat.normalized() * slower if slower > 0.0 else Vector3.ZERO
+	velocity.x = flat.x
+	velocity.z = flat.z
+
+
+func _slide(delta: float) -> void:
+	var grounded := not _airborne() and is_on_floor()
 	var before := global_position
 	move_and_slide()
 	if grounded and is_on_floor():
 		_absorb_step(global_position - before)
 	_ground_normal = _ground()
 	_settle_step(delta)
-	
-	var pressing := not direction.is_zero_approx()
-	var speed := Vector2(velocity.x, velocity.z).length()
-	if state == State.GROUND and not is_on_floor():
-		state = State.AIR
-		_request(&"fall")
-	elif state == State.AIR and is_on_floor():
-		state = State.GROUND
+
+
+func _transition(pressing: bool, speed: float, exit_wait: bool) -> void:
+	if not _airborne() and not is_on_floor():
+		_enter(Anim.FALL)
+	elif _airborne() and is_on_floor():
 		_character.set_idle_foot(false)
-		_request(&"move" if pressing else &"land")
-	elif state == State.GROUND and _anim == &"stop":
+		_enter(Anim.MOVE if pressing else Anim.LAND)
+	elif _anim == Anim.STOP:
 		if pressing:
-			_request(&"move")
-		elif _clip_time >= _clip_length:
-			_anim = &"idle"
+			_enter(Anim.MOVE)
+		elif _stop.time >= _character.exit_length:
+			_anim = Anim.IDLE
+			_stop = null
 	elif exit_wait:
 		var foot := _exit_foot()
 		if foot >= 0:
-			_stop(foot, speed)
-	elif state == State.GROUND and (pressing or (speed > STOP_SPEED and _anim != &"land")):
-		_request(&"move")
-	elif state == State.GROUND and _anim != &"land":
-		if _anim != &"idle":
+			_enter_stop(foot, speed)
+	elif not _airborne() and (pressing or (speed > STOP_SPEED and _anim != Anim.LAND)):
+		_enter(Anim.MOVE)
+	elif not _airborne() and _anim != Anim.LAND:
+		if _anim != Anim.IDLE:
 			_character.set_idle_foot(_right_ahead())
-		_request(&"idle")
-	
-	var facing := Vector3(velocity.x, 0.0, velocity.z) if speed > STOP_SPEED else direction
-	_turn_skin(facing, delta)
+		_enter(Anim.IDLE)
+
+
+func _animate(speed: float, turned: float, delta: float) -> void:
 	var clip := speed / _scale
 	var rate := 1.0
 	if clip > walk_speed:
@@ -178,20 +204,24 @@ func _physics_process(delta: float) -> void:
 	_character.set_lean(_lean)
 
 
-# anim: idle, move, stop(Exit), jump_start, fall, land.
-func _request(anim: StringName) -> void:
+func _enter(anim: Anim) -> void:
 	if anim == _anim:
 		return
-	if anim == &"move":
+	if anim == Anim.MOVE:
 		_character.start_cycle(_character.idle_foot_right())
-	var tree_state := anim
-	if anim == &"stop":
-		tree_state = &"idle"
+	if anim == Anim.STOP:
 		_character.rest(&"exit")
-	elif anim == &"idle":
+	elif anim == Anim.IDLE:
 		_character.rest(&"still")
 	_anim = anim
-	_character.request(tree_state)
+	_character.request(TREE_STATE[anim])
+
+
+func _enter_stop(foot: int, speed: float) -> void:
+	_character.set_exit_foot(foot)
+	_stop = Stop.new()
+	_stop.decel = speed / EXIT_STOP
+	_enter(Anim.STOP)
 
 
 func _exit_foot() -> int:
@@ -213,14 +243,6 @@ func _flat_ahead(dir: Vector3) -> bool:
 		if hit.is_empty() or absf(hit.position.y - global_position.y) > FLAT_RISE:
 			return false
 	return true
-
-
-func _stop(foot: int, speed: float) -> void:
-	_character.set_exit_foot(foot)
-	_clip_time = 0.0
-	_clip_length = _character.exit_length
-	_stop_decel = speed / EXIT_STOP
-	_request(&"stop")
 
 
 func _right_ahead() -> bool:
