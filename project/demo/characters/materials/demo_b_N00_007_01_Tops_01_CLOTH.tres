@@ -3,7 +3,7 @@
 [ext_resource type="Shader" uid="uid://bta78oqjbb6g6" path="res://demo/shaders/mtoon/mtoon_outline_cutout.gdshader" id="1_r0qjn"]
 [ext_resource type="Texture2D" uid="uid://ckqx1tvfa6hgl" path="res://demo/characters/demo_b_Shader_NoneNormal.png" id="2_bsysm"]
 [ext_resource type="Texture2D" uid="uid://ce8tw5o0ru6i8" path="res://demo/characters/demo_b_Shader_NoneBlack.png" id="3_4w7k1"]
-[ext_resource type="Texture2D" uid="uid://ccm0g4uv6xdv7" path="res://demo/characters/demo_b__13.png" id="4_hr5ws"]
+[ext_resource type="Texture2D" uid="uid://c3o8y11ytgxr1" path="res://demo/characters/demo_b__14.png" id="4_hr5ws"]
 [ext_resource type="Texture2D" uid="uid://doy1n77cng5wn" path="res://demo/characters/demo_b_MatcapWarp.png" id="5_iq7ot"]
 [ext_resource type="Shader" uid="uid://dwlpyba606kl" path="res://demo/shaders/mtoon/mtoon_cutout_cull_off.gdshader" id="6_3k805"]
 
