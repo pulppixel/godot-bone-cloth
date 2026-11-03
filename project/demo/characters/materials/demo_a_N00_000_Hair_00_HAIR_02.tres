@@ -2,8 +2,8 @@
 
 [ext_resource type="Shader" uid="uid://bta78oqjbb6g6" path="res://demo/shaders/mtoon/mtoon_outline_cutout.gdshader" id="1_c6401"]
 [ext_resource type="Texture2D" uid="uid://oq387pdkby55" path="res://demo/characters/demo_a_N00_000_Hair_00_nml_02.png" id="2_7g0gr"]
-[ext_resource type="Texture2D" uid="uid://diy1t61dnxok1" path="res://demo/characters/demo_a__25.png" id="3_xehae"]
-[ext_resource type="Texture2D" uid="uid://dyh0lrsmj3mkw" path="res://demo/characters/demo_a__24.png" id="4_yox7s"]
+[ext_resource type="Texture2D" uid="uid://bap8eil7qxa5r" path="res://demo/characters/demo_a__26.png" id="3_xehae"]
+[ext_resource type="Texture2D" uid="uid://diy1t61dnxok1" path="res://demo/characters/demo_a__25.png" id="4_yox7s"]
 [ext_resource type="Texture2D" uid="uid://ium2nxedusp1" path="res://demo/characters/demo_a_MatcapWarp.png" id="5_2l20u"]
 [ext_resource type="Shader" uid="uid://dwlpyba606kl" path="res://demo/shaders/mtoon/mtoon_cutout_cull_off.gdshader" id="6_jv55i"]
 
