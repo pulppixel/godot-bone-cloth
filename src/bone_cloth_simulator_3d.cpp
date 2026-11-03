@@ -135,8 +135,7 @@ void BoneClothSimulator3D::_build_branches() {
 			continue;
 		}
 
-		// parent chain은 앞 chain에서만 찾는다. 파생 chain은 이번 step에 먼저 움직인 parent joint를 따라가야 한다.
-		// 순서가 반대면 configuration warning이 알려 준다.
+		// parent chain은 앞 chain에서만 찾는다.
 		const int root = chain.joints[0].bone;
 		for (uint32_t other = 0; other < c && chain.parent_chain < 0; other++) {
 			for (uint32_t j = 0; j < chains[other].joints.size(); j++) {
@@ -183,7 +182,7 @@ void BoneClothSimulator3D::_build_branches() {
 
 // 여러 chain이 한 면처럼 움직이도록 같은 depth의 joint를 link로 연결한다 (root 제외)
 // tip은 tip끼리만 연결한다.
-void BoneClothSimulator3D::_build_links(Skeleton3D *p_skeleton) {
+void BoneClothSimulator3D::_build_links() {
 	links.clear();
 	LocalVector<uint32_t> linked;
 	for (uint32_t c = 0; c < chains.size(); c++) {
@@ -1705,7 +1704,7 @@ void BoneClothSimulator3D::_process_modification_with_delta(double p_delta) {
 			}
 		}
 		_build_branches();
-		_build_links(skeleton);
+		_build_links();
 		_build_sync(skeleton);
 	}
 

@@ -227,7 +227,7 @@ private:
 	float _get_units_per_meter(const Skeleton3D *p_skeleton) const;
 	bool _build_joints(Skeleton3D *p_skeleton, Chain &p_chain);
 	void _build_branches();
-	void _build_links(Skeleton3D *p_skeleton);
+	void _build_links();
 	void _build_sync(Skeleton3D *p_skeleton);
 	bool _is_child_collision(const NodePath &p_node_path) const;
 	void _find_chain_collisions(const LocalVector<PosedCollision> &p_collisions);
