@@ -5,9 +5,11 @@ _data = [Vector2(0, 0.2), 0.0, 0.8000001, 1, 1, Vector2(1, 1), 0.8000001, 0.0, 1
 point_count = 2
 
 [resource]
+link_split = true
 drag/value = 0.2
 stiffness/value = 0.02
-radius/value = 0.05
+radius/value = 0.035
+radius/rest_overlap = false
 limit_angle/value = 1.3089969
 limit_angle/damping_curve = SubResource("Curve_6lddl")
 limit_angle/stiffness = 0.66

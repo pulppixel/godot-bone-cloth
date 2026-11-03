@@ -297,6 +297,19 @@ float BoneClothCollision3D::get_rest_depth(const Vector3 &p_a, const Vector3 &p_
 	return _segment_depth(Transform3D(shape.basis * meters, shape.origin * meters), p_a * meters, p_b * meters, p_radius * meters) * units_per_meter;
 }
 
+// 두 점(p_a, p_b)이 이 모양을 사이에 두고 반대편에 있는지. 각 점을 모양 밖으로 미는 방향이 90도보다 많이 벌어지면 반대편이다.
+// 모양에서 멀리 있는 점도 미는 방향을 얻도록 아주 큰 반지름(1000 m)으로 민다. 평면은 두 점을 같은 방향으로 밀어서 늘 false다.
+bool BoneClothCollision3D::separates(const Vector3 &p_a, const Vector3 &p_b, bool p_mirror) const {
+	const float meters = 1.0f / units_per_meter;
+	const Transform3D &shape = p_mirror ? mirror_pose : pose;
+	const Transform3D shape_in_meters(shape.basis * meters, shape.origin * meters);
+	const Vector3 a = p_a * meters;
+	const Vector3 b = p_b * meters;
+	const Vector3 out_a = _collide(shape_in_meters, a, 1000.0f) - a;
+	const Vector3 out_b = _collide(shape_in_meters, b, 1000.0f) - b;
+	return out_a.dot(out_b) < 0.0f;
+}
+
 // 양 끝 joint 중 더 많이 밀릴 joint가 밀리는 거리. 양 끝만 미는 모양(plane, inside)은 이것이 선분의 깊이다.
 // 선분 가운데를 미는 모양(구, 캡슐)은 이 함수를 다시 쓴다.
 float BoneClothCollision3D::_segment_depth(const Transform3D &p_pose, const Vector3 &p_a, const Vector3 &p_b, float p_radius) const {

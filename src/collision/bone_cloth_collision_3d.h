@@ -72,6 +72,7 @@ public:
 	void sync_pose();
 	void collide_segment(Vector3 &r_a, Vector3 &r_b, float p_radius, bool p_mirror) const;
 	float get_rest_depth(const Vector3 &p_a, const Vector3 &p_b, float p_radius, bool p_mirror) const;
+	bool separates(const Vector3 &p_a, const Vector3 &p_b, bool p_mirror) const;
 
 	BoneClothCollision3D();
 };

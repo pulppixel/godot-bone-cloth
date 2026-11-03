@@ -116,6 +116,8 @@ static func run(t) -> void:
 	await _sync_bone(t)
 	await _squeeze(t)
 	await _rest_overlap(t)
+	await _rest_overlap_off(t)
+	await _link_split(t)
 	await _root_spring(t)
 	await _root_spring_forward(t)
 	await _monitors(t)
@@ -449,6 +451,76 @@ static func _rest_overlap(t) -> void:
 
 	t.check(largest < REST_OVERLAP_TOLERANCE, "Rest overlap: a chain that overlaps a sphere at rest moves %.5f m." % largest)
 	t.check(absf(depths["bent"] - depths["rest"]) < BONE_COLLISION_TOLERANCE, "Rest overlap: bent toward the sphere, a bone is %.4f m in, %.4f m at rest." % [depths["bent"], depths["rest"]])
+
+
+# radius/rest_overlap을 끄면, rest 자세에서 구와 겹친 chain도 구 밖으로 밀린다.
+static func _rest_overlap_off(t) -> void:
+	var center := Vector3(0.05, -0.15, 0.0)
+	var rig := Rig.new(t)
+	rig.simulator.set("gravity/value", 0.0)
+	rig.simulator.set("stiffness/value", 0.2)
+	rig.simulator.set("radius/rest_overlap", false)
+	var sphere: Node = ClassDB.instantiate("BoneClothCollisionSphere3D")
+	rig.simulator.add_child(sphere)
+	sphere.set("bone_name", "b0")
+	sphere.set("position_offset", center)
+	sphere.set("radius", 0.04)
+	for frame in 60:
+		await rig.advance(1.0 / 60.0)
+	var deepest := 0.0 # bone이 구에 들어간 가장 깊은 거리 (m)
+	for i in range(1, TIP + 1):
+		var nearest := Geometry3D.get_closest_point_to_segment(center, rig.poses[i - 1].origin, rig.poses[i].origin)
+		deepest = maxf(deepest, 0.04 + 0.02 - center.distance_to(nearest))
+	rig.remove()
+
+	t.check(deepest < BONE_COLLISION_TOLERANCE, "Rest overlap off: a chain that overlaps a sphere at rest stays %.4f m in." % deepest)
+
+
+# link_split: 두 chain을 잇는 link만 구를 가로지른다. 켜면 구가 link를 밀지 않고, 끄면 link가 구 밖으로 밀린다.
+#   r +-- a0 - a1 - a2   (x -0.05)
+#     +-- c0 - c1 - c2   (x 0.05)
+#   구는 a1과 c1 사이, 조금 앞(z 0.01)에 있다.
+static func _link_split(t) -> void:
+	var center := Vector3(0.0, -BONE_LENGTH, 0.01)
+	var nearest := {} # 경우마다, link a1 - c1과 구 중심 사이의 거리 (m)
+	for split in [false, true]:
+		var skeleton := Skeleton3D.new()
+		t.root.add_child(skeleton)
+		skeleton.add_bone("r")
+		for side in [["a", -0.05], ["c", 0.05]]:
+			for i in 3:
+				var bone := skeleton.add_bone("%s%d" % [side[0], i])
+				skeleton.set_bone_parent(bone, 0 if i == 0 else bone - 1)
+				skeleton.set_bone_rest(bone, Transform3D(Basis(), Vector3(side[1], 0, 0) if i == 0 else Vector3(0, -BONE_LENGTH, 0)))
+				skeleton.set_bone_pose(bone, skeleton.get_bone_rest(bone))
+		skeleton.modifier_callback_mode_process = Skeleton3D.MODIFIER_CALLBACK_MODE_PROCESS_MANUAL
+		var simulator: Node = ClassDB.instantiate("BoneClothSimulator3D")
+		skeleton.add_child(simulator)
+		simulator.set("chain_count", 2)
+		simulator.set("chains/0/root_bone_name", "a0")
+		simulator.set("chains/0/end_bone_name", "a2")
+		simulator.set("chains/1/root_bone_name", "c0")
+		simulator.set("chains/1/end_bone_name", "c2")
+		simulator.set("link_mode", 1)
+		simulator.set("link_split", split)
+		simulator.set("stiffness/value", 0.2)
+		simulator.set("radius/value", 0.01)
+		var sphere: Node = ClassDB.instantiate("BoneClothCollisionSphere3D")
+		simulator.add_child(sphere)
+		sphere.set("position", center)
+		sphere.set("radius", 0.03)
+		var joints: Array[Vector3] = [Vector3(), Vector3()] # a1, c1 (skeleton 공간)
+		skeleton.skeleton_updated.connect(func() -> void:
+			joints[0] = skeleton.get_bone_global_pose(2).origin
+			joints[1] = skeleton.get_bone_global_pose(5).origin)
+		for frame in 60:
+			skeleton.advance(1.0 / 60.0)
+			await t.process_frame
+		nearest[split] = center.distance_to(Geometry3D.get_closest_point_to_segment(center, joints[0], joints[1]))
+		skeleton.free()
+
+	t.check(nearest[false] > 0.03, "Link split off: a link across a sphere stays %.4f m from its center." % nearest[false])
+	t.check(nearest[true] < 0.02, "Link split: a link across a sphere is pushed out to %.4f m from its center." % nearest[true])
 
 
 # root spring이 있으면 root bone(b0)도 흔들린다.

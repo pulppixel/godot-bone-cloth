@@ -7,6 +7,8 @@ using namespace godot;
 void BoneClothPreset::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_link_stiffness", "stiffness"), &BoneClothPreset::set_link_stiffness);
 	ClassDB::bind_method(D_METHOD("get_link_stiffness"), &BoneClothPreset::get_link_stiffness);
+	ClassDB::bind_method(D_METHOD("set_link_split_enabled", "enabled"), &BoneClothPreset::set_link_split_enabled);
+	ClassDB::bind_method(D_METHOD("is_link_split_enabled"), &BoneClothPreset::is_link_split_enabled);
 	ClassDB::bind_method(D_METHOD("set_drag", "drag"), &BoneClothPreset::set_drag);
 	ClassDB::bind_method(D_METHOD("get_drag"), &BoneClothPreset::get_drag);
 	ClassDB::bind_method(D_METHOD("set_drag_damping_curve", "curve"), &BoneClothPreset::set_drag_damping_curve);
@@ -19,6 +21,8 @@ void BoneClothPreset::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_radius"), &BoneClothPreset::get_radius);
 	ClassDB::bind_method(D_METHOD("set_radius_damping_curve", "curve"), &BoneClothPreset::set_radius_damping_curve);
 	ClassDB::bind_method(D_METHOD("get_radius_damping_curve"), &BoneClothPreset::get_radius_damping_curve);
+	ClassDB::bind_method(D_METHOD("set_rest_overlap_enabled", "enabled"), &BoneClothPreset::set_rest_overlap_enabled);
+	ClassDB::bind_method(D_METHOD("is_rest_overlap_enabled"), &BoneClothPreset::is_rest_overlap_enabled);
 	ClassDB::bind_method(D_METHOD("set_limit_angle", "angle"), &BoneClothPreset::set_limit_angle);
 	ClassDB::bind_method(D_METHOD("get_limit_angle"), &BoneClothPreset::get_limit_angle);
 	ClassDB::bind_method(D_METHOD("set_limit_angle_damping_curve", "curve"), &BoneClothPreset::set_limit_angle_damping_curve);
@@ -61,12 +65,14 @@ void BoneClothPreset::_bind_methods() {
 	// 이름과 범위(hint)를 BoneClothSimulator3D와 맞춘다.
 	// 값을 이름으로 복사하고, preset을 열면 node와 같은 슬라이더로 보인다.
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "link_stiffness", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_link_stiffness", "get_link_stiffness");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "link_split"), "set_link_split_enabled", "is_link_split_enabled");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "drag/value", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_drag", "get_drag");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "drag/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_drag_damping_curve", "get_drag_damping_curve");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "stiffness/value", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_stiffness", "get_stiffness");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "stiffness/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_stiffness_damping_curve", "get_stiffness_damping_curve");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "radius/value", PROPERTY_HINT_RANGE, "0,0.2,0.001,or_greater,suffix:m"), "set_radius", "get_radius");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "radius/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_radius_damping_curve", "get_radius_damping_curve");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "radius/rest_overlap"), "set_rest_overlap_enabled", "is_rest_overlap_enabled");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "limit_angle/value", PROPERTY_HINT_RANGE, "0,180,0.1,radians_as_degrees"), "set_limit_angle", "get_limit_angle");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "limit_angle/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_limit_angle_damping_curve", "get_limit_angle_damping_curve");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "limit_angle/stiffness", PROPERTY_HINT_RANGE, "0,1,0.01"), "set_limit_angle_stiffness", "get_limit_angle_stiffness");
@@ -103,6 +109,15 @@ void BoneClothPreset::set_link_stiffness(float p_stiffness) {
 
 float BoneClothPreset::get_link_stiffness() const {
 	return link_stiffness;
+}
+
+void BoneClothPreset::set_link_split_enabled(bool p_enabled) {
+	link_split = p_enabled;
+	emit_changed();
+}
+
+bool BoneClothPreset::is_link_split_enabled() const {
+	return link_split;
 }
 
 void BoneClothPreset::set_drag(float p_drag) {
@@ -157,6 +172,15 @@ void BoneClothPreset::set_radius_damping_curve(const Ref<Curve> &p_curve) {
 
 Ref<Curve> BoneClothPreset::get_radius_damping_curve() const {
 	return radius_damping_curve;
+}
+
+void BoneClothPreset::set_rest_overlap_enabled(bool p_enabled) {
+	rest_overlap = p_enabled;
+	emit_changed();
+}
+
+bool BoneClothPreset::is_rest_overlap_enabled() const {
+	return rest_overlap;
 }
 
 void BoneClothPreset::set_limit_angle(float p_angle) {

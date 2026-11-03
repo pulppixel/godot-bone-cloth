@@ -15,12 +15,14 @@ class BoneClothPreset : public Resource {
 
 	// 기본값은 BoneClothSimulator3D와 같다.
 	float link_stiffness = 0.0f;
+	bool link_split = false;
 	float drag = 0.1f;
 	Ref<Curve> drag_damping_curve;
 	float stiffness = 0.05f;
 	Ref<Curve> stiffness_damping_curve;
 	float radius = 0.03f;
 	Ref<Curve> radius_damping_curve;
+	bool rest_overlap = true;
 	float limit_angle = 0.0f;
 	Ref<Curve> limit_angle_damping_curve;
 	float limit_angle_stiffness = 1.0f;
@@ -49,12 +51,14 @@ public:
 	// 쓰는 곳: apply_preset, make_preset, 에디터의 Presets 메뉴
 	static constexpr const char *VALUES[] = {
 		"link_stiffness",
+		"link_split",
 		"drag/value",
 		"drag/damping_curve",
 		"stiffness/value",
 		"stiffness/damping_curve",
 		"radius/value",
 		"radius/damping_curve",
+		"radius/rest_overlap",
 		"limit_angle/value",
 		"limit_angle/damping_curve",
 		"limit_angle/stiffness",
@@ -80,6 +84,8 @@ public:
 	static Variant copy_value(const Variant &p_value);
 	void set_link_stiffness(float p_stiffness);
 	float get_link_stiffness() const;
+	void set_link_split_enabled(bool p_enabled);
+	bool is_link_split_enabled() const;
 	void set_drag(float p_drag);
 	float get_drag() const;
 	void set_drag_damping_curve(const Ref<Curve> &p_curve);
@@ -92,6 +98,8 @@ public:
 	float get_radius() const;
 	void set_radius_damping_curve(const Ref<Curve> &p_curve);
 	Ref<Curve> get_radius_damping_curve() const;
+	void set_rest_overlap_enabled(bool p_enabled);
+	bool is_rest_overlap_enabled() const;
 	void set_limit_angle(float p_angle);
 	float get_limit_angle() const;
 	void set_limit_angle_damping_curve(const Ref<Curve> &p_curve);

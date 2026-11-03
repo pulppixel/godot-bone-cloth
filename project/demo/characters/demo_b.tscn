@@ -54,9 +54,11 @@ chains/1/exclude_collision_count = 0
 
 [node name="BackHair" type="BoneClothSimulator3D" parent="GeneralSkeleton" parent_id_path=PackedInt32Array(1565448554) index="4" unique_id=1523706013]
 link_mode = 1
+link_split = true
 drag/value = 0.2
 stiffness/value = 0.02
-radius/value = 0.05
+radius/value = 0.035
+radius/rest_overlap = false
 limit_angle/value = 1.3089969
 limit_angle/damping_curve = SubResource("Curve_hair_limit")
 limit_angle/stiffness = 0.66
@@ -209,7 +211,8 @@ transform = Transform3D(-0.99999976, -8.0019884e-17, -1.1218724e-17, -8.001988e-
 [node name="SideHair" type="BoneClothSimulator3D" parent="GeneralSkeleton" parent_id_path=PackedInt32Array(1565448554) index="5" unique_id=1487933093]
 drag/value = 0.2
 stiffness/value = 0.02
-radius/value = 0.05
+radius/value = 0.035
+radius/rest_overlap = false
 limit_angle/value = 1.3089969
 limit_angle/damping_curve = SubResource("Curve_hair_limit")
 limit_angle/stiffness = 0.66

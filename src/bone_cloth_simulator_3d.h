@@ -179,12 +179,14 @@ private:
 	LocalVector<Chain> chains;
 	LinkMode link_mode = LINK_MODE_NONE;
 	float link_stiffness = 0.0f;
+	bool link_split = false;
 	float drag = 0.1f;
 	Ref<Curve> drag_damping_curve;
 	float stiffness = 0.05f;
 	Ref<Curve> stiffness_damping_curve;
 	float radius = 0.03f;
 	Ref<Curve> radius_damping_curve;
+	bool rest_overlap = true;
 	float limit_angle = 0.0f;
 	Ref<Curve> limit_angle_damping_curve;
 	float limit_angle_stiffness = 1.0f;
@@ -261,7 +263,7 @@ private:
 	void _move_root(Chain &r_chain, const Vector3 &p_move, const Quaternion &p_turn);
 	void _simulate(Chain &p_chain, const Vector3 &p_gravity_direction, const Vector3 &p_move, const Quaternion &p_turn);
 	void _solve_links();
-	void _collide_segment(Joint &r_a, Joint &r_b, float p_radius, const LocalVector<PosedCollision> &p_collisions, const LocalVector<bool> &p_collides_a, const LocalVector<bool> &p_collides_b, Vector3 Joint::*p_field);
+	void _collide_segment(Joint &r_a, Joint &r_b, float p_radius, const LocalVector<PosedCollision> &p_collisions, const LocalVector<bool> &p_collides_a, const LocalVector<bool> &p_collides_b, Vector3 Joint::*p_field, bool p_split);
 	void _collide(const LocalVector<PosedCollision> &p_collisions, Vector3 Joint::*p_field);
 	void _restore_limits_and_lengths(Chain &p_chain);
 	void _restore_lengths(Chain &p_chain, Vector3 Joint::*p_field, Vector3 Joint::*p_pose_field);
@@ -326,6 +328,8 @@ public:
 	LinkMode get_link_mode() const;
 	void set_link_stiffness(float p_stiffness);
 	float get_link_stiffness() const;
+	void set_link_split_enabled(bool p_enabled);
+	bool is_link_split_enabled() const;
 	void set_drag(float p_drag);
 	float get_drag() const;
 	void set_drag_damping_curve(const Ref<Curve> &p_curve);
@@ -338,6 +342,8 @@ public:
 	float get_radius() const;
 	void set_radius_damping_curve(const Ref<Curve> &p_curve);
 	Ref<Curve> get_radius_damping_curve() const;
+	void set_rest_overlap_enabled(bool p_enabled);
+	bool is_rest_overlap_enabled() const;
 	void set_limit_angle(float p_angle);
 	float get_limit_angle() const;
 	void set_limit_angle_damping_curve(const Ref<Curve> &p_curve);

@@ -567,7 +567,7 @@ static Vector3 combine_pushes(const LocalVector<Vector3> &p_pushes) {
 //     손 -->  |치마|  <-- 허벅지
 //
 // 위처럼 두 collision이 반대로 밀면 두 방향이 서로 지워져 선분은 거의 움직이지 않는다.
-void BoneClothSimulator3D::_collide_segment(Joint &r_a, Joint &r_b, float p_radius, const LocalVector<PosedCollision> &p_collisions, const LocalVector<bool> &p_collides_a, const LocalVector<bool> &p_collides_b, Vector3 Joint::*p_field) {
+void BoneClothSimulator3D::_collide_segment(Joint &r_a, Joint &r_b, float p_radius, const LocalVector<PosedCollision> &p_collisions, const LocalVector<bool> &p_collides_a, const LocalVector<bool> &p_collides_b, Vector3 Joint::*p_field, bool p_split) {
 	const Vector3 &location_a = r_a.*p_field;
 	const Vector3 &location_b = r_b.*p_field;
 	for (uint32_t c = 0; c < p_collisions.size(); c++) {
@@ -582,7 +582,19 @@ void BoneClothSimulator3D::_collide_segment(Joint &r_a, Joint &r_b, float p_radi
 			continue;
 		}
 
-		const float rest_depth = p_collisions[c].collision->get_rest_depth(r_a.rest_location, r_b.rest_location, p_radius, p_collisions[c].mirror);
+		// p_split(link_split을 켠 link): 양 끝 joint가 이 collision의 반대편에 있으면 link를 밀지 않는다.
+		/*
+			예: 긴 머리, 어깨 collision.
+			앞으로 넘어온 가닥과 등 뒤 가닥을 잇는 link가 어깨를 가로지른다. 이 link를 밀면 두 가닥이 어깨 위로 들리고,
+			각도 제한이 다시 끌어내린다. 매 step 밀고 당겨서 가닥이 떨린다.
+			밀지 않으면 두 가닥이 어깨 앞뒤로 갈라진다. 가닥 자체(bone)는 그대로 collision에 밀린다.
+		*/
+		if (p_split && p_collisions[c].collision->separates(location_a, location_b, p_collisions[c].mirror)) {
+			continue;
+		}
+
+		// rest_overlap을 끄면 rest 자세에서 겹친 만큼도 봐주지 않고, 다른 곳처럼 반지름만큼 민다.
+		const float rest_depth = rest_overlap ? p_collisions[c].collision->get_rest_depth(r_a.rest_location, r_b.rest_location, p_radius, p_collisions[c].mirror) : 0.0f;
 		if (rest_depth > 0.0f) {
 			a = location_a;
 			b = location_b;
@@ -612,7 +624,7 @@ void BoneClothSimulator3D::_collide(const LocalVector<PosedCollision> &p_collisi
 		for (uint32_t i = 1; i < chain.joints.size(); i++) {
 			Joint &parent = chain.joints[i - 1];
 			Joint &joint = chain.joints[i];
-			_collide_segment(parent, joint, (parent.radius + joint.radius) * 0.5f, p_collisions, chain.collides, chain.collides, p_field);
+			_collide_segment(parent, joint, (parent.radius + joint.radius) * 0.5f, p_collisions, chain.collides, chain.collides, p_field, false);
 		}
 	}
 
@@ -621,7 +633,7 @@ void BoneClothSimulator3D::_collide(const LocalVector<PosedCollision> &p_collisi
 		Chain &chain_b = chains[link.chain_b];
 		Joint &joint_a = chain_a.joints[link.depth];
 		Joint &joint_b = chain_b.joints[link.depth];
-		_collide_segment(joint_a, joint_b, (joint_a.radius + joint_b.radius) * 0.5f, p_collisions, chain_a.collides, chain_b.collides, p_field);
+		_collide_segment(joint_a, joint_b, (joint_a.radius + joint_b.radius) * 0.5f, p_collisions, chain_a.collides, chain_b.collides, p_field, link_split);
 	}
 
 	for (Chain &chain : chains) {
@@ -755,6 +767,8 @@ void BoneClothSimulator3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_link_mode"), &BoneClothSimulator3D::get_link_mode);
 	ClassDB::bind_method(D_METHOD("set_link_stiffness", "stiffness"), &BoneClothSimulator3D::set_link_stiffness);
 	ClassDB::bind_method(D_METHOD("get_link_stiffness"), &BoneClothSimulator3D::get_link_stiffness);
+	ClassDB::bind_method(D_METHOD("set_link_split_enabled", "enabled"), &BoneClothSimulator3D::set_link_split_enabled);
+	ClassDB::bind_method(D_METHOD("is_link_split_enabled"), &BoneClothSimulator3D::is_link_split_enabled);
 
 	ClassDB::bind_method(D_METHOD("set_drag", "drag"), &BoneClothSimulator3D::set_drag);
 	ClassDB::bind_method(D_METHOD("get_drag"), &BoneClothSimulator3D::get_drag);
@@ -769,6 +783,8 @@ void BoneClothSimulator3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_radius"), &BoneClothSimulator3D::get_radius);
 	ClassDB::bind_method(D_METHOD("set_radius_damping_curve", "curve"), &BoneClothSimulator3D::set_radius_damping_curve);
 	ClassDB::bind_method(D_METHOD("get_radius_damping_curve"), &BoneClothSimulator3D::get_radius_damping_curve);
+	ClassDB::bind_method(D_METHOD("set_rest_overlap_enabled", "enabled"), &BoneClothSimulator3D::set_rest_overlap_enabled);
+	ClassDB::bind_method(D_METHOD("is_rest_overlap_enabled"), &BoneClothSimulator3D::is_rest_overlap_enabled);
 	ClassDB::bind_method(D_METHOD("set_limit_angle", "angle"), &BoneClothSimulator3D::set_limit_angle);
 	ClassDB::bind_method(D_METHOD("get_limit_angle"), &BoneClothSimulator3D::get_limit_angle);
 	ClassDB::bind_method(D_METHOD("set_limit_angle_damping_curve", "curve"), &BoneClothSimulator3D::set_limit_angle_damping_curve);
@@ -817,6 +833,7 @@ void BoneClothSimulator3D::_bind_methods() {
 
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "link_mode", PROPERTY_HINT_ENUM, "None,Sequential,Loop"), "set_link_mode", "get_link_mode");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "link_stiffness", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_link_stiffness", "get_link_stiffness");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "link_split"), "set_link_split_enabled", "is_link_split_enabled");
 
 	// chain 위치마다 값을 다르게 주기 위해 값마다 curve가 있다(<name>/value, <name>/damping_curve).
 	// stiffness는 step마다 joint를 pose 쪽으로 당기는 비율이다(0에서 1).
@@ -826,6 +843,7 @@ void BoneClothSimulator3D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "stiffness/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_stiffness_damping_curve", "get_stiffness_damping_curve");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "radius/value", PROPERTY_HINT_RANGE, "0,0.2,0.001,or_greater,suffix:m"), "set_radius", "get_radius");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "radius/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_radius_damping_curve", "get_radius_damping_curve");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "radius/rest_overlap"), "set_rest_overlap_enabled", "is_rest_overlap_enabled");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "limit_angle/value", PROPERTY_HINT_RANGE, "0,180,0.1,radians_as_degrees"), "set_limit_angle", "get_limit_angle");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "limit_angle/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_limit_angle_damping_curve", "get_limit_angle_damping_curve");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "limit_angle/stiffness", PROPERTY_HINT_RANGE, "0,1,0.01"), "set_limit_angle_stiffness", "get_limit_angle_stiffness");
@@ -1027,7 +1045,7 @@ void BoneClothSimulator3D::_get_property_list(List<PropertyInfo> *p_list) const 
 
 // inspector에 노출할 지 말 지 여부를 여기서 최종적으로 정한다.
 void BoneClothSimulator3D::_validate_property(PropertyInfo &p_property) const {
-	if (link_mode == LINK_MODE_NONE && p_property.name == StringName("link_stiffness")) {
+	if (link_mode == LINK_MODE_NONE && (p_property.name == StringName("link_stiffness") || p_property.name == StringName("link_split"))) {
 		p_property.usage = PROPERTY_USAGE_NO_EDITOR;
 	}
 }
@@ -1325,6 +1343,14 @@ float BoneClothSimulator3D::get_link_stiffness() const {
 	return link_stiffness;
 }
 
+void BoneClothSimulator3D::set_link_split_enabled(bool p_enabled) {
+	link_split = p_enabled;
+}
+
+bool BoneClothSimulator3D::is_link_split_enabled() const {
+	return link_split;
+}
+
 void BoneClothSimulator3D::set_drag(float p_drag) {
 	drag = p_drag;
 }
@@ -1371,6 +1397,14 @@ void BoneClothSimulator3D::set_radius_damping_curve(const Ref<Curve> &p_curve) {
 
 Ref<Curve> BoneClothSimulator3D::get_radius_damping_curve() const {
 	return radius_damping_curve;
+}
+
+void BoneClothSimulator3D::set_rest_overlap_enabled(bool p_enabled) {
+	rest_overlap = p_enabled;
+}
+
+bool BoneClothSimulator3D::is_rest_overlap_enabled() const {
+	return rest_overlap;
 }
 
 void BoneClothSimulator3D::set_limit_angle(float p_angle) {

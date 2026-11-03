@@ -46,6 +46,9 @@
 		<member name="limit_angle/value" type="float" setter="set_limit_angle" getter="get_limit_angle" default="0.0">
 			See [member BoneClothSimulator3D.limit_angle/value].
 		</member>
+		<member name="link_split" type="bool" setter="set_link_split_enabled" getter="is_link_split_enabled" default="false">
+			See [member BoneClothSimulator3D.link_split].
+		</member>
 		<member name="link_stiffness" type="float" setter="set_link_stiffness" getter="get_link_stiffness" default="0.0">
 			See [member BoneClothSimulator3D.link_stiffness].
 		</member>
@@ -60,6 +63,9 @@
 		</member>
 		<member name="radius/damping_curve" type="Curve" setter="set_radius_damping_curve" getter="get_radius_damping_curve">
 			See [member BoneClothSimulator3D.radius/damping_curve].
+		</member>
+		<member name="radius/rest_overlap" type="bool" setter="set_rest_overlap_enabled" getter="is_rest_overlap_enabled" default="true">
+			See [member BoneClothSimulator3D.radius/rest_overlap].
 		</member>
 		<member name="radius/value" type="float" setter="set_radius" getter="get_radius" default="0.03">
 			See [member BoneClothSimulator3D.radius/value].
