@@ -134,6 +134,7 @@ drag/value = 0.2
 stiffness/value = 0.08
 limit_angle/value = 0.7853982
 limit_angle/damping_curve = SubResource("Curve_hair_limit")
+limit_angle/stiffness = 0.66
 gravity/value = 5.0
 local_movement_speed_limit = 3.0
 local_rotation_speed_limit = 6.2831855

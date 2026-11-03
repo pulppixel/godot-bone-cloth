@@ -644,8 +644,15 @@ void BoneClothSimulator3D::_collide(const LocalVector<PosedCollision> &p_collisi
 	}
 }
 
-// joint가 pose 방향에서 p_limit 각도보다 많이 기울면, 딱 p_limit까지만 기울도록 한다.
-static Vector3 limit_to_cone(const Vector3 &p_offset, const Vector3 &p_pose_vector, float p_limit) {
+// joint가 pose 방향에서 p_limit 각도보다 많이 기울면, 넘친 각도에 p_stiffness를 곱한 만큼 되돌린다.
+// p_stiffness가 1이면 딱 p_limit까지 돌린다. 1보다 작으면 넘친 채로 남고, 다음 step들에 걸쳐 조금씩 돌아온다.
+/*
+	예: 긴 머리, 고개를 옆 위로 들 때.
+	애니메이션의 머리카락 방향이 어깨 속을 향한다. 각도 제한이 한 번에 p_limit까지 당기면 joint가 어깨 안으로 크게 들어가고,
+	collision이 그것을 밀어낸다. 한 step에 당기는 거리가 collision보다 커지면 joint가 어깨를 넘어가서 반대편으로 밀려난다(튄다).
+	조금씩 되돌리면 joint가 어깨 위를 미끄러져 넘어간다.
+*/
+static Vector3 limit_to_cone(const Vector3 &p_offset, const Vector3 &p_pose_vector, float p_limit, float p_stiffness) {
 	const Vector3 pose_direction = p_pose_vector.normalized();
 	const Vector3 direction = p_offset.normalized();
 	const Vector3 axis = pose_direction.cross(direction);
@@ -657,7 +664,7 @@ static Vector3 limit_to_cone(const Vector3 &p_offset, const Vector3 &p_pose_vect
 	// offset이 pose 방향과 정반대면 외적이 0이 되어 회전축을 구할 수 없다. 이때는 pose 방향에 수직인 아무 축으로 돌린다.
 	// rig마다 bone 축 방향이 달라서 특정 bone을 축으로 쓰지 않는다.
 	const Vector3 turn_axis = axis.is_zero_approx() ? pose_direction.get_any_perpendicular() : axis.normalized();
-	return p_offset.rotated(turn_axis, p_limit - angle);
+	return p_offset.rotated(turn_axis, (p_limit - angle) * p_stiffness);
 }
 
 // link와 collision이 joint를 밀면 bone이 늘어나거나 각도 제한(limit_to_cone)을 넘을 수 있다.
@@ -672,7 +679,7 @@ void BoneClothSimulator3D::_restore_limits_and_lengths(Chain &p_chain) {
 		// curve 때문에 0이 된 joint는 비활성화하지 않고 pose 방향에 고정한다.
 		Vector3 offset = joint.location - parent.location;
 		if (limit_angle > 0.0f) {
-			offset = limit_to_cone(offset, pose_vector, joint.limit_angle);
+			offset = limit_to_cone(offset, pose_vector, joint.limit_angle, limit_angle_stiffness);
 		}
 
 		joint.location = parent.location + offset.normalized() * pose_vector.length();
@@ -766,6 +773,8 @@ void BoneClothSimulator3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_limit_angle"), &BoneClothSimulator3D::get_limit_angle);
 	ClassDB::bind_method(D_METHOD("set_limit_angle_damping_curve", "curve"), &BoneClothSimulator3D::set_limit_angle_damping_curve);
 	ClassDB::bind_method(D_METHOD("get_limit_angle_damping_curve"), &BoneClothSimulator3D::get_limit_angle_damping_curve);
+	ClassDB::bind_method(D_METHOD("set_limit_angle_stiffness", "stiffness"), &BoneClothSimulator3D::set_limit_angle_stiffness);
+	ClassDB::bind_method(D_METHOD("get_limit_angle_stiffness"), &BoneClothSimulator3D::get_limit_angle_stiffness);
 	ClassDB::bind_method(D_METHOD("set_gravity", "gravity"), &BoneClothSimulator3D::set_gravity);
 	ClassDB::bind_method(D_METHOD("get_gravity"), &BoneClothSimulator3D::get_gravity);
 	ClassDB::bind_method(D_METHOD("set_gravity_damping_curve", "curve"), &BoneClothSimulator3D::set_gravity_damping_curve);
@@ -819,6 +828,7 @@ void BoneClothSimulator3D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "radius/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_radius_damping_curve", "get_radius_damping_curve");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "limit_angle/value", PROPERTY_HINT_RANGE, "0,180,0.1,radians_as_degrees"), "set_limit_angle", "get_limit_angle");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "limit_angle/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_limit_angle_damping_curve", "get_limit_angle_damping_curve");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "limit_angle/stiffness", PROPERTY_HINT_RANGE, "0,1,0.01"), "set_limit_angle_stiffness", "get_limit_angle_stiffness");
 
 	// gravity/value는 가속도(m/s^2)다. step마다 속도에 value * dt를 더한다.
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "gravity/value", PROPERTY_HINT_RANGE, "0,20,0.01,or_greater,or_less,suffix:m/s^2"), "set_gravity", "get_gravity");
@@ -1377,6 +1387,14 @@ void BoneClothSimulator3D::set_limit_angle_damping_curve(const Ref<Curve> &p_cur
 
 Ref<Curve> BoneClothSimulator3D::get_limit_angle_damping_curve() const {
 	return limit_angle_damping_curve;
+}
+
+void BoneClothSimulator3D::set_limit_angle_stiffness(float p_stiffness) {
+	limit_angle_stiffness = p_stiffness;
+}
+
+float BoneClothSimulator3D::get_limit_angle_stiffness() const {
+	return limit_angle_stiffness;
 }
 
 void BoneClothSimulator3D::set_gravity(float p_gravity) {

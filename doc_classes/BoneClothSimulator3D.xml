@@ -307,6 +307,9 @@
 		<member name="limit_angle/damping_curve" type="Curve" setter="set_limit_angle_damping_curve" getter="get_limit_angle_damping_curve">
 			The curve that scales [member limit_angle/value] along the chains. If not set, the scale is [code]1.0[/code].
 		</member>
+		<member name="limit_angle/stiffness" type="float" setter="set_limit_angle_stiffness" getter="get_limit_angle_stiffness" default="1.0">
+			How much of a bone's tilt past [member limit_angle/value] is taken back each step. [code]1.0[/code] holds every bone within the limit. Lower values let a bone pass the limit and come back over the next steps, so a chain that the limit pulls into a collision, such as long hair on the shoulder while the head turns up, slides over it instead of jumping through. Recommended value for long hair: [code]0.66[/code].
+		</member>
 		<member name="limit_angle/value" type="float" setter="set_limit_angle" getter="get_limit_angle" default="0.0">
 			The maximum angle each bone can tilt from its animated direction, in radians. Lower values keep the chain closer to the pose and cut its overshoot after the skeleton stops. [code]0.0[/code] disables the limit. Recommended values are between [code]0.5[/code] (30 degrees) and [code]1.3[/code] (75 degrees).
 			To draw the limits, check [b]Show Limit Angle[/b] in the node's toolbar menu.

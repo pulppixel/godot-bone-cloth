@@ -105,6 +105,7 @@ static func run(t) -> void:
 	await _frame_rate(t)
 	await _teleport(t)
 	await _limits_and_lengths(t)
+	await _soft_limit(t)
 	await _long_step(t)
 	await _scale(t)
 	await _bone_collision(t)
@@ -202,6 +203,30 @@ static func _limits_and_lengths(t) -> void:
 	t.check(longest < LENGTH_TOLERANCE, "Lengths: a bone differs from its pose by %.7f m." % longest)
 	t.check(widest < limit + ANGLE_TOLERANCE, "Limit angle 30 deg: a bone leaned %.4f deg." % rad_to_deg(widest))
 	t.check(widest > limit - deg_to_rad(5.0), "Limit angle 30 deg: the bones leaned only %.4f deg, so the limit was not tested." % rad_to_deg(widest))
+
+
+# limit_angle/stiffness: 1보다 작으면 bone이 limit_angle을 넘었다가 다음 step들에 걸쳐 돌아온다. 길이는 그대로다.
+static func _soft_limit(t) -> void:
+	var limit := deg_to_rad(30.0)
+	var widest := {} # stiffness별, pose 방향과 가장 많이 벌어진 각 (rad)
+	var longest := 0.0 # pose 길이와 가장 많이 다른 양 (m)
+	for stiffness in [0.0, 0.3]:
+		var rig := Rig.new(t)
+		rig.simulator.set("limit_angle/value", limit)
+		rig.simulator.set("limit_angle/stiffness", stiffness)
+		widest[stiffness] = 0.0
+		for frame in 180:
+			_move(rig, float(frame + 1) / 60.0)
+			await rig.advance(1.0 / 60.0)
+			for i in range(1, TIP + 1):
+				var bone := rig.poses[i].origin - rig.poses[i - 1].origin
+				longest = maxf(longest, absf(bone.length() - BONE_LENGTH))
+				widest[stiffness] = maxf(widest[stiffness], bone.angle_to(Vector3.DOWN))
+		rig.remove()
+
+	t.check(longest < LENGTH_TOLERANCE, "Soft limit: a bone differs from its pose by %.7f m." % longest)
+	t.check(widest[0.3] > limit + deg_to_rad(5.0), "Soft limit 0.3: the bones leaned only %.4f deg, as with a hard limit of 30 deg." % rad_to_deg(widest[0.3]))
+	t.check(widest[0.3] < widest[0.0] - deg_to_rad(5.0), "Soft limit 0.3: the bones leaned %.4f deg, as without a limit (%.4f deg)." % [rad_to_deg(widest[0.3]), rad_to_deg(widest[0.0])])
 
 
 static func _long_step(t) -> void:

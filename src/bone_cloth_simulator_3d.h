@@ -187,6 +187,7 @@ private:
 	Ref<Curve> radius_damping_curve;
 	float limit_angle = 0.0f;
 	Ref<Curve> limit_angle_damping_curve;
+	float limit_angle_stiffness = 1.0f;
 	float gravity = 0.0f;
 	Ref<Curve> gravity_damping_curve;
 	Vector3 gravity_direction = Vector3(0, -1, 0);
@@ -341,6 +342,8 @@ public:
 	float get_limit_angle() const;
 	void set_limit_angle_damping_curve(const Ref<Curve> &p_curve);
 	Ref<Curve> get_limit_angle_damping_curve() const;
+	void set_limit_angle_stiffness(float p_stiffness);
+	float get_limit_angle_stiffness() const;
 	void set_gravity(float p_gravity);
 	float get_gravity() const;
 	void set_gravity_damping_curve(const Ref<Curve> &p_curve);

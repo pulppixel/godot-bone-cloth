@@ -40,6 +40,9 @@
 		<member name="limit_angle/damping_curve" type="Curve" setter="set_limit_angle_damping_curve" getter="get_limit_angle_damping_curve">
 			See [member BoneClothSimulator3D.limit_angle/damping_curve].
 		</member>
+		<member name="limit_angle/stiffness" type="float" setter="set_limit_angle_stiffness" getter="get_limit_angle_stiffness" default="1.0">
+			See [member BoneClothSimulator3D.limit_angle/stiffness].
+		</member>
 		<member name="limit_angle/value" type="float" setter="set_limit_angle" getter="get_limit_angle" default="0.0">
 			See [member BoneClothSimulator3D.limit_angle/value].
 		</member>

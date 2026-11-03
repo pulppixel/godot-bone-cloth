@@ -23,6 +23,8 @@ void BoneClothPreset::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_limit_angle"), &BoneClothPreset::get_limit_angle);
 	ClassDB::bind_method(D_METHOD("set_limit_angle_damping_curve", "curve"), &BoneClothPreset::set_limit_angle_damping_curve);
 	ClassDB::bind_method(D_METHOD("get_limit_angle_damping_curve"), &BoneClothPreset::get_limit_angle_damping_curve);
+	ClassDB::bind_method(D_METHOD("set_limit_angle_stiffness", "stiffness"), &BoneClothPreset::set_limit_angle_stiffness);
+	ClassDB::bind_method(D_METHOD("get_limit_angle_stiffness"), &BoneClothPreset::get_limit_angle_stiffness);
 	ClassDB::bind_method(D_METHOD("set_gravity", "gravity"), &BoneClothPreset::set_gravity);
 	ClassDB::bind_method(D_METHOD("get_gravity"), &BoneClothPreset::get_gravity);
 	ClassDB::bind_method(D_METHOD("set_gravity_damping_curve", "curve"), &BoneClothPreset::set_gravity_damping_curve);
@@ -67,6 +69,7 @@ void BoneClothPreset::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "radius/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_radius_damping_curve", "get_radius_damping_curve");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "limit_angle/value", PROPERTY_HINT_RANGE, "0,180,0.1,radians_as_degrees"), "set_limit_angle", "get_limit_angle");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "limit_angle/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_limit_angle_damping_curve", "get_limit_angle_damping_curve");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "limit_angle/stiffness", PROPERTY_HINT_RANGE, "0,1,0.01"), "set_limit_angle_stiffness", "get_limit_angle_stiffness");
 
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "gravity/value", PROPERTY_HINT_RANGE, "0,20,0.01,or_greater,or_less,suffix:m/s^2"), "set_gravity", "get_gravity");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "gravity/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_gravity_damping_curve", "get_gravity_damping_curve");
@@ -172,6 +175,15 @@ void BoneClothPreset::set_limit_angle_damping_curve(const Ref<Curve> &p_curve) {
 
 Ref<Curve> BoneClothPreset::get_limit_angle_damping_curve() const {
 	return limit_angle_damping_curve;
+}
+
+void BoneClothPreset::set_limit_angle_stiffness(float p_stiffness) {
+	limit_angle_stiffness = p_stiffness;
+	emit_changed();
+}
+
+float BoneClothPreset::get_limit_angle_stiffness() const {
+	return limit_angle_stiffness;
 }
 
 void BoneClothPreset::set_gravity(float p_gravity) {
