@@ -137,7 +137,7 @@ limit_angle/damping_curve = SubResource("Curve_hair_limit")
 gravity/value = 5.0
 local_movement_speed_limit = 3.0
 local_rotation_speed_limit = 6.2831855
-joint_speed_limit = 0.0
+joint_speed_limit = 1.5
 chain_count = 4
 chains/0/root_bone_name = "J_Sec_Hair1_08"
 chains/0/end_bone_name = "J_Sec_Hair5_08"
@@ -164,17 +164,16 @@ bone_name = "UpperChest"
 position_offset = Vector3(0, 0, 0.011)
 
 [node name="Blades" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/BackHair"]
-radius = 0.076
-height = 0.26
+radius = 0.15
+height = 0.3
 bone_name = "UpperChest"
-position_offset = Vector3(0, 0.07, -0.011)
 rotation_offset = Quaternion(0, 0, 0.70710677, 0.70710677)
 
 [node name="Back" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/BackHair"]
-radius = 0.07
-height = 0.302
+radius = 0.12
+height = 0.3
 bone_name = "Chest"
-position_offset = Vector3(0, 0, -0.054)
+position_offset = Vector3(0, 0, -0.07)
 rotation_offset = Quaternion(0, 0, 0.70710677, 0.70710677)
 
 [node name="Bangs" type="BoneClothSimulator3D" parent="GeneralSkeleton"]
