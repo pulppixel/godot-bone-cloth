@@ -373,13 +373,6 @@ position_offset = Vector3(0, 0, -0.054)
 rotation_offset = Quaternion(0, 0, 0.70710677, 0.70710677)
 transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, 2.32516e-17, 1.176256, -0.032055043)
 
-[node name="Shoulder" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/BackHair"]
-radius = 0.055
-height = 0.23
-bone_name = "LeftUpperArm"
-mirror_bone_name = "RightUpperArm"
-position_offset = Vector3(0, 0.14, 0)
-
 [node name="Collar" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/BackHair"]
 radius = 0.06
 height = 0.23
