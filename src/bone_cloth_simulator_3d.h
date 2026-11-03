@@ -152,10 +152,28 @@ private:
 		float length = 0.0f;
 	};
 
-	// 충돌에 쓸 collision. mirror가 존재하는 collision일 경우, 2개가 들어간다. (mirror는 좌우대칭 collision, 자동으로 값 따라감)
+	// 충돌에 쓸 collision. mirror가 존재하는 collision일 경우, 2개가 들어간다.
 	struct PosedCollision {
 		const BoneClothCollision3D *collision = nullptr; // 어느 collision 노드인지.
 		bool mirror = false; // true: mirror bone, false: 본인의 bone
+	};
+
+	// 이번 frame에 skeleton이 움직인 양을 step으로 나눈 값이다.
+	struct FrameMotion {
+		Transform3D skeleton_transform;
+		Vector3 move_location;
+		Quaternion move_rotation;
+		bool teleported = false;
+		double elapsed = 0.0;
+		double dropped = 0.0;
+		int step_count = 0;
+		Vector3 step_move;
+		Quaternion step_turn;
+		bool smoothing = false;
+		float smoothing_rate = 0.0f;
+		Vector3 frame_velocity;
+		Basis to_skeleton;
+		Vector3 gravity_direction;
 	};
 
 	LocalVector<Chain> chains;
@@ -185,12 +203,12 @@ private:
 	float teleport_distance = 0.5f;
 	float teleport_angle = Math::deg_to_rad(90.0f);
 
-	// root가 pose에서 벗어나 흔들리게 하는 스프링(예: 가슴). 0이면 root는 pose에 고정이다.
+	// root가 pose에서 벗어나 흔들리게 하는 스프링(예: 가슴).
 	float root_spring_stiffness = 0.0f;
 	float root_spring_limit = 0.04f;
 	float root_spring_forward_limit = 0.005f;
 
-	// inspector의 길이 값(m)에 곱해서 skeleton 단위로 바꾸는 배율. 매 frame _get_units_per_meter로 구한다.
+	// inspector의 길이 값(m)에 곱해서 skeleton 단위로 바꾸는 배율.
 	// 예: Armature의 scale이 0.01인 cm rig는 100이다(radius 0.03 m -> skeleton 단위 3).
 	float units_per_meter = 1.0f;
 
@@ -217,7 +235,7 @@ private:
 	float local_move_share = 0.0f;
 	float local_turn_share = 0.0f;
 
-	// rest에서 모든 chain root의 중심. sync bone이 rest에서 움직인 양을 이 중심 기준으로 잰다.
+	// rest에서 모든 chain root의 중심.
 	Vector3 rest_center;
 
 	// 캐릭터가 회전해도, 천의 방향이 같이 돌지 않도록 world 공간으로 저장한다.
@@ -248,6 +266,16 @@ private:
 	void _restore_lengths(Chain &p_chain, Vector3 Joint::*p_field, Vector3 Joint::*p_pose_field);
 	void _update_display(Chain &p_chain, float p_follow);
 	void _write_rotations(Skeleton3D *p_skeleton, const Chain &p_chain);
+
+	// _process_modification_with_delta가 frame마다 이 순서로 부른다.
+	void _rebuild_if_changed(Skeleton3D *p_skeleton);
+	void _read_frame(Skeleton3D *p_skeleton);
+	void _reset(const Transform3D &p_skeleton_transform);
+	void _gather_collisions(LocalVector<PosedCollision> &r_collisions) const;
+	FrameMotion _measure_motion(double p_delta, const Transform3D &p_skeleton_transform);
+	void _run_steps(FrameMotion &r_motion, const LocalVector<PosedCollision> &p_collisions);
+	void _settle_display(double p_delta, const FrameMotion &p_motion, const LocalVector<PosedCollision> &p_collisions);
+	void _end_frame(Skeleton3D *p_skeleton);
 
 protected:
 	static void _bind_methods();

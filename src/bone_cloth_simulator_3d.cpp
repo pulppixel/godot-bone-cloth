@@ -1683,190 +1683,28 @@ void BoneClothSimulator3D::_process_modification_with_delta(double p_delta) {
 		return;
 	}
 
-	// 이 노드가 이번 frame에 쓰는 시간(Monitors 탭의 Bone Cloth 값).
+	// Monitors 탭의 Bone Cloth > Time 값이다.
 	const std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
 
-	// 씬 안의 scale이 바뀌면 길이 값을 다시 바꿔야 하므로 chain을 다시 만든다.
-	// owner가 없으면 캐릭터가 돌 때 float 오차가 생기므로, 근사값으로 비교한다.
-	const float units = _get_units_per_meter(skeleton);
-	if (!Math::is_equal_approx(units, units_per_meter)) {
-		units_per_meter = units;
-		joints_dirty = true;
-	}
+	_rebuild_if_changed(skeleton);
+	_read_frame(skeleton);
 
-	// 설정이 바뀌면 chain을 다시 만든다.
-	if (joints_dirty) {
-		joints_dirty = false;
-		needs_reset = true;
-		for (Chain &chain : chains) {
-			if (!_build_joints(skeleton, chain)) {
-				chain.joints.clear();
-			}
-		}
-		_build_branches();
-		_build_links();
-		_build_sync(skeleton);
-	}
-
-	for (Chain &chain : chains) {
-		if (!chain.joints.is_empty()) {
-			_read_pose(skeleton, chain);
-			_update_joint_settings(chain);
-		}
-	}
-
-	_read_center(skeleton);
-	_apply_sync(skeleton);
-
-	// 이번 frame에 화면에 그려지는 skeleton transform (physics tick 사이 frame에서도 보간된 값이다).
 	const Transform3D skeleton_transform = skeleton->get_global_transform_interpolated();
-
 	if (needs_reset) {
-		needs_reset = false;
-		for (Chain &chain : chains) {
-			for (Joint &joint : chain.joints) {
-				joint.location = joint.current_pose_location;
-				joint.prev_location = joint.current_pose_location;
-				joint.pose_location = joint.current_pose_location;
-				joint.prev_pose_location = joint.current_pose_location;
-				joint.display_location = joint.current_pose_location;
-			}
-		}
-
-		step_time = 0.0;
-		prev_skeleton_transform = skeleton_transform;
-		prev_step_move = Vector3();
-		prev_step_turn = Quaternion();
-		smoothing_velocity = Vector3();
-		prev_frame_center = frame_center;
-		prev_frame_center_rotation = frame_center_rotation;
-		step_center = frame_center;
-		step_center_rotation = frame_center_rotation;
+		_reset(skeleton_transform);
 	}
 
 	LocalVector<PosedCollision> collisions;
-	for (int i = 0; i < get_child_count(); i++) {
-		BoneClothCollision3D *collision = Object::cast_to<BoneClothCollision3D>(get_child(i));
-		if (collision) {
-			collision->sync_pose();
-			collisions.push_back({ collision, false });
-		}
-	}
-
-	const uint32_t collision_count = collisions.size();
-	for (uint32_t i = 0; i < collision_count; i++) {
-		if (collisions[i].collision->has_mirror()) {
-			collisions.push_back({ collisions[i].collision, true });
-		}
-	}
-
+	_gather_collisions(collisions);
 	_find_chain_collisions(collisions);
 
 	if (p_delta > 0.0) {
-		// 지난 step 이후 skeleton이 움직이고 돈 양(현재 skeleton 기준).
-		const Transform3D move = skeleton_transform.affine_inverse() * prev_skeleton_transform;
-		const Vector3 move_location = move.origin;
-		const Quaternion move_rotation = move.basis.get_rotation_quaternion();
-
-		// 순간이동 때 천이 크게 튀지 않게 한다.
-		// 한 frame에 teleport_distance보다 멀리 가거나 teleport_angle보다 많이 돌면,
-		// skeleton이 지난 step과 같은 양만큼 움직인 것으로 계산한다.
-		// 돈 각도는 angle_to로 잰다.
-		const bool teleported = move_location.length() > teleport_distance * units_per_meter || Quaternion().angle_to(move_rotation) > teleport_angle;
-
-		const double elapsed = step_time + p_delta;
-		step_time = MIN(elapsed, MAX_STEPS * STEP);
-		const double dropped = elapsed - step_time;
-		const int step_count = int(step_time / STEP);
-		step_time -= step_count * STEP;
-
-		// 캐릭터가 움직일 때 천을 얼마나 뒤로 휘날릴지 정한다.
-		// inertia가 1이면 이동을 모두 반영하여 뒤로 휘날리고, 0이면 skeleton과 동일하게 움직인다.
-		const float share = float(STEP / elapsed);
-		const float speed_limit = movement_speed_limit * units_per_meter;
-		Vector3 step_move = (move_location * share * inertia).limit_length(speed_limit * float(STEP));
-		Quaternion step_turn = Quaternion().slerp(move_rotation, share * inertia);
-		const float max_turn = rotation_speed_limit * float(STEP);
-		if (step_turn.get_angle() > max_turn) {
-			step_turn = Quaternion(step_turn.get_axis(), max_turn);
-		}
-
-		if (teleported) {
-			step_move = prev_step_move;
-			step_turn = prev_step_turn;
-		}
-
-		// 급출발, 급정지 때 천이 갑자기 튀지 않게 한다
-		// frame rate와 상관없이 같은 시간이 걸리도록 step마다 바꾼다.
-		const bool smoothing = inertia_smoothing >= 1e-6f && !teleported;
-		const float smoothing_rate = CLAMP(Math::pow(1.0f - inertia_smoothing, 3.0f) * 0.99f + 0.01f, 0.0f, 1.0f);
-		const Vector3 frame_velocity = skeleton_transform.basis.xform((-move_location / float(elapsed)).limit_length(speed_limit));
-		const Basis to_skeleton = skeleton_transform.basis.inverse();
-		// 방향만 skeleton 공간으로 바꾼다. 크기는 joint.gravity에 이미 skeleton 단위로 들어 있다.
-		const Vector3 skeleton_gravity_direction = to_skeleton.xform(gravity_direction).normalized();
-
-		for (int step = 0; step < step_count; step++) {
-			if (smoothing) {
-				smoothing_velocity = smoothing_velocity.lerp(frame_velocity, smoothing_rate);
-				step_move = (to_skeleton.xform(-smoothing_velocity) * float(STEP) * inertia).limit_length(speed_limit * float(STEP));
-			}
-
-			const float weight = float(step + 1) / float(step_count);
-			for (Chain &chain : chains) {
-				for (Joint &joint : chain.joints) {
-					joint.pose_location = joint.prev_pose_location.lerp(joint.current_pose_location, weight);
-				}
-			}
-
-			// 중심도 pose처럼 보간하고, 지난 step부터 움직이고 회전한 양을 구한다.
-			const Vector3 center = prev_frame_center.lerp(frame_center, weight);
-			const Quaternion center_rotation = prev_frame_center_rotation.slerp(frame_center_rotation, weight).normalized();
-			center_move = center - step_center;
-			center_turn = (center_rotation * step_center_rotation.inverse()).normalized();
-			_update_local_shares(center, center_rotation, step_move, step_turn);
-
-			_step(skeleton_gravity_direction, step_move, step_turn, collisions);
-
-			step_center = center;
-			step_center_rotation = center_rotation;
-
-			prev_step_move = step_move;
-			prev_step_turn = step_turn;
-		}
-
-		// 남은 이동은 다음 step으로 넘긴다.
-		const double spent = teleported ? 1.0 : (step_count * STEP + dropped) / elapsed;
-		prev_skeleton_transform = prev_skeleton_transform.interpolate_with(skeleton_transform, float(spent));
-
-		// 화면 위치를 예측 위치 쪽으로 얼마나 옮길지 계산한다.
-		const float follow = float(p_delta / (STEP - step_time + p_delta));
-		for (Chain &chain : chains) {
-			if (!chain.joints.is_empty()) {
-				_update_display(chain, follow);
-			}
-		}
-
-		_collide(collisions, &Joint::display_location);
-		for (Chain &chain : chains) {
-			if (!chain.joints.is_empty()) {
-				_restore_lengths(chain, &Joint::display_location, &Joint::current_pose_location);
-			}
-		}
+		FrameMotion motion = _measure_motion(p_delta, skeleton_transform);
+		_run_steps(motion, collisions);
+		_settle_display(p_delta, motion, collisions);
 	}
 
-	prev_frame_center = frame_center;
-	prev_frame_center_rotation = frame_center_rotation;
-
-	for (Chain &chain : chains) {
-		for (Joint &joint : chain.joints) {
-			joint.prev_pose_location = joint.current_pose_location;
-		}
-
-		_write_rotations(skeleton, chain);
-	}
-
-	// joint가 매 frame 움직이므로 gizmo도 매 frame 다시 그린다.
-	update_gizmos();
+	_end_frame(skeleton);
 
 	uint64_t joint_count = 0;
 	for (const Chain &chain : chains) {
@@ -1875,6 +1713,192 @@ void BoneClothSimulator3D::_process_modification_with_delta(double p_delta) {
 
 	monitor_joints.sum.fetch_add(joint_count, std::memory_order_relaxed);
 	monitor_time.sum.fetch_add(std::chrono::nanoseconds(std::chrono::steady_clock::now() - start).count(), std::memory_order_relaxed);
+}
+
+void BoneClothSimulator3D::_rebuild_if_changed(Skeleton3D *p_skeleton) {
+	// owner가 없으면 캐릭터가 돌 때 float 오차가 생기므로, 근사값으로 비교한다.
+	const float units = _get_units_per_meter(p_skeleton);
+	if (!Math::is_equal_approx(units, units_per_meter)) {
+		units_per_meter = units;
+		joints_dirty = true;
+	}
+
+	if (joints_dirty) {
+		joints_dirty = false;
+		needs_reset = true;
+		for (Chain &chain : chains) {
+			if (!_build_joints(p_skeleton, chain)) {
+				chain.joints.clear();
+			}
+		}
+		_build_branches();
+		_build_links();
+		_build_sync(p_skeleton);
+	}
+}
+
+void BoneClothSimulator3D::_read_frame(Skeleton3D *p_skeleton) {
+	for (Chain &chain : chains) {
+		if (!chain.joints.is_empty()) {
+			_read_pose(p_skeleton, chain);
+			_update_joint_settings(chain);
+		}
+	}
+
+	_read_center(p_skeleton);
+	_apply_sync(p_skeleton);
+}
+
+// 처음 돌 때, chain을 다시 만든 뒤, reset()을 부른 뒤에 부른다.
+void BoneClothSimulator3D::_reset(const Transform3D &p_skeleton_transform) {
+	needs_reset = false;
+	for (Chain &chain : chains) {
+		for (Joint &joint : chain.joints) {
+			joint.location = joint.current_pose_location;
+			joint.prev_location = joint.current_pose_location;
+			joint.pose_location = joint.current_pose_location;
+			joint.prev_pose_location = joint.current_pose_location;
+			joint.display_location = joint.current_pose_location;
+		}
+	}
+
+	step_time = 0.0;
+	prev_skeleton_transform = p_skeleton_transform;
+	prev_step_move = Vector3();
+	prev_step_turn = Quaternion();
+	smoothing_velocity = Vector3();
+	prev_frame_center = frame_center;
+	prev_frame_center_rotation = frame_center_rotation;
+	step_center = frame_center;
+	step_center_rotation = frame_center_rotation;
+}
+
+// mirror 쪽은 목록 뒤에 하나 더 넣는다.
+void BoneClothSimulator3D::_gather_collisions(LocalVector<PosedCollision> &r_collisions) const {
+	for (int i = 0; i < get_child_count(); i++) {
+		BoneClothCollision3D *collision = Object::cast_to<BoneClothCollision3D>(get_child(i));
+		if (collision) {
+			collision->sync_pose();
+			r_collisions.push_back({ collision, false });
+		}
+	}
+
+	const uint32_t collision_count = r_collisions.size();
+	for (uint32_t i = 0; i < collision_count; i++) {
+		if (r_collisions[i].collision->has_mirror()) {
+			r_collisions.push_back({ r_collisions[i].collision, true });
+		}
+	}
+}
+
+BoneClothSimulator3D::FrameMotion BoneClothSimulator3D::_measure_motion(double p_delta, const Transform3D &p_skeleton_transform) {
+	FrameMotion motion;
+	motion.skeleton_transform = p_skeleton_transform;
+
+	const Transform3D move = p_skeleton_transform.affine_inverse() * prev_skeleton_transform;
+	motion.move_location = move.origin;
+	motion.move_rotation = move.basis.get_rotation_quaternion();
+
+	// 순간이동이면 지난 step의 움직임을 다시 써서 천이 튀지 않게 한다.
+	motion.teleported = motion.move_location.length() > teleport_distance * units_per_meter || Quaternion().angle_to(motion.move_rotation) > teleport_angle;
+
+	motion.elapsed = step_time + p_delta;
+	step_time = MIN(motion.elapsed, MAX_STEPS * STEP);
+	motion.dropped = motion.elapsed - step_time;
+	motion.step_count = int(step_time / STEP);
+	step_time -= motion.step_count * STEP;
+
+	// inertia가 1이면 이동을 모두 받아 휘날리고, 0이면 skeleton을 그대로 따른다.
+	const float share = float(STEP / motion.elapsed);
+	const float speed_limit = movement_speed_limit * units_per_meter;
+	motion.step_move = (motion.move_location * share * inertia).limit_length(speed_limit * float(STEP));
+	motion.step_turn = Quaternion().slerp(motion.move_rotation, share * inertia);
+	const float max_turn = rotation_speed_limit * float(STEP);
+	if (motion.step_turn.get_angle() > max_turn) {
+		motion.step_turn = Quaternion(motion.step_turn.get_axis(), max_turn);
+	}
+
+	if (motion.teleported) {
+		motion.step_move = prev_step_move;
+		motion.step_turn = prev_step_turn;
+	}
+
+	// 급출발과 급정지에서 천이 튀지 않게 step마다 조금씩 바꾼다.
+	motion.smoothing = inertia_smoothing >= 1e-6f && !motion.teleported;
+	motion.smoothing_rate = CLAMP(Math::pow(1.0f - inertia_smoothing, 3.0f) * 0.99f + 0.01f, 0.0f, 1.0f);
+	motion.frame_velocity = p_skeleton_transform.basis.xform((-motion.move_location / float(motion.elapsed)).limit_length(speed_limit));
+	motion.to_skeleton = p_skeleton_transform.basis.inverse();
+	// 크기는 joint.gravity에 이미 들어 있어서 방향만 바꾼다.
+	motion.gravity_direction = motion.to_skeleton.xform(gravity_direction).normalized();
+	return motion;
+}
+
+void BoneClothSimulator3D::_run_steps(FrameMotion &r_motion, const LocalVector<PosedCollision> &p_collisions) {
+	const float speed_limit = movement_speed_limit * units_per_meter;
+	for (int step = 0; step < r_motion.step_count; step++) {
+		if (r_motion.smoothing) {
+			smoothing_velocity = smoothing_velocity.lerp(r_motion.frame_velocity, r_motion.smoothing_rate);
+			r_motion.step_move = (r_motion.to_skeleton.xform(-smoothing_velocity) * float(STEP) * inertia).limit_length(speed_limit * float(STEP));
+		}
+
+		const float weight = float(step + 1) / float(r_motion.step_count);
+		for (Chain &chain : chains) {
+			for (Joint &joint : chain.joints) {
+				joint.pose_location = joint.prev_pose_location.lerp(joint.current_pose_location, weight);
+			}
+		}
+
+		// 중심도 pose처럼 보간한다.
+		const Vector3 center = prev_frame_center.lerp(frame_center, weight);
+		const Quaternion center_rotation = prev_frame_center_rotation.slerp(frame_center_rotation, weight).normalized();
+		center_move = center - step_center;
+		center_turn = (center_rotation * step_center_rotation.inverse()).normalized();
+		_update_local_shares(center, center_rotation, r_motion.step_move, r_motion.step_turn);
+
+		_step(r_motion.gravity_direction, r_motion.step_move, r_motion.step_turn, p_collisions);
+
+		step_center = center;
+		step_center_rotation = center_rotation;
+
+		prev_step_move = r_motion.step_move;
+		prev_step_turn = r_motion.step_turn;
+	}
+}
+
+// 화면에 그릴 위치를 예측 위치 쪽으로 옮기고 collision과 길이를 다시 맞춘다.
+void BoneClothSimulator3D::_settle_display(double p_delta, const FrameMotion &p_motion, const LocalVector<PosedCollision> &p_collisions) {
+	const double spent = p_motion.teleported ? 1.0 : (p_motion.step_count * STEP + p_motion.dropped) / p_motion.elapsed;
+	prev_skeleton_transform = prev_skeleton_transform.interpolate_with(p_motion.skeleton_transform, float(spent));
+
+	const float follow = float(p_delta / (STEP - step_time + p_delta));
+	for (Chain &chain : chains) {
+		if (!chain.joints.is_empty()) {
+			_update_display(chain, follow);
+		}
+	}
+
+	_collide(p_collisions, &Joint::display_location);
+	for (Chain &chain : chains) {
+		if (!chain.joints.is_empty()) {
+			_restore_lengths(chain, &Joint::display_location, &Joint::current_pose_location);
+		}
+	}
+}
+
+void BoneClothSimulator3D::_end_frame(Skeleton3D *p_skeleton) {
+	prev_frame_center = frame_center;
+	prev_frame_center_rotation = frame_center_rotation;
+
+	for (Chain &chain : chains) {
+		for (Joint &joint : chain.joints) {
+			joint.prev_pose_location = joint.current_pose_location;
+		}
+
+		_write_rotations(p_skeleton, chain);
+	}
+
+	// joint가 매 frame 움직이므로 gizmo도 매 frame 다시 그린다.
+	update_gizmos();
 }
 
 // 탭에는 Bone Cloth 아래에 Time과 Joints로 나온다(에디터가 이름의 _를 띄우고, 단어의 첫 글자를 대문자로 바꾼다).
