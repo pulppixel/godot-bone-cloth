@@ -1,6 +1,7 @@
 extends CharacterBody3D
 
 const CharacterSkin := preload("res://demo/scripts/skin.gd")
+const CameraRig := preload("res://demo/scripts/camera_rig.gd")
 
 
 enum Anim { IDLE, MOVE, STOP, JUMP_START, FALL, LAND }
@@ -97,6 +98,7 @@ func use(character: Node3D) -> void:
 	_right_foot = _skeleton.find_bone(&"RightFoot")
 	_character.request(TREE_STATE[_anim])
 	_character.rest(&"still")
+	(camera_rig as CameraRig).frame(_character)
 
 
 func _process(_delta: float) -> void:

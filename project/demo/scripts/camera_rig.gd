@@ -1,5 +1,7 @@
 extends Node3D
 
+const CharacterSkin := preload("res://demo/scripts/skin.gd")
+
 const TIME_STEP := 0.1
 @export var mouse_deg_per_px := 0.15
 @export var stick_deg_per_sec := 150.0
@@ -10,6 +12,9 @@ const TIME_STEP := 0.1
 @export var zoom_step := 0.25
 
 var _last_ticks := 0
+var _home_length := 0.0
+var _chest := 0.0
+var _neck := 0.0
 
 @onready var _arm: SpringArm3D = $SpringArm3D
 
@@ -17,6 +22,15 @@ var _last_ticks := 0
 func _ready() -> void:
 	_arm.add_excluded_object((get_parent() as CollisionObject3D).get_rid())
 	_last_ticks = Time.get_ticks_usec()
+	_home_length = _arm.spring_length
+
+
+func frame(character: CharacterSkin) -> void:
+	var skeleton := character.skeleton
+	var to_feet := character.global_transform.affine_inverse() * skeleton.global_transform
+	_chest = (to_feet * skeleton.get_bone_global_rest(skeleton.find_bone(&"UpperChest")).origin).y
+	_neck = (to_feet * skeleton.get_bone_global_rest(skeleton.find_bone(&"Neck")).origin).y
+	_aim()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -24,9 +38,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		_turn(event.screen_relative * mouse_deg_per_px)
 	elif event is InputEventMouseButton and event.pressed:
 		if event.button_index == MOUSE_BUTTON_WHEEL_UP:
-			_arm.spring_length = maxf(_arm.spring_length - zoom_step, zoom_min)
+			_zoom(-zoom_step)
 		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
-			_arm.spring_length = minf(_arm.spring_length + zoom_step, zoom_max)
+			_zoom(zoom_step)
 		else:
 			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	elif event.is_action_pressed("ui_cancel"):
@@ -51,6 +65,16 @@ func _turn(degrees: Vector2) -> void:
 	rotation.y -= deg_to_rad(degrees.x)
 	var pitch := _arm.rotation.x - deg_to_rad(degrees.y)
 	_arm.rotation.x = clampf(pitch, deg_to_rad(pitch_min_deg), deg_to_rad(pitch_max_deg))
+
+
+func _zoom(step: float) -> void:
+	_arm.spring_length = clampf(_arm.spring_length + step, zoom_min, zoom_max)
+	_aim()
+
+
+func _aim() -> void:
+	var near := clampf(inverse_lerp(_home_length, zoom_min, _arm.spring_length), 0.0, 1.0)
+	_arm.position.y = lerpf(_chest, _neck, near)
 
 
 func _set_time_scale(value: float) -> void:
