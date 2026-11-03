@@ -1,4 +1,6 @@
 extends Node
+const CharacterSkin := preload("res://demo/scripts/skin.gd")
+
 
 const LEGS := [
 	[&"LeftUpperLeg", &"LeftLowerLeg", &"LeftFoot", &"LeftToes"],
@@ -35,8 +37,7 @@ var _foot: Array[Vector2] = [Vector2.ZERO, Vector2.ZERO]
 var _hip := Vector2.ZERO
 var _floor_y := NAN
 var _foot_basis: Array[Basis] = [Basis(), Basis()]
-var _tree: AnimationTree
-var _move: AnimationNodeBlendSpace1D
+var _skin: CharacterSkin
 var _cycles := []
 var _phase := 0.0
 var _planted: Array[bool] = [false, false]
@@ -68,8 +69,7 @@ func _ready() -> void:
 	while node != null and node is not CharacterBody3D:
 		node = node.get_parent()
 	_body = node
-	_tree = parent.get_node("AnimationTree")
-	_move = (_tree.tree_root as AnimationNodeBlendTree).get_node(&"Move")
+	_skin = parent as CharacterSkin
 	_hips = _skeleton.find_bone(&"Hips")
 	for leg in LEGS:
 		_bones.append(leg.map(func(bone: StringName) -> int: return _skeleton.find_bone(bone)))
@@ -83,10 +83,8 @@ func _ready() -> void:
 		_targets.append(target)
 		_poles.append(pole)
 	
-	var player: AnimationPlayer = parent.get_node("AnimationPlayer")
-	for i in _move.get_blend_point_count():
-		var clip := _move.get_blend_point_node(i) as AnimationNodeAnimation
-		_cycles.append(_analyze(player.get_animation(clip.animation)))
+	for i in _skin.clip_count():
+		_cycles.append(_analyze(_skin.clip(i)))
 	
 	var ground := FootGround.new()
 	ground.name = "FootGround"
@@ -183,34 +181,18 @@ func _clip_bone(anim: Animation, bone: int, time: float) -> Vector3:
 
 
 func _cycle(delta: float) -> Array:
-	if _tree.get("parameters/State/current_state") != &"move":
+	if _skin.state != &"move":
 		return []
-	var length: float = _tree.get("parameters/Move/current_length")
+	var length := _skin.cycle_length()
 	if length <= 0.0:
 		return []
-	var clip := _move.get_blend_point_node(0) as AnimationNodeAnimation
-	var half := clip.start_offset / clip.timeline_length if clip.use_custom_timeline else 0.0
-	var phase := fposmod(_tree.get("parameters/Move/current_position") / length + half, 1.0)
+	var phase := _skin.phase()
 	var advance := fposmod(phase - _phase, 1.0)
 	_phase = phase
 	if advance > 0.0 and advance < 0.5 and delta > 0.0:
 		length = delta / advance
-	var at: float = _tree.get("parameters/Move/blend_position")
-	var weights := []
-	for p in _move.get_blend_point_count():
-		weights.append(0.0)
-	var count := _move.get_blend_point_count()
-	if at <= _move.get_blend_point_position(0):
-		weights[0] = 1.0
-	elif at >= _move.get_blend_point_position(count - 1):
-		weights[count - 1] = 1.0
-	else:
-		for p in count - 1:
-			var a := _move.get_blend_point_position(p)
-			var b := _move.get_blend_point_position(p + 1)
-			if at >= a and at <= b:
-				weights[p + 1] = (at - a) / (b - a)
-				weights[p] = 1.0 - weights[p + 1]
+	var weights := _skin.blend_weights()
+	var count := weights.size()
 	var legs := []
 	for i in LEGS.size():
 		var leg := {"stance": 0.0, "off": 0.0, "strike": 0.0, "off_z": 0.0, "strike_z": 0.0, "off_ankle": Vector3.ZERO, "off_toes": Vector3.ZERO, "strike_ankle": Vector3.ZERO, "strike_toes": Vector3.ZERO}

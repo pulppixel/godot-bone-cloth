@@ -1,4 +1,5 @@
 extends CharacterBody3D
+const CharacterSkin := preload("res://demo/scripts/skin.gd")
 
 
 enum State { GROUND, AIR }
@@ -45,22 +46,18 @@ const FLAT_RISE := 0.03
 
 var state := State.GROUND
 
-var _tree: AnimationTree
+var _character: CharacterSkin
 var _skeleton: Skeleton3D
 var _left_foot := -1
 var _right_foot := -1
 var _scale := 1.0
 var _anim := &"idle"
 var _lean := 0.0
-var _lean_length := 1.0
-var _sprint_at := 0.0
-var _half := 0.0
 var _step_offset := 0.0
 var _step_speed := 0.0
 var _ground_normal := Vector3.UP
 var _skin_y := 0.0
 var _rig_y := 0.0
-var _exit_length := 0.0
 var _clip_time := 0.0
 var _clip_length := 0.0
 var _stop_decel := 0.0
@@ -83,27 +80,18 @@ func use(character: Node3D) -> void:
 	if _anim == &"stop":
 		_anim = &"idle"
 		velocity = Vector3(0.0, velocity.y, 0.0)
-	_tree = character.get_node("AnimationTree")
-	_skeleton = character.find_children("*", "Skeleton3D", true, false)[0]
+	_character = character as CharacterSkin
+	_skeleton = _character.skeleton
 	_scale = _skeleton.motion_scale
 	_left_foot = _skeleton.find_bone(&"LeftFoot")
 	_right_foot = _skeleton.find_bone(&"RightFoot")
-	_tree.set("parameters/State/transition_request", _anim)
-	_tree.set("parameters/Rest/transition_request", &"still")
-	_tree.set("parameters/LeanOnly/sub_amount", 1.0)
-	_tree.set("parameters/Lean/add_amount", 1.0)
-	var player: AnimationPlayer = character.get_node("AnimationPlayer")
-	_lean_length = player.get_animation(&"demo_motions/Jog_Fwd_LeanR").length
-	var move: AnimationNodeBlendSpace1D = (_tree.tree_root as AnimationNodeBlendTree).get_node(&"Move")
-	_sprint_at = move.get_blend_point_position(1)
-	_exit_length = player.get_animation(&"demo_motions/Sprint_Exit").length
+	_character.request(_anim)
+	_character.rest(&"still")
 
 func _process(_delta: float) -> void:
-	var length: float = _tree.get("parameters/Move/current_length")
-	if length <= 0.0:
+	if _character.cycle_length() <= 0.0:
 		return
-	var at: float = _tree.get("parameters/Move/current_position") + _tree.get("parameters/Move/current_delta")
-	_tree.set("parameters/LeanPhase/seek_request", fposmod(at / length + _half, 1.0) * _lean_length)
+	_character.seek_lean(_character.phase(true))
 
 
 func _physics_process(delta: float) -> void:
@@ -159,7 +147,7 @@ func _physics_process(delta: float) -> void:
 		_request(&"fall")
 	elif state == State.AIR and is_on_floor():
 		state = State.GROUND
-		_tree.set("parameters/IdleFoot/blend_amount", 0.0)
+		_character.set_idle_foot(false)
 		_request(&"move" if pressing else &"land")
 	elif state == State.GROUND and _anim == &"stop":
 		if pressing:
@@ -174,7 +162,7 @@ func _physics_process(delta: float) -> void:
 		_request(&"move")
 	elif state == State.GROUND and _anim != &"land":
 		if _anim != &"idle":
-			_tree.set("parameters/IdleFoot/blend_amount", 1.0 if _right_ahead() else 0.0)
+			_character.set_idle_foot(_right_ahead())
 		_request(&"idle")
 	
 	var facing := Vector3(velocity.x, 0.0, velocity.z) if speed > STOP_SPEED else direction
@@ -182,13 +170,12 @@ func _physics_process(delta: float) -> void:
 	var clip := speed / _scale
 	var rate := 1.0
 	if clip > walk_speed:
-		rate = clip / lerpf(walk_speed, _sprint_at, clampf(inverse_lerp(walk_speed, run_speed, clip), 0.0, 1.0))
-	_tree.set("parameters/MoveRate/scale", rate)
-	_tree.set("parameters/Move/blend_position", clip / rate)
+		rate = clip / lerpf(walk_speed, _character.sprint_at, clampf(inverse_lerp(walk_speed, run_speed, clip), 0.0, 1.0))
+	_character.set_move(clip / rate, rate)
 	
 	var lean_target := clampf(-turned / delta * speed / turn_grip, -1.0, 1.0)
 	_lean = lerpf(_lean, lean_target, 1.0 - exp(-delta / lean_time))
-	_tree.set("parameters/Side/blend_amount", _lean)
+	_character.set_lean(_lean)
 
 
 # anim: idle, move, stop(Exit), jump_start, fall, land.
@@ -196,22 +183,21 @@ func _request(anim: StringName) -> void:
 	if anim == _anim:
 		return
 	if anim == &"move":
-		_start_foot()
+		_character.start_cycle(_character.idle_foot_right())
 	var tree_state := anim
 	if anim == &"stop":
 		tree_state = &"idle"
-		_tree.set("parameters/Rest/transition_request", &"exit")
+		_character.rest(&"exit")
 	elif anim == &"idle":
-		_tree.set("parameters/Rest/transition_request", &"still")
+		_character.rest(&"still")
 	_anim = anim
-	_tree.set("parameters/State/transition_request", tree_state)
+	_character.request(tree_state)
 
 
 func _exit_foot() -> int:
-	var length: float = _tree.get("parameters/Move/current_length")
-	if length <= 0.0:
+	if _character.cycle_length() <= 0.0:
 		return -1
-	var phase := fposmod(float(_tree.get("parameters/Move/current_position")) / length + _half, 1.0)
+	var phase := _character.phase()
 	for foot in 2:
 		if absf(angle_difference(TAU * phase, TAU * (EXIT_AT + 0.5 * foot))) <= TAU * EXIT_WINDOW:
 			return foot
@@ -230,24 +216,11 @@ func _flat_ahead(dir: Vector3) -> bool:
 
 
 func _stop(foot: int, speed: float) -> void:
-	_tree.set("parameters/ExitFoot/blend_amount", float(foot))
-	_tree.set("parameters/IdleFoot/blend_amount", float(foot))
+	_character.set_exit_foot(foot)
 	_clip_time = 0.0
-	_clip_length = _exit_length
+	_clip_length = _character.exit_length
 	_stop_decel = speed / EXIT_STOP
 	_request(&"stop")
-
-
-func _start_foot() -> void:
-	_half = 0.5 if _tree.get("parameters/IdleFoot/blend_amount") > 0.5 else 0.0
-	var move: AnimationNodeBlendSpace1D = (_tree.tree_root as AnimationNodeBlendTree).get_node(&"Move")
-	for i in move.get_blend_point_count():
-		var clip := move.get_blend_point_node(i) as AnimationNodeAnimation
-		var length := _tree.get_animation(clip.animation).length
-		clip.use_custom_timeline = true
-		clip.timeline_length = length
-		clip.loop_mode = Animation.LOOP_LINEAR
-		clip.start_offset = length * _half
 
 
 func _right_ahead() -> bool:

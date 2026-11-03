@@ -1,4 +1,6 @@
 extends Node
+const CharacterSkin := preload("res://demo/scripts/skin.gd")
+
 
 @export_enum("calm", "bright") var style := "calm"
 
@@ -44,7 +46,7 @@ const BLINK_OPEN := 0.18
 const BLINK_COOLDOWN := 1.0
 const EYE_CLOSERS := ["Fcl_ALL_Joy", "Fcl_EYE_Joy", "Fcl_EYE_Close"]
 
-var _tree: AnimationTree
+var _skin: CharacterSkin
 var _face: MeshInstance3D
 var _shapes: Dictionary[String, int] = {}
 var _weights: Dictionary[String, float] = {}
@@ -59,7 +61,7 @@ var _next_blink := 0.0
 
 
 func _ready() -> void:
-	_tree = get_parent().get_node("AnimationTree")
+	_skin = get_parent() as CharacterSkin
 	_face = get_parent().find_child("Face", true, false)
 	for key in STYLES[style]:
 		for shape in STYLES[style][key]:
@@ -79,8 +81,8 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	_time += delta
-	var state: StringName = _tree.get("parameters/State/current_state")
-	var speed: float = _tree.get("parameters/Move/blend_position") * _tree.get("parameters/MoveRate/scale")
+	var state: StringName = _skin.state
+	var speed: float = _skin.clip_speed()
 	if state == &"land" and _last_state != &"land":
 		_land_time = _time
 	_last_state = state

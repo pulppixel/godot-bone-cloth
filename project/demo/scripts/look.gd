@@ -1,4 +1,5 @@
 extends Node
+const CharacterSkin := preload("res://demo/scripts/skin.gd")
 
 
 const BODY := [
@@ -34,7 +35,7 @@ const HAND_OVER := 3.0
 var _skeleton: Skeleton3D
 var _body: CharacterBody3D
 var _expression: Node
-var _tree: AnimationTree
+var _skin: CharacterSkin
 var _looks: Array[LookAtModifier3D] = []
 var _chest_weight := 0.0
 var _weight := 1.0
@@ -62,7 +63,7 @@ func _ready() -> void:
 	var parent := get_parent()
 	_skeleton = parent.find_children("*", "Skeleton3D", true, false)[0]
 	_expression = parent.get_node_or_null("Expression")
-	_tree = parent.get_node("AnimationTree")
+	_skin = parent as CharacterSkin
 	var node := parent
 	while node != null and node is not CharacterBody3D:
 		node = node.get_parent()
@@ -124,7 +125,7 @@ func _process(delta: float) -> void:
 	var camera := get_viewport().get_camera_3d()
 	var camera_at := camera.get_global_transform_interpolated().origin if camera != null else Vector3.ZERO
 	var stepping := _speed() > MOVING
-	var clip_speed := float(_tree.get("parameters/Move/blend_position")) * float(_tree.get("parameters/MoveRate/scale"))
+	var clip_speed := _skin.clip_speed()
 	var walking := stepping and clip_speed < RUN_FROM
 	var sees := camera != null and _within(camera_at - eyes, REACH_OUT if _at_camera else REACH)
 	if not walking:
@@ -149,7 +150,7 @@ func _process(delta: float) -> void:
 	# 2
 	_head = _rotate_toward(_head, goal, 1.0 - exp(-HEAD_FOLLOW * delta))
 	_head_target.global_position = eyes + _vector(_head, facing) * distance
-	var state: StringName = _tree.get("parameters/State/current_state")
+	var state: StringName = _skin.state
 	var to_clip := state == &"land" or ((state == &"jump_start" or state == &"fall") and _body.velocity.y < 0.0)
 	_weight = move_toward(_weight, 0.0 if to_clip else 1.0, delta * HAND_OVER)
 	_chest_weight = move_toward(_chest_weight, BODY[0][2] if not stepping else 0.0, delta * 2.0)

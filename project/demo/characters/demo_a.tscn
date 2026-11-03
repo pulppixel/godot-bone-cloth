@@ -6,6 +6,7 @@
 [ext_resource type="Script" uid="uid://b31tfi6s47b4q" path="res://demo/scripts/face.gd" id="4_q8l8q"]
 [ext_resource type="Script" uid="uid://csfpwv81biimb" path="res://demo/scripts/look.gd" id="5_73pr4"]
 [ext_resource type="Script" uid="uid://olte1161ncgj" path="res://demo/scripts/feet.gd" id="6_1f4nk"]
+[ext_resource type="Script" path="res://demo/scripts/skin.gd" id="7_skin"]
 
 [sub_resource type="Curve" id="Curve_skirt_limit"]
 _data = [Vector2(0, 0.5), 0.0, 0.5, 1, 1, Vector2(1, 1), 0.5, 0.0, 1, 1]
@@ -25,6 +26,7 @@ _data = [Vector2(0, 0.05), 0.0, 0.08333333, 1, 1, Vector2(0.6, 0.1), 0.08333333,
 point_count = 3
 
 [node name="demo_a" unique_id=468153633 instance=ExtResource("1_lyi5y")]
+script = ExtResource("7_skin")
 
 [node name="Skirt" type="BoneClothSimulator3D" parent="GeneralSkeleton" parent_id_path=PackedInt32Array(570007486) index="3" unique_id=2063740867]
 drag/value = 0.15

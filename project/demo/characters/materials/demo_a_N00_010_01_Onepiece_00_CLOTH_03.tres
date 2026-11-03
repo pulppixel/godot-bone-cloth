@@ -1,4 +1,4 @@
-[gd_resource type="ShaderMaterial" format=3]
+[gd_resource type="ShaderMaterial" format=3 uid="uid://dvu8j2nxeni5l"]
 
 [ext_resource type="Shader" uid="uid://bta78oqjbb6g6" path="res://demo/shaders/mtoon/mtoon_outline_cutout.gdshader" id="1_dx63x"]
 [ext_resource type="Texture2D" uid="uid://cs2fy1ibldsft" path="res://demo/characters/demo_a_Shader_NoneNormal.png" id="2_1nsar"]
