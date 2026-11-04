@@ -15,9 +15,30 @@ var passes := 0
 var failures := 0
 var _start_msec := 0
 var _delta := 0.0 # 이번 frame의 시간(초)
+var _errors := ErrorCount.new()
+
+
+class ErrorCount extends Logger:
+	var count := 0
+	var first := ""
+	var _mutex := Mutex.new()
+
+	func _log_message(_message: String, _error: bool) -> void:
+		pass
+
+	func _log_error(_function: String, file: String, line: int, code: String, rationale: String, _editor_notify: bool, error_type: int, _script_backtraces: Array[ScriptBacktrace]) -> void:
+		# 엔진 오류는 세지 않는다. headless 에디터는 Edit Chains 창을 띄울 때마다 화면 밖이라는 오류를 찍는다.
+		if error_type == ERROR_TYPE_WARNING or (error_type != ERROR_TYPE_SCRIPT and not file.contains("bone_cloth")):
+			return
+		_mutex.lock()
+		if count == 0:
+			first = "%s:%d %s" % [file, line, rationale if not rationale.is_empty() else code]
+		count += 1
+		_mutex.unlock()
 
 
 func _initialize() -> void:
+	OS.add_logger(_errors)
 	_start_msec = Time.get_ticks_msec()
 	_run()
 
@@ -113,5 +134,6 @@ func _remove(p_path: String) -> void:
 
 
 func _finish() -> void:
+	check(_errors.count == 0, "%d errors were printed during the run; the first: %s" % [_errors.count, _errors.first])
 	print("==== TESTS FINISHED ==== passes %d, failures %d" % [passes, failures])
 	quit(1 if failures > 0 else 0)
