@@ -1,5 +1,6 @@
 #include "collision/bone_cloth_collision_3d.h"
 
+#include "bone_cloth_bone_lookup.h"
 #include "bone_cloth_simulator_3d.h"
 
 #include <godot_cpp/classes/engine.hpp>
@@ -100,11 +101,7 @@ void BoneClothCollision3D::set_bone_name(const String &p_bone_name) {
 	bone_name = p_bone_name;
 	Skeleton3D *skeleton = get_skeleton();
 	if (skeleton) {
-		const int found = skeleton->find_bone(bone_name);
-		if (found < 0 && !bone_name.is_empty()) {
-			WARN_PRINT_ED("Bone not found: '" + bone_name + "'.");
-		}
-		set_bone(found);
+		set_bone(find_bone_or_warn(skeleton, bone_name, "Bone"));
 	}
 }
 
@@ -114,15 +111,7 @@ String BoneClothCollision3D::get_bone_name() const {
 
 void BoneClothCollision3D::set_bone(int p_bone) {
 	bone = p_bone;
-	Skeleton3D *skeleton = get_skeleton();
-	if (skeleton && bone >= 0) {
-		if (bone >= skeleton->get_bone_count()) {
-			WARN_PRINT_ED("Bone index " + itos(bone) + " is out of range.");
-			bone = -1;
-		} else {
-			bone_name = skeleton->get_bone_name(bone);
-		}
-	}
+	read_bone_name(get_skeleton(), bone, bone_name, "Bone");
 
 	notify_property_list_changed();
 }
@@ -135,11 +124,7 @@ void BoneClothCollision3D::set_mirror_bone_name(const String &p_bone_name) {
 	mirror_bone_name = p_bone_name;
 	Skeleton3D *skeleton = get_skeleton();
 	if (skeleton) {
-		const int found = skeleton->find_bone(mirror_bone_name);
-		if (found < 0 && !mirror_bone_name.is_empty()) {
-			WARN_PRINT_ED("Mirror bone not found: '" + mirror_bone_name + "'.");
-		}
-		set_mirror_bone(found);
+		set_mirror_bone(find_bone_or_warn(skeleton, mirror_bone_name, "Mirror bone"));
 	}
 }
 
@@ -149,15 +134,7 @@ String BoneClothCollision3D::get_mirror_bone_name() const {
 
 void BoneClothCollision3D::set_mirror_bone(int p_bone) {
 	mirror_bone = p_bone;
-	Skeleton3D *skeleton = get_skeleton();
-	if (skeleton && mirror_bone >= 0) {
-		if (mirror_bone >= skeleton->get_bone_count()) {
-			WARN_PRINT_ED("Mirror bone index " + itos(mirror_bone) + " is out of range.");
-			mirror_bone = -1;
-		} else {
-			mirror_bone_name = skeleton->get_bone_name(mirror_bone);
-		}
-	}
+	read_bone_name(get_skeleton(), mirror_bone, mirror_bone_name, "Mirror bone");
 
 	sync_pose();
 	update_gizmos();

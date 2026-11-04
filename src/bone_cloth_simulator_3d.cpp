@@ -1,5 +1,7 @@
 #include "bone_cloth_simulator_3d.h"
 
+#include "bone_cloth_bone_lookup.h"
+
 #include <godot_cpp/classes/engine.hpp>
 #include <godot_cpp/classes/performance.hpp>
 #include <godot_cpp/core/class_db.hpp>
@@ -387,12 +389,7 @@ void BoneClothSimulator3D::set_root_bone_name(int p_index, const String &p_bone_
 	chains[p_index].root_bone_name = p_bone_name;
 	Skeleton3D *skeleton = get_skeleton();
 	if (skeleton) {
-		const int found = skeleton->find_bone(p_bone_name);
-		if (found < 0 && !p_bone_name.is_empty()) {
-			WARN_PRINT_ED("Chain " + itos(p_index) + ": root bone not found: '" + p_bone_name + "'.");
-		}
-
-		set_root_bone(p_index, found);
+		set_root_bone(p_index, find_bone_or_warn(skeleton, p_bone_name, "Chain " + itos(p_index) + ": root bone"));
 	}
 }
 
@@ -405,15 +402,7 @@ void BoneClothSimulator3D::set_root_bone(int p_index, int p_bone) {
 	ERR_FAIL_INDEX(p_index, int(chains.size()));
 	Chain &chain = chains[p_index];
 	chain.root_bone = p_bone;
-	Skeleton3D *skeleton = get_skeleton();
-	if (skeleton && p_bone >= 0) {
-		if (p_bone >= skeleton->get_bone_count()) {
-			WARN_PRINT_ED("Chain " + itos(p_index) + ": root bone index " + itos(p_bone) + " is out of range.");
-			chain.root_bone = -1;
-		} else {
-			chain.root_bone_name = skeleton->get_bone_name(p_bone);
-		}
-	}
+	read_bone_name(get_skeleton(), chain.root_bone, chain.root_bone_name, "Chain " + itos(p_index) + ": root bone");
 
 	joints_dirty = true;
 	update_configuration_warnings();
@@ -429,12 +418,7 @@ void BoneClothSimulator3D::set_end_bone_name(int p_index, const String &p_bone_n
 	chains[p_index].end_bone_name = p_bone_name;
 	Skeleton3D *skeleton = get_skeleton();
 	if (skeleton) {
-		const int found = skeleton->find_bone(p_bone_name);
-		if (found < 0 && !p_bone_name.is_empty()) {
-			WARN_PRINT_ED("Chain " + itos(p_index) + ": end bone not found: '" + p_bone_name + "'.");
-		}
-
-		set_end_bone(p_index, found);
+		set_end_bone(p_index, find_bone_or_warn(skeleton, p_bone_name, "Chain " + itos(p_index) + ": end bone"));
 	}
 }
 
@@ -447,15 +431,7 @@ void BoneClothSimulator3D::set_end_bone(int p_index, int p_bone) {
 	ERR_FAIL_INDEX(p_index, int(chains.size()));
 	Chain &chain = chains[p_index];
 	chain.end_bone = p_bone;
-	Skeleton3D *skeleton = get_skeleton();
-	if (skeleton && p_bone >= 0) {
-		if (p_bone >= skeleton->get_bone_count()) {
-			WARN_PRINT_ED("Chain " + itos(p_index) + ": end bone index " + itos(p_bone) + " is out of range.");
-			chain.end_bone = -1;
-		} else {
-			chain.end_bone_name = skeleton->get_bone_name(p_bone);
-		}
-	}
+	read_bone_name(get_skeleton(), chain.end_bone, chain.end_bone_name, "Chain " + itos(p_index) + ": end bone");
 
 	joints_dirty = true;
 	notify_property_list_changed();
@@ -507,12 +483,7 @@ void BoneClothSimulator3D::set_sync_bone_name(int p_index, const String &p_bone_
 	chains[p_index].sync_bone_name = p_bone_name;
 	Skeleton3D *skeleton = get_skeleton();
 	if (skeleton) {
-		const int found = skeleton->find_bone(p_bone_name);
-		if (found < 0 && !p_bone_name.is_empty()) {
-			WARN_PRINT_ED("Chain " + itos(p_index) + ": sync bone not found: '" + p_bone_name + "'.");
-		}
-
-		set_sync_bone(p_index, found);
+		set_sync_bone(p_index, find_bone_or_warn(skeleton, p_bone_name, "Chain " + itos(p_index) + ": sync bone"));
 	}
 }
 
@@ -525,15 +496,7 @@ void BoneClothSimulator3D::set_sync_bone(int p_index, int p_bone) {
 	ERR_FAIL_INDEX(p_index, int(chains.size()));
 	Chain &chain = chains[p_index];
 	chain.sync_bone = p_bone;
-	Skeleton3D *skeleton = get_skeleton();
-	if (skeleton && p_bone >= 0) {
-		if (p_bone >= skeleton->get_bone_count()) {
-			WARN_PRINT_ED("Chain " + itos(p_index) + ": sync bone index " + itos(p_bone) + " is out of range.");
-			chain.sync_bone = -1;
-		} else {
-			chain.sync_bone_name = skeleton->get_bone_name(p_bone);
-		}
-	}
+	read_bone_name(get_skeleton(), chain.sync_bone, chain.sync_bone_name, "Chain " + itos(p_index) + ": sync bone");
 
 	update_configuration_warnings();
 }
