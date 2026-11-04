@@ -315,7 +315,7 @@ void BoneClothSimulator3DMenu::_on_preset_pressed(int p_id) {
 
 	EditorUndoRedoManager *undo_redo = EditorInterface::get_singleton()->get_editor_undo_redo();
 	undo_redo->create_action("Apply Bone Cloth Preset", UndoRedo::MERGE_DISABLE, simulator);
-	for (const char *name : BoneClothPreset::VALUES) {
+	for (const String &name : BoneClothPreset::get_value_names()) {
 		undo_redo->add_do_property(simulator, name, BoneClothPreset::copy_value(preset->get(name)));
 		undo_redo->add_undo_property(simulator, name, simulator->get(name));
 	}

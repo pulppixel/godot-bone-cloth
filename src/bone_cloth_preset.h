@@ -44,39 +44,7 @@ protected:
 	static void _bind_methods();
 
 public:
-	static constexpr const char *VALUES[] = {
-		"link_stiffness",
-		"link_split",
-		"link_spacing/value",
-		"link_spacing/damping_curve",
-		"drag/value",
-		"drag/damping_curve",
-		"stiffness/value",
-		"stiffness/damping_curve",
-		"radius/value",
-		"radius/damping_curve",
-		"radius/rest_overlap",
-		"limit_angle/value",
-		"limit_angle/damping_curve",
-		"limit_angle/stiffness",
-		"gravity/value",
-		"gravity/damping_curve",
-		"gravity/direction",
-		"inertia",
-		"inertia_smoothing",
-		"depth_inertia",
-		"local_movement_speed_limit",
-		"local_rotation_speed_limit",
-		"movement_speed_limit",
-		"rotation_speed_limit",
-		"joint_speed_limit",
-		"teleport_distance",
-		"teleport_angle",
-		"root_spring_stiffness",
-		"root_spring_limit",
-		"root_spring_forward_limit",
-	};
-
+	static PackedStringArray get_value_names();
 	static Variant copy_value(const Variant &p_value);
 	void set_link_stiffness(float p_stiffness);
 	float get_link_stiffness() const;

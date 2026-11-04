@@ -101,6 +101,18 @@ void BoneClothPreset::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "root_spring_forward_limit", PROPERTY_HINT_RANGE, "0,0.2,0.001,or_greater,suffix:m"), "set_root_spring_forward_limit", "get_root_spring_forward_limit");
 }
 
+PackedStringArray BoneClothPreset::get_value_names() {
+	PackedStringArray names;
+	const TypedArray<Dictionary> properties = ClassDB::class_get_property_list(get_class_static(), true);
+	for (int i = 0; i < properties.size(); i++) {
+		const Dictionary property = properties[i];
+		if (int(property["usage"]) & PROPERTY_USAGE_STORAGE) {
+			names.push_back(property["name"]);
+		}
+	}
+	return names;
+}
+
 Variant BoneClothPreset::copy_value(const Variant &p_value) {
 	const Ref<Curve> curve = p_value;
 	return curve.is_valid() ? Variant(curve->duplicate()) : p_value;

@@ -358,7 +358,7 @@ void BoneClothSimulator3D::_validate_property(PropertyInfo &p_property) const {
 
 void BoneClothSimulator3D::apply_preset(const Ref<BoneClothPreset> &p_preset) {
 	ERR_FAIL_COND_MSG(p_preset.is_null(), "No preset to apply.");
-	for (const char *name : BoneClothPreset::VALUES) {
+	for (const String &name : BoneClothPreset::get_value_names()) {
 		set(name, BoneClothPreset::copy_value(p_preset->get(name)));
 	}
 }
@@ -366,7 +366,7 @@ void BoneClothSimulator3D::apply_preset(const Ref<BoneClothPreset> &p_preset) {
 Ref<BoneClothPreset> BoneClothSimulator3D::make_preset() const {
 	Ref<BoneClothPreset> made;
 	made.instantiate();
-	for (const char *name : BoneClothPreset::VALUES) {
+	for (const String &name : BoneClothPreset::get_value_names()) {
 		made->set(name, BoneClothPreset::copy_value(get(name)));
 	}
 	return made;
