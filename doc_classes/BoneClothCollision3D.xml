@@ -4,9 +4,8 @@
 		A base class of the collisions that interact with [BoneClothSimulator3D].
 	</brief_description>
 	<description>
-		A collision has an effect only as a child of [BoneClothSimulator3D]. It pushes out the simulator's bones and links, the joints at their ends included. Every collision pushes from the same place and the pushes are averaged, so their order does not matter.
-		If [member bone] is set, the collision follows the bone's pose with [member position_offset] and [member rotation_offset]. Moving or rotating the collision updates the offsets. The sizes and [member position_offset] are in meters, as the values of [BoneClothSimulator3D] are, and the collision's scale is set to match; a scale set by hand is ignored. Without [member bone], the shape uses the node's own transform, scale included. On a bone, the collision does not push what the cloth already overlaps at the skeleton's rest pose, only what goes deeper; without a bone, or when the simulator's [member BoneClothSimulator3D.radius/rest_overlap] is [code]false[/code], it pushes fully.
-		If [member mirror_bone_name] is also set, the same shape collides a second time on that bone, mirrored from left to right.
+		A collision works only as a child of [BoneClothSimulator3D], and pushes its chains out.
+		Set [member bone_name] to make the collision follow a bone. Moving or rotating the node then updates the offsets. On a bone, sizes are in meters, as the simulator's values are, and the node's scale is ignored. Without a bone, the node's own transform is used, scale included.
 	</description>
 	<tutorials>
 	</tutorials>
@@ -29,13 +28,13 @@
 			The index of the mirror bone. [code]-1[/code] is no mirror.
 		</member>
 		<member name="mirror_bone_name" type="String" setter="set_mirror_bone_name" getter="get_mirror_bone_name" default="&quot;&quot;">
-			The name of the bone on the other side, such as the right thigh for a collision on the left thigh. The collision also collides on this bone, with [member position_offset] and [member rotation_offset] mirrored across the skeleton's YZ plane in the rest pose. It can be [member bone] itself, which mirrors a shape on one side of a center bone such as the hips. Has no effect when [member bone] is not set.
+			The bone on the other side, such as the right thigh for a collision on the left thigh. The same shape collides there too, mirrored. Set it to [member bone_name] itself to mirror a shape across a center bone such as the hips.
 		</member>
 		<member name="position_offset" type="Vector3" setter="set_position_offset" getter="get_position_offset">
-			The position offset from the [member bone] pose, along the bone's axes.
+			The position offset from the bone, along the bone's axes.
 		</member>
 		<member name="rotation_offset" type="Quaternion" setter="set_rotation_offset" getter="get_rotation_offset">
-			The rotation offset from the [member bone] pose.
+			The rotation offset from the bone.
 		</member>
 	</members>
 </class>

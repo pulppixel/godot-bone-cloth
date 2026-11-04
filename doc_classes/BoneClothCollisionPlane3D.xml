@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <class name="BoneClothCollisionPlane3D" inherits="BoneClothCollision3D" api_type="extension" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
 	<brief_description>
-		An infinite plane collision that interacts with [BoneClothSimulator3D].
+		An infinite plane collision for [BoneClothSimulator3D].
 	</brief_description>
 	<description>
-		An infinite plane collision that interacts with [BoneClothSimulator3D]. It is an infinite size XZ plane, and the +Y direction is treated as normal.
+		An infinite plane collision for [BoneClothSimulator3D], on the node's XZ plane. It keeps the chains on its +Y side.
 	</description>
 	<tutorials>
 	</tutorials>
