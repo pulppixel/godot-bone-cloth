@@ -13,9 +13,10 @@ Every class is documented in the editor (F1).
 
 ## Install
 
-Copy `project/addons/bone_cloth` into your project's `addons/`, with the binaries in its `bin/`.
+Download the zip from [Releases](https://github.com/pulppixel/godot-bone-cloth/releases) and extract it into your
+project, so that it holds `addons/bone_cloth/`. It runs on Windows, Linux and macOS.
 
-The binaries for Windows, Linux and macOS are built by the Builds workflow (Actions, `bone-cloth-bin`). To build them yourself:
+To build it yourself:
 
 ```
 git clone --recursive https://github.com/pulppixel/godot-bone-cloth.git
@@ -23,6 +24,8 @@ cd godot-bone-cloth
 scons target=template_debug
 scons target=template_release
 ```
+
+Then copy `project/addons/bone_cloth` into your project's `addons/`.
 
 ## Use
 
