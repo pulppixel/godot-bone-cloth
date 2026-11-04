@@ -19,6 +19,7 @@ const REST_OVERLAP_TOLERANCE := 0.0001 # m
 const ROOT_SPRING_LIMIT := 0.03 # m
 const ROOT_SPRING_TOLERANCE := 0.001 # m
 const ROOT_SPRING_FORWARD_LIMIT := 0.005 # m
+const SHAPE_TOLERANCE := 0.005 # m
 const TIME_MONITOR := &"bone_cloth/time"
 const JOINTS_MONITOR := &"bone_cloth/joints"
 
@@ -123,6 +124,7 @@ static func run(t) -> void:
 	await _root_spring_forward(t)
 	await _monitors(t)
 	_bone_lookup(t)
+	await _plane_and_inside(t)
 
 
 # 캐릭터가 좌우로 오가며 몸을 돌리는 움직임. p_time초 때의 자세를 정한다.
@@ -651,3 +653,34 @@ static func _bone_lookup(t) -> void:
 		node.set(name_property, "b3")
 		t.check(node.get(index_property) == 3, "Bone lookup, %s b3: the index reads %s." % [name_property, node.get(index_property)])
 	rig.remove()
+
+
+# Each shape: [class, properties, a function giving how far a bone at p_point is on the wrong side (m)].
+static func _plane_and_inside(t) -> void:
+	var tilt := Basis(Vector3.BACK, deg_to_rad(30.0))
+	var center := Vector3(0.03, -0.15, 0.0)
+	var axis_center := Vector3(0.03, -0.2, 0.0)
+	var shapes := [
+		["BoneClothCollisionPlane3D", {"transform": Transform3D(tilt, Vector3(0.0, -0.25, 0.0))},
+			func(p: Vector3) -> float: return -((p - Vector3(0.0, -0.25, 0.0)).dot(tilt.y) - 0.02)],
+		["BoneClothCollisionSphere3D", {"bone_name": "b0", "position_offset": center, "radius": 0.25, "inside": true},
+			func(p: Vector3) -> float: return p.distance_to(center) - (0.25 - 0.02)],
+		["BoneClothCollisionCapsule3D", {"bone_name": "b0", "position_offset": axis_center, "radius": 0.1, "height": 0.4, "inside": true},
+			func(p: Vector3) -> float: return p.distance_to(Vector3(0.03, clampf(p.y, -0.3, -0.1), 0.0)) - (0.1 - 0.02)],
+		["BoneClothCollisionTaperedCapsule3D", {"bone_name": "b0", "position_offset": axis_center, "top_radius": 0.1, "bottom_radius": 0.1, "height": 0.4, "inside": true},
+			func(p: Vector3) -> float: return p.distance_to(Vector3(0.03, clampf(p.y, -0.3, -0.1), 0.0)) - (0.1 - 0.02)],
+	]
+	for shape in shapes:
+		var rig := Rig.new(t)
+		rig.simulator.set("radius/rest_overlap", false)
+		var collision: Node = ClassDB.instantiate(shape[0])
+		rig.simulator.add_child(collision)
+		for property in shape[1]:
+			collision.set(property, shape[1][property])
+		for frame in 180:
+			await rig.advance(1.0 / 60.0)
+		var worst := 0.0
+		for i in range(1, TIP + 1):
+			worst = maxf(worst, shape[2].call(rig.poses[i].origin))
+		rig.remove()
+		t.check(worst <= SHAPE_TOLERANCE, "Plane and inside, %s: a bone is %.4f m on the wrong side." % [shape[0], worst])
