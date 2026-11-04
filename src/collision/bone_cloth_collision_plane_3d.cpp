@@ -14,8 +14,3 @@ Vector3 BoneClothCollisionPlane3D::_collide(const Transform3D &p_pose, const Vec
 
 	return p_point - normal * distance;
 }
-
-void BoneClothCollisionPlane3D::_collide_segment(const Transform3D &p_pose, Vector3 &r_a, Vector3 &r_b, float p_radius) const {
-	r_a = _collide(p_pose, r_a, p_radius);
-	r_b = _collide(p_pose, r_b, p_radius);
-}

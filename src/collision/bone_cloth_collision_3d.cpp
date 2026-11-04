@@ -275,6 +275,8 @@ Vector3 BoneClothCollision3D::_collide(const Transform3D &p_pose, const Vector3 
 }
 
 void BoneClothCollision3D::_collide_segment(const Transform3D &p_pose, Vector3 &r_a, Vector3 &r_b, float p_radius) const {
+	r_a = _collide(p_pose, r_a, p_radius);
+	r_b = _collide(p_pose, r_b, p_radius);
 }
 
 void BoneClothCollision3D::_push_segment_out(Vector3 &r_a, Vector3 &r_b, const Vector3 &p_on_segment, const Vector3 &p_on_shape, float p_limit, const Vector3 &p_fallback) {
