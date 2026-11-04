@@ -23,8 +23,6 @@ void BoneClothCollisionTaperedCapsule3D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "inside"), "set_inside", "is_inside");
 }
 
-// height는 캡슐처럼 전체 길이(두 반지름이 같으면 BoneClothCollisionCapsule3D와 같은 모양).
-// 반지름이 height의 절반을 넘지 않게 맞춘다.
 void BoneClothCollisionTaperedCapsule3D::set_top_radius(float p_radius) {
 	top_radius = p_radius;
 	if (top_radius > height * 0.5f) {
@@ -76,20 +74,16 @@ bool BoneClothCollisionTaperedCapsule3D::is_inside() const {
 	return inside;
 }
 
-// head는 +Y 쪽(top_radius), tail은 -Y 쪽(bottom_radius).
 void BoneClothCollisionTaperedCapsule3D::_get_head_and_tail(const Transform3D &p_pose, Vector3 &r_head, Vector3 &r_tail) const {
 	r_head = p_pose.origin + p_pose.basis.xform(Vector3(0.0f, height * 0.5f - top_radius, 0.0f));
 	r_tail = p_pose.origin - p_pose.basis.xform(Vector3(0.0f, height * 0.5f - bottom_radius, 0.0f));
 }
 
-// joint가 부딪칠 구 하나를 고른다. 이 모양은 굵기가 조금씩 변하는 구를 축을 따라 이어 붙인 것으로 본다.
-// 굵기가 다르면 옆면이 기울어서, 그 구는 joint 바로 옆보다 굵은 쪽으로 조금 옮겨져 있다(joint와 축의 거리 * 옆면 기울기만큼).
 void BoneClothCollisionTaperedCapsule3D::_get_nearest_sphere(const Vector3 &p_head, const Vector3 &p_tail, const Vector3 &p_point, Vector3 &r_center, float &r_radius) const {
 	const Vector3 axis = p_tail - p_head;
 	const float length = axis.length();
 	const float shrink = top_radius - bottom_radius;
 
-	// height가 최소면 작은 구가 큰 구 안에 들어간다.
 	if (length <= Math::abs(shrink)) {
 		r_center = shrink >= 0.0f ? p_head : p_tail;
 		r_radius = MAX(top_radius, bottom_radius);
@@ -106,7 +100,6 @@ void BoneClothCollisionTaperedCapsule3D::_get_nearest_sphere(const Vector3 &p_he
 	r_radius = Math::lerp(top_radius, bottom_radius, t);
 }
 
-// 선택한 구로 충돌을 한다.
 Vector3 BoneClothCollisionTaperedCapsule3D::_collide(const Transform3D &p_pose, const Vector3 &p_point, float p_radius) const {
 	Vector3 head;
 	Vector3 tail;
@@ -134,7 +127,6 @@ void BoneClothCollisionTaperedCapsule3D::_collide_segment(const Transform3D &p_p
 	_push_segment_out(r_a, r_b, closest[0], center, radius + p_radius, p_pose.basis.get_column(0).normalized());
 }
 
-// 선분과 축 사이에서 가장 가까운 점에 고른 구의 깊이.
 float BoneClothCollisionTaperedCapsule3D::_segment_depth(const Transform3D &p_pose, const Vector3 &p_a, const Vector3 &p_b, float p_radius) const {
 	if (inside) {
 		return BoneClothCollision3D::_segment_depth(p_pose, p_a, p_b, p_radius);

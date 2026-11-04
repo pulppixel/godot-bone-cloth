@@ -1,4 +1,3 @@
-// 양쪽의 굵기가 다른 캡슐(예: 허벅지).
 // The push is KawaiiPhysics' tapered capsule collision (MIT, Copyright (c) 2019-2026 pafuhana1213), see THIRD_PARTY_NOTICES.md,
 // with the axis point moved so it collides with the hull itself.
 

@@ -1,7 +1,3 @@
-// BoneClothSimulator3D의 에디터 기능(에디터 전용).
-// simulator를 선택하면 3D 화면 위 툴바에 BoneClothSimulator3D 메뉴가 생긴다.
-// gizmo도 여기서 추가한다.
-
 #pragma once
 
 #include "bone_cloth_simulator_3d.h"
@@ -18,11 +14,6 @@
 
 using namespace godot;
 
-// Edit Chains...: skeleton의 bone 트리에서 체크한 bone마다 chain을 넣고, 체크를 풀면 뺀다.
-// Presets: 프로젝트의 프리셋 파일 목록.
-// Save Preset...: 노드 값을 새 프리셋 파일로 저장한다.
-// Show Radius: joint마다 반지름 구를 그릴지 말지 여부를 선택한다.
-// Show Limit Angle: "각도 제한 원뿔"을 그릴지 말지 여부를 선택한다.
 class BoneClothSimulator3DMenu : public MenuButton {
 	GDCLASS(BoneClothSimulator3DMenu, MenuButton)
 

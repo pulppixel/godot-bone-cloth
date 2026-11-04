@@ -1,6 +1,3 @@
-// bone에 붙어 천의 joint를 밀어내는 Collision.
-// mirror bone을 정하면 그 bone에도 좌우 반전된 모양으로 생긴다.
-
 #pragma once
 
 #include <godot_cpp/classes/node3d.hpp>
@@ -21,21 +18,15 @@ class BoneClothCollision3D : public Node3D {
 	Vector3 position_offset;
 	Quaternion rotation_offset;
 
-	// sync_pose가 노드를 옮기는 중이면 true.
 	bool syncing = false;
 
-	// 크기와 offset 값(m)을 skeleton 단위로 바꾸는 배율.
 	float units_per_meter = 1.0f;
 
 	void _validate_bone_name();
 	void _take_offsets_from_transform();
 
-	// 충돌에 쓰는 위치와 회전(skeleton 공간).
-	// units_per_meter만큼 scale도 들어 있어서, 모양의 크기(m)가 skeleton 단위가 된다.
 	Transform3D pose;
-	// mirror bone 쪽 모양의 위치와 회전.
 	Transform3D mirror_pose;
-	// skeleton이 rest 자세일 때의 pose와 mirror_pose.
 	Transform3D rest_pose;
 	Transform3D mirror_rest_pose;
 

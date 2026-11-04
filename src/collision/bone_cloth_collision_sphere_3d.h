@@ -1,4 +1,3 @@
-// bone에 붙은 구.
 // The push is KawaiiPhysics' sphere collision (MIT, Copyright (c) 2019-2026 pafuhana1213), see THIRD_PARTY_NOTICES.md.
 
 #pragma once

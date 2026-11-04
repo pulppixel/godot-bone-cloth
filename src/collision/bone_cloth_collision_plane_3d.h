@@ -1,5 +1,3 @@
-// bone에 붙은 끝없는 평면. 노드의 Y 방향이 정면이다.
-
 #pragma once
 
 #include "collision/bone_cloth_collision_3d.h"

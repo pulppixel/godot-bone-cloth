@@ -66,8 +66,6 @@ void BoneClothPreset::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_root_spring_forward_limit", "limit"), &BoneClothPreset::set_root_spring_forward_limit);
 	ClassDB::bind_method(D_METHOD("get_root_spring_forward_limit"), &BoneClothPreset::get_root_spring_forward_limit);
 
-	// 이름과 범위(hint)를 BoneClothSimulator3D와 맞춘다.
-	// 값을 이름으로 복사하고, preset을 열면 node와 같은 슬라이더로 보인다.
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "link_stiffness", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_link_stiffness", "get_link_stiffness");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "link_split"), "set_link_split_enabled", "is_link_split_enabled");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "link_spacing/value", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_link_spacing", "get_link_spacing");

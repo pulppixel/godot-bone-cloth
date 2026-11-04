@@ -1,4 +1,3 @@
-// Bone cloth: 이웃한 spring chain을 연결해서, 여러 chain으로 된 치마가 하나의 면처럼 움직이고 다리에 뚫리지 않게 한다.
 // The solver is ported from KawaiiPhysics (MIT, Copyright (c) 2019-2026 pafuhana1213), see THIRD_PARTY_NOTICES.md.
 
 #pragma once
@@ -18,7 +17,6 @@ class BoneClothSimulator3DGizmoPlugin;
 class BoneClothSimulator3D : public SkeletonModifier3D {
 	GDCLASS(BoneClothSimulator3D, SkeletonModifier3D)
 
-	// Gizmo는 simulator의 계산 상태(joint, link)를 읽고 화면에 그린다.
 	friend class BoneClothSimulator3DGizmoPlugin;
 
 public:
@@ -29,36 +27,26 @@ public:
 	};
 
 private:
-	// 위치와 회전은 모두 skeleton 공간 기준이다.
 	struct Joint {
 		int bone = -1;
 		Vector3 location;
 		Vector3 prev_location;
 
-		// 이번 step에서 joint가 따라갈 pose 위치.
-		// step은 천을 한 번 계산하는 단위다(1/60초 분량).
 		Vector3 pose_location;
 		Vector3 prev_pose_location;
 		Vector3 current_pose_location;
 
-		// 이번 frame에 애니메이션(과 앞선 modifier)이 만든 위치.
-		// bone 회전은 이 위치를 기준으로 구한다.
 		Vector3 animated_location;
 
-		// skeleton이 rest 자세일 때의 위치.
 		Vector3 rest_location;
 
-		// 화면에 그리는 위치 벡터 (step이 없어도 매 frame마다 동작한다).
 		Vector3 display_location;
 		Basis pose_basis;
 
-		// 파생 chain의 root가 이 joint다.
 		bool branched = false;
 
-		// chain 안에서 joint의 위치. (root: 0 ~ 가장 먼 끝 점: 1)
 		float length_rate = 0.0f;
 
-		// joint마다 쓸 값. inspector 값에 length_rate 위치의 curve 값을 곱한다.
 		float drag = 0.0f;
 		float stiffness = 0.0f;
 		float radius = 0.0f;
@@ -67,19 +55,15 @@ private:
 		float sync = 0.0f;
 		float spacing = 0.0f;
 
-		// 이번 step(또는 화면 위치 계산)에 collision마다 이 joint를 민 양.
 		LocalVector<Vector3> collision_pushes;
 	};
 
 	struct Chain {
-		// inspector에서는 bone 이름을 고르고, index는 같이 저장한다. skeleton의 bone 순서가 바뀌어도 같은 bone을 찾도록 name을 키 값처럼 쓴다.
 		String root_bone_name;
 		int root_bone = -1;
 		String end_bone_name;
 		int end_bone = -1;
 
-		// end bone 뒤에 joint 하나를 더한다. 이 joint가 없으면 end bone이 회전할 수 없다.
-		// 치마와 머리카락 rig에는 끝 bone이 없는 경우가 많아서 기본값을 켜짐으로 했다.
 		bool extend_end_bone = true;
 		BoneDirection end_bone_direction = BONE_DIRECTION_FROM_PARENT;
 		float end_bone_length = 0.1f;
@@ -87,65 +71,21 @@ private:
 
 		Vector3 end_axis;
 
-		// sync bone(예: 무릎)이 움직인 만큼 chain이 따라갈 pose를 옮긴다.
 		String sync_bone_name;
 		int sync_bone = -1;
 
-		// chain이 몸 밖을 향하는 수평 방향(rest).
 		Vector3 sync_direction;
 
-		/*
-			Hair1 - Hair2 - Hair3 - Hair4   (chain 0)
-					  |
-					  +-- HairB1 - HairB2   (chain 1, root bone: Hair2)
-
-			파생 chain(다른 chain 중간에서 갈라진 chain)이면, 갈라진 곳의 chain 번호와 joint 번호를 저장한다. 아니면 parent_chain은 -1.
-			위 그림이면 chain 1의 parent_chain = 0, parent_joint = 1(Hair2).
-			parent joint(Hair2)는 흔들리기 때문에, 파생된 chain의 root는 그 joint(Hair2)의 위치를 따라간다.
-		*/
 		int parent_chain = -1;
 		uint32_t parent_joint = 0;
 
-		// true: 자식 collision 중 exclude_collisions에 없는 것 전부와 충돌한다.
-		// false: collisions에 있는 collision하고만 충돌한다.
 		bool enable_all_child_collisions = true;
 		LocalVector<NodePath> exclude_collisions;
 		LocalVector<NodePath> collisions;
 
-		/*
-			BoneClothSimulator3D
-			 +-- Thighs
-			 +-- Chest
-			 +-- Calves
-
-			만약 exclude_collisions에 Thighs를 넣었다면 아래와 같이 된다.
-
-			0       1       2        <- 칸 번호
-			Thighs  Chest   Calves   <- 자식 collision
-			false   true    true     <- collides
-
-			여기서 true인 collision만 충돌시킨다는 뜻이다.
-			자식 칸 뒤에는 mirror가 있는 collision마다 칸이 하나씩 더 붙는다.
-		*/
 		LocalVector<bool> collides;
 	};
 
-	/*
-				  chain 0    chain 1    chain 2
-		depth 0     R0         R1         R2       <- root끼리는 연결하지 않는다.
-					|          |          |
-		depth 1     a1 ------- b1 ------- c1
-					|          |          |
-		depth 2     a2 ------- b2 ------- c2
-					|          |          |
-		depth 3     a3 ------- b3 ------- c3
-
-		위 그림에서 |는 bone(chain으로 연결되는 부모-자식 관계),
-		----가 바로 Link이다. Loop면 c1과 a1도 잇는다.
-
-		Link는 chain끼리 연결하는 역할을 한다 (이게 없다면 천이 벌어지고, 그 틈으로 body가 뚫고 나오게 된다).
-		즉, 여러 chain이 한 면처럼 움직일 수 있도록, 이웃한 두 chain의 "동일한 depth를 가진 joint를 연결한 선 하나"다.
-	*/
 	struct Link {
 		uint32_t chain_a = 0;
 		uint32_t chain_b = 0;
@@ -153,13 +93,11 @@ private:
 		float length = 0.0f;
 	};
 
-	// 충돌에 쓸 collision. mirror가 존재하는 collision일 경우, 2개가 들어간다.
 	struct PosedCollision {
-		const BoneClothCollision3D *collision = nullptr; // 어느 collision 노드인지.
-		bool mirror = false; // true: mirror bone, false: 본인의 bone
+		const BoneClothCollision3D *collision = nullptr;
+		bool mirror = false;
 	};
 
-	// 이번 frame에 skeleton이 움직인 양을 step으로 나눈 값이다.
 	struct FrameMotion {
 		Transform3D skeleton_transform;
 		Vector3 move_location;
@@ -209,13 +147,10 @@ private:
 	float teleport_distance = 0.5f;
 	float teleport_angle = Math::deg_to_rad(90.0f);
 
-	// root가 pose에서 벗어나 흔들리게 하는 스프링(예: 가슴).
 	float root_spring_stiffness = 0.0f;
 	float root_spring_limit = 0.04f;
 	float root_spring_forward_limit = 0.005f;
 
-	// inspector의 길이 값(m)에 곱해서 skeleton 단위로 바꾸는 배율.
-	// 예: Armature의 scale이 0.01인 cm rig는 100이다(radius 0.03 m -> skeleton 단위 3).
 	float units_per_meter = 1.0f;
 
 	LocalVector<Link> links;
@@ -226,8 +161,6 @@ private:
 	Vector3 prev_step_move;
 	Quaternion prev_step_turn;
 
-	// 모든 chain root의 중심(skeleton 공간)과 회전.
-	// frame마다 frame_center를 읽고, step마다 지난 frame 값(prev_frame_center)과 보간한다.
 	Vector3 prev_frame_center;
 	Quaternion prev_frame_center_rotation;
 	Vector3 frame_center;
@@ -237,17 +170,13 @@ private:
 	Vector3 center_move;
 	Quaternion center_turn;
 
-	// 이번 step에 중심의 움직임과 회전 중, 모든 joint에 흔들림 없이 그대로 옮기는 몫(0 ~ 1).
 	float local_move_share = 0.0f;
 	float local_turn_share = 0.0f;
 
-	// rest에서 모든 chain root의 중심.
 	Vector3 rest_center;
 
-	// 캐릭터가 회전해도, 천의 방향이 같이 돌지 않도록 world 공간으로 저장한다.
 	Vector3 smoothing_velocity;
 
-	// State
 	float _get_units_per_meter(const Skeleton3D *p_skeleton) const;
 	bool _build_joints(Skeleton3D *p_skeleton, Chain &p_chain);
 	void _build_branches();
@@ -274,7 +203,6 @@ private:
 	void _update_display(Chain &p_chain, float p_follow);
 	void _write_rotations(Skeleton3D *p_skeleton, const Chain &p_chain);
 
-	// _process_modification_with_delta가 frame마다 이 순서로 부른다.
 	void _rebuild_if_changed(Skeleton3D *p_skeleton);
 	void _read_frame(Skeleton3D *p_skeleton);
 	void _reset(const Transform3D &p_skeleton_transform);
@@ -401,7 +329,6 @@ public:
 	void _validate_bone_names() override;
 	void _process_modification_with_delta(double p_delta) override;
 
-	// Debugger > Monitors 탭의 Bone Cloth 값.
 	static void add_monitors();
 	static void remove_monitors();
 };

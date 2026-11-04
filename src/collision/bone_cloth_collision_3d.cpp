@@ -34,8 +34,6 @@ void BoneClothCollision3D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::QUATERNION, "rotation_offset"), "set_rotation_offset", "get_rotation_offset");
 }
 
-// 인스펙터 표시 형식을 정한다. bone 이름 두 개는 skeleton의 bone 목록에서 고른다(연필 버튼으로 직접 입력도 된다).
-// bone이 없으면 mirror_bone_name을 숨기되 저장은 한다(저장까지 막으면 모든 collision에 빈 이름이 저장된다).
 void BoneClothCollision3D::_validate_property(PropertyInfo &p_property) const {
 	if (Engine::get_singleton()->is_editor_hint() && (p_property.name == StringName("bone_name") || p_property.name == StringName("mirror_bone_name"))) {
 		Skeleton3D *skeleton = get_skeleton();
@@ -50,11 +48,11 @@ void BoneClothCollision3D::_validate_property(PropertyInfo &p_property) const {
 	if (bone < 0 && (p_property.name == StringName("position_offset") || p_property.name == StringName("rotation_offset"))) {
 		p_property.usage = PROPERTY_USAGE_NONE;
 	} else if (bone < 0 && p_property.name == StringName("mirror_bone_name")) {
+		// PROPERTY_USAGE_NONE을 쓰면 mirror bone이 없는 collision도 씬 파일에 mirror_bone_name = ""을 저장한다.
 		p_property.usage = PROPERTY_USAGE_NO_EDITOR;
 	}
 }
 
-// 노드가 simulator 아래에 들어오면, bone을 다시 찾는다 (이름으로 찾는다).
 void BoneClothCollision3D::_notification(int p_what) {
 	switch (p_what) {
 		case NOTIFICATION_ENTER_TREE:
@@ -67,8 +65,7 @@ void BoneClothCollision3D::_notification(int p_what) {
 	}
 }
 
-// 이름을 먼저 복사해 둔다. set_bone_name(bone_name)처럼 자기 값을 넘기면 이름이 지워진다.
-// (godot-cpp의 String 대입이 자기 자신을 검사하지 않는다)
+// set_bone_name(bone_name)을 바로 부르면 이름이 지워지므로, 복사해서 넘긴다.
 void BoneClothCollision3D::_validate_bone_name() {
 	const String name = bone_name;
 	if (!name.is_empty()) {
@@ -99,7 +96,6 @@ Skeleton3D *BoneClothCollision3D::get_skeleton() const {
 	return parent ? parent->get_skeleton() : nullptr;
 }
 
-// bone 이름으로 번호를 찾는다.
 void BoneClothCollision3D::set_bone_name(const String &p_bone_name) {
 	bone_name = p_bone_name;
 	Skeleton3D *skeleton = get_skeleton();
@@ -116,7 +112,6 @@ String BoneClothCollision3D::get_bone_name() const {
 	return bone_name;
 }
 
-// 번호로 bone을 정하고 이름을 설정한다. -1은 bone 없음.
 void BoneClothCollision3D::set_bone(int p_bone) {
 	bone = p_bone;
 	Skeleton3D *skeleton = get_skeleton();
@@ -136,8 +131,6 @@ int BoneClothCollision3D::get_bone() const {
 	return bone;
 }
 
-// 반대쪽 bone(예: bone이 LeftUpperLeg면 RightUpperLeg).
-// 자기 bone도 고를 수 있다(Hips를 고르면 몸 가운데를 기준으로 뒤집는다).
 void BoneClothCollision3D::set_mirror_bone_name(const String &p_bone_name) {
 	mirror_bone_name = p_bone_name;
 	Skeleton3D *skeleton = get_skeleton();
@@ -154,7 +147,6 @@ String BoneClothCollision3D::get_mirror_bone_name() const {
 	return mirror_bone_name;
 }
 
-// -1은 mirror 없음.
 void BoneClothCollision3D::set_mirror_bone(int p_bone) {
 	mirror_bone = p_bone;
 	Skeleton3D *skeleton = get_skeleton();
@@ -205,8 +197,6 @@ Quaternion BoneClothCollision3D::get_rotation_offset() const {
 	return rotation_offset;
 }
 
-// bone의 이번 프레임 pose에 offset을 더한 위치와 회전(skeleton 공간). offset은 bone 방향 기준, m 단위다.
-// p_units로 offset을 skeleton 단위로 바꾸고, 모양의 크기도 같은 배율로 커지도록 scale을 넣는다(예: cm rig는 100배).
 static Transform3D get_pose_on_bone(const Skeleton3D *p_skeleton, int p_bone, const Vector3 &p_position_offset, const Quaternion &p_rotation_offset, float p_units, bool p_rest = false) {
 	Transform3D result = p_rest ? p_skeleton->get_bone_global_rest(p_bone) : p_skeleton->get_bone_global_pose(p_bone);
 	result.origin += result.basis.get_rotation_quaternion().xform(p_position_offset * p_units);
@@ -214,9 +204,6 @@ static Transform3D get_pose_on_bone(const Skeleton3D *p_skeleton, int p_bone, co
 	return result;
 }
 
-// 노드를 bone 위로 옮긴다(이번 프레임 bone pose + offset).
-// 아래 mirror 부분: offset을 skeleton 공간에서 좌우(X)로 뒤집어 반대쪽 bone에 놓는다(예: X +0.05 -> -0.05).
-// 양쪽 bone 축이 대칭이 아닌 리그에서도 맞도록, rest 자세에서 뒤집는다.
 void BoneClothCollision3D::sync_pose() {
 	Skeleton3D *skeleton = get_skeleton();
 	if (!skeleton) {
@@ -250,9 +237,6 @@ void BoneClothCollision3D::sync_pose() {
 	update_gizmos();
 }
 
-// 에디터에서 노드를 옮기거나 돌리면 그 자리를 offset으로 저장한다(undo 포함, scale은 버린다).
-// 그래서 애니메이션이 돌아도 옮긴 자리에 붙어 있다. 씬을 불러오는 중에는 저장된 offset을 그대로 쓴다.
-// 지금과 같은 위치가 들어오면 다시 계산하지 않는다(에디터는 안 움직여도 이동을 확정해서, 다시 계산하면 float 오차가 저장된다).
 void BoneClothCollision3D::_take_offsets_from_transform() {
 	if (syncing || bone < 0 || !is_inside_tree()) {
 		return;
@@ -264,6 +248,7 @@ void BoneClothCollision3D::_take_offsets_from_transform() {
 
 	const Transform3D bone_pose = skeleton->get_bone_global_pose(bone);
 	const Transform3D moved = skeleton->get_global_transform().affine_inverse() * get_global_transform();
+	// 노드가 움직이지 않았는데 offset을 다시 계산하면, float 오차가 씬 파일에 저장된다.
 	if (moved.is_equal_approx(pose)) {
 		return;
 	}
@@ -273,8 +258,6 @@ void BoneClothCollision3D::_take_offsets_from_transform() {
 	sync_pose();
 }
 
-// 선분(joint 둘 사이)을 모양 밖으로 민다.
-// 모양 함수가 m 단위로 계산하므로 공간을 m로 줄였다가 되돌린다.
 void BoneClothCollision3D::collide_segment(Vector3 &r_a, Vector3 &r_b, float p_radius, bool p_mirror) const {
 	const float meters = 1.0f / units_per_meter;
 	const Transform3D &shape = p_mirror ? mirror_pose : pose;
@@ -285,8 +268,6 @@ void BoneClothCollision3D::collide_segment(Vector3 &r_a, Vector3 &r_b, float p_r
 	r_b *= units_per_meter;
 }
 
-// 선분(p_a ~ p_b, 굵기 p_radius)이 skeleton의 rest 자세에서 이 모양에 얼마나 깊이 들어가 있는지(skeleton 단위). 겹치지 않으면 0.
-// bone에 붙지 않은 collision은 늘 0이다. 캐릭터 밖에 놓인 물체(예: 탁자)라 캐릭터의 rest 자세와 상관이 없다.
 float BoneClothCollision3D::get_rest_depth(const Vector3 &p_a, const Vector3 &p_b, float p_radius, bool p_mirror) const {
 	if (bone < 0) {
 		return 0.0f;
@@ -297,8 +278,6 @@ float BoneClothCollision3D::get_rest_depth(const Vector3 &p_a, const Vector3 &p_
 	return _segment_depth(Transform3D(shape.basis * meters, shape.origin * meters), p_a * meters, p_b * meters, p_radius * meters) * units_per_meter;
 }
 
-// 두 점(p_a, p_b)이 이 모양을 사이에 두고 반대편에 있는지. 각 점을 모양 밖으로 미는 방향이 90도보다 많이 벌어지면 반대편이다.
-// 모양에서 멀리 있는 점도 미는 방향을 얻도록 아주 큰 반지름(1000 m)으로 민다. 평면은 두 점을 같은 방향으로 밀어서 늘 false다.
 bool BoneClothCollision3D::separates(const Vector3 &p_a, const Vector3 &p_b, bool p_mirror) const {
 	const float meters = 1.0f / units_per_meter;
 	const Transform3D &shape = p_mirror ? mirror_pose : pose;
@@ -310,14 +289,10 @@ bool BoneClothCollision3D::separates(const Vector3 &p_a, const Vector3 &p_b, boo
 	return out_a.dot(out_b) < 0.0f;
 }
 
-// 양 끝 joint 중 더 많이 밀릴 joint가 밀리는 거리. 양 끝만 미는 모양(plane, inside)은 이것이 선분의 깊이다.
-// 선분 가운데를 미는 모양(구, 캡슐)은 이 함수를 다시 쓴다.
 float BoneClothCollision3D::_segment_depth(const Transform3D &p_pose, const Vector3 &p_a, const Vector3 &p_b, float p_radius) const {
 	return MAX(_collide(p_pose, p_a, p_radius).distance_to(p_a), _collide(p_pose, p_b, p_radius).distance_to(p_b));
 }
 
-// base class는 모양이 없어서 아무것도 밀지 않는다(구, 캡슐, 평면이 이 함수를 다시 쓴다).
-// 에디터의 노드 추가 창에 모양 class만 나오도록 virtual class로 등록한다.
 Vector3 BoneClothCollision3D::_collide(const Transform3D &p_pose, const Vector3 &p_point, float p_radius) const {
 	return p_point;
 }
@@ -325,9 +300,6 @@ Vector3 BoneClothCollision3D::_collide(const Transform3D &p_pose, const Vector3 
 void BoneClothCollision3D::_collide_segment(const Transform3D &p_pose, Vector3 &r_a, Vector3 &r_b, float p_radius) const {
 }
 
-// 선분(r_a ~ r_b, bone이나 link)을 모양 밖으로 민다. 두 joint 사이로 다리가 빠져나가지 않게 한다.
-// p_on_segment: 선분에서 모양에 가장 가까운 점. p_on_shape: 그 점에 가장 가까운 모양의 중심(또는 축 위 점). 두 점이 p_limit보다 가까우면 밀어낸다.
-// 민 양은 가까운 joint에 더 많이 나눈다(s: 선분 위 위치, r_a 0 ~ r_b 1).
 void BoneClothCollision3D::_push_segment_out(Vector3 &r_a, Vector3 &r_b, const Vector3 &p_on_segment, const Vector3 &p_on_shape, float p_limit, const Vector3 &p_fallback) {
 	const Vector3 offset = p_on_segment - p_on_shape;
 	const float distance_squared = offset.length_squared();

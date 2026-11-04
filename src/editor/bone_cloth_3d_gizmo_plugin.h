@@ -1,5 +1,3 @@
-// bone cloth 노드를 3D 화면에 그리는 gizmo(에디터 전용).
-
 #pragma once
 
 #include <godot_cpp/classes/camera3d.hpp>
@@ -8,12 +6,9 @@
 
 using namespace godot;
 
-// collision gizmo.
 class BoneClothCollision3DGizmoPlugin : public EditorNode3DGizmoPlugin {
 	GDCLASS(BoneClothCollision3DGizmoPlugin, EditorNode3DGizmoPlugin)
 
-	// handle을 끌기 시작할 때의 크기와 노드 위치.
-	// 여기서부터 측정을 시작하고, Esc를 누르면 이 값으로 되돌린다.
 	Variant initial_value;
 	Transform3D initial_transform;
 
@@ -39,7 +34,6 @@ public:
 	BoneClothCollision3DGizmoPlugin();
 };
 
-// simulator gizmo.
 class BoneClothSimulator3DGizmoPlugin : public EditorNode3DGizmoPlugin {
 	GDCLASS(BoneClothSimulator3DGizmoPlugin, EditorNode3DGizmoPlugin)
 

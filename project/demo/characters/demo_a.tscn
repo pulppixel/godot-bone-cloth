@@ -6,7 +6,7 @@
 [ext_resource type="Script" uid="uid://b31tfi6s47b4q" path="res://demo/scripts/face.gd" id="4_q8l8q"]
 [ext_resource type="Script" uid="uid://csfpwv81biimb" path="res://demo/scripts/look.gd" id="5_73pr4"]
 [ext_resource type="Script" uid="uid://olte1161ncgj" path="res://demo/scripts/feet.gd" id="6_1f4nk"]
-[ext_resource type="Script" path="res://demo/scripts/skin.gd" id="7_skin"]
+[ext_resource type="Script" uid="uid://bvpypg2ii06px" path="res://demo/scripts/skin.gd" id="7_skin"]
 
 [sub_resource type="Curve" id="Curve_skirt_limit"]
 _data = [Vector2(0, 0.5), 0.0, 0.5, 1, 1, Vector2(1, 1), 0.5, 0.0, 1, 1]
@@ -28,7 +28,7 @@ point_count = 3
 [node name="demo_a" unique_id=468153633 instance=ExtResource("1_lyi5y")]
 script = ExtResource("7_skin")
 
-[node name="Skirt" type="BoneClothSimulator3D" parent="GeneralSkeleton" parent_id_path=PackedInt32Array(570007486) index="3" unique_id=2063740867]
+[node name="Skirt" type="BoneClothSimulator3D" parent="GeneralSkeleton" parent_id_path=PackedInt32Array(1665035847) index="3" unique_id=2063740867]
 drag/value = 0.15
 limit_angle/value = 1.3089969
 limit_angle/damping_curve = SubResource("Curve_skirt_limit")
@@ -261,9 +261,9 @@ mirror_bone_name = "RightUpperLeg"
 mirror_bone = 161
 position_offset = Vector3(0, 0.119, 0)
 rotation_offset = Quaternion(0, 0, 0, 1)
-transform = Transform3D(-1, 0, 0, 0, -1, 0, 0, 0, 1, 0.08272511, 0.84309053, -0.0002089641)
+transform = Transform3D(-1, 0, 0, 0, -1, 0, 0, 0, 1, 0.08663513, 0.814104, -0.00030707335)
 
-[node name="BackHair" type="BoneClothSimulator3D" parent="GeneralSkeleton" parent_id_path=PackedInt32Array(570007486) index="4" unique_id=1430696631]
+[node name="BackHair" type="BoneClothSimulator3D" parent="GeneralSkeleton" parent_id_path=PackedInt32Array(1665035847) index="4" unique_id=1430696631]
 link_mode = 1
 link_split = true
 drag/value = 0.2
@@ -340,7 +340,7 @@ bone_name = "Head"
 bone = 42
 position_offset = Vector3(0, 0.101, -0.014)
 rotation_offset = Quaternion(0, 0, 0, 1)
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.6419509e-16, 1.611559, -0.01051112)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.8406494e-16, 1.612393, -0.010461794)
 
 [node name="Neck" type="BoneClothCollisionSphere3D" parent="GeneralSkeleton/BackHair" index="1" unique_id=539553205]
 radius = 0.054
@@ -348,7 +348,7 @@ bone_name = "Neck"
 bone = 41
 position_offset = Vector3(0, 0.033, 0.014)
 rotation_offset = Quaternion(0, 0, 0, 1)
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.2754905e-16, 1.4749174, 0.017488882)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.3357769e-16, 1.4713036, 0.017538229)
 
 [node name="Chest" type="BoneClothCollisionSphere3D" parent="GeneralSkeleton/BackHair" index="2" unique_id=1539592397]
 radius = 0.109
@@ -356,7 +356,7 @@ bone_name = "UpperChest"
 bone = 36
 position_offset = Vector3(0, 0, 0.011)
 rotation_offset = Quaternion(0, 0, 0, 1)
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.0309721e-17, 1.2930739, 0.014035452)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.0797015e-17, 1.2814451, 0.015106592)
 
 [node name="Blades" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/BackHair" index="3" unique_id=242437273]
 radius = 0.076
@@ -365,7 +365,7 @@ bone_name = "UpperChest"
 bone = 36
 position_offset = Vector3(0, 0.071, -0.011)
 rotation_offset = Quaternion(0, 0, 0.70710677, 0.70710677)
-transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, -1.0309721e-17, 1.3610739, -0.0059645474)
+transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, -1.0797015e-17, 1.3524451, -0.0068934076)
 
 [node name="Back" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/BackHair" index="4" unique_id=307511189]
 radius = 0.045
@@ -374,16 +374,20 @@ bone_name = "Chest"
 bone = 35
 position_offset = Vector3(0, 0, -0.054)
 rotation_offset = Quaternion(0, 0, 0.70710677, 0.70710677)
-transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, 2.32516e-17, 1.176256, -0.032055043)
+transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, 2.4350594e-17, 1.1599689, -0.033349503)
 
-[node name="Collar" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/BackHair"]
+[node name="Collar" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/BackHair" index="5" unique_id=17264397]
 radius = 0.04
 height = 0.19
 bone_name = "LeftShoulder"
+bone = 87
 mirror_bone_name = "RightShoulder"
+mirror_bone = 106
 position_offset = Vector3(0, 0.055, 0)
+rotation_offset = Quaternion(0, 0, 0, 1)
+transform = Transform3D(0, 1, 0, 0, 0, 1, 1, 0, 0, 0.08014674, 1.4065496, 0.00439078)
 
-[node name="Bangs" type="BoneClothSimulator3D" parent="GeneralSkeleton" parent_id_path=PackedInt32Array(570007486) index="5" unique_id=30715688]
+[node name="Bangs" type="BoneClothSimulator3D" parent="GeneralSkeleton" parent_id_path=PackedInt32Array(1665035847) index="5" unique_id=30715688]
 drag/value = 0.135
 stiffness/value = 0.035
 stiffness/damping_curve = SubResource("Curve_bangs_stiffness")
@@ -454,9 +458,9 @@ bone_name = "Head"
 bone = 42
 position_offset = Vector3(0, 0.101, -0.014)
 rotation_offset = Quaternion(0, 0, 0, 1)
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.6419509e-16, 1.611559, -0.01051112)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.8406494e-16, 1.612393, -0.010461794)
 
-[node name="Bust" type="BoneClothSimulator3D" parent="GeneralSkeleton" parent_id_path=PackedInt32Array(570007486) index="6" unique_id=1588807226]
+[node name="Bust" type="BoneClothSimulator3D" parent="GeneralSkeleton" parent_id_path=PackedInt32Array(1665035847) index="6" unique_id=1588807226]
 drag/value = 0.45
 stiffness/value = 0.25
 radius/value = 0.05
@@ -484,18 +488,30 @@ chains/1/sync_bone = -1
 chains/1/enable_all_child_collisions = true
 chains/1/exclude_collision_count = 0
 
-[node name="Ears" type="BoneClothSimulator3D" parent="GeneralSkeleton"]
+[node name="Ears" type="BoneClothSimulator3D" parent="GeneralSkeleton" parent_id_path=PackedInt32Array(1665035847) index="7" unique_id=1062956794]
 drag/value = 0.2
 stiffness/value = 0.1
 limit_angle/value = 0.5235988
 joint_speed_limit = 0.0
 chain_count = 2
 chains/0/root_bone_name = "J_Opt_L_RabbitEar2_01"
+chains/0/root_bone = 82
 chains/0/end_bone_name = "J_Opt_L_RabbitEar2_end_01"
+chains/0/end_bone = 83
 chains/0/extend_end_bone = false
+chains/0/sync_bone_name = ""
+chains/0/sync_bone = -1
+chains/0/enable_all_child_collisions = true
+chains/0/exclude_collision_count = 0
 chains/1/root_bone_name = "J_Opt_R_RabbitEar2_01"
+chains/1/root_bone = 85
 chains/1/end_bone_name = "J_Opt_R_RabbitEar2_end_01"
+chains/1/end_bone = 86
 chains/1/extend_end_bone = false
+chains/1/sync_bone_name = ""
+chains/1/sync_bone = -1
+chains/1/enable_all_child_collisions = true
+chains/1/exclude_collision_count = 0
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="." index="1" unique_id=260542559]
 libraries/demo_motions = ExtResource("2_btxln")

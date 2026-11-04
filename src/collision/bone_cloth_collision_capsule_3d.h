@@ -1,4 +1,3 @@
-// bone에 붙은 캡슐. joint를 밖으로 밀어낸다(inside를 켜면 안에 가둔다).
 // The push is KawaiiPhysics' capsule collision (MIT, Copyright (c) 2019-2026 pafuhana1213), see THIRD_PARTY_NOTICES.md.
 
 #pragma once
