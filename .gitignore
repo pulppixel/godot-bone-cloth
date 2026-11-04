@@ -85,3 +85,6 @@ project/addons/bone_cloth/bin/
 *.vcxproj.filters
 *.vcxproj.user
 x64/
+
+# Visual Studio: the temp copy it writes while saving a file in another encoding
+enc_temp_folder/
