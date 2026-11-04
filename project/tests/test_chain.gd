@@ -122,6 +122,7 @@ static func run(t) -> void:
 	await _root_spring(t)
 	await _root_spring_forward(t)
 	await _monitors(t)
+	_bone_lookup(t)
 
 
 # 캐릭터가 좌우로 오가며 몸을 돌리는 움직임. p_time초 때의 자세를 정한다.
@@ -625,3 +626,28 @@ static func _monitors(t) -> void:
 
 	t.check(joints == 2 * (TIP + 2), "Monitors: Joints shows %d for two chains of %d joints." % [joints, TIP + 2])
 	t.check(time > 0.0, "Monitors: Time shows %f s." % time)
+
+
+static func _bone_lookup(t) -> void:
+	var rig := Rig.new(t, 1.0, 1.0, "model", true)
+	var sphere: Node = rig.simulator.get_child(0)
+	var pairs := [
+		[rig.simulator, "chains/0/root_bone_name", "chains/0/root_bone"],
+		[rig.simulator, "chains/0/end_bone_name", "chains/0/end_bone"],
+		[rig.simulator, "chains/0/sync_bone_name", "chains/0/sync_bone"],
+		[sphere, "bone_name", "bone"],
+		[sphere, "mirror_bone_name", "mirror_bone"],
+	]
+	for pair in pairs:
+		var node: Node = pair[0]
+		var name_property: String = pair[1]
+		var index_property: String = pair[2]
+		node.set(index_property, 2)
+		t.check(node.get(name_property) == "b2", "Bone lookup, %s 2: the name reads %s." % [index_property, node.get(name_property)])
+		node.set(index_property, 99)
+		t.check(node.get(index_property) == -1 and node.get(name_property) == "b2", "Bone lookup, %s 99 (out of range): %s, %s." % [index_property, node.get(index_property), node.get(name_property)])
+		node.set(name_property, "nope")
+		t.check(node.get(index_property) == -1 and node.get(name_property) == "nope", "Bone lookup, %s nope: %s, %s." % [name_property, node.get(index_property), node.get(name_property)])
+		node.set(name_property, "b3")
+		t.check(node.get(index_property) == 3, "Bone lookup, %s b3: the index reads %s." % [name_property, node.get(index_property)])
+	rig.remove()
