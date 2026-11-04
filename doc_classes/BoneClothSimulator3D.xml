@@ -330,7 +330,7 @@
 			Like [member local_movement_speed_limit], for rotation, in radians per second. [code]6.283[/code] (360 degrees) suits long hair. [code]0.0[/code] disables it.
 		</member>
 		<member name="movement_speed_limit" type="float" setter="set_movement_speed_limit" getter="get_movement_speed_limit" default="5.0">
-			The character speed, in m/s, above which the cloth reacts no more.
+			The character speed, in m/s, above which the cloth stops reacting to faster movement.
 		</member>
 		<member name="radius/damping_curve" type="Curve" setter="set_radius_damping_curve" getter="get_radius_damping_curve">
 			Scales [member radius/value] from the roots ([code]0.0[/code]) to the tips ([code]1.0[/code]).
@@ -351,7 +351,7 @@
 			Lets the root bone sway too, for a part that moves as a lump, such as a breast. Lower values bounce longer. [code]0.0[/code] disables it.
 		</member>
 		<member name="rotation_speed_limit" type="float" setter="set_rotation_speed_limit" getter="get_rotation_speed_limit" default="12.566371">
-			The character rotation speed, in radians per second, above which the cloth reacts no more.
+			The character rotation speed, in radians per second, above which the cloth stops reacting to faster turns.
 		</member>
 		<member name="stiffness/damping_curve" type="Curve" setter="set_stiffness_damping_curve" getter="get_stiffness_damping_curve">
 			Scales [member stiffness/value] from the roots ([code]0.0[/code]) to the tips ([code]1.0[/code]).
