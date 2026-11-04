@@ -125,6 +125,7 @@ static func run(t) -> void:
 	await _monitors(t)
 	_bone_lookup(t)
 	await _plane_and_inside(t)
+	_preset_round_trip(t)
 
 
 # 캐릭터가 좌우로 오가며 몸을 돌리는 움직임. p_time초 때의 자세를 정한다.
@@ -684,3 +685,45 @@ static func _plane_and_inside(t) -> void:
 			worst = maxf(worst, shape[2].call(rig.poses[i].origin))
 		rig.remove()
 		t.check(worst <= SHAPE_TOLERANCE, "Plane and inside, %s: a bone is %.4f m on the wrong side." % [shape[0], worst])
+
+
+static func _preset_round_trip(t) -> void:
+	var names: Array[String] = []
+	for property in ClassDB.class_get_property_list("BoneClothPreset", true):
+		if property.usage & PROPERTY_USAGE_STORAGE:
+			names.append(property.name)
+	t.check(names.size() == 30, "Preset round trip: the preset stores %d values." % names.size())
+
+	var source: Node = ClassDB.instantiate("BoneClothSimulator3D")
+	var target: Node = ClassDB.instantiate("BoneClothSimulator3D")
+	var defaults: Resource = ClassDB.instantiate("BoneClothPreset")
+	var simulator_names: Array[String] = []
+	for property in source.get_property_list():
+		simulator_names.append(property.name)
+	for name in names:
+		t.check(name in simulator_names, "Preset round trip: the simulator has no %s." % name)
+		t.check(source.get(name) == defaults.get(name), "Preset round trip, %s: the simulator starts at %s, the preset at %s." % [name, source.get(name), defaults.get(name)])
+		var value: Variant = source.get(name)
+		match typeof(value):
+			TYPE_BOOL:
+				source.set(name, not value)
+			TYPE_FLOAT:
+				source.set(name, 0.5 * value + 0.01)
+			TYPE_VECTOR3:
+				source.set(name, Vector3(0.0, 0.0, -1.0))
+			TYPE_OBJECT, TYPE_NIL:
+				var curve := Curve.new()
+				curve.add_point(Vector2(0.0, 0.25))
+				source.set(name, curve)
+
+	var preset: Resource = source.call("make_preset")
+	target.call("apply_preset", preset)
+	for name in names:
+		var expected: Variant = source.get(name)
+		var actual: Variant = target.get(name)
+		if expected is Curve:
+			t.check(actual is Curve and actual != expected and actual.sample(0.0) == expected.sample(0.0), "Preset round trip, %s: the curve did not arrive as its own copy." % name)
+		else:
+			t.check(actual == expected, "Preset round trip, %s: %s arrived as %s." % [name, expected, actual])
+	source.free()
+	target.free()
