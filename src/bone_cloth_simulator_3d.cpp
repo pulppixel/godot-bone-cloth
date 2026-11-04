@@ -315,21 +315,18 @@ void BoneClothSimulator3D::_read_center(Skeleton3D *p_skeleton) {
 	}
 }
 
-void BoneClothSimulator3D::_update_local_shares(const Vector3 &p_center, const Quaternion &p_center_rotation, const Vector3 &p_move, const Quaternion &p_turn) {
-	local_move_share = 0.0f;
-	local_turn_share = 0.0f;
-
+void BoneClothSimulator3D::_update_local_shares(StepMotion &r_step, const Vector3 &p_center, const Quaternion &p_center_rotation) const {
 	if (local_movement_speed_limit > 0.0f) {
-		const float speed = (p_center - (p_turn.xform(step_center) + p_move)).length() / float(STEP) / units_per_meter;
+		const float speed = (p_center - (r_step.turn.xform(step_center) + r_step.move)).length() / float(STEP) / units_per_meter;
 		if (speed > local_movement_speed_limit) {
-			local_move_share = 1.0f - local_movement_speed_limit / speed;
+			r_step.move_share = 1.0f - local_movement_speed_limit / speed;
 		}
 	}
 
 	if (local_rotation_speed_limit > 0.0f) {
-		const float turn_speed = (p_turn * step_center_rotation).normalized().angle_to(p_center_rotation) / float(STEP);
+		const float turn_speed = (r_step.turn * step_center_rotation).normalized().angle_to(p_center_rotation) / float(STEP);
 		if (turn_speed > local_rotation_speed_limit) {
-			local_turn_share = 1.0f - local_rotation_speed_limit / turn_speed;
+			r_step.turn_share = 1.0f - local_rotation_speed_limit / turn_speed;
 		}
 	}
 }
@@ -359,12 +356,12 @@ void BoneClothSimulator3D::_apply_sync(Skeleton3D *p_skeleton) {
 	}
 }
 
-void BoneClothSimulator3D::_step(const Vector3 &p_gravity_direction, const Vector3 &p_move, const Quaternion &p_turn, const LocalVector<PosedCollision> &p_collisions) {
+void BoneClothSimulator3D::_step(const StepMotion &p_step, const LocalVector<PosedCollision> &p_collisions) {
 	for (Chain &chain : chains) {
 		if (!chain.joints.is_empty() && chain.parent_chain < 0) {
 			Joint &root = chain.joints[0];
 			if (root_spring_stiffness > 0.0f) {
-				_move_root(chain, p_move, p_turn);
+				_move_root(chain, p_step);
 				continue;
 			}
 
@@ -375,7 +372,7 @@ void BoneClothSimulator3D::_step(const Vector3 &p_gravity_direction, const Vecto
 
 	for (Chain &chain : chains) {
 		_follow_parent_chain(chain);
-		_simulate(chain, p_gravity_direction, p_move, p_turn);
+		_simulate(chain, p_step);
 	}
 
 	_solve_links();
@@ -416,15 +413,15 @@ void BoneClothSimulator3D::_follow_parent_chain(Chain &p_chain) {
 	root.location = chains[p_chain.parent_chain].joints[p_chain.parent_joint].location;
 }
 
-void BoneClothSimulator3D::_move_joint(Joint &r_joint, const Vector3 &p_gravity_direction, const Vector3 &p_move, const Quaternion &p_turn) {
+void BoneClothSimulator3D::_move_joint(Joint &r_joint, const StepMotion &p_step, const Vector3 &p_gravity_direction) {
 	const float dt = float(STEP);
 
 	const float depth_share = depth_inertia * (1.0f - r_joint.length_rate * r_joint.length_rate);
-	const float share = local_move_share + (1.0f - local_move_share) * depth_share;
-	const float turn_share = local_turn_share + (1.0f - local_turn_share) * depth_share;
+	const float share = p_step.move_share + (1.0f - p_step.move_share) * depth_share;
+	const float turn_share = p_step.turn_share + (1.0f - p_step.turn_share) * depth_share;
 	if (share > 0.0f || turn_share > 0.0f) {
-		const Vector3 move = center_move * share;
-		const Quaternion turn = Quaternion().slerp(center_turn, turn_share);
+		const Vector3 move = p_step.center_move * share;
+		const Quaternion turn = Quaternion().slerp(p_step.center_turn, turn_share);
 		r_joint.location = step_center + turn.xform(r_joint.location - step_center) + move;
 		r_joint.prev_location = step_center + turn.xform(r_joint.prev_location - step_center) + move;
 	}
@@ -441,13 +438,13 @@ void BoneClothSimulator3D::_move_joint(Joint &r_joint, const Vector3 &p_gravity_
 	velocity += p_gravity_direction * r_joint.gravity * dt;
 	r_joint.location += velocity * dt;
 
-	r_joint.location += (p_move - prev_step_move) * (1.0f - share);
-	r_joint.location += (p_turn.xform(r_joint.prev_location) - prev_step_turn.xform(r_joint.prev_location)) * (1.0f - turn_share);
+	r_joint.location += (p_step.move - prev_step_move) * (1.0f - share);
+	r_joint.location += (p_step.turn.xform(r_joint.prev_location) - prev_step_turn.xform(r_joint.prev_location)) * (1.0f - turn_share);
 }
 
-void BoneClothSimulator3D::_move_root(Chain &r_chain, const Vector3 &p_move, const Quaternion &p_turn) {
+void BoneClothSimulator3D::_move_root(Chain &r_chain, const StepMotion &p_step) {
 	Joint &root = r_chain.joints[0];
-	_move_joint(root, Vector3(), p_move, p_turn);
+	_move_joint(root, p_step, Vector3());
 
 	Vector3 offset = ((root.location - root.pose_location) * (1.0f - root_spring_stiffness)).limit_length(root_spring_limit * units_per_meter);
 
@@ -462,11 +459,11 @@ void BoneClothSimulator3D::_move_root(Chain &r_chain, const Vector3 &p_move, con
 	root.location = root.pose_location + offset;
 }
 
-void BoneClothSimulator3D::_simulate(Chain &p_chain, const Vector3 &p_gravity_direction, const Vector3 &p_move, const Quaternion &p_turn) {
+void BoneClothSimulator3D::_simulate(Chain &p_chain, const StepMotion &p_step) {
 	for (uint32_t i = 1; i < p_chain.joints.size(); i++) {
 		Joint &joint = p_chain.joints[i];
 		const Joint &parent = p_chain.joints[i - 1];
-		_move_joint(joint, p_gravity_direction, p_move, p_turn);
+		_move_joint(joint, p_step, p_step.gravity_direction);
 
 		const Vector3 target = parent.location + (joint.pose_location - parent.pose_location);
 		joint.location += (target - joint.location) * joint.stiffness;
@@ -1826,11 +1823,15 @@ void BoneClothSimulator3D::_run_steps(FrameMotion &r_motion, const LocalVector<P
 
 		const Vector3 center = prev_frame_center.lerp(frame_center, weight);
 		const Quaternion center_rotation = prev_frame_center_rotation.slerp(frame_center_rotation, weight).normalized();
-		center_move = center - step_center;
-		center_turn = (center_rotation * step_center_rotation.inverse()).normalized();
-		_update_local_shares(center, center_rotation, r_motion.step_move, r_motion.step_turn);
+		StepMotion step_motion;
+		step_motion.gravity_direction = r_motion.gravity_direction;
+		step_motion.move = r_motion.step_move;
+		step_motion.turn = r_motion.step_turn;
+		step_motion.center_move = center - step_center;
+		step_motion.center_turn = (center_rotation * step_center_rotation.inverse()).normalized();
+		_update_local_shares(step_motion, center, center_rotation);
 
-		_step(r_motion.gravity_direction, r_motion.step_move, r_motion.step_turn, p_collisions);
+		_step(step_motion, p_collisions);
 
 		step_center = center;
 		step_center_rotation = center_rotation;

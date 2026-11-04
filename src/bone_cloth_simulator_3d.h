@@ -115,6 +115,16 @@ private:
 		Vector3 gravity_direction;
 	};
 
+	struct StepMotion {
+		Vector3 gravity_direction;
+		Vector3 move;
+		Quaternion turn;
+		Vector3 center_move;
+		Quaternion center_turn;
+		float move_share = 0.0f;
+		float turn_share = 0.0f;
+	};
+
 	LocalVector<Chain> chains;
 	LinkMode link_mode = LINK_MODE_NONE;
 	float link_stiffness = 0.0f;
@@ -167,11 +177,6 @@ private:
 	Quaternion frame_center_rotation;
 	Vector3 step_center;
 	Quaternion step_center_rotation;
-	Vector3 center_move;
-	Quaternion center_turn;
-
-	float local_move_share = 0.0f;
-	float local_turn_share = 0.0f;
 
 	Vector3 rest_center;
 
@@ -187,13 +192,13 @@ private:
 	void _read_pose(Skeleton3D *p_skeleton, Chain &p_chain);
 	void _update_joint_settings(Chain &p_chain);
 	void _read_center(Skeleton3D *p_skeleton);
-	void _update_local_shares(const Vector3 &p_center, const Quaternion &p_center_rotation, const Vector3 &p_move, const Quaternion &p_turn);
+	void _update_local_shares(StepMotion &r_step, const Vector3 &p_center, const Quaternion &p_center_rotation) const;
 	void _apply_sync(Skeleton3D *p_skeleton);
-	void _step(const Vector3 &p_gravity_direction, const Vector3 &p_move, const Quaternion &p_turn, const LocalVector<PosedCollision> &p_collisions);
+	void _step(const StepMotion &p_step, const LocalVector<PosedCollision> &p_collisions);
 	void _follow_parent_chain(Chain &p_chain);
-	void _move_joint(Joint &r_joint, const Vector3 &p_gravity_direction, const Vector3 &p_move, const Quaternion &p_turn);
-	void _move_root(Chain &r_chain, const Vector3 &p_move, const Quaternion &p_turn);
-	void _simulate(Chain &p_chain, const Vector3 &p_gravity_direction, const Vector3 &p_move, const Quaternion &p_turn);
+	void _move_joint(Joint &r_joint, const StepMotion &p_step, const Vector3 &p_gravity_direction);
+	void _move_root(Chain &r_chain, const StepMotion &p_step);
+	void _simulate(Chain &p_chain, const StepMotion &p_step);
 	void _solve_links();
 	void _space_links();
 	void _collide_segment(Joint &r_a, Joint &r_b, float p_radius, const LocalVector<PosedCollision> &p_collisions, const LocalVector<bool> &p_collides_a, const LocalVector<bool> &p_collides_b, Vector3 Joint::*p_field, bool p_split);
