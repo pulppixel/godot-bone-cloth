@@ -265,9 +265,11 @@ transform = Transform3D(-1, 0, 0, 0, -1, 0, 0, 0, 1, 0.08272511, 0.84309053, -0.
 
 [node name="BackHair" type="BoneClothSimulator3D" parent="GeneralSkeleton" parent_id_path=PackedInt32Array(570007486) index="4" unique_id=1430696631]
 link_mode = 1
+link_split = true
 drag/value = 0.2
 stiffness/value = 0.02
-radius/value = 0.05
+radius/value = 0.035
+radius/rest_overlap = false
 limit_angle/value = 1.3089969
 limit_angle/damping_curve = SubResource("Curve_hair_limit")
 limit_angle/stiffness = 0.66
@@ -366,7 +368,7 @@ rotation_offset = Quaternion(0, 0, 0.70710677, 0.70710677)
 transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, -1.0309721e-17, 1.3610739, -0.0059645474)
 
 [node name="Back" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/BackHair" index="4" unique_id=307511189]
-radius = 0.071
+radius = 0.045
 height = 0.305
 bone_name = "Chest"
 bone = 35
@@ -375,8 +377,8 @@ rotation_offset = Quaternion(0, 0, 0.70710677, 0.70710677)
 transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, 2.32516e-17, 1.176256, -0.032055043)
 
 [node name="Collar" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/BackHair"]
-radius = 0.06
-height = 0.23
+radius = 0.04
+height = 0.19
 bone_name = "LeftShoulder"
 mirror_bone_name = "RightShoulder"
 position_offset = Vector3(0, 0.055, 0)
