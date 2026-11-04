@@ -180,6 +180,7 @@ chains/11/extend_end_bone = false
 
 [node name="BackHair" type="BoneClothSimulator3D" parent="GeneralSkeleton"]
 link_mode = 1
+link_split = true
 drag/value = 0.2
 stiffness/value = 0.02
 radius/value = 0.05
