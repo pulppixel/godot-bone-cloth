@@ -12,7 +12,6 @@ const SCALE_TOLERANCE := 0.00002 # m
 const BONE_COLLISION_TOLERANCE := 0.001 # m
 const DEPTH_INERTIA_RATIO := 0.5
 const LOCAL_SPEED_LIMIT_RATIO := 0.5
-const SYNC_MIN := 0.05 # m
 const SYNC_TOLERANCE := 0.0001 # m
 const SQUEEZE_TOLERANCE := 0.0001 # m
 const REST_OVERLAP_TOLERANCE := 0.0001 # m
@@ -379,34 +378,43 @@ static func _local_rotation_limit(t) -> void:
 
 
 static func _sync_bone(t) -> void:
-	var tips := {} # 경우마다, knee를 옮긴 뒤 끝 bone 위치 (m)
-	var tilt := 0.0 # 앞으로 간 경우, root bone 회전이 가리키는 b1 방향과 실제 b1 방향 사이의 각도 (rad)
-	for case in ["rest", "forward", "back", "off"]:
+	var cases := { # 경우: [thigh 위치, thigh pose 회전, sync/value, 기대하는 사슬 회전]
+		"rest": [Vector3(0, 0, 0.05), Quaternion(), 1.0, Quaternion()],
+		"swing": [Vector3(0, 0, 0.05), Quaternion(Vector3.RIGHT, 0.5), 1.0, Quaternion(Vector3.RIGHT, 0.5)],
+		"back": [Vector3(0, 0, 0.05), Quaternion(Vector3.RIGHT, -0.5), 1.0, Quaternion(Vector3.RIGHT, -0.5)],
+		"half": [Vector3(0, 0, 0.05), Quaternion(Vector3.RIGHT, 0.5), 0.5, Quaternion(Vector3.RIGHT, 0.25)],
+		"side": [Vector3(0.05, 0, 0), Quaternion(Vector3.RIGHT, 0.5), 1.0, Quaternion(Vector3.RIGHT, 0.125)],
+		"twist": [Vector3(0, 0, 0.05), Quaternion(Vector3.UP, 0.5), 1.0, Quaternion()],
+		"off": [Vector3(0, 0, 0.05), Quaternion(Vector3.RIGHT, 0.5), 0.0, Quaternion()],
+	}
+	var tips := {}
+	var tilt := 0.0 # swing에서 root bone 회전이 가리키는 b1 방향과 실제 b1 방향 사이의 각도 (rad)
+	for case in cases:
 		var rig := Rig.new(t)
 		rig.skeleton.set_bone_rest(1, Transform3D(Basis(), Vector3(0, -BONE_LENGTH, 0.05)))
 		rig.skeleton.set_bone_pose(1, rig.skeleton.get_bone_rest(1))
-		var knee := rig.skeleton.add_bone("knee")
-		rig.skeleton.set_bone_parent(knee, 0)
-		rig.skeleton.set_bone_rest(knee, Transform3D(Basis(), Vector3(0, -0.4, 0)))
-		rig.skeleton.set_bone_pose(knee, rig.skeleton.get_bone_rest(knee))
+		var thigh := rig.skeleton.add_bone("thigh")
+		rig.skeleton.set_bone_parent(thigh, 0)
+		rig.skeleton.set_bone_rest(thigh, Transform3D(Basis(), cases[case][0]))
+		rig.skeleton.set_bone_pose(thigh, rig.skeleton.get_bone_rest(thigh))
+		rig.skeleton.set_bone_pose_rotation(thigh, cases[case][1])
 		rig.simulator.set("gravity/value", 0.0)
 		rig.simulator.set("stiffness/value", 1.0)
-		rig.simulator.set("chains/0/sync_bone_name", "knee")
-		if case == "off":
-			rig.simulator.set("sync/value", 0.0)
-		var move := {"rest": 0.0, "forward": 0.1, "back": -0.1, "off": 0.1}[case] as float
-		rig.skeleton.set_bone_pose_position(knee, Vector3(0, -0.4, move))
+		rig.simulator.set("sync/bone_count", 1)
+		rig.simulator.set("sync/bones/0/bone_name", "thigh")
+		rig.simulator.set("sync/value", cases[case][2])
 		for frame in 30:
 			await rig.advance(1.0 / 60.0)
 		tips[case] = rig.tip()
-		if case == "forward":
+		if case == "swing":
 			tilt = (rig.poses[0].basis * Vector3(0, -BONE_LENGTH, 0.05)).angle_to(rig.poses[1].origin - rig.poses[0].origin)
 		rig.remove()
 
-	t.check(tips["forward"].z - tips["rest"].z > SYNC_MIN, "Sync bone forward 0.1 m: the chain end moves %.4f m forward." % (tips["forward"].z - tips["rest"].z))
-	t.check(tilt < ANGLE_TOLERANCE, "Sync bone forward 0.1 m: the root bone's rotation points %.4f rad off the moved joint." % tilt)
-	t.check(tips["back"].distance_to(tips["rest"]) < SYNC_TOLERANCE, "Sync bone back 0.1 m, away from the chain: the chain end moves %.5f m." % tips["back"].distance_to(tips["rest"]))
-	t.check(tips["off"].distance_to(tips["rest"]) < SYNC_TOLERANCE, "Sync value 0: the chain end moves %.5f m." % tips["off"].distance_to(tips["rest"]))
+	for case in cases:
+		var expected: Vector3 = cases[case][3] * tips["rest"]
+		t.check(tips[case].distance_to(expected) < SYNC_TOLERANCE, "Sync bone, %s: the chain end is %.5f m off the chain turned from its root." % [case, tips[case].distance_to(expected)])
+	t.check(tips["swing"].distance_to(tips["rest"]) > SWING_MIN, "Sync bone, swing: the chain end moves %.4f m." % tips["swing"].distance_to(tips["rest"]))
+	t.check(tilt < ANGLE_TOLERANCE, "Sync bone, swing: the root bone's rotation points %.4f rad off the moved joint." % tilt)
 
 
 static func _squeeze(t) -> void:
@@ -633,11 +641,12 @@ static func _monitors(t) -> void:
 
 static func _bone_lookup(t) -> void:
 	var rig := Rig.new(t, 1.0, 1.0, "model", true)
+	rig.simulator.set("sync/bone_count", 1)
 	var sphere: Node = rig.simulator.get_child(0)
 	var pairs := [
 		[rig.simulator, "chains/0/root_bone_name", "chains/0/root_bone"],
 		[rig.simulator, "chains/0/end_bone_name", "chains/0/end_bone"],
-		[rig.simulator, "chains/0/sync_bone_name", "chains/0/sync_bone"],
+		[rig.simulator, "sync/bones/0/bone_name", "sync/bones/0/bone"],
 		[sphere, "bone_name", "bone"],
 		[sphere, "mirror_bone_name", "mirror_bone"],
 	]

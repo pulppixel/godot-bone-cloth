@@ -11,7 +11,7 @@
 		Add [BoneClothCollision3D] nodes as children to keep the chains out of the body.
 		Lengths and speeds are in meters at the size of the character's model, so a centimeter rig takes the same values as a meter rig.
 		While the project runs, the [b]Monitors[/b] tab of the [b]Debugger[/b] shows the cost under [b]Bone Cloth[/b].
-		[b]Note:[/b] Most methods in this class take an [code]index[/code] parameter. This parameter specifies which chain to use (e.g. [code]chains/&lt;index&gt;/root_bone_name[/code]).
+		[b]Note:[/b] Most methods in this class take an [code]index[/code] parameter. This parameter specifies which chain to use (e.g. [code]chains/&lt;index&gt;/root_bone_name[/code]), except in the sync bone methods, where it specifies which sync bone to use (e.g. [code]sync/bones/&lt;index&gt;/bone_name[/code]).
 	</description>
 	<tutorials>
 	</tutorials>
@@ -120,14 +120,14 @@
 			<return type="int" />
 			<param index="0" name="index" type="int" />
 			<description>
-				Returns the sync bone index of the chain.
+				Returns the bone index of the sync bone.
 			</description>
 		</method>
 		<method name="get_sync_bone_name" qualifiers="const">
 			<return type="String" />
 			<param index="0" name="index" type="int" />
 			<description>
-				Returns the sync bone name of the chain.
+				Returns the bone name of the sync bone.
 			</description>
 		</method>
 		<method name="is_end_bone_extended" qualifiers="const">
@@ -254,7 +254,7 @@
 			<param index="0" name="index" type="int" />
 			<param index="1" name="bone" type="int" />
 			<description>
-				Sets the sync bone index of the chain. [code]-1[/code] is no bone.
+				Sets the bone index of the sync bone. [code]-1[/code] is no bone.
 			</description>
 		</method>
 		<method name="set_sync_bone_name">
@@ -262,7 +262,7 @@
 			<param index="0" name="index" type="int" />
 			<param index="1" name="bone_name" type="String" />
 			<description>
-				Sets the sync bone name of the chain, such as the knee beside a skirt chain. The chain then moves out of the bone's way: a knee coming forward lifts the front of a skirt. See [member sync/value]. An empty name is no bone.
+				Sets the bone name of the sync bone, such as a thigh inside a skirt. See [member sync/bone_count]. An empty name is no bone.
 			</description>
 		</method>
 	</methods>
@@ -360,11 +360,12 @@
 			How strongly the chains return to the pose, from [code]0.0[/code] to [code]1.0[/code]. Higher values swing less. Recommended values are between [code]0.05[/code] and [code]0.2[/code].
 			[b]Note:[/b] Values from [SpringBoneSimulator3D] do not carry over.
 		</member>
-		<member name="sync/damping_curve" type="Curve" setter="set_sync_damping_curve" getter="get_sync_damping_curve">
-			Scales [member sync/value] from the roots ([code]0.0[/code]) to the tips ([code]1.0[/code]).
+		<member name="sync/bone_count" type="int" setter="set_sync_bone_count" getter="get_sync_bone_count" default="0">
+			The number of sync bones. The chains turn from their roots as these bones swing, as a skirt follows the thighs so that the legs do not pass through it. Add both thighs for a skirt or a long coat.
+			Each chain follows each sync bone by where it hangs around the body: fully on the bone's side, a quarter at a right angle to it, not at all on the opposite side. A bone turning around its own length does not turn the chains.
 		</member>
 		<member name="sync/value" type="float" setter="set_sync" getter="get_sync" default="1.0">
-			How far the chains follow their sync bone ([method set_sync_bone_name]). At [code]1.0[/code], they follow fully.
+			How far the chains turn with the sync bones ([member sync/bone_count]), from [code]0.0[/code] to [code]1.0[/code]. At [code]1.0[/code], a chain on a bone's side turns as far as the bone swings. [code]0.7[/code] suits a skirt.
 		</member>
 		<member name="teleport_angle" type="float" setter="set_teleport_angle" getter="get_teleport_angle" default="1.5707964">
 			A turn of the character larger than this in one frame, in radians, is a teleport, and the cloth ignores it.

@@ -59,11 +59,6 @@ void BoneClothSimulator3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_end_bone_length", "index", "length"), &BoneClothSimulator3D::set_end_bone_length);
 	ClassDB::bind_method(D_METHOD("get_end_bone_length", "index"), &BoneClothSimulator3D::get_end_bone_length);
 
-	ClassDB::bind_method(D_METHOD("set_sync_bone_name", "index", "bone_name"), &BoneClothSimulator3D::set_sync_bone_name);
-	ClassDB::bind_method(D_METHOD("get_sync_bone_name", "index"), &BoneClothSimulator3D::get_sync_bone_name);
-	ClassDB::bind_method(D_METHOD("set_sync_bone", "index", "bone"), &BoneClothSimulator3D::set_sync_bone);
-	ClassDB::bind_method(D_METHOD("get_sync_bone", "index"), &BoneClothSimulator3D::get_sync_bone);
-
 	ClassDB::bind_method(D_METHOD("set_enable_all_child_collisions", "index", "enabled"), &BoneClothSimulator3D::set_enable_all_child_collisions);
 	ClassDB::bind_method(D_METHOD("are_all_child_collisions_enabled", "index"), &BoneClothSimulator3D::are_all_child_collisions_enabled);
 	ClassDB::bind_method(D_METHOD("set_exclude_collision_path", "index", "collision", "node_path"), &BoneClothSimulator3D::set_exclude_collision_path);
@@ -115,10 +110,14 @@ void BoneClothSimulator3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_gravity_damping_curve"), &BoneClothSimulator3D::get_gravity_damping_curve);
 	ClassDB::bind_method(D_METHOD("set_gravity_direction", "direction"), &BoneClothSimulator3D::set_gravity_direction);
 	ClassDB::bind_method(D_METHOD("get_gravity_direction"), &BoneClothSimulator3D::get_gravity_direction);
+	ClassDB::bind_method(D_METHOD("set_sync_bone_count", "count"), &BoneClothSimulator3D::set_sync_bone_count);
+	ClassDB::bind_method(D_METHOD("get_sync_bone_count"), &BoneClothSimulator3D::get_sync_bone_count);
+	ClassDB::bind_method(D_METHOD("set_sync_bone_name", "index", "bone_name"), &BoneClothSimulator3D::set_sync_bone_name);
+	ClassDB::bind_method(D_METHOD("get_sync_bone_name", "index"), &BoneClothSimulator3D::get_sync_bone_name);
+	ClassDB::bind_method(D_METHOD("set_sync_bone", "index", "bone"), &BoneClothSimulator3D::set_sync_bone);
+	ClassDB::bind_method(D_METHOD("get_sync_bone", "index"), &BoneClothSimulator3D::get_sync_bone);
 	ClassDB::bind_method(D_METHOD("set_sync", "sync"), &BoneClothSimulator3D::set_sync);
 	ClassDB::bind_method(D_METHOD("get_sync"), &BoneClothSimulator3D::get_sync);
-	ClassDB::bind_method(D_METHOD("set_sync_damping_curve", "curve"), &BoneClothSimulator3D::set_sync_damping_curve);
-	ClassDB::bind_method(D_METHOD("get_sync_damping_curve"), &BoneClothSimulator3D::get_sync_damping_curve);
 
 	ClassDB::bind_method(D_METHOD("set_inertia", "inertia"), &BoneClothSimulator3D::set_inertia);
 	ClassDB::bind_method(D_METHOD("get_inertia"), &BoneClothSimulator3D::get_inertia);
@@ -171,7 +170,7 @@ void BoneClothSimulator3D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR3, "gravity/direction"), "set_gravity_direction", "get_gravity_direction");
 
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "sync/value", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_sync", "get_sync");
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "sync/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_sync_damping_curve", "get_sync_damping_curve");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "sync/bone_count", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_ARRAY, "Sync Bones,sync/bones/"), "set_sync_bone_count", "get_sync_bone_count");
 
 	ADD_GROUP("Inertia", "");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "inertia", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_inertia", "get_inertia");
@@ -215,6 +214,22 @@ void BoneClothSimulator3D::_notification(int p_what) {
 
 bool BoneClothSimulator3D::_set(const StringName &p_name, const Variant &p_value) {
 	const String path = p_name;
+	if (path.begins_with("sync/bones/")) {
+		const int which = path.get_slice("/", 2).to_int();
+		const String what = path.get_slice("/", 3);
+		ERR_FAIL_INDEX_V(which, int(sync_bones.size()), false);
+
+		if (what == "bone_name") {
+			set_sync_bone_name(which, p_value);
+		} else if (what == "bone") {
+			set_sync_bone(which, p_value);
+		} else {
+			return false;
+		}
+
+		return true;
+	}
+
 	if (!path.begins_with("chains/")) {
 		return false;
 	}
@@ -242,10 +257,6 @@ bool BoneClothSimulator3D::_set(const StringName &p_name, const Variant &p_value
 		}
 	} else if (what == "extend_end_bone") {
 		set_extend_end_bone(which, p_value);
-	} else if (what == "sync_bone_name") {
-		set_sync_bone_name(which, p_value);
-	} else if (what == "sync_bone") {
-		set_sync_bone(which, p_value);
 	} else if (what == "enable_all_child_collisions") {
 		set_enable_all_child_collisions(which, p_value);
 	} else if (what == "exclude_collision_count") {
@@ -265,6 +276,22 @@ bool BoneClothSimulator3D::_set(const StringName &p_name, const Variant &p_value
 
 bool BoneClothSimulator3D::_get(const StringName &p_name, Variant &r_ret) const {
 	const String path = p_name;
+	if (path.begins_with("sync/bones/")) {
+		const int which = path.get_slice("/", 2).to_int();
+		const String what = path.get_slice("/", 3);
+		ERR_FAIL_INDEX_V(which, int(sync_bones.size()), false);
+
+		if (what == "bone_name") {
+			r_ret = get_sync_bone_name(which);
+		} else if (what == "bone") {
+			r_ret = get_sync_bone(which);
+		} else {
+			return false;
+		}
+
+		return true;
+	}
+
 	if (!path.begins_with("chains/")) {
 		return false;
 	}
@@ -292,10 +319,6 @@ bool BoneClothSimulator3D::_get(const StringName &p_name, Variant &r_ret) const 
 		}
 	} else if (what == "extend_end_bone") {
 		r_ret = is_end_bone_extended(which);
-	} else if (what == "sync_bone_name") {
-		r_ret = get_sync_bone_name(which);
-	} else if (what == "sync_bone") {
-		r_ret = get_sync_bone(which);
 	} else if (what == "enable_all_child_collisions") {
 		r_ret = are_all_child_collisions_enabled(which);
 	} else if (what == "exclude_collision_count") {
@@ -318,6 +341,12 @@ void BoneClothSimulator3D::_get_property_list(List<PropertyInfo> *p_list) const 
 	const PropertyHint hint = skeleton ? PROPERTY_HINT_ENUM_SUGGESTION : PROPERTY_HINT_NONE;
 	const String bone_names = skeleton ? String(skeleton->get_concatenated_bone_names()) : String();
 
+	for (uint32_t i = 0; i < sync_bones.size(); i++) {
+		const String path = "sync/bones/" + itos(i) + "/";
+		p_list->push_back(PropertyInfo(Variant::STRING, path + String("bone_name"), hint, bone_names));
+		p_list->push_back(PropertyInfo(Variant::INT, path + String("bone"), PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR));
+	}
+
 	for (uint32_t i = 0; i < chains.size(); i++) {
 		const String path = "chains/" + itos(i) + "/";
 		p_list->push_back(PropertyInfo(Variant::STRING, path + String("root_bone_name"), hint, bone_names));
@@ -331,8 +360,6 @@ void BoneClothSimulator3D::_get_property_list(List<PropertyInfo> *p_list) const 
 		p_list->push_back(PropertyInfo(Variant::BOOL, path + String("extend_end_bone"), PROPERTY_HINT_NONE, "", extend_usage));
 		p_list->push_back(PropertyInfo(Variant::INT, path + String("end_bone/direction"), PROPERTY_HINT_ENUM, "+X,-X,+Y,-Y,+Z,-Z,FromParent", tip_usage));
 		p_list->push_back(PropertyInfo(Variant::FLOAT, path + String("end_bone/length"), PROPERTY_HINT_RANGE, "0,1,0.001,or_greater,suffix:m", tip_usage));
-		p_list->push_back(PropertyInfo(Variant::STRING, path + String("sync_bone_name"), hint, bone_names));
-		p_list->push_back(PropertyInfo(Variant::INT, path + String("sync_bone"), PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR));
 
 		const Chain &chain = chains[i];
 		const bool all = chain.enable_all_child_collisions;
@@ -476,34 +503,6 @@ void BoneClothSimulator3D::set_end_bone_length(int p_index, float p_length) {
 float BoneClothSimulator3D::get_end_bone_length(int p_index) const {
 	ERR_FAIL_INDEX_V(p_index, int(chains.size()), 0.0f);
 	return chains[p_index].end_bone_length;
-}
-
-void BoneClothSimulator3D::set_sync_bone_name(int p_index, const String &p_bone_name) {
-	ERR_FAIL_INDEX(p_index, int(chains.size()));
-	chains[p_index].sync_bone_name = p_bone_name;
-	Skeleton3D *skeleton = get_skeleton();
-	if (skeleton) {
-		set_sync_bone(p_index, find_bone_or_warn(skeleton, p_bone_name, "Chain " + itos(p_index) + ": sync bone"));
-	}
-}
-
-String BoneClothSimulator3D::get_sync_bone_name(int p_index) const {
-	ERR_FAIL_INDEX_V(p_index, int(chains.size()), String());
-	return chains[p_index].sync_bone_name;
-}
-
-void BoneClothSimulator3D::set_sync_bone(int p_index, int p_bone) {
-	ERR_FAIL_INDEX(p_index, int(chains.size()));
-	Chain &chain = chains[p_index];
-	chain.sync_bone = p_bone;
-	read_bone_name(get_skeleton(), chain.sync_bone, chain.sync_bone_name, "Chain " + itos(p_index) + ": sync bone");
-
-	update_configuration_warnings();
-}
-
-int BoneClothSimulator3D::get_sync_bone(int p_index) const {
-	ERR_FAIL_INDEX_V(p_index, int(chains.size()), -1);
-	return chains[p_index].sync_bone;
 }
 
 void BoneClothSimulator3D::set_enable_all_child_collisions(int p_index, bool p_enabled) {
@@ -731,20 +730,53 @@ Vector3 BoneClothSimulator3D::get_gravity_direction() const {
 	return gravity_direction;
 }
 
+void BoneClothSimulator3D::set_sync_bone_count(int p_count) {
+	ERR_FAIL_COND(p_count < 0);
+	sync_bones.resize(p_count);
+	joints_dirty = true;
+	notify_property_list_changed();
+	update_configuration_warnings();
+}
+
+int BoneClothSimulator3D::get_sync_bone_count() const {
+	return sync_bones.size();
+}
+
+void BoneClothSimulator3D::set_sync_bone_name(int p_index, const String &p_bone_name) {
+	ERR_FAIL_INDEX(p_index, int(sync_bones.size()));
+	sync_bones[p_index].bone_name = p_bone_name;
+	Skeleton3D *skeleton = get_skeleton();
+	if (skeleton) {
+		set_sync_bone(p_index, find_bone_or_warn(skeleton, p_bone_name, "Sync bone " + itos(p_index)));
+	}
+}
+
+String BoneClothSimulator3D::get_sync_bone_name(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, int(sync_bones.size()), String());
+	return sync_bones[p_index].bone_name;
+}
+
+void BoneClothSimulator3D::set_sync_bone(int p_index, int p_bone) {
+	ERR_FAIL_INDEX(p_index, int(sync_bones.size()));
+	SyncBone &sync_bone = sync_bones[p_index];
+	sync_bone.bone = p_bone;
+	read_bone_name(get_skeleton(), sync_bone.bone, sync_bone.bone_name, "Sync bone " + itos(p_index));
+
+	joints_dirty = true;
+	update_configuration_warnings();
+}
+
+int BoneClothSimulator3D::get_sync_bone(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, int(sync_bones.size()), -1);
+	return sync_bones[p_index].bone;
+}
+
 void BoneClothSimulator3D::set_sync(float p_sync) {
 	sync = p_sync;
 }
 
 float BoneClothSimulator3D::get_sync() const {
 	return sync;
-}
-
-void BoneClothSimulator3D::set_sync_damping_curve(const Ref<Curve> &p_curve) {
-	sync_damping_curve = p_curve;
-}
-
-Ref<Curve> BoneClothSimulator3D::get_sync_damping_curve() const {
-	return sync_damping_curve;
 }
 
 void BoneClothSimulator3D::set_inertia(float p_inertia) {
@@ -885,6 +917,12 @@ PackedStringArray BoneClothSimulator3D::_get_configuration_warnings() const {
 		}
 	}
 
+	for (uint32_t s = 0; s < sync_bones.size() && skeleton; s++) {
+		if (!sync_bones[s].bone_name.is_empty() && sync_bones[s].bone < 0) {
+			warnings.push_back(vformat("Sync bone %d: '%s' is not in the skeleton.", s, sync_bones[s].bone_name));
+		}
+	}
+
 	for (uint32_t c = 0; c < chains.size(); c++) {
 		const Chain &chain = chains[c];
 		PackedStringArray problems;
@@ -899,10 +937,6 @@ PackedStringArray BoneClothSimulator3D::_get_configuration_warnings() const {
 			}
 			if (!no_end && chain.end_bone < 0) {
 				problems.push_back(vformat("end bone '%s' is not in the skeleton", chain.end_bone_name));
-			}
-
-			if (!chain.sync_bone_name.is_empty() && chain.sync_bone < 0) {
-				problems.push_back(vformat("sync bone '%s' is not in the skeleton", chain.sync_bone_name));
 			}
 
 			const bool has_path = is_on_bone_path(skeleton, chain.root_bone, chain.end_bone, chain.root_bone);
@@ -955,12 +989,14 @@ void BoneClothSimulator3D::_validate_bone_names() {
 		} else if (chains[i].end_bone != -1) {
 			set_end_bone(i, chains[i].end_bone);
 		}
+	}
 
-		const String sync_name = chains[i].sync_bone_name;
+	for (uint32_t i = 0; i < sync_bones.size(); i++) {
+		const String sync_name = sync_bones[i].bone_name;
 		if (!sync_name.is_empty()) {
 			set_sync_bone_name(i, sync_name);
-		} else if (chains[i].sync_bone != -1) {
-			set_sync_bone(i, chains[i].sync_bone);
+		} else if (sync_bones[i].bone != -1) {
+			set_sync_bone(i, sync_bones[i].bone);
 		}
 	}
 }

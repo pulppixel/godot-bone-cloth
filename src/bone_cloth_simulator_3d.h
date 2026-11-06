@@ -52,7 +52,6 @@ private:
 		float radius = 0.0f;
 		float limit_angle = 0.0f;
 		float gravity = 0.0f;
-		float sync = 0.0f;
 		float spacing = 0.0f;
 
 		LocalVector<Vector3> collision_pushes;
@@ -71,10 +70,7 @@ private:
 
 		Vector3 end_axis;
 
-		String sync_bone_name;
-		int sync_bone = -1;
-
-		Vector3 sync_direction;
+		LocalVector<float> sync_shares;
 
 		int parent_chain = -1;
 		uint32_t parent_joint = 0;
@@ -84,6 +80,11 @@ private:
 		LocalVector<NodePath> collisions;
 
 		LocalVector<bool> collides;
+	};
+
+	struct SyncBone {
+		String bone_name;
+		int bone = -1;
 	};
 
 	struct Link {
@@ -144,8 +145,8 @@ private:
 	float gravity = 0.0f;
 	Ref<Curve> gravity_damping_curve;
 	Vector3 gravity_direction = Vector3(0, -1, 0);
+	LocalVector<SyncBone> sync_bones;
 	float sync = 1.0f;
-	Ref<Curve> sync_damping_curve;
 	float inertia = 1.0f;
 	float inertia_smoothing = 0.4f;
 	float depth_inertia = 0.0f;
@@ -193,6 +194,7 @@ private:
 	void _update_joint_settings(Chain &p_chain);
 	void _read_center(Skeleton3D *p_skeleton);
 	void _update_local_shares(StepMotion &r_step, const Vector3 &p_center, const Quaternion &p_center_rotation) const;
+	Quaternion _get_sync_swing(Skeleton3D *p_skeleton, int p_bone) const;
 	void _apply_sync(Skeleton3D *p_skeleton);
 	void _step(const StepMotion &p_step, const LocalVector<PosedCollision> &p_collisions);
 	void _follow_parent_chain(Chain &p_chain);
@@ -245,10 +247,6 @@ public:
 	BoneDirection get_end_bone_direction(int p_index) const;
 	void set_end_bone_length(int p_index, float p_length);
 	float get_end_bone_length(int p_index) const;
-	void set_sync_bone_name(int p_index, const String &p_bone_name);
-	String get_sync_bone_name(int p_index) const;
-	void set_sync_bone(int p_index, int p_bone);
-	int get_sync_bone(int p_index) const;
 	void set_enable_all_child_collisions(int p_index, bool p_enabled);
 	bool are_all_child_collisions_enabled(int p_index) const;
 	void set_exclude_collision_count(int p_index, int p_count);
@@ -297,10 +295,14 @@ public:
 	Ref<Curve> get_gravity_damping_curve() const;
 	void set_gravity_direction(const Vector3 &p_direction);
 	Vector3 get_gravity_direction() const;
+	void set_sync_bone_count(int p_count);
+	int get_sync_bone_count() const;
+	void set_sync_bone_name(int p_index, const String &p_bone_name);
+	String get_sync_bone_name(int p_index) const;
+	void set_sync_bone(int p_index, int p_bone);
+	int get_sync_bone(int p_index) const;
 	void set_sync(float p_sync);
 	float get_sync() const;
-	void set_sync_damping_curve(const Ref<Curve> &p_curve);
-	Ref<Curve> get_sync_damping_curve() const;
 	void set_inertia(float p_inertia);
 	float get_inertia() const;
 	void set_inertia_smoothing(float p_smoothing);

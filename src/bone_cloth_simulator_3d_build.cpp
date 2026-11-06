@@ -171,15 +171,26 @@ void BoneClothSimulator3D::_build_sync(Skeleton3D *p_skeleton) {
 		rest_center /= float(count);
 	}
 
+	LocalVector<Vector3> bone_directions;
+	for (const SyncBone &sync_bone : sync_bones) {
+		Vector3 outward = sync_bone.bone >= 0 ? p_skeleton->get_bone_global_rest(sync_bone.bone).origin - rest_center : Vector3();
+		outward.y = 0.0f;
+		bone_directions.push_back(outward.normalized());
+	}
+
 	for (Chain &chain : chains) {
-		chain.sync_direction = Vector3();
+		chain.sync_shares.clear();
 		if (chain.joints.size() < 2) {
 			continue;
 		}
 
 		Vector3 outward = p_skeleton->get_bone_global_rest(chain.end_bone).origin - rest_center;
 		outward.y = 0.0f;
-		chain.sync_direction = outward.normalized();
+		outward.normalize();
+		for (const Vector3 &direction : bone_directions) {
+			const float share = 0.5f + 0.5f * outward.dot(direction);
+			chain.sync_shares.push_back(share * share);
+		}
 	}
 }
 

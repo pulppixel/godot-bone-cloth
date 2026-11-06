@@ -39,7 +39,6 @@ void BoneClothSimulator3D::_update_joint_settings(Chain &p_chain) {
 		joint.radius = MAX(radius * sample_curve(radius_damping_curve, joint.length_rate), 0.0f) * units_per_meter;
 		joint.limit_angle = MAX(limit_angle * sample_curve(limit_angle_damping_curve, joint.length_rate), 0.0f);
 		joint.gravity = gravity * sample_curve(gravity_damping_curve, joint.length_rate) * units_per_meter;
-		joint.sync = MAX(sync * sample_curve(sync_damping_curve, joint.length_rate), 0.0f);
 		joint.spacing = CLAMP(link_spacing * sample_curve(link_spacing_damping_curve, joint.length_rate), 0.0f, 1.0f);
 	}
 }
@@ -88,27 +87,55 @@ void BoneClothSimulator3D::_update_local_shares(StepMotion &r_step, const Vector
 	}
 }
 
+Quaternion BoneClothSimulator3D::_get_sync_swing(Skeleton3D *p_skeleton, int p_bone) const {
+	const Quaternion rest = p_skeleton->get_bone_rest(p_bone).basis.get_rotation_quaternion();
+	const Quaternion turn = p_skeleton->get_bone_pose_rotation(p_bone) * rest.inverse();
+	const Vector3 axis = rest.xform(Vector3(0, 1, 0));
+	const Vector3 along = axis * Vector3(turn.x, turn.y, turn.z).dot(axis);
+	Quaternion twist(along.x, along.y, along.z, turn.w);
+	twist = twist.length_squared() > 0.0f ? twist.normalized() : Quaternion();
+
+	const int parent = p_skeleton->get_bone_parent(p_bone);
+	const Quaternion parent_rotation = parent >= 0 ? p_skeleton->get_bone_global_pose(parent).basis.get_rotation_quaternion() : Quaternion();
+	return parent_rotation * (turn * twist.inverse()) * parent_rotation.inverse();
+}
+
 void BoneClothSimulator3D::_apply_sync(Skeleton3D *p_skeleton) {
-	for (Chain &chain : chains) {
-		if (chain.sync_bone < 0 || chain.joints.size() < 2) {
+	if (sync_bones.is_empty()) {
+		return;
+	}
+
+	LocalVector<Quaternion> swings;
+	for (const SyncBone &sync_bone : sync_bones) {
+		swings.push_back(sync_bone.bone >= 0 ? _get_sync_swing(p_skeleton, sync_bone.bone) : Quaternion());
+	}
+
+	LocalVector<Quaternion> turns;
+	LocalVector<Vector3> pivots;
+	turns.resize(chains.size());
+	pivots.resize(chains.size());
+	for (uint32_t c = 0; c < chains.size(); c++) {
+		Chain &chain = chains[c];
+		if (chain.joints.is_empty()) {
 			continue;
 		}
 
-		const Vector3 location = frame_center_rotation.xform_inv(p_skeleton->get_bone_global_pose(chain.sync_bone).origin - frame_center);
-		const Vector3 rest_location = p_skeleton->get_bone_global_rest(chain.sync_bone).origin - rest_center;
-		const float along = (location - rest_location).dot(chain.sync_direction);
-		if (along <= 0.0f) {
-			continue;
-		}
-
-		const Vector3 offset = frame_center_rotation.xform(chain.sync_direction * along);
-		for (uint32_t i = 1; i < chain.joints.size(); i++) {
-			Joint &joint = chain.joints[i];
-			const Joint &parent = chain.joints[i - 1];
-			const Vector3 direction = joint.current_pose_location + offset * joint.sync - parent.current_pose_location;
-			if (!direction.is_zero_approx()) {
-				joint.current_pose_location = parent.current_pose_location + direction.normalized() * (joint.animated_location - parent.animated_location).length();
+		if (chain.parent_chain >= 0) {
+			turns[c] = turns[chain.parent_chain];
+			pivots[c] = pivots[chain.parent_chain];
+		} else {
+			Quaternion turn;
+			for (uint32_t s = 0; s < chain.sync_shares.size(); s++) {
+				turn = turn * Quaternion().slerp(swings[s], sync * chain.sync_shares[s]);
 			}
+			turns[c] = turn;
+			pivots[c] = chain.joints[0].current_pose_location;
+		}
+
+		for (Joint &joint : chain.joints) {
+			joint.current_pose_location = pivots[c] + turns[c].xform(joint.current_pose_location - pivots[c]);
+			joint.animated_location = pivots[c] + turns[c].xform(joint.animated_location - pivots[c]);
+			joint.pose_basis = Basis(turns[c]) * joint.pose_basis;
 		}
 	}
 }
@@ -446,8 +473,8 @@ void BoneClothSimulator3D::_read_frame(Skeleton3D *p_skeleton) {
 		}
 	}
 
-	_read_center(p_skeleton);
 	_apply_sync(p_skeleton);
+	_read_center(p_skeleton);
 }
 
 void BoneClothSimulator3D::_reset(const Transform3D &p_skeleton_transform) {
