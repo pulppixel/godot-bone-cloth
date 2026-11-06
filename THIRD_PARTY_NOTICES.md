@@ -2,10 +2,7 @@
 
 ## KawaiiPhysics
 
-The cloth solver is ported from KawaiiPhysics, https://github.com/pafuhana1213/KawaiiPhysics
-
-The presets accessory, breast, hair_soft, hair_stiff and tail in presets/ take their values from KawaiiPhysics'
-sample presets (Content/KawaiiPhysicsSample/Presets), in meters and radians.
+https://github.com/pafuhana1213/KawaiiPhysics
 
 MIT License
 
@@ -31,10 +28,6 @@ SOFTWARE.
 
 ## Godot Engine
 
-The class icons in icons/ are the engine's own editor icons (editor/icons/ at 4.7.2-stable), renamed after the classes:
-SpringBoneSimulator3D.svg, SpringBoneCollision3D.svg, SpringBoneCollisionSphere3D.svg, SpringBoneCollisionCapsule3D.svg
-(the tapered capsule's too) and SpringBoneCollisionPlane3D.svg. The editor gizmos port the engine's Gizmo3DHelper and
-spring_bone_3d_gizmo_plugin.cpp, and the class reference takes sentences from the engine's own (doc/classes/SpringBone*.xml).
 https://github.com/godotengine/godot
 
 MIT License
@@ -62,10 +55,5 @@ SOFTWARE.
 
 ## VRoid Studio sample characters
 
-The demo characters `project/demo/characters/demo_a.glb` to `demo_d.glb` are four of VRoid Studio 2.16's sample models
-(VRoidPreset), by pixiv VRoid Project, edited in VRoid Studio by pulppixel, exported as VRM 0.0 and converted to glb. They are not covered by this
-repository's MIT License. Their conditions of use:
-https://vroid.pixiv.help/hc/en-us/articles/4402394424089
-
-Among them: anyone may use, edit and redistribute the models, for profit or not, without credit; the models and their
-images must not be redistributed for a fee, nor with their "Redistribution and alteration" condition set to CC0.
+The demo characters are VRoid Studio sample models by pixiv VRoid Project, not covered by this repository's license.
+Conditions of use: https://vroid.pixiv.help/hc/en-us/articles/4402394424089

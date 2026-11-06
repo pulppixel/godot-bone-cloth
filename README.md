@@ -40,5 +40,4 @@ Open `project/` in Godot 4.7 and run it.
 
 ## License
 
-MIT. The parts from KawaiiPhysics and Godot, and the demo characters' conditions of use, are in
-`THIRD_PARTY_NOTICES.md`.
+MIT. Third-party licenses are in `THIRD_PARTY_NOTICES.md`.
