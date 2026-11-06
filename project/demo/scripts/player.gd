@@ -28,6 +28,8 @@ const FLAT_RAY_DOWN := 1.2
 const FLAT_RISE := 0.03
 const GROUND_RAY_UP := 0.3
 const GROUND_RAY_DOWN := 0.6
+const BLOCK_CHECK := 0.1
+const BLOCK_HOLD := 0.2
 
 @export_group("Speed")
 @export var walk_speed := WALK
@@ -71,6 +73,9 @@ var _since_top := INF
 var _exit_pending := false
 var _run_time := 0.0
 var _run_off := INF
+var _clip_speed := 0.0
+var _block_held := false
+var _state_age := 0.0
 
 @onready var _skin: Node3D = $Skin
 @onready var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
@@ -116,6 +121,12 @@ func _physics_process(delta: float) -> void:
 	_run_off = 0.0 if Input.is_action_pressed("run") else _run_off + delta
 	var top_speed := (run_speed if _run_off <= EXIT_GRACE else walk_speed) * _scale
 	var exit_wait := _watch_exit(direction, delta)
+	_state_age += delta
+	var blocked := _blocked(direction)
+	if blocked != _block_held and _state_age >= BLOCK_HOLD:
+		_block_held = blocked
+	if not _airborne() and _block_held:
+		direction = Vector3.ZERO
 	var turned := 0.0
 	if _anim == Anim.STOP:
 		_decelerate(delta)
@@ -132,7 +143,7 @@ func _physics_process(delta: float) -> void:
 		velocity.y = maxf(velocity.y - _gravity * delta, -max_fall_speed)
 	_slide(delta)
 	
-	var pressing := not direction.is_zero_approx()
+	var pressing := not direction.is_zero_approx() and not _block_held
 	var speed := Vector2(velocity.x, velocity.z).length()
 	_transition(pressing, speed, exit_wait)
 
@@ -203,7 +214,8 @@ func _transition(pressing: bool, speed: float, exit_wait: bool) -> void:
 
 
 func _animate(speed: float, turned: float, delta: float) -> void:
-	var clip := speed / _scale
+	_clip_speed = maxf(speed / _scale, _clip_speed - deceleration / _scale * delta)
+	var clip := _clip_speed
 	var rate := 1.0
 	if clip > walk_speed:
 		rate = clip / lerpf(walk_speed, _character.sprint_at, clampf(inverse_lerp(walk_speed, run_speed, clip), 0.0, 1.0))
@@ -224,6 +236,7 @@ func _enter(anim: Anim) -> void:
 	else:
 		_character.rest(&"still")
 	_anim = anim
+	_state_age = 0.0
 	_character.request(TREE_STATE[anim])
 
 
@@ -242,6 +255,30 @@ func _exit_foot() -> int:
 		if absf(angle_difference(TAU * phase, TAU * (EXIT_AT + 0.5 * foot))) <= TAU * EXIT_WINDOW:
 			return foot
 	return -1
+
+
+func _blocked(direction: Vector3) -> bool:
+	if direction.is_zero_approx():
+		return false
+	var dir := direction.normalized()
+	var from := global_transform
+	var motion := dir * BLOCK_CHECK
+	var hit := KinematicCollision3D.new()
+	var walls := 0
+	for i in max_slides:
+		if not test_move(from, motion, hit):
+			return false
+		var normal := hit.get_normal()
+		from.origin += hit.get_travel()
+		if normal.angle_to(up_direction) <= floor_max_angle:
+			motion = hit.get_remainder().slide(normal)
+			continue
+		walls += 1
+		var wall := normal.slide(up_direction).normalized()
+		if walls > 1 or wall.angle_to(-dir) < wall_min_slide_angle:
+			return true
+		motion = hit.get_remainder().slide(wall)
+	return false
 
 
 func _flat_ahead(dir: Vector3) -> bool:
