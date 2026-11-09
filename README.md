@@ -7,11 +7,13 @@ Bone-based cloth for Godot 4.7: hair, skirts, capes, tails and breasts that sway
 <img width="33%" alt="A skirt swinging as she stops" src="media/skirt.gif" /><img width="33%" alt="A tail whipping through a vault" src="media/tail_vault.gif" /><img width="33%" alt="Hair flowing over the shoulders" src="media/collision.gif" />
 </p>
 
-Watch on YouTube: [Tutorial (12:41)](https://youtu.be/B8XE65gJaQk) | [On/Off comparison](https://youtu.be/QDqhtDSR8PA)
-
 - Sphere, capsule and plane collisions keep cloth out of the body.
 - Chains can be linked for skirts and capes, and long hair can part over the shoulders.
 - Eight presets to start from, editor gizmos, and docs in the editor (F1).
+
+## Videos
+
+<a href="https://youtu.be/B8XE65gJaQk"><img width="49%" alt="Tutorial video on YouTube" src="https://img.youtube.com/vi/B8XE65gJaQk/maxresdefault.jpg" /></a> <a href="https://youtu.be/QDqhtDSR8PA"><img width="49%" alt="On/Off comparison video on YouTube" src="https://img.youtube.com/vi/QDqhtDSR8PA/maxresdefault.jpg" /></a>
 
 ## Install
 
