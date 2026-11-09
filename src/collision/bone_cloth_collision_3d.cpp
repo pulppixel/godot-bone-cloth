@@ -162,6 +162,7 @@ Vector3 BoneClothCollision3D::get_position_offset() const {
 }
 
 void BoneClothCollision3D::set_rotation_offset(const Quaternion &p_offset) {
+	ERR_FAIL_COND_MSG(p_offset.length_squared() == 0.0f, "rotation_offset cannot be (0, 0, 0, 0): that is not a rotation.");
 	if (rotation_offset == p_offset) {
 		return;
 	}
