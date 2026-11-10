@@ -19,6 +19,8 @@ const ROOT_SPRING_LIMIT := 0.03 # m
 const ROOT_SPRING_TOLERANCE := 0.001 # m
 const ROOT_SPRING_FORWARD_LIMIT := 0.005 # m
 const SHAPE_TOLERANCE := 0.005 # m
+const WIND_MIN := 0.02 # m
+const WIND_TOLERANCE := 0.0001 # m
 const TIME_MONITOR := &"bone_cloth/time"
 const JOINTS_MONITOR := &"bone_cloth/joints"
 
@@ -38,6 +40,10 @@ class Rig:
 	# p_owner: "model"이면 simulator가 모델(character)에 저장된 경우, "stage"면 Stage에서 더한 경우, ""이면 owner가 없는 경우.
 	func _init(p_tree: SceneTree, p_character_scale := 1.0, p_armature_scale := 1.0, p_owner := "model", p_collision := false) -> void:
 		var armature := Node3D.new()
+		stage.name = "Stage"
+		character.name = "Character"
+		armature.name = "Armature"
+		skeleton.name = "Skeleton"
 		character.scale = Vector3.ONE * p_character_scale
 		armature.scale = Vector3.ONE * p_armature_scale
 		p_tree.root.add_child(stage)
@@ -54,6 +60,7 @@ class Rig:
 		skeleton.modifier_callback_mode_process = Skeleton3D.MODIFIER_CALLBACK_MODE_PROCESS_MANUAL
 
 		simulator = ClassDB.instantiate("BoneClothSimulator3D")
+		simulator.name = "Simulator"
 		skeleton.add_child(simulator)
 		simulator.set("chain_count", 1)
 		simulator.set("chains/0/root_bone_name", "b0")
@@ -121,6 +128,9 @@ static func run(t) -> void:
 	await _link_spacing(t)
 	await _root_spring(t)
 	await _root_spring_forward(t)
+	await _wind(t)
+	await _wind_frame_rate(t)
+	await _wind_scale(t)
 	await _monitors(t)
 	_bone_lookup(t)
 	await _plane_and_inside(t)
@@ -573,7 +583,7 @@ static func _link_spacing(t) -> void:
 			await t.process_frame
 		gap[spacing] = tips[0].distance_to(tips[1])
 		skeleton.free()
-
+	
 	t.check(absf(gap[0.0] - 0.02) < 0.001, "Link spacing off: two chains 2 cm apart stay %.4f m apart." % gap[0.0])
 	t.check(gap[1.0] > 0.03, "Link spacing: two chains 2 cm apart with 2 cm joints are pushed %.4f m apart." % gap[1.0])
 
@@ -595,7 +605,7 @@ static func _root_spring(t) -> void:
 		moved[stiffness] = largest
 		settled[stiffness] = rig.poses[0].origin.length()
 		rig.remove()
-
+	
 	t.check(moved[0.0] < LENGTH_TOLERANCE, "Root spring 0: the root moves %.6f m." % moved[0.0])
 	t.check(moved[0.15] > SWING_MIN and moved[0.15] < ROOT_SPRING_LIMIT + LENGTH_TOLERANCE, "Root spring: the root moves up to %.4f m (limit %.2f m)." % [moved[0.15], ROOT_SPRING_LIMIT])
 	t.check(settled[0.15] < ROOT_SPRING_TOLERANCE, "Root spring: 2 s after the character stops, the root is %.5f m off its pose." % settled[0.15])
@@ -614,7 +624,7 @@ static func _root_spring_forward(t) -> void:
 		down = maxf(down, -rig.poses[0].origin.y)
 		up = maxf(up, rig.poses[0].origin.y)
 	rig.remove()
-
+	
 	t.check(down < ROOT_SPRING_FORWARD_LIMIT + LENGTH_TOLERANCE, "Root spring forward limit: the root moves %.4f m along its bone (limit %.3f m)." % [down, ROOT_SPRING_FORWARD_LIMIT])
 	t.check(up > ROOT_SPRING_FORWARD_LIMIT * 2.0, "Root spring forward limit: the root moves only %.4f m against its bone." % up)
 
@@ -623,7 +633,7 @@ static func _monitors(t) -> void:
 	if not (Performance.has_custom_monitor(TIME_MONITOR) and Performance.has_custom_monitor(JOINTS_MONITOR)):
 		t.check(false, "Monitors: the plugin has not added %s and %s." % [TIME_MONITOR, JOINTS_MONITOR])
 		return
-
+	
 	var rigs: Array[Rig] = [Rig.new(t), Rig.new(t)]
 	Performance.get_custom_monitor(TIME_MONITOR)
 	Performance.get_custom_monitor(JOINTS_MONITOR)
@@ -634,7 +644,7 @@ static func _monitors(t) -> void:
 	var joints: int = Performance.get_custom_monitor(JOINTS_MONITOR)
 	for rig in rigs:
 		rig.remove()
-
+	
 	t.check(joints == 2 * (TIP + 2), "Monitors: Joints shows %d for two chains of %d joints." % [joints, TIP + 2])
 	t.check(time > 0.0, "Monitors: Time shows %f s." % time)
 
@@ -665,7 +675,6 @@ static func _bone_lookup(t) -> void:
 	rig.remove()
 
 
-# Each shape: [class, properties, a function giving how far a bone at p_point is on the wrong side (m)].
 static func _plane_and_inside(t) -> void:
 	var tilt := Basis(Vector3.BACK, deg_to_rad(30.0))
 	var center := Vector3(0.03, -0.15, 0.0)
@@ -696,13 +705,108 @@ static func _plane_and_inside(t) -> void:
 		t.check(worst <= SHAPE_TOLERANCE, "Plane and inside, %s: a bone is %.4f m on the wrong side." % [shape[0], worst])
 
 
+static func _wind(t) -> void:
+	var still := await _wind_tip(t, 0.0, 1.0, null, false, 0.0)
+	var blown := await _wind_tip(t, 5.0, 1.0, null, false, 0.0)
+	t.check(blown.x < still.x - WIND_MIN, "Wind: the tip moved %.4f m along the wind." % (still.x - blown.x))
+	t.check(absf(blown.z - still.z) < WIND_TOLERANCE, "Wind: the tip moved %.4f m across the wind." % absf(blown.z - still.z))
+	
+	var none := await _wind_tip(t, 5.0, 0.0, null, false, 0.0)
+	t.check(none.distance_to(still) < WIND_TOLERANCE, "Wind, influence 0: the tip moved %.4f m." % none.distance_to(still))
+	
+	var half := await _wind_tip(t, 5.0, 0.5, null, false, 0.0)
+	t.check(still.x - half.x < still.x - blown.x, "Wind, influence 0.5: the tip moved as far as at 1.")
+	
+	var curve := Curve.new()
+	curve.add_point(Vector2(0.0, 0.0))
+	curve.add_point(Vector2(1.0, 0.0))
+	var curved := await _wind_tip(t, 5.0, 1.0, curve, false, 0.0)
+	t.check(curved.distance_to(still) < WIND_TOLERANCE, "Wind, curve at 0: the tip moved %.4f m." % curved.distance_to(still))
+	
+	var hidden := await _wind_tip(t, 5.0, 1.0, null, true, 0.0)
+	t.check(hidden.distance_to(still) < WIND_TOLERANCE, "Wind, hidden node: the tip moved %.4f m." % hidden.distance_to(still))
+	
+	var turned := await _wind_tip(t, 5.0, 1.0, null, false, PI)
+	t.check(turned.x > still.x + WIND_MIN, "Wind, turned character: the tip moved %.4f m along local X." % (turned.x - still.x))
+	
+	var rig := Rig.new(t)
+	rig.simulator.set("gravity/value", 0.0)
+	rig.simulator.set("root_spring_stiffness", 0.5)
+	var wind: Node3D = ClassDB.instantiate("BoneClothWind3D")
+	wind.rotation_degrees = Vector3(0, 90, 0)
+	rig.stage.add_child(wind)
+	for i in 60:
+		await rig.advance(1.0 / 60.0)
+	var root_moved: float = rig.poses[0].origin.length()
+	rig.remove()
+	t.check(root_moved < WIND_TOLERANCE, "Wind, root spring: the root moved %.4f m." % root_moved)
+
+
+static func _wind_frame_rate(t) -> void:
+	var tips := {}
+	for fps in [30, 60, 120]:
+		var rig := Rig.new(t)
+		rig.simulator.set("gravity/value", 0.0)
+		var wind: Node3D = ClassDB.instantiate("BoneClothWind3D")
+		wind.rotation_degrees = Vector3(0, 90, 0)
+		rig.stage.add_child(wind)
+		var list: Array[Vector3] = []
+		for frame in 2 * fps:
+			await rig.advance(1.0 / fps)
+			if (frame + 1) % (fps / 30) == 0:
+				list.append(rig.tip())
+		tips[fps] = list
+		rig.remove()
+	for fps in [30, 120]:
+		var largest := 0.0
+		for i in tips[60].size():
+			largest = maxf(largest, tips[fps][i].distance_to(tips[60][i]))
+		t.check(largest < FRAME_RATE_TOLERANCE, "Wind, %d fps: the tip is up to %.4f m from 60 fps." % [fps, largest])
+
+
+static func _wind_scale(t) -> void:
+	var tips: Array[Vector3] = []
+	for armature_scale in [1.0, 0.01]:
+		var rig := Rig.new(t, 1.0, armature_scale)
+		rig.simulator.set("gravity/value", 0.0)
+		var wind: Node3D = ClassDB.instantiate("BoneClothWind3D")
+		wind.rotation_degrees = Vector3(0, 90, 0)
+		wind.set("turbulence", 0.0)
+		rig.stage.add_child(wind)
+		for i in 120:
+			await rig.advance(1.0 / 60.0)
+		tips.append(rig.tip())
+		rig.remove()
+	t.check(tips[0].distance_to(tips[1]) < SCALE_TOLERANCE, "Wind, cm rig: the tip is %.5f m from the m rig." % tips[0].distance_to(tips[1]))
+
+
+static func _wind_tip(t, p_strength: float, p_influence: float, p_curve: Curve, p_hidden: bool, p_turn: float) -> Vector3:
+	var rig := Rig.new(t)
+	rig.simulator.set("gravity/value", 0.0)
+	rig.simulator.set("wind_influence/value", p_influence)
+	rig.simulator.set("wind_influence/damping_curve", p_curve)
+	rig.character.rotation.y = p_turn
+	if p_strength > 0.0:
+		var wind: Node3D = ClassDB.instantiate("BoneClothWind3D")
+		wind.rotation_degrees = Vector3(0, 90, 0)
+		wind.set("strength", p_strength)
+		wind.set("turbulence", 0.0)
+		wind.visible = not p_hidden
+		rig.stage.add_child(wind)
+	for i in 120:
+		await rig.advance(1.0 / 60.0)
+	var tip := rig.tip()
+	rig.remove()
+	return tip
+
+
 static func _preset_round_trip(t) -> void:
 	var names: Array[String] = []
 	for property in ClassDB.class_get_property_list("BoneClothPreset", true):
 		if property.usage & PROPERTY_USAGE_STORAGE:
 			names.append(property.name)
-	t.check(names.size() == 30, "Preset round trip: the preset stores %d values." % names.size())
-
+	t.check(names.size() == 35, "Preset round trip: the preset stores %d values." % names.size())
+	
 	var source: Node = ClassDB.instantiate("BoneClothSimulator3D")
 	var target: Node = ClassDB.instantiate("BoneClothSimulator3D")
 	var defaults: Resource = ClassDB.instantiate("BoneClothPreset")

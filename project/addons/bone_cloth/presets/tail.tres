@@ -4,3 +4,4 @@
 drag/value = 0.12
 stiffness/value = 0.08
 radius/value = 0.04
+wind_sync = 0.35

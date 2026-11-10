@@ -7,3 +7,4 @@ radius/value = 0.05
 limit_angle/value = 0.5235988
 joint_speed_limit = 0.0
 root_spring_stiffness = 0.15
+wind_influence/value = 0.0

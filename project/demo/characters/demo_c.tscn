@@ -25,6 +25,14 @@ point_count = 2
 _data = [Vector2(0, 0.05), 0.0, 0.08333333, 1, 1, Vector2(0.6, 0.1), 0.08333333, 2.2500002, 1, 1, Vector2(1, 1), 2.2500002, 0.0, 1, 1]
 point_count = 3
 
+[sub_resource type="Curve" id="Curve_wind_skirt"]
+_data = [Vector2(0, 0.166), 0.0, 0.0, 0, 0, Vector2(1, 1), 1.668, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="Curve" id="Curve_wind_coat"]
+_data = [Vector2(0, 0.5), 0.0, 0.0, 0, 0, Vector2(1, 1), 1.0, 0.0, 0, 0]
+point_count = 2
+
 [node name="demo_c" unique_id=234296301 instance=ExtResource("1_63s8f")]
 script = ExtResource("7_skin")
 
@@ -34,6 +42,7 @@ limit_angle/value = 1.3089969
 limit_angle/damping_curve = SubResource("Curve_skirt_limit")
 depth_inertia = 0.7
 movement_speed_limit = 4.0
+wind_influence/damping_curve = SubResource("Curve_wind_skirt")
 chain_count = 30
 chains/0/root_bone_name = "J_Sec_L_SkirtBack1_01"
 chains/0/root_bone = 130
@@ -264,6 +273,9 @@ limit_angle/value = 0.7853982
 limit_angle/damping_curve = SubResource("Curve_skirt_limit")
 depth_inertia = 0.7
 movement_speed_limit = 4.0
+wind_influence/value = 2.0
+wind_influence/damping_curve = SubResource("Curve_wind_coat")
+wind_sync = 0.9
 chain_count = 12
 chains/0/root_bone_name = "J_Sec_L_CoatSkirtBack_01"
 chains/0/root_bone = 170
@@ -363,6 +375,7 @@ gravity/value = 5.0
 local_movement_speed_limit = 3.0
 local_rotation_speed_limit = 6.2831855
 joint_speed_limit = 3.0
+wind_sync = 0.5
 chain_count = 4
 chains/0/root_bone_name = "J_Sec_Hair1_04"
 chains/0/root_bone = 66
@@ -531,6 +544,7 @@ limit_angle/value = 0.7853982
 local_movement_speed_limit = 3.0
 local_rotation_speed_limit = 6.2831855
 joint_speed_limit = 0.0
+wind_sync = 0.35
 chain_count = 1
 chains/0/root_bone_name = "J_Opt_C_FoxTail1_01"
 chains/0/root_bone = 244
@@ -548,6 +562,7 @@ limit_angle/value = 0.5235988
 joint_speed_limit = 0.0
 root_spring_stiffness = 0.45
 root_spring_limit = 0.02
+wind_influence/value = 0.0
 chain_count = 2
 chains/0/root_bone_name = "J_Sec_L_Bust1"
 chains/0/root_bone = 45

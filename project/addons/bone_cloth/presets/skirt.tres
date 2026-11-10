@@ -4,6 +4,10 @@
 _data = [Vector2(0, 0.5), 0.0, 0.5, 0, 1, Vector2(1, 1), 0.5, 0.0, 1, 0]
 point_count = 2
 
+[sub_resource type="Curve" id="Curve_wind_skirt"]
+_data = [Vector2(0, 0.166), 0.0, 0.0, 0, 0, Vector2(1, 1), 1.668, 0.0, 0, 0]
+point_count = 2
+
 [resource]
 drag/value = 0.15
 stiffness/value = 0.1
@@ -11,3 +15,4 @@ limit_angle/value = 1.3089969
 limit_angle/damping_curve = SubResource("Curve_ry6i0")
 depth_inertia = 0.7
 movement_speed_limit = 4.0
+wind_influence/damping_curve = SubResource("Curve_wind_skirt")
