@@ -14,7 +14,7 @@ Bone-based cloth for Godot 4.7: hair, skirts, capes, tails and breasts that sway
 
 ## Videos
 
-<a href="https://youtu.be/B8XE65gJaQk"><img width="49%" alt="Tutorial video on YouTube" src="https://img.youtube.com/vi/B8XE65gJaQk/maxresdefault.jpg" /></a> <a href="https://youtu.be/QDqhtDSR8PA"><img width="49%" alt="On/Off comparison video on YouTube" src="https://img.youtube.com/vi/QDqhtDSR8PA/maxresdefault.jpg" /></a>
+<a href="https://youtu.be/B8XE65gJaQk"><img width="49%" alt="Tutorial video on YouTube" src="https://img.youtube.com/vi/B8XE65gJaQk/maxresdefault.jpg" /></a> <a href="https://youtu.be/nMj-gu3MNsc"><img width="49%" alt="Wind video on YouTube" src="https://img.youtube.com/vi/nMj-gu3MNsc/maxresdefault.jpg" /></a>
 
 ## Install
 
