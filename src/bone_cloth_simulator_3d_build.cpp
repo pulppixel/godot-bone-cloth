@@ -157,6 +157,20 @@ void BoneClothSimulator3D::_build_links() {
 	}
 }
 
+void BoneClothSimulator3D::_build_wind(Skeleton3D *p_skeleton) {
+	wind_seed = double(String(get_path()).hash() % 1000u) * 0.0419;
+	wind_swell_seed = double(String(p_skeleton->get_path()).hash() % 1000u) * 0.0419;
+	uint32_t joint_count = 0;
+	for (Chain &chain : chains) {
+		if (chain.parent_chain >= 0 && chain.parent_joint > 0) {
+			chain.wind_index = chains[chain.parent_chain].wind_index;
+			continue;
+		}
+		chain.wind_index = joint_count;
+		joint_count += chain.joints.size();
+	}
+}
+
 void BoneClothSimulator3D::_build_sync(Skeleton3D *p_skeleton) {
 	rest_center = Vector3();
 	int count = 0;
@@ -239,6 +253,7 @@ void BoneClothSimulator3D::_rebuild_if_changed(Skeleton3D *p_skeleton) {
 		}
 		_build_branches();
 		_build_links();
+		_build_wind(p_skeleton);
 		_build_sync(p_skeleton);
 	}
 }

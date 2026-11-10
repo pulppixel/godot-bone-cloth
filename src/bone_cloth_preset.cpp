@@ -39,6 +39,16 @@ void BoneClothPreset::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_gravity_damping_curve"), &BoneClothPreset::get_gravity_damping_curve);
 	ClassDB::bind_method(D_METHOD("set_gravity_direction", "direction"), &BoneClothPreset::set_gravity_direction);
 	ClassDB::bind_method(D_METHOD("get_gravity_direction"), &BoneClothPreset::get_gravity_direction);
+	ClassDB::bind_method(D_METHOD("set_wind_influence", "influence"), &BoneClothPreset::set_wind_influence);
+	ClassDB::bind_method(D_METHOD("get_wind_influence"), &BoneClothPreset::get_wind_influence);
+	ClassDB::bind_method(D_METHOD("set_wind_influence_damping_curve", "curve"), &BoneClothPreset::set_wind_influence_damping_curve);
+	ClassDB::bind_method(D_METHOD("get_wind_influence_damping_curve"), &BoneClothPreset::get_wind_influence_damping_curve);
+	ClassDB::bind_method(D_METHOD("set_wind_sync", "sync"), &BoneClothPreset::set_wind_sync);
+	ClassDB::bind_method(D_METHOD("get_wind_sync"), &BoneClothPreset::get_wind_sync);
+	ClassDB::bind_method(D_METHOD("set_wind_turbulence", "turbulence"), &BoneClothPreset::set_wind_turbulence);
+	ClassDB::bind_method(D_METHOD("get_wind_turbulence"), &BoneClothPreset::get_wind_turbulence);
+	ClassDB::bind_method(D_METHOD("set_wind_frequency", "frequency"), &BoneClothPreset::set_wind_frequency);
+	ClassDB::bind_method(D_METHOD("get_wind_frequency"), &BoneClothPreset::get_wind_frequency);
 	ClassDB::bind_method(D_METHOD("set_inertia", "inertia"), &BoneClothPreset::set_inertia);
 	ClassDB::bind_method(D_METHOD("get_inertia"), &BoneClothPreset::get_inertia);
 	ClassDB::bind_method(D_METHOD("set_inertia_smoothing", "smoothing"), &BoneClothPreset::set_inertia_smoothing);
@@ -84,6 +94,11 @@ void BoneClothPreset::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "gravity/value", PROPERTY_HINT_RANGE, "0,20,0.01,or_greater,or_less,suffix:m/s^2"), "set_gravity", "get_gravity");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "gravity/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_gravity_damping_curve", "get_gravity_damping_curve");
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR3, "gravity/direction"), "set_gravity_direction", "get_gravity_direction");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "wind_influence/value", PROPERTY_HINT_RANGE, "0,2,0.01,or_greater"), "set_wind_influence", "get_wind_influence");
+	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "wind_influence/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_wind_influence_damping_curve", "get_wind_influence_damping_curve");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "wind_sync", PROPERTY_HINT_RANGE, "0,1,0.01"), "set_wind_sync", "get_wind_sync");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "wind_turbulence", PROPERTY_HINT_RANGE, "0,2,0.01"), "set_wind_turbulence", "get_wind_turbulence");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "wind_frequency", PROPERTY_HINT_RANGE, "0,2,0.01"), "set_wind_frequency", "get_wind_frequency");
 	ADD_GROUP("Inertia", "");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "inertia", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_inertia", "get_inertia");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "inertia_smoothing", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_inertia_smoothing", "get_inertia_smoothing");
@@ -270,6 +285,51 @@ void BoneClothPreset::set_gravity_direction(const Vector3 &p_direction) {
 
 Vector3 BoneClothPreset::get_gravity_direction() const {
 	return gravity_direction;
+}
+
+void BoneClothPreset::set_wind_influence(float p_influence) {
+	wind_influence = p_influence;
+	emit_changed();
+}
+
+float BoneClothPreset::get_wind_influence() const {
+	return wind_influence;
+}
+
+void BoneClothPreset::set_wind_influence_damping_curve(const Ref<Curve> &p_curve) {
+	wind_influence_damping_curve = p_curve;
+	emit_changed();
+}
+
+Ref<Curve> BoneClothPreset::get_wind_influence_damping_curve() const {
+	return wind_influence_damping_curve;
+}
+
+void BoneClothPreset::set_wind_sync(float p_sync) {
+	wind_sync = p_sync;
+	emit_changed();
+}
+
+float BoneClothPreset::get_wind_sync() const {
+	return wind_sync;
+}
+
+void BoneClothPreset::set_wind_turbulence(float p_turbulence) {
+	wind_turbulence = p_turbulence;
+	emit_changed();
+}
+
+float BoneClothPreset::get_wind_turbulence() const {
+	return wind_turbulence;
+}
+
+void BoneClothPreset::set_wind_frequency(float p_frequency) {
+	wind_frequency = p_frequency;
+	emit_changed();
+}
+
+float BoneClothPreset::get_wind_frequency() const {
+	return wind_frequency;
 }
 
 void BoneClothPreset::set_inertia(float p_inertia) {

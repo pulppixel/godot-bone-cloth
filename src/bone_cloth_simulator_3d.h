@@ -52,6 +52,9 @@ private:
 		float radius = 0.0f;
 		float limit_angle = 0.0f;
 		float gravity = 0.0f;
+		float wind = 0.0f;
+		float contact = 0.0f;
+		Vector3 contact_normal;
 		float spacing = 0.0f;
 
 		LocalVector<Vector3> collision_pushes;
@@ -71,6 +74,8 @@ private:
 		Vector3 end_axis;
 
 		LocalVector<float> sync_shares;
+
+		uint32_t wind_index = 0;
 
 		int parent_chain = -1;
 		uint32_t parent_joint = 0;
@@ -114,10 +119,22 @@ private:
 		Vector3 frame_velocity;
 		Basis to_skeleton;
 		Vector3 gravity_direction;
+		Vector3 wind_forward;
+		Vector3 wind_up;
+		Vector3 wind_side;
+		float wind_speed = 0.0f;
+		float wind_turbulence = 0.0f;
+		float wind_rate = 0.0f;
 	};
 
 	struct StepMotion {
 		Vector3 gravity_direction;
+		Vector3 wind_forward;
+		Vector3 wind_up;
+		Vector3 wind_side;
+		float wind_speed = 0.0f;
+		float wind_turbulence = 0.0f;
+		float wind_swell = 1.0f;
 		Vector3 move;
 		Quaternion turn;
 		Vector3 center_move;
@@ -145,6 +162,15 @@ private:
 	float gravity = 0.0f;
 	Ref<Curve> gravity_damping_curve;
 	Vector3 gravity_direction = Vector3(0, -1, 0);
+	float wind_influence = 1.0f;
+	Ref<Curve> wind_influence_damping_curve;
+	float wind_sync = 0.7f;
+	float wind_turbulence = 1.0f;
+	float wind_frequency = 1.0f;
+	double wind_time = 0.0;
+	double wind_seconds = 0.0;
+	double wind_seed = 0.0;
+	double wind_swell_seed = 0.0;
 	LocalVector<SyncBone> sync_bones;
 	float sync = 1.0f;
 	float inertia = 1.0f;
@@ -198,9 +224,11 @@ private:
 	void _apply_sync(Skeleton3D *p_skeleton);
 	void _step(const StepMotion &p_step, const LocalVector<PosedCollision> &p_collisions);
 	void _follow_parent_chain(Chain &p_chain);
-	void _move_joint(Joint &r_joint, const StepMotion &p_step, const Vector3 &p_gravity_direction);
+	void _move_joint(Joint &r_joint, const StepMotion &p_step, const Vector3 &p_force);
 	void _move_root(Chain &r_chain, const StepMotion &p_step);
 	void _simulate(Chain &p_chain, const StepMotion &p_step);
+	Vector3 _get_wind_force(const Joint &p_joint, const Chain &p_chain, const StepMotion &p_step) const;
+	void _build_wind(Skeleton3D *p_skeleton);
 	void _solve_links();
 	void _space_links();
 	void _collide_segment(Joint &r_a, Joint &r_b, float p_radius, const LocalVector<PosedCollision> &p_collisions, const LocalVector<bool> &p_collides_a, const LocalVector<bool> &p_collides_b, Vector3 Joint::*p_field, bool p_split);
@@ -295,6 +323,16 @@ public:
 	Ref<Curve> get_gravity_damping_curve() const;
 	void set_gravity_direction(const Vector3 &p_direction);
 	Vector3 get_gravity_direction() const;
+	void set_wind_influence(float p_influence);
+	float get_wind_influence() const;
+	void set_wind_influence_damping_curve(const Ref<Curve> &p_curve);
+	Ref<Curve> get_wind_influence_damping_curve() const;
+	void set_wind_sync(float p_sync);
+	float get_wind_sync() const;
+	void set_wind_turbulence(float p_turbulence);
+	float get_wind_turbulence() const;
+	void set_wind_frequency(float p_frequency);
+	float get_wind_frequency() const;
 	void set_sync_bone_count(int p_count);
 	int get_sync_bone_count() const;
 	void set_sync_bone_name(int p_index, const String &p_bone_name);

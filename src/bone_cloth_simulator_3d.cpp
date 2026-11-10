@@ -110,6 +110,16 @@ void BoneClothSimulator3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_gravity_damping_curve"), &BoneClothSimulator3D::get_gravity_damping_curve);
 	ClassDB::bind_method(D_METHOD("set_gravity_direction", "direction"), &BoneClothSimulator3D::set_gravity_direction);
 	ClassDB::bind_method(D_METHOD("get_gravity_direction"), &BoneClothSimulator3D::get_gravity_direction);
+	ClassDB::bind_method(D_METHOD("set_wind_influence", "influence"), &BoneClothSimulator3D::set_wind_influence);
+	ClassDB::bind_method(D_METHOD("get_wind_influence"), &BoneClothSimulator3D::get_wind_influence);
+	ClassDB::bind_method(D_METHOD("set_wind_influence_damping_curve", "curve"), &BoneClothSimulator3D::set_wind_influence_damping_curve);
+	ClassDB::bind_method(D_METHOD("get_wind_influence_damping_curve"), &BoneClothSimulator3D::get_wind_influence_damping_curve);
+	ClassDB::bind_method(D_METHOD("set_wind_sync", "sync"), &BoneClothSimulator3D::set_wind_sync);
+	ClassDB::bind_method(D_METHOD("get_wind_sync"), &BoneClothSimulator3D::get_wind_sync);
+	ClassDB::bind_method(D_METHOD("set_wind_turbulence", "turbulence"), &BoneClothSimulator3D::set_wind_turbulence);
+	ClassDB::bind_method(D_METHOD("get_wind_turbulence"), &BoneClothSimulator3D::get_wind_turbulence);
+	ClassDB::bind_method(D_METHOD("set_wind_frequency", "frequency"), &BoneClothSimulator3D::set_wind_frequency);
+	ClassDB::bind_method(D_METHOD("get_wind_frequency"), &BoneClothSimulator3D::get_wind_frequency);
 	ClassDB::bind_method(D_METHOD("set_sync_bone_count", "count"), &BoneClothSimulator3D::set_sync_bone_count);
 	ClassDB::bind_method(D_METHOD("get_sync_bone_count"), &BoneClothSimulator3D::get_sync_bone_count);
 	ClassDB::bind_method(D_METHOD("set_sync_bone_name", "index", "bone_name"), &BoneClothSimulator3D::set_sync_bone_name);
@@ -169,6 +179,11 @@ void BoneClothSimulator3D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "gravity/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_gravity_damping_curve", "get_gravity_damping_curve");
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR3, "gravity/direction"), "set_gravity_direction", "get_gravity_direction");
 
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "wind_influence/value", PROPERTY_HINT_RANGE, "0,2,0.01,or_greater"), "set_wind_influence", "get_wind_influence");
+	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "wind_influence/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_wind_influence_damping_curve", "get_wind_influence_damping_curve");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "wind_sync", PROPERTY_HINT_RANGE, "0,1,0.01"), "set_wind_sync", "get_wind_sync");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "wind_turbulence", PROPERTY_HINT_RANGE, "0,2,0.01"), "set_wind_turbulence", "get_wind_turbulence");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "wind_frequency", PROPERTY_HINT_RANGE, "0,2,0.01"), "set_wind_frequency", "get_wind_frequency");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "sync/value", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_sync", "get_sync");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "sync/bone_count", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_ARRAY, "Sync Bones,sync/bones/"), "set_sync_bone_count", "get_sync_bone_count");
 
@@ -728,6 +743,46 @@ void BoneClothSimulator3D::set_gravity_direction(const Vector3 &p_direction) {
 
 Vector3 BoneClothSimulator3D::get_gravity_direction() const {
 	return gravity_direction;
+}
+
+void BoneClothSimulator3D::set_wind_influence(float p_influence) {
+	wind_influence = p_influence;
+}
+
+float BoneClothSimulator3D::get_wind_influence() const {
+	return wind_influence;
+}
+
+void BoneClothSimulator3D::set_wind_influence_damping_curve(const Ref<Curve> &p_curve) {
+	wind_influence_damping_curve = p_curve;
+}
+
+Ref<Curve> BoneClothSimulator3D::get_wind_influence_damping_curve() const {
+	return wind_influence_damping_curve;
+}
+
+void BoneClothSimulator3D::set_wind_sync(float p_sync) {
+	wind_sync = p_sync;
+}
+
+float BoneClothSimulator3D::get_wind_sync() const {
+	return wind_sync;
+}
+
+void BoneClothSimulator3D::set_wind_turbulence(float p_turbulence) {
+	wind_turbulence = p_turbulence;
+}
+
+float BoneClothSimulator3D::get_wind_turbulence() const {
+	return wind_turbulence;
+}
+
+void BoneClothSimulator3D::set_wind_frequency(float p_frequency) {
+	wind_frequency = p_frequency;
+}
+
+float BoneClothSimulator3D::get_wind_frequency() const {
+	return wind_frequency;
 }
 
 void BoneClothSimulator3D::set_sync_bone_count(int p_count) {

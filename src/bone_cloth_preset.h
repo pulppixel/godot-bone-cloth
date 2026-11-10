@@ -26,6 +26,11 @@ class BoneClothPreset : public Resource {
 	float gravity = 0.0f;
 	Ref<Curve> gravity_damping_curve;
 	Vector3 gravity_direction = Vector3(0, -1, 0);
+	float wind_influence = 1.0f;
+	Ref<Curve> wind_influence_damping_curve;
+	float wind_sync = 0.7f;
+	float wind_turbulence = 1.0f;
+	float wind_frequency = 1.0f;
 	float inertia = 1.0f;
 	float inertia_smoothing = 0.4f;
 	float depth_inertia = 0.0f;
@@ -80,6 +85,16 @@ public:
 	Ref<Curve> get_gravity_damping_curve() const;
 	void set_gravity_direction(const Vector3 &p_direction);
 	Vector3 get_gravity_direction() const;
+	void set_wind_influence(float p_influence);
+	float get_wind_influence() const;
+	void set_wind_influence_damping_curve(const Ref<Curve> &p_curve);
+	Ref<Curve> get_wind_influence_damping_curve() const;
+	void set_wind_sync(float p_sync);
+	float get_wind_sync() const;
+	void set_wind_turbulence(float p_turbulence);
+	float get_wind_turbulence() const;
+	void set_wind_frequency(float p_frequency);
+	float get_wind_frequency() const;
 	void set_inertia(float p_inertia);
 	float get_inertia() const;
 	void set_inertia_smoothing(float p_smoothing);

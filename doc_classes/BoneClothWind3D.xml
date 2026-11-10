@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<class name="BoneClothWind3D" inherits="Node3D" api_type="extension" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/godotengine/godot/master/doc/class.xsd">
+	<brief_description>
+		Wind for [BoneClothSimulator3D] nodes.
+	</brief_description>
+	<description>
+		Blows along the node's -Z axis on every [BoneClothSimulator3D] in the same world. Several winds add up, and hiding the node turns it off. The wind wavers on its own, so hair and clothes keep moving while the character stands still.
+	</description>
+	<tutorials>
+	</tutorials>
+	<members>
+		<member name="frequency" type="float" setter="set_frequency" getter="get_frequency" default="1.0">
+			How fast the wind wavers. The rate also rises with [member strength].
+		</member>
+		<member name="strength" type="float" setter="set_strength" getter="get_strength" default="5.0">
+			How hard the wind pushes, as an acceleration. Each simulator scales it by its [code]wind_influence/value[/code].
+		</member>
+		<member name="turbulence" type="float" setter="set_turbulence" getter="get_turbulence" default="1.0">
+			How much the wind wavers in direction and strength. [code]0.0[/code] blows steadily, and a steady wind makes hair and clothes settle and hold still.
+		</member>
+	</members>
+</class>

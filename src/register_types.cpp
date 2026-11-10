@@ -2,6 +2,7 @@
 
 #include "bone_cloth_preset.h"
 #include "bone_cloth_simulator_3d.h"
+#include "bone_cloth_wind_3d.h"
 #include "collision/bone_cloth_collision_3d.h"
 #include "collision/bone_cloth_collision_capsule_3d.h"
 #include "collision/bone_cloth_collision_plane_3d.h"
@@ -22,6 +23,7 @@ void initialize_bone_cloth_module(ModuleInitializationLevel p_level) {
 	if (p_level == MODULE_INITIALIZATION_LEVEL_SCENE) {
 		GDREGISTER_CLASS(BoneClothPreset);
 		GDREGISTER_CLASS(BoneClothSimulator3D);
+		GDREGISTER_CLASS(BoneClothWind3D);
 		GDREGISTER_VIRTUAL_CLASS(BoneClothCollision3D);
 		GDREGISTER_CLASS(BoneClothCollisionSphere3D);
 		GDREGISTER_CLASS(BoneClothCollisionCapsule3D);

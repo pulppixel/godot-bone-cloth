@@ -100,5 +100,20 @@
 		<member name="teleport_distance" type="float" setter="set_teleport_distance" getter="get_teleport_distance" default="0.5">
 			See [member BoneClothSimulator3D.teleport_distance].
 		</member>
+		<member name="wind_frequency" type="float" setter="set_wind_frequency" getter="get_wind_frequency" default="1.0">
+			How fast this simulator's chains waver in the wind, multiplied by [member BoneClothWind3D.frequency].
+		</member>
+		<member name="wind_influence/damping_curve" type="Curve" setter="set_wind_influence_damping_curve" getter="get_wind_influence_damping_curve">
+			Scales [code]wind_influence/value[/code] along the chain, from the root (0) to the tip (1). Lower the start of the curve to keep the waist of a skirt or the roots of bangs steady.
+		</member>
+		<member name="wind_influence/value" type="float" setter="set_wind_influence" getter="get_wind_influence" default="1.0">
+			How much wind this simulator receives. [code]0.0[/code] ignores wind. The root of a chain never receives wind.
+		</member>
+		<member name="wind_sync" type="float" setter="set_wind_sync" getter="get_wind_sync" default="0.7">
+			How closely neighboring chains move together in the wind. [code]1.0[/code] moves them as one, [code]0.0[/code] moves them separately.
+		</member>
+		<member name="wind_turbulence" type="float" setter="set_wind_turbulence" getter="get_wind_turbulence" default="1.0">
+			How much this simulator's chains waver in the wind, multiplied by [member BoneClothWind3D.turbulence].
+		</member>
 	</members>
 </class>
