@@ -44,6 +44,11 @@ Then copy `project/addons/bone_cloth` into your project's `addons/`.
 
 To try the demo, open `project/` in Godot 4.7 and run it.
 
+## Credits
+
+The solver and the sphere and capsule collisions are ported from [KawaiiPhysics](https://github.com/pafuhana1213/KawaiiPhysics).
+The demo characters are [VRoid Studio](https://vroid.com/en/studio) sample models.
+
 ## License
 
 MIT. Third-party licenses are in `THIRD_PARTY_NOTICES.md`.
