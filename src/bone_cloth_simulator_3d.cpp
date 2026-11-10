@@ -1036,6 +1036,18 @@ void BoneClothSimulator3D::_process_modification_with_delta(double p_delta) {
 		FrameMotion motion = _measure_motion(p_delta, skeleton_transform);
 		_run_steps(motion, collisions);
 		_settle_display(p_delta, motion, collisions);
+	} else {
+		for (Chain &chain : chains) {
+			if (chain.joints.is_empty()) {
+				continue;
+			}
+			const Joint &root = chain.joints[0];
+			const Vector3 root_display = chain.parent_chain >= 0 ? chains[chain.parent_chain].joints[chain.parent_joint].display_location : root.current_pose_location + (root.location - root.pose_location);
+			const Vector3 shift = root_display - root.display_location;
+			for (Joint &joint : chain.joints) {
+				joint.display_location += shift;
+			}
+		}
 	}
 
 	_end_frame(skeleton);
