@@ -9,6 +9,11 @@ const CharacterSkin := preload("res://demo/scripts/skin.gd")
 @export var cloth_button: CheckButton
 @export var time_slider: HSlider
 @export var time_value: Label
+@export var wind: BoneClothWind3D
+@export var wind_angle_slider: HSlider
+@export var wind_angle_value: Label
+@export var wind_direction_slider: HSlider
+@export var wind_direction_value: Label
 
 var _character := -1
 var _cloth := true
@@ -21,12 +26,18 @@ func _ready() -> void:
 		character_buttons[i].pressed.connect(func() -> void: _choose(i, _cloth))
 	cloth_button.toggled.connect(func(on: bool) -> void: _choose(_character, on))
 	time_slider.value_changed.connect(func(value: float) -> void: Engine.time_scale = value)
+	wind_angle_slider.set_value_no_signal(rad_to_deg(wind.direction_noise_angle))
+	wind_angle_slider.value_changed.connect(func(value: float) -> void: wind.direction_noise_angle = deg_to_rad(value))
+	wind_direction_slider.set_value_no_signal(wrapf(rad_to_deg(wind.rotation.y), 0.0, 360.0))
+	wind_direction_slider.value_changed.connect(func(value: float) -> void: wind.rotation.y = deg_to_rad(value))
 	_show(0)
 
 
 func _process(_delta: float) -> void:
 	time_slider.set_value_no_signal(Engine.time_scale)
 	time_value.text = "%.1fx" % Engine.time_scale
+	wind_angle_value.text = "%d deg" % roundi(wind_angle_slider.value)
+	wind_direction_value.text = "%d deg" % roundi(wind_direction_slider.value)
 
 
 func _unhandled_input(event: InputEvent) -> void:

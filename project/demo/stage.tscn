@@ -65,7 +65,7 @@ size = Vector2(2000, 2000)
 [sub_resource type="BoxShape3D" id="BoxShape3D_4efso"]
 size = Vector3(2000, 1, 2000)
 
-[node name="Stage" type="Node3D" unique_id=287086239 node_paths=PackedStringArray("characters", "player", "character_buttons", "cloth_button", "time_slider", "time_value")]
+[node name="Stage" type="Node3D" unique_id=287086239 node_paths=PackedStringArray("characters", "player", "character_buttons", "cloth_button", "time_slider", "time_value", "wind", "wind_angle_slider", "wind_angle_value", "wind_direction_slider", "wind_direction_value")]
 script = ExtResource("1_vknmp")
 characters = [NodePath("Player/Skin/demo_a"), NodePath("Player/Skin/demo_b"), NodePath("Player/Skin/demo_c"), NodePath("Player/Skin/demo_d")]
 player = NodePath("Player")
@@ -73,6 +73,11 @@ character_buttons = [NodePath("CanvasLayer/Panel/Column/Rows/Characters/A"), Nod
 cloth_button = NodePath("CanvasLayer/Panel/Column/Rows/Cloth")
 time_slider = NodePath("CanvasLayer/Panel/Column/Rows/Time/Slider")
 time_value = NodePath("CanvasLayer/Panel/Column/Rows/Time/Value")
+wind = NodePath("BoneClothWind3D")
+wind_angle_slider = NodePath("CanvasLayer/Panel/Column/Rows/WindAngle/Slider")
+wind_angle_value = NodePath("CanvasLayer/Panel/Column/Rows/WindAngle/Value")
+wind_direction_slider = NodePath("CanvasLayer/Panel/Column/Rows/WindDirection/Slider")
+wind_direction_value = NodePath("CanvasLayer/Panel/Column/Rows/WindDirection/Value")
 
 [node name="Player" type="CharacterBody3D" parent="." unique_id=1170255093 node_paths=PackedStringArray("camera_rig")]
 floor_snap_length = 0.3
@@ -255,6 +260,49 @@ value = 1.0
 layout_mode = 2
 text = "1.0x"
 
+[node name="WindDirectionLabel" type="Label" parent="CanvasLayer/Panel/Column/Rows" unique_id=1820447395]
+self_modulate = Color(1, 1, 1, 0.6)
+layout_mode = 2
+text = "Wind Direction"
+vertical_alignment = 1
+
+[node name="WindDirection" type="HBoxContainer" parent="CanvasLayer/Panel/Column/Rows" unique_id=1820447396]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Slider" type="HSlider" parent="CanvasLayer/Panel/Column/Rows/WindDirection" unique_id=1820447397]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+size_flags_vertical = 4
+focus_mode = 0
+max_value = 360.0
+
+[node name="Value" type="Label" parent="CanvasLayer/Panel/Column/Rows/WindDirection" unique_id=1820447398]
+layout_mode = 2
+text = "0 deg"
+
+[node name="WindAngleLabel" type="Label" parent="CanvasLayer/Panel/Column/Rows" unique_id=1820447391]
+self_modulate = Color(1, 1, 1, 0.6)
+layout_mode = 2
+text = "Wind Angle"
+vertical_alignment = 1
+
+[node name="WindAngle" type="HBoxContainer" parent="CanvasLayer/Panel/Column/Rows" unique_id=1820447392]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Slider" type="HSlider" parent="CanvasLayer/Panel/Column/Rows/WindAngle" unique_id=1820447393]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+size_flags_vertical = 4
+focus_mode = 0
+max_value = 90.0
+value = 45.0
+
+[node name="Value" type="Label" parent="CanvasLayer/Panel/Column/Rows/WindAngle" unique_id=1820447394]
+layout_mode = 2
+text = "45 deg"
+
 [node name="Prompts" type="HBoxContainer" parent="CanvasLayer" unique_id=255855788]
 anchors_preset = -1
 anchor_top = 1.0
@@ -406,7 +454,7 @@ layout_mode = 2
 text = "Character"
 vertical_alignment = 1
 
-[node name="BoneClothWind3D" type="BoneClothWind3D" parent="." unique_id=1050622147]
+[node name="BoneClothWind3D" type="BoneClothWind3D" parent="." unique_id=268072479]
 strength = 30.0
 direction_noise_angle = 0.7853982
-transform = Transform3D(0.72296715, 0, 0.69088244, 0, 1, 0, -0.69088244, 0, 0.72296715, 0, 0, 0)
+transform = Transform3D(0.22835088, 0, -0.97357893, 0, 1, 0, 0.97357893, 0, 0.22835088, 0, 0, 0)
