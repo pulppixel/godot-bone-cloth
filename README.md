@@ -9,6 +9,7 @@ Bone-based cloth for Godot 4.7: hair, skirts, capes, tails and breasts that sway
 
 - Sphere, capsule and plane collisions keep cloth out of the body.
 - Chains can be linked for skirts and capes, and long hair can part over the shoulders.
+- A `BoneClothWind3D` node blows hair and clothes, and keeps them moving while the character stands still.
 - Eight presets to start from, editor gizmos, and docs in the editor (F1).
 
 ## Videos
@@ -41,6 +42,8 @@ Then copy `project/addons/bone_cloth` into your project's `addons/`.
 2. Add a chain and set its root and end bones.
 3. Pick a preset from the node's toolbar menu.
 4. Add collisions under the simulator and set their bones.
+
+For wind, add a `BoneClothWind3D` anywhere in the scene and rotate it to aim. It blows along its -Z axis.
 
 To try the demo, open `project/` in Godot 4.7 and run it.
 
