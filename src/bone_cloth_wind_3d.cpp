@@ -15,16 +15,43 @@ void BoneClothWind3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_turbulence"), &BoneClothWind3D::get_turbulence);
 	ClassDB::bind_method(D_METHOD("set_frequency", "frequency"), &BoneClothWind3D::set_frequency);
 	ClassDB::bind_method(D_METHOD("get_frequency"), &BoneClothWind3D::get_frequency);
+	ClassDB::bind_method(D_METHOD("set_direction_noise_angle", "angle"), &BoneClothWind3D::set_direction_noise_angle);
+	ClassDB::bind_method(D_METHOD("get_direction_noise_angle"), &BoneClothWind3D::get_direction_noise_angle);
+	ClassDB::bind_method(D_METHOD("set_direction_noise_period", "period"), &BoneClothWind3D::set_direction_noise_period);
+	ClassDB::bind_method(D_METHOD("get_direction_noise_period"), &BoneClothWind3D::get_direction_noise_period);
 
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "strength", PROPERTY_HINT_RANGE, "0,30,0.01,or_greater,suffix:m/s^2"), "set_strength", "get_strength");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "turbulence", PROPERTY_HINT_RANGE, "0,2,0.01"), "set_turbulence", "get_turbulence");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "frequency", PROPERTY_HINT_RANGE, "0,2,0.01"), "set_frequency", "get_frequency");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "direction_noise_angle", PROPERTY_HINT_RANGE, "0,90,0.1,radians_as_degrees"), "set_direction_noise_angle", "get_direction_noise_angle");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "direction_noise_period", PROPERTY_HINT_RANGE, "0.1,30,0.1,or_greater,suffix:s"), "set_direction_noise_period", "get_direction_noise_period");
 }
 
 void BoneClothWind3D::_notification(int p_what) {
 	if (p_what == NOTIFICATION_ENTER_TREE) {
 		add_to_group(WIND_GROUP);
+		set_process_internal(true);
+	} else if (p_what == NOTIFICATION_INTERNAL_PROCESS) {
+		direction_noise_time += get_process_delta_time();
 	}
+}
+
+Vector3 BoneClothWind3D::_get_direction() const {
+	const Vector3 forward = -get_global_basis().get_column(2).normalized();
+	if (direction_noise_angle <= 0.0f) {
+		return forward;
+	}
+
+	const double phase = Math::TAU * direction_noise_time / MAX(direction_noise_period, 0.01f);
+	const Vector2 disk(0.6 * Math::sin(phase) + 0.4 * Math::sin(2.37 * phase + 1.3), 0.6 * Math::sin(1.27 * phase + 2.1) + 0.4 * Math::sin(3.11 * phase + 0.7));
+	if (disk.is_zero_approx()) {
+		return forward;
+	}
+
+	const Vector3 axis_a = forward.get_any_perpendicular();
+	const Vector3 axis_b = forward.cross(axis_a);
+	const Vector3 tilt_axis = (axis_a * disk.x + axis_b * disk.y).normalized();
+	return forward.rotated(tilt_axis, direction_noise_angle * MIN(disk.length(), 1.0f)).normalized();
 }
 
 BoneClothWind3D::Total BoneClothWind3D::get_total_wind(const Node3D *p_node) {
@@ -35,7 +62,7 @@ BoneClothWind3D::Total BoneClothWind3D::get_total_wind(const Node3D *p_node) {
 	for (int i = 0; i < winds.size(); i++) {
 		const BoneClothWind3D *wind = Object::cast_to<BoneClothWind3D>(winds[i]);
 		if (wind && wind->is_visible_in_tree() && wind->get_world_3d() == world) {
-			total.force -= wind->get_global_basis().get_column(2).normalized() * wind->strength;
+			total.force += wind->_get_direction() * wind->strength;
 			total.turbulence += wind->turbulence * wind->strength;
 			total.frequency += wind->frequency * wind->strength;
 			weight += wind->strength;
@@ -70,4 +97,20 @@ void BoneClothWind3D::set_frequency(float p_frequency) {
 
 float BoneClothWind3D::get_frequency() const {
 	return frequency;
+}
+
+void BoneClothWind3D::set_direction_noise_angle(float p_angle) {
+	direction_noise_angle = p_angle;
+}
+
+float BoneClothWind3D::get_direction_noise_angle() const {
+	return direction_noise_angle;
+}
+
+void BoneClothWind3D::set_direction_noise_period(float p_period) {
+	direction_noise_period = p_period;
+}
+
+float BoneClothWind3D::get_direction_noise_period() const {
+	return direction_noise_period;
 }

@@ -16,6 +16,7 @@ macos.release = "bin/libbonecloth.macos.template_release.universal.dylib"
 [icons]
 
 BoneClothSimulator3D = "icons/BoneClothSimulator3D.svg"
+BoneClothWind3D = "icons/BoneClothWind3D.svg"
 BoneClothCollision3D = "icons/BoneClothCollision3D.svg"
 BoneClothCollisionSphere3D = "icons/BoneClothCollisionSphere3D.svg"
 BoneClothCollisionCapsule3D = "icons/BoneClothCollisionCapsule3D.svg"

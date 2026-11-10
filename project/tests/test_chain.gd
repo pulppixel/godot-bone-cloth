@@ -130,6 +130,7 @@ static func run(t) -> void:
 	await _root_spring_forward(t)
 	await _wind(t)
 	await _wind_frame_rate(t)
+	await _wind_direction_noise(t)
 	await _wind_scale(t)
 	await _monitors(t)
 	_bone_lookup(t)
@@ -762,6 +763,29 @@ static func _wind_frame_rate(t) -> void:
 		for i in tips[60].size():
 			largest = maxf(largest, tips[fps][i].distance_to(tips[60][i]))
 		t.check(largest < FRAME_RATE_TOLERANCE, "Wind, %d fps: the tip is up to %.4f m from 60 fps." % [fps, largest])
+
+
+static func _wind_direction_noise(t) -> void:
+	var drift := {}
+	for angle in [0.0, deg_to_rad(45.0)]:
+		var rig := Rig.new(t)
+		rig.simulator.set("gravity/value", 0.0)
+		var wind: Node3D = ClassDB.instantiate("BoneClothWind3D")
+		wind.rotation_degrees = Vector3(0, 90, 0)
+		wind.set("turbulence", 0.0)
+		wind.set("direction_noise_angle", angle)
+		wind.set("direction_noise_period", 2.0)
+		rig.stage.add_child(wind)
+		var low := INF
+		var high := -INF
+		for i in 300:
+			await rig.advance(1.0 / 60.0)
+			low = minf(low, rig.tip().z)
+			high = maxf(high, rig.tip().z)
+		drift[angle] = high - low
+		rig.remove()
+	t.check(drift[0.0] < WIND_TOLERANCE, "Wind direction noise, angle 0: the tip moved %.4f m across the wind." % drift[0.0])
+	t.check(drift[deg_to_rad(45.0)] > WIND_MIN, "Wind direction noise, 45 deg: the tip moved only %.4f m across the wind." % drift[deg_to_rad(45.0)])
 
 
 static func _wind_scale(t) -> void:

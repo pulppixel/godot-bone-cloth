@@ -407,5 +407,6 @@ text = "Character"
 vertical_alignment = 1
 
 [node name="BoneClothWind3D" type="BoneClothWind3D" parent="." unique_id=1050622147]
-strength = 10.0
-transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 0, 1.3039126, 0)
+strength = 30.0
+direction_noise_angle = 0.7853982
+transform = Transform3D(0.72296715, 0, 0.69088244, 0, 1, 0, -0.69088244, 0, 0.72296715, 0, 0, 0)

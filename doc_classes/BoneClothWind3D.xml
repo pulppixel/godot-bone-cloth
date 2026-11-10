@@ -9,6 +9,12 @@
 	<tutorials>
 	</tutorials>
 	<members>
+		<member name="direction_noise_angle" type="float" setter="set_direction_noise_angle" getter="get_direction_noise_angle" default="0.0">
+			How far the wind's direction drifts from the node's -Z axis. [code]0.0[/code] keeps the direction fixed.
+		</member>
+		<member name="direction_noise_period" type="float" setter="set_direction_noise_period" getter="get_direction_noise_period" default="5.0">
+			How long the direction takes to drift, in seconds.
+		</member>
 		<member name="frequency" type="float" setter="set_frequency" getter="get_frequency" default="1.0">
 			How fast the wind wavers. The rate also rises with [member strength].
 		</member>

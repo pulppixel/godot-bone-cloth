@@ -10,6 +10,11 @@ class BoneClothWind3D : public Node3D {
 	float strength = 5.0f;
 	float turbulence = 1.0f;
 	float frequency = 1.0f;
+	float direction_noise_angle = 0.0f;
+	float direction_noise_period = 5.0f;
+	double direction_noise_time = 0.0;
+
+	Vector3 _get_direction() const;
 
 protected:
 	static void _bind_methods();
@@ -30,4 +35,8 @@ public:
 	float get_turbulence() const;
 	void set_frequency(float p_frequency);
 	float get_frequency() const;
+	void set_direction_noise_angle(float p_angle);
+	float get_direction_noise_angle() const;
+	void set_direction_noise_period(float p_period);
+	float get_direction_noise_period() const;
 };
