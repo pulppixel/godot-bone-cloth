@@ -355,6 +355,8 @@ void BoneClothSimulator3DGizmoPlugin::_bind_methods() {
 BoneClothSimulator3DGizmoPlugin::BoneClothSimulator3DGizmoPlugin() {
 	Ref<EditorSettings> settings = EditorInterface::get_singleton()->get_editor_settings();
 	create_material("joint", settings->get_setting("editors/3d_gizmos/gizmo_colors/spring_bone_joint"), false, true);
+	create_material("max_distance", settings->get_setting("editors/3d_gizmos/gizmo_colors/joint"), false, true);
+	create_material("backstop", settings->get_setting("editors/3d_gizmos/gizmo_colors/occluder"), false, true);
 }
 
 bool BoneClothSimulator3DGizmoPlugin::_has_gizmo(Node3D *p_for_node_3d) const {
@@ -380,6 +382,20 @@ static bool is_simulator_selected(BoneClothSimulator3D *p_simulator) {
 	return false;
 }
 
+static void add_skeleton_lines(const Ref<EditorNode3DGizmo> &p_gizmo, PackedVector3Array &r_lines, const Transform3D &p_to_node, const Ref<Material> &p_material) {
+	if (r_lines.is_empty()) {
+		return;
+	}
+
+	Vector3 *points = r_lines.ptrw();
+	for (int64_t i = 0; i < r_lines.size(); i++) {
+		points[i] = p_to_node.xform(points[i]);
+	}
+
+	p_gizmo->add_lines(r_lines, p_material);
+	p_gizmo->add_collision_segments(r_lines);
+}
+
 void BoneClothSimulator3DGizmoPlugin::_redraw(const Ref<EditorNode3DGizmo> &p_gizmo) {
 	static constexpr float CONE_SCALE = 0.5f;
 	static constexpr int CONE_LINE_COUNT = 4;
@@ -400,6 +416,8 @@ void BoneClothSimulator3DGizmoPlugin::_redraw(const Ref<EditorNode3DGizmo> &p_gi
 	const float mark = BACKSTOP_MARK * simulator->units_per_meter;
 
 	PackedVector3Array lines;
+	PackedVector3Array max_distance_lines;
+	PackedVector3Array backstop_lines;
 
 	for (const BoneClothSimulator3D::Chain &chain : simulator->chains) {
 		for (uint32_t i = 1; i < chain.joints.size(); i++) {
@@ -412,7 +430,7 @@ void BoneClothSimulator3DGizmoPlugin::_redraw(const Ref<EditorNode3DGizmo> &p_gi
 			}
 
 			if (show_max_distance && simulator->max_distance > 0.0f) {
-				add_sphere(lines, joint.current_pose_location, joint.max_distance);
+				add_sphere(max_distance_lines, joint.current_pose_location, joint.max_distance);
 			}
 
 			const Vector3 outward = joint.current_pose_location - simulator->backstop_center;
@@ -420,9 +438,9 @@ void BoneClothSimulator3DGizmoPlugin::_redraw(const Ref<EditorNode3DGizmo> &p_gi
 				const Vector3 normal = outward.normalized();
 				const Vector3 wall = joint.current_pose_location - normal * joint.backstop_distance;
 				const Vector3 axis_x = normal.get_any_perpendicular();
-				add_arc(lines, wall, axis_x, normal.cross(axis_x), mark, 0.0f, Math::TAU);
-				lines.push_back(wall);
-				lines.push_back(wall + normal * mark);
+				add_arc(backstop_lines, wall, axis_x, normal.cross(axis_x), mark, 0.0f, Math::TAU);
+				backstop_lines.push_back(wall);
+				backstop_lines.push_back(wall + normal * mark);
 			}
 
 			const Vector3 pose_vector = joint.current_pose_location - parent.current_pose_location;
@@ -462,20 +480,13 @@ void BoneClothSimulator3DGizmoPlugin::_redraw(const Ref<EditorNode3DGizmo> &p_gi
 	if (show_backstop) {
 		const Vector3 axes[3] = { Vector3(mark, 0, 0), Vector3(0, mark, 0), Vector3(0, 0, mark) };
 		for (const Vector3 &axis : axes) {
-			lines.push_back(simulator->backstop_center - axis);
-			lines.push_back(simulator->backstop_center + axis);
+			backstop_lines.push_back(simulator->backstop_center - axis);
+			backstop_lines.push_back(simulator->backstop_center + axis);
 		}
 	}
 
-	if (lines.is_empty()) {
-		return;
-	}
-
 	const Transform3D to_node = simulator->get_global_transform().affine_inverse() * skeleton->get_global_transform();
-	Vector3 *points = lines.ptrw();
-	for (int64_t i = 0; i < lines.size(); i++) {
-		points[i] = to_node.xform(points[i]);
-	}
-	p_gizmo->add_lines(lines, get_material("joint", p_gizmo));
-	p_gizmo->add_collision_segments(lines);
+	add_skeleton_lines(p_gizmo, lines, to_node, get_material("joint", p_gizmo));
+	add_skeleton_lines(p_gizmo, max_distance_lines, to_node, get_material("max_distance", p_gizmo));
+	add_skeleton_lines(p_gizmo, backstop_lines, to_node, get_material("backstop", p_gizmo));
 }
