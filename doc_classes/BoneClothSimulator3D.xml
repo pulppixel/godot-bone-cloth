@@ -5,7 +5,7 @@
 	</brief_description>
 	<description>
 		This node sways hair, skirts, capes and tails, and returns them toward the animated pose.
-		Each chain runs from its root bone down to its end bone. The root bone follows the pose and the bones below it sway. A chain can branch from a bone of an earlier chain; list the trunk before its branches.
+		Each chain runs from its root bone down to its end bone. The root bone follows the pose and the bones below it sway. A chain can branch from a bone of an earlier chain; list the trunk before its branches. Chains whose bones sit at the same places, as in the stacked skirt chains of a VRoid model, move as one.
 		The values apply to every chain. Use a separate node for parts that need other values.
 		To tune a node, start from a preset in the [b]Presets[/b] submenu of the node's toolbar menu. Then set how far the chains swing with [member stiffness/value] and [member limit_angle/value], and how soon they settle with [member drag/value].
 		Add [BoneClothCollision3D] nodes as children to keep the chains out of the body.

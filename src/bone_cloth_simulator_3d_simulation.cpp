@@ -167,7 +167,7 @@ void BoneClothSimulator3D::_apply_sync(Skeleton3D *p_skeleton) {
 
 void BoneClothSimulator3D::_step(const StepMotion &p_step, const LocalVector<PosedCollision> &p_collisions) {
 	for (Chain &chain : chains) {
-		if (!chain.joints.is_empty() && chain.parent_chain < 0) {
+		if (!chain.joints.is_empty() && chain.parent_chain < 0 && chain.same_as < 0) {
 			Joint &root = chain.joints[0];
 			if (root_spring_stiffness > 0.0f) {
 				_move_root(chain, p_step);
@@ -180,6 +180,9 @@ void BoneClothSimulator3D::_step(const StepMotion &p_step, const LocalVector<Pos
 	}
 
 	for (Chain &chain : chains) {
+		if (chain.same_as >= 0) {
+			continue;
+		}
 		_follow_parent_chain(chain);
 		_simulate(chain, p_step);
 	}
@@ -189,6 +192,9 @@ void BoneClothSimulator3D::_step(const StepMotion &p_step, const LocalVector<Pos
 	_solve_links();
 
 	for (Chain &chain : chains) {
+		if (chain.same_as >= 0) {
+			continue;
+		}
 		_follow_parent_chain(chain);
 		_restore_limits_and_lengths(chain);
 	}
@@ -197,6 +203,9 @@ void BoneClothSimulator3D::_step(const StepMotion &p_step, const LocalVector<Pos
 	_solve_links();
 
 	for (Chain &chain : chains) {
+		if (chain.same_as >= 0) {
+			continue;
+		}
 		_follow_parent_chain(chain);
 		_restore_lengths(chain, &Joint::location, &Joint::pose_location);
 		_limit_movement(chain, &Joint::location, &Joint::pose_location, p_step.backstop_center);
@@ -496,6 +505,9 @@ void BoneClothSimulator3D::_collide(const LocalVector<PosedCollision> &p_collisi
 	}
 
 	for (Chain &chain : chains) {
+		if (chain.same_as >= 0) {
+			continue;
+		}
 		for (uint32_t i = 1; i < chain.joints.size(); i++) {
 			Joint &parent = chain.joints[i - 1];
 			Joint &joint = chain.joints[i];
@@ -512,6 +524,10 @@ void BoneClothSimulator3D::_collide(const LocalVector<PosedCollision> &p_collisi
 	}
 
 	for (Chain &chain : chains) {
+		if (chain.same_as >= 0) {
+			continue;
+		}
+
 		for (uint32_t i = 1; i < chain.joints.size(); i++) {
 			Joint &joint = chain.joints[i];
 			const Vector3 push = combine_pushes(joint.collision_pushes);
@@ -740,21 +756,41 @@ void BoneClothSimulator3D::_settle_display(double p_delta, const FrameMotion &p_
 
 	const float follow = float(p_delta / (STEP - step_time + p_delta));
 	for (Chain &chain : chains) {
-		if (!chain.joints.is_empty()) {
+		if (!chain.joints.is_empty() && chain.same_as < 0) {
 			_update_display(chain, follow);
 		}
 	}
 
 	_collide(p_collisions, &Joint::display_location);
 	for (Chain &chain : chains) {
-		if (!chain.joints.is_empty()) {
+		if (!chain.joints.is_empty() && chain.same_as < 0) {
 			_restore_lengths(chain, &Joint::display_location, &Joint::current_pose_location);
 			_limit_movement(chain, &Joint::display_location, &Joint::current_pose_location, backstop_center);
 		}
 	}
 }
 
+void BoneClothSimulator3D::_copy_same_chains() {
+	for (Chain &chain : chains) {
+		if (chain.same_as < 0) {
+			continue;
+		}
+
+		const Chain &same = chains[chain.same_as];
+		for (uint32_t i = 0; i < chain.joints.size(); i++) {
+			Joint &joint = chain.joints[i];
+			const Joint &from = same.joints[i];
+			joint.location = from.location;
+			joint.prev_location = from.prev_location;
+			joint.display_location = from.display_location;
+			joint.contact = from.contact;
+			joint.contact_normal = from.contact_normal;
+		}
+	}
+}
+
 void BoneClothSimulator3D::_end_frame(Skeleton3D *p_skeleton) {
+	_copy_same_chains();
 	prev_frame_center = frame_center;
 	prev_frame_center_rotation = frame_center_rotation;
 	prev_backstop_center = backstop_center;

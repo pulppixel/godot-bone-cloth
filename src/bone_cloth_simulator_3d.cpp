@@ -1239,7 +1239,9 @@ void BoneClothSimulator3D::_process_modification_with_delta(double p_delta) {
 
 	uint64_t joint_count = 0;
 	for (const Chain &chain : chains) {
-		joint_count += chain.joints.size();
+		if (chain.same_as < 0) {
+			joint_count += chain.joints.size();
+		}
 	}
 
 	monitor_joints.sum.fetch_add(joint_count, std::memory_order_relaxed);

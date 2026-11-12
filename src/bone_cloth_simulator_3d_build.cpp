@@ -121,11 +121,49 @@ void BoneClothSimulator3D::_build_branches() {
 	}
 }
 
+static bool same_paths(const LocalVector<NodePath> &p_a, const LocalVector<NodePath> &p_b) {
+	if (p_a.size() != p_b.size()) {
+		return false;
+	}
+	for (uint32_t i = 0; i < p_a.size(); i++) {
+		if (p_a[i] != p_b[i]) {
+			return false;
+		}
+	}
+	return true;
+}
+
+void BoneClothSimulator3D::_build_same_chains() {
+	const float tolerance = 0.0001f * units_per_meter;
+	for (uint32_t c = 0; c < chains.size(); c++) {
+		Chain &chain = chains[c];
+		chain.same_as = -1;
+		if (chain.joints.is_empty() || chain.parent_chain >= 0) {
+			continue;
+		}
+
+		for (uint32_t other = 0; other < c && chain.same_as < 0; other++) {
+			const Chain &first = chains[other];
+			if (first.same_as >= 0 || first.parent_chain >= 0 || first.joints.size() != chain.joints.size() || first.enable_all_child_collisions != chain.enable_all_child_collisions || !same_paths(first.exclude_collisions, chain.exclude_collisions) || !same_paths(first.collisions, chain.collisions)) {
+				continue;
+			}
+
+			bool same = true;
+			for (uint32_t j = 0; j < chain.joints.size() && same; j++) {
+				same = (first.joints[j].bone < 0) == (chain.joints[j].bone < 0) && first.joints[j].rest_location.distance_to(chain.joints[j].rest_location) <= tolerance;
+			}
+			if (same) {
+				chain.same_as = int(other);
+			}
+		}
+	}
+}
+
 void BoneClothSimulator3D::_build_links() {
 	links.clear();
 	LocalVector<uint32_t> linked;
 	for (uint32_t c = 0; c < chains.size(); c++) {
-		if (chains[c].parent_chain < 0 || chains[c].parent_joint == 0) {
+		if ((chains[c].parent_chain < 0 || chains[c].parent_joint == 0) && chains[c].same_as < 0) {
 			linked.push_back(c);
 		}
 	}
@@ -252,6 +290,7 @@ void BoneClothSimulator3D::_rebuild_if_changed(Skeleton3D *p_skeleton) {
 			}
 		}
 		_build_branches();
+		_build_same_chains();
 		_build_links();
 		_build_wind(p_skeleton);
 		_build_sync(p_skeleton);

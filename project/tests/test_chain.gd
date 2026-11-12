@@ -130,6 +130,7 @@ static func run(t) -> void:
 	await _rest_overlap_off(t)
 	await _link_split(t)
 	await _link_spacing(t)
+	await _same_place_chains(t)
 	await _root_spring(t)
 	await _root_spring_forward(t)
 	await _wind(t)
@@ -594,6 +595,53 @@ static func _link_spacing(t) -> void:
 	
 	t.check(absf(gap[0.0] - 0.02) < 0.001, "Link spacing off: two chains 2 cm apart stay %.4f m apart." % gap[0.0])
 	t.check(gap[1.0] > 0.03, "Link spacing: two chains 2 cm apart with 2 cm joints are pushed %.4f m apart." % gap[1.0])
+
+
+# 같은 자리에 있는 chain: a와 b는 같은 곳(x -0.05)에, c는 x 0.05에 매달려 있다. VRoid 치마의 겹친 chain과 같다.
+#   r +-- a0 - a1 - a2   (x -0.05)
+#     +-- b0 - b1 - b2   (x -0.05)
+#     +-- c0 - c1 - c2   (x 0.05)
+#   구는 b1과 c1 사이, 조금 앞(z 0.01)에 있다. a와 b는 같이 움직이고, link는 구 밖으로 밀린다.
+static func _same_place_chains(t) -> void:
+	var center := Vector3(0.0, -BONE_LENGTH, 0.01)
+	var skeleton := Skeleton3D.new()
+	t.root.add_child(skeleton)
+	skeleton.add_bone("r")
+	for side in [["a", -0.05], ["b", -0.05], ["c", 0.05]]:
+		for i in 3:
+			var bone := skeleton.add_bone("%s%d" % [side[0], i])
+			skeleton.set_bone_parent(bone, 0 if i == 0 else bone - 1)
+			skeleton.set_bone_rest(bone, Transform3D(Basis(), Vector3(side[1], 0, 0) if i == 0 else Vector3(0, -BONE_LENGTH, 0)))
+			skeleton.set_bone_pose(bone, skeleton.get_bone_rest(bone))
+	skeleton.modifier_callback_mode_process = Skeleton3D.MODIFIER_CALLBACK_MODE_PROCESS_MANUAL
+	var simulator: Node = ClassDB.instantiate("BoneClothSimulator3D")
+	skeleton.add_child(simulator)
+	simulator.set("chain_count", 3)
+	for c in 3:
+		simulator.set("chains/%d/root_bone_name" % c, "%s0" % ["a", "b", "c"][c])
+		simulator.set("chains/%d/end_bone_name" % c, "%s2" % ["a", "b", "c"][c])
+	simulator.set("link_mode", 1)
+	simulator.set("stiffness/value", 0.2)
+	simulator.set("radius/value", 0.01)
+	var sphere: Node = ClassDB.instantiate("BoneClothCollisionSphere3D")
+	simulator.add_child(sphere)
+	sphere.set("position", center)
+	sphere.set("radius", 0.03)
+	var joints: Array[Vector3] = [Vector3(), Vector3(), Vector3()] # a1, b1, c1 (skeleton 공간)
+	skeleton.skeleton_updated.connect(func() -> void:
+		joints[0] = skeleton.get_bone_global_pose(2).origin
+		joints[1] = skeleton.get_bone_global_pose(5).origin
+		joints[2] = skeleton.get_bone_global_pose(8).origin)
+	var apart := 0.0 # a1과 b1이 가장 멀리 떨어진 거리 (m)
+	for frame in 60:
+		skeleton.advance(1.0 / 60.0)
+		await t.process_frame
+		apart = maxf(apart, joints[0].distance_to(joints[1]))
+	var nearest := center.distance_to(Geometry3D.get_closest_point_to_segment(center, joints[1], joints[2]))
+	skeleton.free()
+
+	t.check(apart < LENGTH_TOLERANCE, "Same place chains: two chains at the same place move %.4f m apart." % apart)
+	t.check(nearest > 0.03, "Same place chains: the link next to them stays %.4f m from the sphere's center." % nearest)
 
 
 # root spring이 있으면 root bone(b0)도 흔들린다.

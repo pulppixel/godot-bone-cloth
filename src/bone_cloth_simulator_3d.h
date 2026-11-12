@@ -81,7 +81,7 @@ private:
 
 		int parent_chain = -1;
 		uint32_t parent_joint = 0;
-
+		int same_as = -1;
 		bool enable_all_child_collisions = true;
 		LocalVector<NodePath> exclude_collisions;
 		LocalVector<NodePath> collisions;
@@ -226,6 +226,7 @@ private:
 	float _get_units_per_meter(const Skeleton3D *p_skeleton) const;
 	bool _build_joints(Skeleton3D *p_skeleton, Chain &p_chain);
 	void _build_branches();
+	void _build_same_chains();
 	void _build_links();
 	void _build_sync(Skeleton3D *p_skeleton);
 	bool _is_child_collision(const NodePath &p_node_path) const;
@@ -261,6 +262,7 @@ private:
 	FrameMotion _measure_motion(double p_delta, const Transform3D &p_skeleton_transform);
 	void _run_steps(FrameMotion &r_motion, const LocalVector<PosedCollision> &p_collisions);
 	void _settle_display(double p_delta, const FrameMotion &p_motion, const LocalVector<PosedCollision> &p_collisions);
+	void _copy_same_chains();
 	void _end_frame(Skeleton3D *p_skeleton);
 
 protected:
