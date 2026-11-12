@@ -56,6 +56,8 @@ private:
 		float contact = 0.0f;
 		Vector3 contact_normal;
 		float spacing = 0.0f;
+		float max_distance = 0.0f;
+		float backstop_distance = 0.0f;
 
 		LocalVector<Vector3> collision_pushes;
 	};
@@ -141,6 +143,7 @@ private:
 		Quaternion center_turn;
 		float move_share = 0.0f;
 		float turn_share = 0.0f;
+		Vector3 backstop_center;
 	};
 
 	LocalVector<Chain> chains;
@@ -188,6 +191,16 @@ private:
 	float root_spring_limit = 0.04f;
 	float root_spring_forward_limit = 0.005f;
 
+	float max_distance = 0.0f;
+	Ref<Curve> max_distance_damping_curve;
+	String backstop_bone_name;
+	int backstop_bone = -1;
+	Vector3 backstop_position_offset;
+	float backstop_distance = 0.0f;
+	Ref<Curve> backstop_damping_curve;
+	float backstop_radius = 10.0f;
+	float movement_limit_stiffness = 1.0f;
+
 	float units_per_meter = 1.0f;
 
 	LocalVector<Link> links;
@@ -204,8 +217,9 @@ private:
 	Quaternion frame_center_rotation;
 	Vector3 step_center;
 	Quaternion step_center_rotation;
-
 	Vector3 rest_center;
+	Vector3 prev_backstop_center;
+	Vector3 backstop_center;
 
 	Vector3 smoothing_velocity;
 
@@ -219,6 +233,7 @@ private:
 	void _read_pose(Skeleton3D *p_skeleton, Chain &p_chain);
 	void _update_joint_settings(Chain &p_chain);
 	void _read_center(Skeleton3D *p_skeleton);
+	void _read_backstop_center(Skeleton3D *p_skeleton);
 	void _update_local_shares(StepMotion &r_step, const Vector3 &p_center, const Quaternion &p_center_rotation) const;
 	Quaternion _get_sync_swing(Skeleton3D *p_skeleton, int p_bone) const;
 	void _apply_sync(Skeleton3D *p_skeleton);
@@ -235,6 +250,7 @@ private:
 	void _collide(const LocalVector<PosedCollision> &p_collisions, Vector3 Joint::*p_field);
 	void _restore_limits_and_lengths(Chain &p_chain);
 	void _restore_lengths(Chain &p_chain, Vector3 Joint::*p_field, Vector3 Joint::*p_pose_field);
+	void _limit_movement(Chain &p_chain, Vector3 Joint::*p_field, Vector3 Joint::*p_pose_field, const Vector3 &p_backstop_center);
 	void _update_display(Chain &p_chain, float p_follow);
 	void _write_rotations(Skeleton3D *p_skeleton, const Chain &p_chain);
 
@@ -367,6 +383,24 @@ public:
 	float get_root_spring_limit() const;
 	void set_root_spring_forward_limit(float p_limit);
 	float get_root_spring_forward_limit() const;
+	void set_max_distance(float p_distance);
+	float get_max_distance() const;
+	void set_max_distance_damping_curve(const Ref<Curve> &p_curve);
+	Ref<Curve> get_max_distance_damping_curve() const;
+	void set_backstop_bone_name(const String &p_bone_name);
+	String get_backstop_bone_name() const;
+	void set_backstop_bone(int p_bone);
+	int get_backstop_bone() const;
+	void set_backstop_position_offset(const Vector3 &p_offset);
+	Vector3 get_backstop_position_offset() const;
+	void set_backstop_distance(float p_distance);
+	float get_backstop_distance() const;
+	void set_backstop_damping_curve(const Ref<Curve> &p_curve);
+	Ref<Curve> get_backstop_damping_curve() const;
+	void set_backstop_radius(float p_radius);
+	float get_backstop_radius() const;
+	void set_movement_limit_stiffness(float p_stiffness);
+	float get_movement_limit_stiffness() const;
 
 	void reset();
 	float get_units_per_meter() const;

@@ -155,6 +155,24 @@ void BoneClothSimulator3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_root_spring_limit"), &BoneClothSimulator3D::get_root_spring_limit);
 	ClassDB::bind_method(D_METHOD("set_root_spring_forward_limit", "limit"), &BoneClothSimulator3D::set_root_spring_forward_limit);
 	ClassDB::bind_method(D_METHOD("get_root_spring_forward_limit"), &BoneClothSimulator3D::get_root_spring_forward_limit);
+	ClassDB::bind_method(D_METHOD("set_max_distance", "distance"), &BoneClothSimulator3D::set_max_distance);
+	ClassDB::bind_method(D_METHOD("get_max_distance"), &BoneClothSimulator3D::get_max_distance);
+	ClassDB::bind_method(D_METHOD("set_max_distance_damping_curve", "curve"), &BoneClothSimulator3D::set_max_distance_damping_curve);
+	ClassDB::bind_method(D_METHOD("get_max_distance_damping_curve"), &BoneClothSimulator3D::get_max_distance_damping_curve);
+	ClassDB::bind_method(D_METHOD("set_backstop_bone_name", "bone_name"), &BoneClothSimulator3D::set_backstop_bone_name);
+	ClassDB::bind_method(D_METHOD("get_backstop_bone_name"), &BoneClothSimulator3D::get_backstop_bone_name);
+	ClassDB::bind_method(D_METHOD("set_backstop_bone", "bone"), &BoneClothSimulator3D::set_backstop_bone);
+	ClassDB::bind_method(D_METHOD("get_backstop_bone"), &BoneClothSimulator3D::get_backstop_bone);
+	ClassDB::bind_method(D_METHOD("set_backstop_position_offset", "offset"), &BoneClothSimulator3D::set_backstop_position_offset);
+	ClassDB::bind_method(D_METHOD("get_backstop_position_offset"), &BoneClothSimulator3D::get_backstop_position_offset);
+	ClassDB::bind_method(D_METHOD("set_backstop_distance", "distance"), &BoneClothSimulator3D::set_backstop_distance);
+	ClassDB::bind_method(D_METHOD("get_backstop_distance"), &BoneClothSimulator3D::get_backstop_distance);
+	ClassDB::bind_method(D_METHOD("set_backstop_damping_curve", "curve"), &BoneClothSimulator3D::set_backstop_damping_curve);
+	ClassDB::bind_method(D_METHOD("get_backstop_damping_curve"), &BoneClothSimulator3D::get_backstop_damping_curve);
+	ClassDB::bind_method(D_METHOD("set_backstop_radius", "radius"), &BoneClothSimulator3D::set_backstop_radius);
+	ClassDB::bind_method(D_METHOD("get_backstop_radius"), &BoneClothSimulator3D::get_backstop_radius);
+	ClassDB::bind_method(D_METHOD("set_movement_limit_stiffness", "stiffness"), &BoneClothSimulator3D::set_movement_limit_stiffness);
+	ClassDB::bind_method(D_METHOD("get_movement_limit_stiffness"), &BoneClothSimulator3D::get_movement_limit_stiffness);
 
 	ClassDB::bind_method(D_METHOD("reset"), &BoneClothSimulator3D::reset);
 
@@ -203,6 +221,18 @@ void BoneClothSimulator3D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "root_spring_stiffness", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_root_spring_stiffness", "get_root_spring_stiffness");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "root_spring_limit", PROPERTY_HINT_RANGE, "0,0.2,0.001,or_greater,suffix:m"), "set_root_spring_limit", "get_root_spring_limit");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "root_spring_forward_limit", PROPERTY_HINT_RANGE, "0,0.2,0.001,or_greater,suffix:m"), "set_root_spring_forward_limit", "get_root_spring_forward_limit");
+
+	ADD_GROUP("Movement Limit", "");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "max_distance/value", PROPERTY_HINT_RANGE, "0,1,0.001,or_greater,suffix:m"), "set_max_distance", "get_max_distance");
+	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "max_distance/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_max_distance_damping_curve", "get_max_distance_damping_curve");
+	ADD_PROPERTY(PropertyInfo(Variant::STRING, "backstop/bone_name"), "set_backstop_bone_name", "get_backstop_bone_name");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "backstop/bone", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR), "set_backstop_bone", "get_backstop_bone");
+	ADD_PROPERTY(PropertyInfo(Variant::VECTOR3, "backstop/position_offset", PROPERTY_HINT_NONE, "suffix:m"), "set_backstop_position_offset", "get_backstop_position_offset");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "backstop/distance", PROPERTY_HINT_RANGE, "0,0.2,0.001,or_greater,suffix:m"), "set_backstop_distance", "get_backstop_distance");
+	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "backstop/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_backstop_damping_curve", "get_backstop_damping_curve");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "backstop/radius", PROPERTY_HINT_RANGE, "0,10,0.01,or_greater,suffix:m"), "set_backstop_radius", "get_backstop_radius");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "movement_limit_stiffness", PROPERTY_HINT_RANGE, "0,1,0.01"), "set_movement_limit_stiffness", "get_movement_limit_stiffness");
+
 	ADD_GROUP("", "");
 
 	// godot-cpp에는 ADD_ARRAY_COUNT가 없어서 PROPERTY_USAGE_ARRAY로 대신한다.
@@ -394,6 +424,14 @@ void BoneClothSimulator3D::_get_property_list(List<PropertyInfo> *p_list) const 
 
 void BoneClothSimulator3D::_validate_property(PropertyInfo &p_property) const {
 	if (link_mode == LINK_MODE_NONE && (p_property.name == StringName("link_stiffness") || p_property.name == StringName("link_split") || String(p_property.name).begins_with("link_spacing/"))) {
+		p_property.usage = PROPERTY_USAGE_NO_EDITOR;
+	}
+
+	if (p_property.name == StringName("backstop/bone_name")) {
+		Skeleton3D *skeleton = get_skeleton();
+		p_property.hint = skeleton ? PROPERTY_HINT_ENUM_SUGGESTION : PROPERTY_HINT_NONE;
+		p_property.hint_string = skeleton ? String(skeleton->get_concatenated_bone_names()) : String();
+	} else if (backstop_bone_name.is_empty() && String(p_property.name).begins_with("backstop/")) {
 		p_property.usage = PROPERTY_USAGE_NO_EDITOR;
 	}
 }
@@ -938,6 +976,87 @@ float BoneClothSimulator3D::get_root_spring_forward_limit() const {
 	return root_spring_forward_limit;
 }
 
+void BoneClothSimulator3D::set_max_distance(float p_distance) {
+	max_distance = p_distance;
+}
+
+float BoneClothSimulator3D::get_max_distance() const {
+	return max_distance;
+}
+
+void BoneClothSimulator3D::set_max_distance_damping_curve(const Ref<Curve> &p_curve) {
+	max_distance_damping_curve = p_curve;
+}
+
+Ref<Curve> BoneClothSimulator3D::get_max_distance_damping_curve() const {
+	return max_distance_damping_curve;
+}
+
+void BoneClothSimulator3D::set_backstop_bone_name(const String &p_bone_name) {
+	backstop_bone_name = p_bone_name;
+	Skeleton3D *skeleton = get_skeleton();
+	if (skeleton) {
+		set_backstop_bone(find_bone_or_warn(skeleton, p_bone_name, "Backstop bone"));
+	}
+	notify_property_list_changed();
+}
+
+String BoneClothSimulator3D::get_backstop_bone_name() const {
+	return backstop_bone_name;
+}
+
+void BoneClothSimulator3D::set_backstop_bone(int p_bone) {
+	backstop_bone = p_bone;
+	read_bone_name(get_skeleton(), backstop_bone, backstop_bone_name, "Backstop bone");
+	needs_reset = true;
+	update_configuration_warnings();
+	notify_property_list_changed();
+}
+
+int BoneClothSimulator3D::get_backstop_bone() const {
+	return backstop_bone;
+}
+
+void BoneClothSimulator3D::set_backstop_position_offset(const Vector3 &p_offset) {
+	backstop_position_offset = p_offset;
+}
+
+Vector3 BoneClothSimulator3D::get_backstop_position_offset() const {
+	return backstop_position_offset;
+}
+
+void BoneClothSimulator3D::set_backstop_distance(float p_distance) {
+	backstop_distance = p_distance;
+}
+
+float BoneClothSimulator3D::get_backstop_distance() const {
+	return backstop_distance;
+}
+
+void BoneClothSimulator3D::set_backstop_damping_curve(const Ref<Curve> &p_curve) {
+	backstop_damping_curve = p_curve;
+}
+
+Ref<Curve> BoneClothSimulator3D::get_backstop_damping_curve() const {
+	return backstop_damping_curve;
+}
+
+void BoneClothSimulator3D::set_backstop_radius(float p_radius) {
+	backstop_radius = p_radius;
+}
+
+float BoneClothSimulator3D::get_backstop_radius() const {
+	return backstop_radius;
+}
+
+void BoneClothSimulator3D::set_movement_limit_stiffness(float p_stiffness) {
+	movement_limit_stiffness = p_stiffness;
+}
+
+float BoneClothSimulator3D::get_movement_limit_stiffness() const {
+	return movement_limit_stiffness;
+}
+
 void BoneClothSimulator3D::reset() {
 	needs_reset = true;
 }
@@ -976,6 +1095,10 @@ PackedStringArray BoneClothSimulator3D::_get_configuration_warnings() const {
 		if (!sync_bones[s].bone_name.is_empty() && sync_bones[s].bone < 0) {
 			warnings.push_back(vformat("Sync bone %d: '%s' is not in the skeleton.", s, sync_bones[s].bone_name));
 		}
+	}
+
+	if (skeleton && !backstop_bone_name.is_empty() && backstop_bone < 0) {
+		warnings.push_back(vformat("Backstop bone '%s' is not in the skeleton.", backstop_bone_name));
 	}
 
 	for (uint32_t c = 0; c < chains.size(); c++) {
@@ -1053,6 +1176,13 @@ void BoneClothSimulator3D::_validate_bone_names() {
 		} else if (sync_bones[i].bone != -1) {
 			set_sync_bone(i, sync_bones[i].bone);
 		}
+	}
+
+	const String backstop_name = backstop_bone_name;
+	if (!backstop_name.is_empty()) {
+		set_backstop_bone_name(backstop_name);
+	} else if (backstop_bone != -1) {
+		set_backstop_bone(backstop_bone);
 	}
 }
 

@@ -51,6 +51,10 @@ const EXPECTED := {
 		["Sync bone 0: 'nope_knee' is not in the skeleton."],
 		[],
 	],
+	"BackstopNotInSkeleton": [
+		["Backstop bone 'nope_head' is not in the skeleton."],
+		[],
+	],
 }
 
 
@@ -134,9 +138,10 @@ static func _set_up(p_case: String, p_simulator: Node) -> void:
 	if p_case == "SyncNotInSkeleton":
 		p_simulator.set("sync/bone_count", 1)
 		p_simulator.set("sync/bones/0/bone_name", "nope_knee")
+	if p_case == "BackstopNotInSkeleton":
+		p_simulator.set("backstop/bone_name", "nope_head")
 
 
-# 이름을 붙인 collision node. p_class는 BoneClothCollisionSphere3D 같은 클래스 이름이다.
 static func _collision(p_class: String, p_name: String) -> Node:
 	var collision: Node = ClassDB.instantiate(p_class)
 	collision.name = p_name
@@ -159,6 +164,7 @@ static func _change(p_cases: Node3D) -> void:
 	branch.set("chains/1/root_bone_name", "b2")
 	p_cases.get_node("NoChains/Skeleton3D/Sim").set("chain_count", 1)
 	p_cases.get_node("SyncNotInSkeleton/Skeleton3D/Sim").set("sync/bones/0/bone_name", "d0")
+	p_cases.get_node("BackstopNotInSkeleton/Skeleton3D/Sim").set("backstop/bone_name", "b0")
 
 
 static func _compare(t, p_cases: Node3D, p_label: String, p_column: int) -> void:

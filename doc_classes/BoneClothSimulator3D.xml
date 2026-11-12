@@ -20,7 +20,7 @@
 			<return type="void" />
 			<param index="0" name="preset" type="BoneClothPreset" />
 			<description>
-				Copies the values of [param preset] to this node. The chains, [member link_mode] and the collisions are not changed.
+				Copies the values of [param preset] to this node. The chains, [member link_mode], the backstop's bone and offset, and the collisions are not changed.
 			</description>
 		</method>
 		<method name="are_all_child_collisions_enabled" qualifiers="const">
@@ -267,6 +267,26 @@
 		</method>
 	</methods>
 	<members>
+		<member name="backstop/bone" type="int" setter="set_backstop_bone" getter="get_backstop_bone" default="-1">
+			The index of [member backstop/bone_name]. [code]-1[/code] is no bone.
+		</member>
+		<member name="backstop/bone_name" type="String" setter="set_backstop_bone_name" getter="get_backstop_bone_name" default="&quot;&quot;">
+			The bone at the center of the backstop, such as the head for bangs. The backstop is a wall behind each joint's pose that keeps the joint from moving toward this center, so bangs stay out of the head without a collision. An empty name disables it.
+			On a long chain in a violent move, joints far from the root can still pass the wall slightly, because each joint is placed after the one above it.
+			To see the walls, check [b]Show Backstop[/b] in the node's toolbar menu.
+		</member>
+		<member name="backstop/damping_curve" type="Curve" setter="set_backstop_damping_curve" getter="get_backstop_damping_curve">
+			Scales [member backstop/distance] from the roots ([code]0.0[/code]) to the tips ([code]1.0[/code]).
+		</member>
+		<member name="backstop/distance" type="float" setter="set_backstop_distance" getter="get_backstop_distance" default="0.0">
+			How far, in meters, each joint can move from its pose toward the center of the backstop. [code]0.0[/code] puts the wall at the pose.
+		</member>
+		<member name="backstop/position_offset" type="Vector3" setter="set_backstop_position_offset" getter="get_backstop_position_offset" default="Vector3(0, 0, 0)">
+			The position offset of the backstop's center from [member backstop/bone_name], along the bone's axes. For bangs, put the center in the middle of the head.
+		</member>
+		<member name="backstop/radius" type="float" setter="set_backstop_radius" getter="get_backstop_radius" default="10.0">
+			The radius, in meters, of the wall behind each joint. The default [code]10.0[/code] is almost flat, and smaller values curve it. [code]0.0[/code] disables the backstop.
+		</member>
 		<member name="chain_count" type="int" setter="set_chain_count" getter="get_chain_count" default="0">
 			The number of chains.
 		</member>
@@ -328,6 +348,16 @@
 		</member>
 		<member name="local_rotation_speed_limit" type="float" setter="set_local_rotation_speed_limit" getter="get_local_rotation_speed_limit" default="0.0">
 			Like [member local_movement_speed_limit], for rotation, in radians per second. [code]6.283[/code] (360 degrees) suits long hair. [code]0.0[/code] disables it.
+		</member>
+		<member name="max_distance/damping_curve" type="Curve" setter="set_max_distance_damping_curve" getter="get_max_distance_damping_curve">
+			Scales [member max_distance/value] from the roots ([code]0.0[/code]) to the tips ([code]1.0[/code]).
+		</member>
+		<member name="max_distance/value" type="float" setter="set_max_distance" getter="get_max_distance" default="0.0">
+			How far, in meters, each joint can move from its pose. It keeps chains from flying off in fast moves, such as a dash or a sudden stop. [code]0.0[/code] disables it.
+			To see the limits, check [b]Show Max Distance[/b] in the node's toolbar menu.
+		</member>
+		<member name="movement_limit_stiffness" type="float" setter="set_movement_limit_stiffness" getter="get_movement_limit_stiffness" default="1.0">
+			How firmly [member max_distance/value] and the backstop hold, from [code]0.0[/code] to [code]1.0[/code]. Lower values let a joint pass the limit and come back over the next steps.
 		</member>
 		<member name="movement_speed_limit" type="float" setter="set_movement_speed_limit" getter="get_movement_speed_limit" default="5.0">
 			The character speed, in m/s, above which the cloth stops reacting to faster movement.

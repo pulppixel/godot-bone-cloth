@@ -44,6 +44,12 @@ class BoneClothPreset : public Resource {
 	float root_spring_stiffness = 0.0f;
 	float root_spring_limit = 0.04f;
 	float root_spring_forward_limit = 0.005f;
+	float max_distance = 0.0f;
+	Ref<Curve> max_distance_damping_curve;
+	float backstop_distance = 0.0f;
+	Ref<Curve> backstop_damping_curve;
+	float backstop_radius = 10.0f;
+	float movement_limit_stiffness = 1.0f;
 
 protected:
 	static void _bind_methods();
@@ -121,4 +127,16 @@ public:
 	float get_root_spring_limit() const;
 	void set_root_spring_forward_limit(float p_limit);
 	float get_root_spring_forward_limit() const;
+	void set_max_distance(float p_distance);
+	float get_max_distance() const;
+	void set_max_distance_damping_curve(const Ref<Curve> &p_curve);
+	Ref<Curve> get_max_distance_damping_curve() const;
+	void set_backstop_distance(float p_distance);
+	float get_backstop_distance() const;
+	void set_backstop_damping_curve(const Ref<Curve> &p_curve);
+	Ref<Curve> get_backstop_damping_curve() const;
+	void set_backstop_radius(float p_radius);
+	float get_backstop_radius() const;
+	void set_movement_limit_stiffness(float p_stiffness);
+	float get_movement_limit_stiffness() const;
 };

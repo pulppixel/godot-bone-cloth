@@ -383,18 +383,21 @@ static bool is_simulator_selected(BoneClothSimulator3D *p_simulator) {
 void BoneClothSimulator3DGizmoPlugin::_redraw(const Ref<EditorNode3DGizmo> &p_gizmo) {
 	static constexpr float CONE_SCALE = 0.5f;
 	static constexpr int CONE_LINE_COUNT = 4;
+	static constexpr float BACKSTOP_MARK = 0.02f;
 
 	p_gizmo->clear();
 	BoneClothSimulator3D *simulator = Object::cast_to<BoneClothSimulator3D>(p_gizmo->get_node_3d());
 	Skeleton3D *skeleton = simulator->get_skeleton();
 
-	// joint 목록은 설정을 바꾼 다음 프레임에 새로 만들어지므로, 그 전에는 그리지 않는다.
 	if (!skeleton || simulator->joints_dirty || !is_simulator_selected(simulator)) {
 		return;
 	}
 
 	const bool show_radius = EditorInterface::get_singleton()->get_editor_settings()->get_project_metadata("bone_cloth", "show_radius", true);
 	const bool show_limit_angle = EditorInterface::get_singleton()->get_editor_settings()->get_project_metadata("bone_cloth", "show_limit_angle", false);
+	const bool show_max_distance = EditorInterface::get_singleton()->get_editor_settings()->get_project_metadata("bone_cloth", "show_max_distance", false);
+	const bool show_backstop = EditorInterface::get_singleton()->get_editor_settings()->get_project_metadata("bone_cloth", "show_backstop", false) && simulator->backstop_bone >= 0;
+	const float mark = BACKSTOP_MARK * simulator->units_per_meter;
 
 	PackedVector3Array lines;
 
@@ -406,6 +409,20 @@ void BoneClothSimulator3DGizmoPlugin::_redraw(const Ref<EditorNode3DGizmo> &p_gi
 			lines.push_back(joint.display_location);
 			if (show_radius) {
 				add_sphere(lines, joint.display_location, joint.radius);
+			}
+
+			if (show_max_distance && simulator->max_distance > 0.0f) {
+				add_sphere(lines, joint.current_pose_location, joint.max_distance);
+			}
+
+			const Vector3 outward = joint.current_pose_location - simulator->backstop_center;
+			if (show_backstop && !outward.is_zero_approx()) {
+				const Vector3 normal = outward.normalized();
+				const Vector3 wall = joint.current_pose_location - normal * joint.backstop_distance;
+				const Vector3 axis_x = normal.get_any_perpendicular();
+				add_arc(lines, wall, axis_x, normal.cross(axis_x), mark, 0.0f, Math::TAU);
+				lines.push_back(wall);
+				lines.push_back(wall + normal * mark);
 			}
 
 			const Vector3 pose_vector = joint.current_pose_location - parent.current_pose_location;
@@ -440,6 +457,14 @@ void BoneClothSimulator3DGizmoPlugin::_redraw(const Ref<EditorNode3DGizmo> &p_gi
 	for (const BoneClothSimulator3D::Link &link : simulator->links) {
 		lines.push_back(simulator->chains[link.chain_a].joints[link.depth].display_location);
 		lines.push_back(simulator->chains[link.chain_b].joints[link.depth].display_location);
+	}
+
+	if (show_backstop) {
+		const Vector3 axes[3] = { Vector3(mark, 0, 0), Vector3(0, mark, 0), Vector3(0, 0, mark) };
+		for (const Vector3 &axis : axes) {
+			lines.push_back(simulator->backstop_center - axis);
+			lines.push_back(simulator->backstop_center + axis);
+		}
 	}
 
 	if (lines.is_empty()) {

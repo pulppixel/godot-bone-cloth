@@ -21,6 +21,10 @@ const ROOT_SPRING_FORWARD_LIMIT := 0.005 # m
 const SHAPE_TOLERANCE := 0.005 # m
 const WIND_MIN := 0.02 # m
 const WIND_TOLERANCE := 0.0001 # m
+const MAX_DISTANCE := 0.05 # m
+const BACKSTOP_OFFSET := Vector3(0.1, 0.0, 0.0) # m
+const BACKSTOP_RADIUS := 10.0 # m
+const MOVEMENT_LIMIT_TOLERANCE := 0.00001 # m
 const TIME_MONITOR := &"bone_cloth/time"
 const JOINTS_MONITOR := &"bone_cloth/joints"
 
@@ -132,6 +136,9 @@ static func run(t) -> void:
 	await _wind_frame_rate(t)
 	await _wind_direction_noise(t)
 	await _wind_scale(t)
+	await _max_distance(t)
+	await _backstop(t)
+	await _movement_limit_stiffness(t)
 	await _monitors(t)
 	_bone_lookup(t)
 	await _plane_and_inside(t)
@@ -824,12 +831,66 @@ static func _wind_tip(t, p_strength: float, p_influence: float, p_curve: Curve, 
 	return tip
 
 
+static func _max_distance(t) -> void:
+	var farthest := {}
+	for distance in [0.0, MAX_DISTANCE]:
+		var rig := Rig.new(t)
+		rig.simulator.set("max_distance/value", distance)
+		farthest[distance] = 0.0
+		for frame in 180:
+			_move(rig, float(frame + 1) / 60.0)
+			await rig.advance(1.0 / 60.0)
+			for i in range(1, TIP + 1):
+				farthest[distance] = maxf(farthest[distance], rig.poses[i].origin.distance_to(Vector3(0, -BONE_LENGTH * i, 0)))
+		rig.remove()
+
+	t.check(farthest[MAX_DISTANCE] < MAX_DISTANCE + MOVEMENT_LIMIT_TOLERANCE, "Max distance %.2f m: a bone went %.4f m from its pose." % [MAX_DISTANCE, farthest[MAX_DISTANCE]])
+	t.check(farthest[0.0] > MAX_DISTANCE * 2.0, "Max distance off: the bones went only %.4f m from their pose, so the limit was not tested." % farthest[0.0])
+
+
+static func _backstop(t) -> void:
+	var pose := Vector3(0, -BONE_LENGTH, 0)
+	var wall_center := pose - (pose - BACKSTOP_OFFSET).normalized() * BACKSTOP_RADIUS
+	var deepest := {}
+	for on in [false, true]:
+		var rig := Rig.new(t)
+		if on:
+			rig.simulator.set("backstop/bone_name", "b0")
+			rig.simulator.set("backstop/position_offset", BACKSTOP_OFFSET)
+		deepest[on] = 0.0
+		for frame in 180:
+			_move(rig, float(frame + 1) / 60.0)
+			await rig.advance(1.0 / 60.0)
+			deepest[on] = maxf(deepest[on], BACKSTOP_RADIUS - rig.poses[1].origin.distance_to(wall_center))
+		rig.remove()
+
+	t.check(deepest[true] < MOVEMENT_LIMIT_TOLERANCE, "Backstop: b1 went %.6f m behind the wall." % deepest[true])
+	t.check(deepest[false] > SWING_MIN, "Backstop off: b1 went only %.4f m behind the wall, so the backstop was not tested." % deepest[false])
+
+
+static func _movement_limit_stiffness(t) -> void:
+	var farthest := {}
+	for stiffness in [1.0, 0.3]:
+		var rig := Rig.new(t)
+		rig.simulator.set("max_distance/value", MAX_DISTANCE)
+		rig.simulator.set("movement_limit_stiffness", stiffness)
+		farthest[stiffness] = 0.0
+		for frame in 180:
+			_move(rig, float(frame + 1) / 60.0)
+			await rig.advance(1.0 / 60.0)
+			for i in range(1, TIP + 1):
+				farthest[stiffness] = maxf(farthest[stiffness], rig.poses[i].origin.distance_to(Vector3(0, -BONE_LENGTH * i, 0)))
+		rig.remove()
+
+	t.check(farthest[0.3] > farthest[1.0] + SWING_MIN, "Movement limit stiffness 0.3: the bones went %.4f m from their pose, as with 1.0 (%.4f m)." % [farthest[0.3], farthest[1.0]])
+
+
 static func _preset_round_trip(t) -> void:
 	var names: Array[String] = []
 	for property in ClassDB.class_get_property_list("BoneClothPreset", true):
 		if property.usage & PROPERTY_USAGE_STORAGE:
 			names.append(property.name)
-	t.check(names.size() == 35, "Preset round trip: the preset stores %d values." % names.size())
+	t.check(names.size() == 41, "Preset round trip: the preset stores %d values." % names.size())
 	
 	var source: Node = ClassDB.instantiate("BoneClothSimulator3D")
 	var target: Node = ClassDB.instantiate("BoneClothSimulator3D")

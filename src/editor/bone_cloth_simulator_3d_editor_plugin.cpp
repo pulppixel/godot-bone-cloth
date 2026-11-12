@@ -19,12 +19,13 @@ enum {
 	OPTION_SAVE_PRESET,
 	OPTION_SHOW_RADIUS,
 	OPTION_SHOW_LIMIT_ANGLE,
+	OPTION_SHOW_MAX_DISTANCE,
+	OPTION_SHOW_BACKSTOP,
 };
 
 void BoneClothSimulator3DMenu::_bind_methods() {
 }
 
-// 프로젝트를 처음 열 때는 아이콘이 아직 import되지 않았으므로, 메뉴가 보일 때마다 아이콘을 다시 읽는다.
 void BoneClothSimulator3DMenu::_notification(int p_what) {
 	switch (p_what) {
 		case NOTIFICATION_THEME_CHANGED:
@@ -56,6 +57,10 @@ BoneClothSimulator3DMenu::BoneClothSimulator3DMenu() {
 	options->set_item_checked(options->get_item_index(OPTION_SHOW_RADIUS), EditorInterface::get_singleton()->get_editor_settings()->get_project_metadata("bone_cloth", "show_radius", true));
 	options->add_check_item("Show Limit Angle", OPTION_SHOW_LIMIT_ANGLE);
 	options->set_item_checked(options->get_item_index(OPTION_SHOW_LIMIT_ANGLE), EditorInterface::get_singleton()->get_editor_settings()->get_project_metadata("bone_cloth", "show_limit_angle", false));
+	options->add_check_item("Show Max Distance", OPTION_SHOW_MAX_DISTANCE);
+	options->set_item_checked(options->get_item_index(OPTION_SHOW_MAX_DISTANCE), EditorInterface::get_singleton()->get_editor_settings()->get_project_metadata("bone_cloth", "show_max_distance", false));
+	options->add_check_item("Show Backstop", OPTION_SHOW_BACKSTOP);
+	options->set_item_checked(options->get_item_index(OPTION_SHOW_BACKSTOP), EditorInterface::get_singleton()->get_editor_settings()->get_project_metadata("bone_cloth", "show_backstop", false));
 	options->connect("id_pressed", callable_mp(this, &BoneClothSimulator3DMenu::_on_option_pressed));
 
 	save_dialog = memnew(EditorFileDialog);
@@ -322,13 +327,29 @@ void BoneClothSimulator3DMenu::_on_preset_pressed(int p_id) {
 	undo_redo->commit_action();
 }
 
+static String get_show_setting(int p_id) {
+	switch (p_id) {
+		case OPTION_SHOW_RADIUS:
+			return "show_radius";
+		case OPTION_SHOW_LIMIT_ANGLE:
+			return "show_limit_angle";
+		case OPTION_SHOW_MAX_DISTANCE:
+			return "show_max_distance";
+		case OPTION_SHOW_BACKSTOP:
+			return "show_backstop";
+		default:
+			return String();
+	}
+}
+
 void BoneClothSimulator3DMenu::_on_option_pressed(int p_id) {
-	if (p_id == OPTION_SHOW_RADIUS || p_id == OPTION_SHOW_LIMIT_ANGLE) {
+	const String show_setting = get_show_setting(p_id);
+	if (!show_setting.is_empty()) {
 		PopupMenu *options = get_popup();
 		const int index = options->get_item_index(p_id);
 		const bool show = !options->is_item_checked(index);
 		options->set_item_checked(index, show);
-		EditorInterface::get_singleton()->get_editor_settings()->set_project_metadata("bone_cloth", p_id == OPTION_SHOW_RADIUS ? "show_radius" : "show_limit_angle", show);
+		EditorInterface::get_singleton()->get_editor_settings()->set_project_metadata("bone_cloth", show_setting, show);
 		return;
 	}
 

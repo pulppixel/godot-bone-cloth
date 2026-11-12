@@ -10,6 +10,15 @@
 	<tutorials>
 	</tutorials>
 	<members>
+		<member name="backstop/damping_curve" type="Curve" setter="set_backstop_damping_curve" getter="get_backstop_damping_curve">
+			See [member BoneClothSimulator3D.backstop/damping_curve].
+		</member>
+		<member name="backstop/distance" type="float" setter="set_backstop_distance" getter="get_backstop_distance" default="0.0">
+			See [member BoneClothSimulator3D.backstop/distance].
+		</member>
+		<member name="backstop/radius" type="float" setter="set_backstop_radius" getter="get_backstop_radius" default="10.0">
+			See [member BoneClothSimulator3D.backstop/radius].
+		</member>
 		<member name="depth_inertia" type="float" setter="set_depth_inertia" getter="get_depth_inertia" default="0.0">
 			See [member BoneClothSimulator3D.depth_inertia].
 		</member>
@@ -63,6 +72,15 @@
 		</member>
 		<member name="local_rotation_speed_limit" type="float" setter="set_local_rotation_speed_limit" getter="get_local_rotation_speed_limit" default="0.0">
 			See [member BoneClothSimulator3D.local_rotation_speed_limit].
+		</member>
+		<member name="max_distance/damping_curve" type="Curve" setter="set_max_distance_damping_curve" getter="get_max_distance_damping_curve">
+			See [member BoneClothSimulator3D.max_distance/damping_curve].
+		</member>
+		<member name="max_distance/value" type="float" setter="set_max_distance" getter="get_max_distance" default="0.0">
+			See [member BoneClothSimulator3D.max_distance/value].
+		</member>
+		<member name="movement_limit_stiffness" type="float" setter="set_movement_limit_stiffness" getter="get_movement_limit_stiffness" default="1.0">
+			See [member BoneClothSimulator3D.movement_limit_stiffness].
 		</member>
 		<member name="movement_speed_limit" type="float" setter="set_movement_speed_limit" getter="get_movement_speed_limit" default="5.0">
 			See [member BoneClothSimulator3D.movement_speed_limit].

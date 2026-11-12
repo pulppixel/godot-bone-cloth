@@ -20,6 +20,8 @@ static constexpr double WIND_SWELL_SECONDS = 8.0;
 static constexpr float WIND_SWELL_MIN = 0.6f;
 static constexpr float WIND_CONTACT_DECAY = 0.6f;
 
+static constexpr float MOVEMENT_LIMIT_CARRY = 0.95f;
+
 void BoneClothSimulator3D::_read_pose(Skeleton3D *p_skeleton, Chain &p_chain) {
 	for (Joint &joint : p_chain.joints) {
 		if (joint.bone >= 0) {
@@ -52,6 +54,8 @@ void BoneClothSimulator3D::_update_joint_settings(Chain &p_chain) {
 		joint.gravity = gravity * sample_curve(gravity_damping_curve, joint.length_rate) * units_per_meter;
 		joint.wind = wind_influence * sample_curve(wind_influence_damping_curve, joint.length_rate) * units_per_meter;
 		joint.spacing = CLAMP(link_spacing * sample_curve(link_spacing_damping_curve, joint.length_rate), 0.0f, 1.0f);
+		joint.max_distance = MAX(max_distance * sample_curve(max_distance_damping_curve, joint.length_rate), 0.0f) * units_per_meter;
+		joint.backstop_distance = MAX(backstop_distance * sample_curve(backstop_damping_curve, joint.length_rate), 0.0f) * units_per_meter;
 	}
 }
 
@@ -81,6 +85,15 @@ void BoneClothSimulator3D::_read_center(Skeleton3D *p_skeleton) {
 		frame_center = location_sum / float(count);
 		frame_center_rotation = rotation_sum.normalized();
 	}
+}
+
+void BoneClothSimulator3D::_read_backstop_center(Skeleton3D *p_skeleton) {
+	if (backstop_bone < 0) {
+		return;
+	}
+
+	const Transform3D pose = p_skeleton->get_bone_global_pose(backstop_bone);
+	backstop_center = pose.origin + pose.basis.get_rotation_quaternion().xform(backstop_position_offset * units_per_meter);
 }
 
 void BoneClothSimulator3D::_update_local_shares(StepMotion &r_step, const Vector3 &p_center, const Quaternion &p_center_rotation) const {
@@ -186,6 +199,7 @@ void BoneClothSimulator3D::_step(const StepMotion &p_step, const LocalVector<Pos
 	for (Chain &chain : chains) {
 		_follow_parent_chain(chain);
 		_restore_lengths(chain, &Joint::location, &Joint::pose_location);
+		_limit_movement(chain, &Joint::location, &Joint::pose_location, p_step.backstop_center);
 	}
 }
 
@@ -196,6 +210,64 @@ void BoneClothSimulator3D::_restore_lengths(Chain &p_chain, Vector3 Joint::*p_fi
 		const Vector3 pose_vector = joint.*p_pose_field - parent.*p_pose_field;
 		const Vector3 offset = joint.*p_field - parent.*p_field;
 		joint.*p_field = parent.*p_field + (offset.is_zero_approx() ? pose_vector : offset.normalized() * pose_vector.length());
+	}
+}
+
+static Vector3 closest_on_spheres(const Vector3 &p_point, const Vector3 &p_parent, float p_length, const Vector3 &p_center, float p_radius) {
+	const Vector3 between = p_center - p_parent;
+	const float distance = between.length();
+	if (distance < CMP_EPSILON) {
+		return p_point;
+	}
+
+	const Vector3 axis = between / distance;
+	const float along = CLAMP((p_length * p_length - p_radius * p_radius + distance * distance) / (2.0f * distance), -p_length, p_length);
+	const float ring = Math::sqrt(MAX(p_length * p_length - along * along, 0.0f));
+	const Vector3 ring_center = p_parent + axis * along;
+	Vector3 side = p_point - ring_center;
+	side -= axis * side.dot(axis);
+	if (side.is_zero_approx()) {
+		side = axis.get_any_perpendicular();
+	}
+	return ring_center + side.normalized() * ring;
+}
+
+void BoneClothSimulator3D::_limit_movement(Chain &p_chain, Vector3 Joint::*p_field, Vector3 Joint::*p_pose_field, const Vector3 &p_backstop_center) {
+	const bool backstop = backstop_bone >= 0 && backstop_radius > 0.0f;
+	if (max_distance <= 0.0f && !backstop) {
+		return;
+	}
+
+	const float sphere_radius = backstop_radius * units_per_meter;
+	for (uint32_t i = 1; i < p_chain.joints.size(); i++) {
+		Joint &joint = p_chain.joints[i];
+		const Joint &parent = p_chain.joints[i - 1];
+		const Vector3 pose = joint.*p_pose_field;
+		const Vector3 pose_vector = pose - parent.*p_pose_field;
+		const float length = pose_vector.length();
+		const Vector3 start = joint.*p_field;
+		const Vector3 offset = start - parent.*p_field;
+		const Vector3 reached = parent.*p_field + (offset.is_zero_approx() ? pose_vector : offset.normalized() * length);
+
+		Vector3 location = reached;
+		if (max_distance > 0.0f && location.distance_to(pose) > joint.max_distance) {
+			location = closest_on_spheres(location, parent.*p_field, length, pose, joint.max_distance);
+		}
+
+		const Vector3 outward = pose - p_backstop_center;
+		if (backstop && !outward.is_zero_approx()) {
+			const Vector3 sphere_center = pose - outward.normalized() * (joint.backstop_distance + sphere_radius);
+			if (location.distance_to(sphere_center) < sphere_radius) {
+				location = closest_on_spheres(location, parent.*p_field, length, sphere_center, sphere_radius);
+			}
+		}
+
+		const Vector3 eased = reached.lerp(location, movement_limit_stiffness) - parent.*p_field;
+		location = parent.*p_field + (eased.is_zero_approx() ? pose_vector : eased.normalized() * length);
+		joint.*p_field = location;
+		if (p_field == &Joint::location) {
+			joint.prev_location += (location - start) * MOVEMENT_LIMIT_CARRY;
+		}
 	}
 }
 
@@ -522,6 +594,7 @@ void BoneClothSimulator3D::_read_frame(Skeleton3D *p_skeleton) {
 
 	_apply_sync(p_skeleton);
 	_read_center(p_skeleton);
+	_read_backstop_center(p_skeleton);
 }
 
 void BoneClothSimulator3D::_reset(const Transform3D &p_skeleton_transform) {
@@ -545,6 +618,7 @@ void BoneClothSimulator3D::_reset(const Transform3D &p_skeleton_transform) {
 	prev_frame_center_rotation = frame_center_rotation;
 	step_center = frame_center;
 	step_center_rotation = frame_center_rotation;
+	prev_backstop_center = backstop_center;
 }
 
 void BoneClothSimulator3D::_gather_collisions(LocalVector<PosedCollision> &r_collisions) const {
@@ -647,8 +721,9 @@ void BoneClothSimulator3D::_run_steps(FrameMotion &r_motion, const LocalVector<P
 		step_motion.turn = r_motion.step_turn;
 		step_motion.center_move = center - step_center;
 		step_motion.center_turn = (center_rotation * step_center_rotation.inverse()).normalized();
-		_update_local_shares(step_motion, center, center_rotation);
+		step_motion.backstop_center = prev_backstop_center.lerp(backstop_center, weight);
 
+		_update_local_shares(step_motion, center, center_rotation);
 		_step(step_motion, p_collisions);
 
 		step_center = center;
@@ -674,6 +749,7 @@ void BoneClothSimulator3D::_settle_display(double p_delta, const FrameMotion &p_
 	for (Chain &chain : chains) {
 		if (!chain.joints.is_empty()) {
 			_restore_lengths(chain, &Joint::display_location, &Joint::current_pose_location);
+			_limit_movement(chain, &Joint::display_location, &Joint::current_pose_location, backstop_center);
 		}
 	}
 }
@@ -681,6 +757,7 @@ void BoneClothSimulator3D::_settle_display(double p_delta, const FrameMotion &p_
 void BoneClothSimulator3D::_end_frame(Skeleton3D *p_skeleton) {
 	prev_frame_center = frame_center;
 	prev_frame_center_rotation = frame_center_rotation;
+	prev_backstop_center = backstop_center;
 
 	for (Chain &chain : chains) {
 		for (Joint &joint : chain.joints) {
