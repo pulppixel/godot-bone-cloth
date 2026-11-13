@@ -55,6 +55,10 @@ const EXPECTED := {
 		["Backstop bone 'nope_head' is not in the skeleton."],
 		[],
 	],
+	"AnchorNotFound": [
+		["Anchor 'Missing' is not a Node3D."],
+		[],
+	],
 }
 
 
@@ -138,6 +142,8 @@ static func _set_up(p_case: String, p_simulator: Node) -> void:
 		p_simulator.set("sync/bones/0/bone_name", "nope_knee")
 	if p_case == "BackstopNotInSkeleton":
 		p_simulator.set("backstop/bone_name", "nope_head")
+	if p_case == "AnchorNotFound":
+		p_simulator.set("anchor", NodePath("Missing"))
 
 
 static func _collision(p_class: String, p_name: String) -> Node:
@@ -163,6 +169,7 @@ static func _change(p_cases: Node3D) -> void:
 	p_cases.get_node("NoChains/Skeleton3D/Sim").set("chain_count", 1)
 	p_cases.get_node("SyncNotInSkeleton/Skeleton3D/Sim").set("sync/bones/0/bone_name", "d0")
 	p_cases.get_node("BackstopNotInSkeleton/Skeleton3D/Sim").set("backstop/bone_name", "b0")
+	p_cases.get_node("AnchorNotFound/Skeleton3D/Sim").set("anchor", NodePath("../.."))
 
 
 static func _compare(t, p_cases: Node3D, p_label: String, p_column: int) -> void:

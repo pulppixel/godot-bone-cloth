@@ -176,6 +176,8 @@ private:
 	double wind_swell_seed = 0.0;
 	LocalVector<SyncBone> sync_bones;
 	float sync = 1.0f;
+	NodePath anchor;
+	float anchor_inertia = 0.0f;
 	float inertia = 1.0f;
 	float inertia_smoothing = 0.4f;
 	float depth_inertia = 0.0f;
@@ -208,6 +210,8 @@ private:
 	bool needs_reset = true;
 	double step_time = 0.0;
 	Transform3D prev_skeleton_transform;
+	Transform3D prev_anchor_transform;
+	bool has_prev_anchor = false;
 	Vector3 prev_step_move;
 	Quaternion prev_step_turn;
 
@@ -260,6 +264,7 @@ private:
 	void _read_frame(Skeleton3D *p_skeleton);
 	void _reset(const Transform3D &p_skeleton_transform);
 	void _gather_collisions(LocalVector<PosedCollision> &r_collisions) const;
+	void _follow_anchor();
 	FrameMotion _measure_motion(double p_delta, const Transform3D &p_skeleton_transform);
 	void _run_steps(FrameMotion &r_motion, const LocalVector<PosedCollision> &p_collisions);
 	void _settle_display(double p_delta, const FrameMotion &p_motion, const LocalVector<PosedCollision> &p_collisions);
@@ -360,6 +365,10 @@ public:
 	int get_sync_bone(int p_index) const;
 	void set_sync(float p_sync);
 	float get_sync() const;
+	void set_anchor(const NodePath &p_anchor);
+	NodePath get_anchor() const;
+	void set_anchor_inertia(float p_inertia);
+	float get_anchor_inertia() const;
 	void set_inertia(float p_inertia);
 	float get_inertia() const;
 	void set_inertia_smoothing(float p_smoothing);

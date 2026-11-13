@@ -267,6 +267,12 @@
 		</method>
 	</methods>
 	<members>
+		<member name="anchor" type="NodePath" setter="set_anchor" getter="get_anchor" default="NodePath(&quot;&quot;)">
+			A [Node3D] the character rides, such as a vehicle, a ship or a moving platform. Its movement and rotation are left out of the cloth's inertia, so the cloth reacts only to the character's own movement on it. Set it from a script when the character gets on and clear it when the character gets off. An empty path disables it.
+		</member>
+		<member name="anchor_inertia" type="float" setter="set_anchor_inertia" getter="get_anchor_inertia" default="0.0">
+			How much the cloth still reacts to the [member anchor]'s movement and rotation, from [code]0.0[/code] (not at all) to [code]1.0[/code] (as if there were no anchor).
+		</member>
 		<member name="backstop/bone" type="int" setter="set_backstop_bone" getter="get_backstop_bone" default="-1">
 			The index of [member backstop/bone_name]. [code]-1[/code] is no bone.
 		</member>

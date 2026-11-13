@@ -627,6 +627,7 @@ void BoneClothSimulator3D::_reset(const Transform3D &p_skeleton_transform) {
 
 	step_time = 0.0;
 	prev_skeleton_transform = p_skeleton_transform;
+	has_prev_anchor = false;
 	prev_step_move = Vector3();
 	prev_step_turn = Quaternion();
 	smoothing_velocity = Vector3();
@@ -652,6 +653,24 @@ void BoneClothSimulator3D::_gather_collisions(LocalVector<PosedCollision> &r_col
 			r_collisions.push_back({ r_collisions[i].collision, true });
 		}
 	}
+}
+
+void BoneClothSimulator3D::_follow_anchor() {
+	Node3D *node = anchor.is_empty() ? nullptr : Object::cast_to<Node3D>(get_node_or_null(anchor));
+	if (!node) {
+		has_prev_anchor = false;
+		return;
+	}
+
+	const Transform3D anchor_transform = node->get_global_transform_interpolated();
+	if (has_prev_anchor) {
+		const Transform3D anchor_move = anchor_transform * prev_anchor_transform.affine_inverse();
+		const float share = 1.0f - anchor_inertia;
+		prev_skeleton_transform = prev_skeleton_transform.interpolate_with(anchor_move * prev_skeleton_transform, share);
+		smoothing_velocity = Quaternion().slerp(anchor_move.basis.get_rotation_quaternion(), share).xform(smoothing_velocity);
+	}
+	prev_anchor_transform = anchor_transform;
+	has_prev_anchor = true;
 }
 
 BoneClothSimulator3D::FrameMotion BoneClothSimulator3D::_measure_motion(double p_delta, const Transform3D &p_skeleton_transform) {

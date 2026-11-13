@@ -129,6 +129,10 @@ void BoneClothSimulator3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_sync", "sync"), &BoneClothSimulator3D::set_sync);
 	ClassDB::bind_method(D_METHOD("get_sync"), &BoneClothSimulator3D::get_sync);
 
+	ClassDB::bind_method(D_METHOD("set_anchor", "anchor"), &BoneClothSimulator3D::set_anchor);
+	ClassDB::bind_method(D_METHOD("get_anchor"), &BoneClothSimulator3D::get_anchor);
+	ClassDB::bind_method(D_METHOD("set_anchor_inertia", "inertia"), &BoneClothSimulator3D::set_anchor_inertia);
+	ClassDB::bind_method(D_METHOD("get_anchor_inertia"), &BoneClothSimulator3D::get_anchor_inertia);
 	ClassDB::bind_method(D_METHOD("set_inertia", "inertia"), &BoneClothSimulator3D::set_inertia);
 	ClassDB::bind_method(D_METHOD("get_inertia"), &BoneClothSimulator3D::get_inertia);
 	ClassDB::bind_method(D_METHOD("set_inertia_smoothing", "smoothing"), &BoneClothSimulator3D::set_inertia_smoothing);
@@ -206,6 +210,8 @@ void BoneClothSimulator3D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "sync/bone_count", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_ARRAY, "Sync Bones,sync/bones/"), "set_sync_bone_count", "get_sync_bone_count");
 
 	ADD_GROUP("Inertia", "");
+	ADD_PROPERTY(PropertyInfo(Variant::NODE_PATH, "anchor", PROPERTY_HINT_NODE_PATH_VALID_TYPES, "Node3D"), "set_anchor", "get_anchor");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "anchor_inertia", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_anchor_inertia", "get_anchor_inertia");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "inertia", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_inertia", "get_inertia");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "inertia_smoothing", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_inertia_smoothing", "get_inertia_smoothing");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "depth_inertia", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_depth_inertia", "get_depth_inertia");
@@ -432,6 +438,10 @@ void BoneClothSimulator3D::_validate_property(PropertyInfo &p_property) const {
 		p_property.hint = skeleton ? PROPERTY_HINT_ENUM_SUGGESTION : PROPERTY_HINT_NONE;
 		p_property.hint_string = skeleton ? String(skeleton->get_concatenated_bone_names()) : String();
 	} else if (backstop_bone_name.is_empty() && String(p_property.name).begins_with("backstop/")) {
+		p_property.usage = PROPERTY_USAGE_NO_EDITOR;
+	}
+
+	if (anchor.is_empty() && p_property.name == StringName("anchor_inertia")) {
 		p_property.usage = PROPERTY_USAGE_NO_EDITOR;
 	}
 }
@@ -872,6 +882,25 @@ float BoneClothSimulator3D::get_sync() const {
 	return sync;
 }
 
+void BoneClothSimulator3D::set_anchor(const NodePath &p_anchor) {
+	anchor = p_anchor;
+	has_prev_anchor = false;
+	update_configuration_warnings();
+	notify_property_list_changed();
+}
+
+NodePath BoneClothSimulator3D::get_anchor() const {
+	return anchor;
+}
+
+void BoneClothSimulator3D::set_anchor_inertia(float p_inertia) {
+	anchor_inertia = p_inertia;
+}
+
+float BoneClothSimulator3D::get_anchor_inertia() const {
+	return anchor_inertia;
+}
+
 void BoneClothSimulator3D::set_inertia(float p_inertia) {
 	inertia = p_inertia;
 }
@@ -1097,6 +1126,10 @@ PackedStringArray BoneClothSimulator3D::_get_configuration_warnings() const {
 		}
 	}
 
+	if (!anchor.is_empty() && is_inside_tree() && !Object::cast_to<Node3D>(get_node_or_null(anchor))) {
+		warnings.push_back(vformat("Anchor '%s' is not a Node3D.", anchor));
+	}
+
 	if (skeleton && !backstop_bone_name.is_empty() && backstop_bone < 0) {
 		warnings.push_back(vformat("Backstop bone '%s' is not in the skeleton.", backstop_bone_name));
 	}
@@ -1218,6 +1251,7 @@ void BoneClothSimulator3D::_process_modification_with_delta(double p_delta) {
 	_find_chain_collisions(collisions);
 
 	if (p_delta > 0.0) {
+		_follow_anchor();
 		FrameMotion motion = _measure_motion(p_delta, skeleton_transform);
 		_run_steps(motion, collisions);
 		_settle_display(p_delta, motion, collisions);

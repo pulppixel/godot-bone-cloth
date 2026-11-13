@@ -25,6 +25,7 @@ const MAX_DISTANCE := 0.05 # m
 const BACKSTOP_OFFSET := Vector3(0.1, 0.0, 0.0) # m
 const BACKSTOP_RADIUS := 10.0 # m
 const MOVEMENT_LIMIT_TOLERANCE := 0.00001 # m
+const ANCHOR_TOLERANCE := 0.00001 # m
 const TIME_MONITOR := &"bone_cloth/time"
 const JOINTS_MONITOR := &"bone_cloth/joints"
 
@@ -137,6 +138,7 @@ static func run(t) -> void:
 	await _max_distance(t)
 	await _backstop(t)
 	await _movement_limit_stiffness(t)
+	await _anchor(t)
 	await _monitors(t)
 	_bone_lookup(t)
 	await _plane_and_inside(t)
@@ -949,6 +951,33 @@ static func _movement_limit_stiffness(t) -> void:
 		rig.remove()
 
 	t.check(farthest[0.3] > farthest[1.0] + SWING_MIN, "Movement limit stiffness 0.3: the bones went %.4f m from their pose, as with 1.0 (%.4f m)." % [farthest[0.3], farthest[1.0]])
+
+
+static func _anchor(t) -> void:
+	var tips := {}
+	for c in ["still", "moving", "anchored"]:
+		var rig := Rig.new(t)
+		if c == "anchored":
+			rig.simulator.set("anchor", rig.simulator.get_path_to(rig.stage))
+		var list: Array[Vector3] = []
+		for frame in 120:
+			var time := float(frame + 1) / 60.0
+			rig.character.position = Vector3(sin(time * 6.0) * 0.3, 0, 0)
+			if c != "still":
+				rig.stage.position = Vector3(time * 3.0, 0, sin(time * 5.0) * 0.5)
+				rig.stage.rotation = Vector3(0, time * 2.0, 0)
+			await rig.advance(1.0 / 60.0)
+			list.append(rig.tip())
+		tips[c] = list
+		rig.remove()
+
+	var moved := 0.0
+	var anchored := 0.0
+	for i in tips["still"].size():
+		moved = maxf(moved, tips["moving"][i].distance_to(tips["still"][i]))
+		anchored = maxf(anchored, tips["anchored"][i].distance_to(tips["still"][i]))
+	t.check(moved > SWING_MIN, "Anchor: without the anchor, the moving stage moved the tip only %.6f m." % moved)
+	t.check(anchored < ANCHOR_TOLERANCE, "Anchor: on the moving anchor the tip is up to %.6f m from the still stage." % anchored)
 
 
 static func _preset_round_trip(t) -> void:
