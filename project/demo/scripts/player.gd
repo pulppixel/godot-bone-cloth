@@ -53,7 +53,17 @@ const BLOCK_HOLD := 0.2
 @export var step_spring := 18.7
 @export var step_lag := 0.15
 
+@export_group("Board")
+@export var board_height := 0.4
+@export var board_speed := 12.0
+@export var board_acceleration := 8.0
+@export var board_jump := 6.0
+@export var board_spring := 6.0
+@export var board_damping := 0.4
+@export var board_reach := 3.0
+
 @export var camera_rig: Node3D
+@export var board: Node3D
 
 var _character: CharacterSkin
 var _skeleton: Skeleton3D
@@ -76,6 +86,9 @@ var _run_off := INF
 var _clip_speed := 0.0
 var _block_held := false
 var _state_age := 0.0
+var _boarding := false
+var _floor_body: Object
+var _ride: Node3D
 
 @onready var _skin: Node3D = $Skin
 @onready var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
@@ -104,6 +117,7 @@ func use(character: Node3D) -> void:
 	_character.request(TREE_STATE[_anim])
 	_character.rest(&"still")
 	(camera_rig as CameraRig).frame(_character)
+	_anchor_cloth()
 
 
 func _process(_delta: float) -> void:
@@ -118,6 +132,13 @@ func _physics_process(delta: float) -> void:
 	
 	var input := Input.get_vector("move_left", "move_right", "move_forward", "move_back").normalized()
 	var direction := Basis(Vector3.UP, camera_rig.rotation.y) * Vector3(input.x, 0.0, input.y)
+	if Input.is_action_just_pressed("board"):
+		_set_boarding(not _boarding)
+	if _boarding:
+		_fly(direction, delta)
+		_follow_ride()
+		return
+	
 	_run_off = 0.0 if Input.is_action_pressed("run") else _run_off + delta
 	var top_speed := (run_speed if _run_off <= EXIT_GRACE else walk_speed) * _scale
 	var exit_wait := _watch_exit(direction, delta)
@@ -187,6 +208,7 @@ func _slide(delta: float) -> void:
 		_absorb_step(global_position - before)
 	_ground_normal = _ground()
 	_settle_step(delta)
+	_follow_ride()
 
 
 func _transition(pressing: bool, speed: float, exit_wait: bool) -> void:
@@ -347,9 +369,57 @@ func _ground() -> Vector3:
 	var from := global_position + Vector3.UP * GROUND_RAY_UP
 	var query := PhysicsRayQueryParameters3D.create(from, from + Vector3.DOWN * GROUND_RAY_DOWN, collision_mask, [get_rid()])
 	var hit := get_world_3d().direct_space_state.intersect_ray(query)
+	_floor_body = hit.get("collider")
 	if hit.is_empty() or hit.normal.y < cos(floor_max_angle):
 		return Vector3.UP
 	return hit.normal
+
+
+func _set_boarding(on: bool) -> void:
+	_boarding = on
+	board.visible = on
+	_stop = null
+	_enter(Anim.IDLE if on else Anim.FALL)
+	var hit := _board_ground()
+	if on and not hit.is_empty():
+		global_position.y = maxf(global_position.y, hit.position.y + board_height)
+		velocity.y = 0.0
+
+
+func _board_ground() -> Dictionary:
+	var from := global_position + Vector3.UP * GROUND_RAY_UP
+	var query := PhysicsRayQueryParameters3D.create(from, from + Vector3.DOWN * board_reach, collision_mask, [get_rid()])
+	return get_world_3d().direct_space_state.intersect_ray(query)
+
+
+func _fly(direction: Vector3, delta: float) -> void:
+	var flat := Vector3(velocity.x, 0.0, velocity.z).move_toward(direction * board_speed * _scale, board_acceleration * _scale * delta)
+	var hit := _board_ground()
+	if hit.is_empty():
+		velocity.y = maxf(velocity.y - _gravity * delta, -max_fall_speed)
+	else:
+		var offset: float = global_position.y - hit.position.y - board_height
+		velocity.y += (-board_spring * board_spring * offset - 2.0 * board_damping * board_spring * velocity.y) * delta
+		if Input.is_action_just_pressed("jump") and absf(offset) < board_height:
+			velocity.y = board_jump
+	velocity.x = flat.x
+	velocity.z = flat.z
+	move_and_slide()
+	_turn_skin(flat if flat.length() > STOP_SPEED else direction, delta)
+	_character.set_move(0.0, 1.0)
+
+
+func _follow_ride() -> void:
+	var ride: Node3D = board if _boarding else (_floor_body as AnimatableBody3D if is_on_floor() else null)
+	if ride == _ride:
+		return
+	_ride = ride
+	_anchor_cloth()
+
+
+func _anchor_cloth() -> void:
+	for simulator: BoneClothSimulator3D in _character.find_children("*", "BoneClothSimulator3D", true, false):
+		simulator.anchor = simulator.get_path_to(_ride) if _ride else NodePath()
 
 
 func _settle_step(delta: float) -> void:

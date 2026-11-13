@@ -1,0 +1,23 @@
+[gd_scene format=3 uid="uid://o0h0hpn8qdfh"]
+
+[ext_resource type="Script" uid="uid://chbvr04f0nw87" path="res://demo/scripts/moving_platform.gd" id="1_platform"]
+[ext_resource type="PackedScene" uid="uid://cwpqf6mm7ccrl" path="res://demo/stage/kit/floor-thick.glb" id="2_model"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_platform"]
+size = Vector3(4, 0.2, 4)
+
+[node name="MovingPlatform" type="Node3D" unique_id=1720447021 node_paths=PackedStringArray("end")]
+script = ExtResource("1_platform")
+end = NodePath("End")
+
+[node name="Body" type="AnimatableBody3D" parent="." unique_id=1720447022]
+
+[node name="Model" parent="Body" unique_id=1720447023 instance=ExtResource("2_model")]
+transform = Transform3D(4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Body" unique_id=1720447024]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 0)
+shape = SubResource("BoxShape3D_platform")
+
+[node name="End" type="Marker3D" parent="." unique_id=1720447025]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 0)

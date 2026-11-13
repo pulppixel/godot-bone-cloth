@@ -12,6 +12,8 @@ const CharacterSkin := preload("res://demo/scripts/skin.gd")
 @export var wind: BoneClothWind3D
 @export var wind_angle_slider: HSlider
 @export var wind_angle_value: Label
+@export var anchor_inertia_slider: HSlider
+@export var anchor_inertia_value: Label
 @export var wind_direction_slider: HSlider
 @export var wind_direction_value: Label
 
@@ -30,6 +32,8 @@ func _ready() -> void:
 	wind_angle_slider.value_changed.connect(func(value: float) -> void: wind.direction_noise_angle = deg_to_rad(value))
 	wind_direction_slider.set_value_no_signal(wrapf(rad_to_deg(wind.rotation.y), 0.0, 360.0))
 	wind_direction_slider.value_changed.connect(func(value: float) -> void: wind.rotation.y = deg_to_rad(value))
+	anchor_inertia_slider.value_changed.connect(_set_anchor_inertia)
+	_set_anchor_inertia(anchor_inertia_slider.value)
 	_show(0)
 
 
@@ -37,6 +41,7 @@ func _process(_delta: float) -> void:
 	time_slider.set_value_no_signal(Engine.time_scale)
 	time_value.text = "%.1fx" % Engine.time_scale
 	wind_angle_value.text = "%d deg" % roundi(wind_angle_slider.value)
+	anchor_inertia_value.text = "%.2f" % anchor_inertia_slider.value
 	wind_direction_value.text = "%d deg" % roundi(wind_direction_slider.value)
 
 
@@ -48,6 +53,12 @@ func _unhandled_input(event: InputEvent) -> void:
 	var index := key.physical_keycode - KEY_1
 	if index >= 0 and index < characters.size():
 		_show(index)
+
+
+func _set_anchor_inertia(value: float) -> void:
+	for character in characters:
+		for simulator: BoneClothSimulator3D in character.find_children("*", "BoneClothSimulator3D", true, false):
+			simulator.anchor_inertia = value
 
 
 func _show(index: int) -> void:
