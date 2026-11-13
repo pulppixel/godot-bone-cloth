@@ -131,6 +131,7 @@ static func run(t) -> void:
 	await _link_split(t)
 	await _link_spacing(t)
 	await _same_place_chains(t)
+	await _loop_order(t)
 	await _root_spring(t)
 	await _root_spring_forward(t)
 	await _wind(t)
@@ -146,15 +147,12 @@ static func run(t) -> void:
 	_preset_round_trip(t)
 
 
-# 캐릭터가 좌우로 오가며 몸을 돌리는 움직임. p_time초 때의 자세를 정한다.
 static func _move(p_rig: Rig, p_time: float) -> void:
 	var size := p_rig.character.scale.x
 	p_rig.character.position = Vector3(sin(p_time * 6.0) * 0.6 * size, 0, 0)
 	p_rig.character.rotation = Vector3(0, sin(p_time * 4.0) * 0.8, 0)
 
 
-# frame rate가 달라도 같은 시각에는 같은 자리에 있다.
-# 옆으로 거는 중력으로만 흔든다. 캐릭터를 움직이면 30 fps에서는 움직임 자체가 거칠게 들어가서, 천과 상관없이 달라진다.
 static func _frame_rate(t) -> void:
 	var tips := {} # fps마다, 1/30초마다 읽은 끝 bone 위치
 	for fps in [30, 60, 120]:
@@ -175,16 +173,12 @@ static func _frame_rate(t) -> void:
 		t.check(largest < FRAME_RATE_TOLERANCE, "Frame rate %d fps: the tip is up to %.4f m from 60 fps." % [fps, largest])
 
 
-# 한 frame에 teleport_distance(기본 0.5 m)보다 멀리 가거나 teleport_angle(기본 90도)보다 많이 돌면, 천이 흔들리지 않고 그대로 따라간다.
-# 중력을 0으로 둔다. 중력이 있으면 돈 뒤에 chain이 중력 쪽으로 다시 흔들려서, teleport와 상관없이 움직인다.
 static func _teleport(t) -> void:
-	# 이름, 이동, Z축 회전, teleport_angle, teleport인지
 	var cases := [
 		["move 1 m", Vector3(1, 0, 0), 0.0, deg_to_rad(90.0), true],
 		["turn 100 deg", Vector3(), deg_to_rad(100.0), deg_to_rad(90.0), true],
 		["move 0.3 m", Vector3(0.3, 0, 0), 0.0, deg_to_rad(90.0), false],
 		["turn 60 deg", Vector3(), deg_to_rad(60.0), deg_to_rad(90.0), false],
-		# 120도보다 많이 돈 회전도 teleport_angle을 기준으로 나뉘어야 한다.
 		["turn 175 deg, limit 170 deg", Vector3(), deg_to_rad(175.0), deg_to_rad(170.0), true],
 		["turn 150 deg, limit 170 deg", Vector3(), deg_to_rad(150.0), deg_to_rad(170.0), false],
 	]
@@ -209,13 +203,12 @@ static func _teleport(t) -> void:
 			t.check(largest > SWING_MIN, "No teleport, %s: the tip swung only %.6f m." % [c[0], largest])
 
 
-# 크게 흔들려도 bone 길이는 그대로이고, limit_angle보다 기울지 않는다.
 static func _limits_and_lengths(t) -> void:
 	var limit := deg_to_rad(30.0)
 	var rig := Rig.new(t)
 	rig.simulator.set("limit_angle/value", limit)
-	var longest := 0.0 # pose 길이와 가장 많이 다른 양 (m)
-	var widest := 0.0 # pose 방향과 가장 많이 벌어진 각 (rad)
+	var longest := 0.0
+	var widest := 0.0
 	for frame in 180:
 		_move(rig, float(frame + 1) / 60.0)
 		await rig.advance(1.0 / 60.0)
@@ -230,7 +223,6 @@ static func _limits_and_lengths(t) -> void:
 	t.check(widest > limit - deg_to_rad(5.0), "Limit angle 30 deg: the bones leaned only %.4f deg, so the limit was not tested." % rad_to_deg(widest))
 
 
-# limit_angle/stiffness: 1보다 작으면 bone이 limit_angle을 넘었다가 다음 step들에 걸쳐 돌아온다. 길이는 그대로다.
 static func _soft_limit(t) -> void:
 	var limit := deg_to_rad(30.0)
 	var widest := {} # stiffness별, pose 방향과 가장 많이 벌어진 각 (rad)
@@ -270,9 +262,7 @@ static func _long_step(t) -> void:
 	t.check(tip_distance < 1.0, "A 5 s step: the tip is %.4f m from the character." % tip_distance)
 
 
-# 균일한 scale은 cm 리그든 크게 키운 캐릭터든 scale 1과 똑같이 움직인다(크기만 다르다).
 static func _scale(t) -> void:
-	# 이름, 캐릭터 scale, armature scale, owner, collision. 첫 줄과 collision이 있는 첫 줄이 기준이다.
 	var cases := [
 		["scale 1", 1.0, 1.0, "model", false],
 		["cm rig", 1.0, 0.01, "model", false],
@@ -306,7 +296,6 @@ static func _scale(t) -> void:
 		t.check(largest < SCALE_TOLERANCE, "Scale, %s: the tip is up to %.6f m from scale 1." % [c[0], largest])
 
 
-# joint 사이의 bone도 collision 밖으로 밀린다.
 static func _bone_collision(t) -> void:
 	var rig := Rig.new(t)
 	rig.simulator.set("gravity/value", 0.0)
@@ -329,7 +318,7 @@ static func _bone_collision(t) -> void:
 
 
 static func _depth_inertia(t) -> void:
-	var offsets := {} # depth_inertia마다, b1이 제자리에서 벗어난 평균 거리 (m)
+	var offsets := {}
 	for value in [0.0, 1.0]:
 		var rig := Rig.new(t)
 		rig.simulator.set("depth_inertia", value)
@@ -345,7 +334,7 @@ static func _depth_inertia(t) -> void:
 
 
 static func _depth_speed_limit(t) -> void:
-	var trails := {} # depth_inertia마다, b1이 제자리에서 뒤로 처진 평균 거리 (m)
+	var trails := {}
 	for value in [0.0, 1.0]:
 		var rig := Rig.new(t)
 		rig.simulator.set("depth_inertia", value)
@@ -363,7 +352,7 @@ static func _depth_speed_limit(t) -> void:
 
 
 static func _local_speed_limit(t) -> void:
-	var offsets := {} # 제한마다, b4가 제자리에서 벗어난 평균 거리 (m)
+	var offsets := {}
 	for limit in [0.0, 0.1]:
 		var rig := Rig.new(t)
 		rig.simulator.set("gravity/value", 0.0)
@@ -380,7 +369,7 @@ static func _local_speed_limit(t) -> void:
 
 
 static func _local_rotation_limit(t) -> void:
-	var offsets := {} # 제한마다, b4가 제자리에서 벗어난 평균 거리 (m)
+	var offsets := {}
 	for limit in [0.0, 0.5]:
 		var rig := Rig.new(t)
 		rig.simulator.set("gravity/value", 0.0)
@@ -397,7 +386,7 @@ static func _local_rotation_limit(t) -> void:
 
 
 static func _sync_bone(t) -> void:
-	var cases := { # 경우: [thigh 위치, thigh pose 회전, sync/value, 기대하는 사슬 회전]
+	var cases := {
 		"rest": [Vector3(0, 0, 0.05), Quaternion(), 1.0, Quaternion()],
 		"swing": [Vector3(0, 0, 0.05), Quaternion(Vector3.RIGHT, 0.5), 1.0, Quaternion(Vector3.RIGHT, 0.5)],
 		"back": [Vector3(0, 0, 0.05), Quaternion(Vector3.RIGHT, -0.5), 1.0, Quaternion(Vector3.RIGHT, -0.5)],
@@ -407,7 +396,7 @@ static func _sync_bone(t) -> void:
 		"off": [Vector3(0, 0, 0.05), Quaternion(Vector3.RIGHT, 0.5), 0.0, Quaternion()],
 	}
 	var tips := {}
-	var tilt := 0.0 # swing에서 root bone 회전이 가리키는 b1 방향과 실제 b1 방향 사이의 각도 (rad)
+	var tilt := 0.0
 	for case in cases:
 		var rig := Rig.new(t)
 		rig.skeleton.set_bone_rest(1, Transform3D(Basis(), Vector3(0, -BONE_LENGTH, 0.05)))
@@ -444,7 +433,7 @@ static func _squeeze(t) -> void:
 		rig.simulator.add_child(sphere)
 		sphere.set("position", Vector3(0.05 * side, -0.15, 0.0))
 		sphere.set("radius", 0.04)
-	var largest := 0.0 # b1 ~ 끝 bone이 옆(X)으로 간 가장 먼 거리 (m)
+	var largest := 0.0
 	for frame in 60:
 		await rig.advance(1.0 / 60.0)
 		for i in range(1, TIP + 1):
@@ -456,8 +445,8 @@ static func _squeeze(t) -> void:
 
 static func _rest_overlap(t) -> void:
 	var center := Vector3(0.05, -0.15, 0.0)
-	var depths := {} # 경우마다, bone이 구에 들어간 가장 깊은 거리 (m)
-	var largest := 0.0 # 그대로 둔 경우, b1 ~ 끝 bone이 옆(X)으로 간 가장 먼 거리 (m)
+	var depths := {}
+	var largest := 0.0
 	for case in ["rest", "bent"]:
 		var rig := Rig.new(t)
 		rig.simulator.set("gravity/value", 0.0)
@@ -485,7 +474,6 @@ static func _rest_overlap(t) -> void:
 	t.check(absf(depths["bent"] - depths["rest"]) < BONE_COLLISION_TOLERANCE, "Rest overlap: bent toward the sphere, a bone is %.4f m in, %.4f m at rest." % [depths["bent"], depths["rest"]])
 
 
-# radius/rest_overlap을 끄면, rest 자세에서 구와 겹친 chain도 구 밖으로 밀린다.
 static func _rest_overlap_off(t) -> void:
 	var center := Vector3(0.05, -0.15, 0.0)
 	var rig := Rig.new(t)
@@ -499,7 +487,7 @@ static func _rest_overlap_off(t) -> void:
 	sphere.set("radius", 0.04)
 	for frame in 60:
 		await rig.advance(1.0 / 60.0)
-	var deepest := 0.0 # bone이 구에 들어간 가장 깊은 거리 (m)
+	var deepest := 0.0
 	for i in range(1, TIP + 1):
 		var nearest := Geometry3D.get_closest_point_to_segment(center, rig.poses[i - 1].origin, rig.poses[i].origin)
 		deepest = maxf(deepest, 0.04 + 0.02 - center.distance_to(nearest))
@@ -508,13 +496,11 @@ static func _rest_overlap_off(t) -> void:
 	t.check(deepest < BONE_COLLISION_TOLERANCE, "Rest overlap off: a chain that overlaps a sphere at rest stays %.4f m in." % deepest)
 
 
-# link_split: 두 chain을 잇는 link만 구를 가로지른다. 켜면 구가 link를 밀지 않고, 끄면 link가 구 밖으로 밀린다.
 #   r +-- a0 - a1 - a2   (x -0.05)
 #     +-- c0 - c1 - c2   (x 0.05)
-#   구는 a1과 c1 사이, 조금 앞(z 0.01)에 있다.
 static func _link_split(t) -> void:
 	var center := Vector3(0.0, -BONE_LENGTH, 0.01)
-	var nearest := {} # 경우마다, link a1 - c1과 구 중심 사이의 거리 (m)
+	var nearest := {}
 	for split in [false, true]:
 		var skeleton := Skeleton3D.new()
 		t.root.add_child(skeleton)
@@ -555,12 +541,10 @@ static func _link_split(t) -> void:
 	t.check(nearest[true] < 0.02, "Link split: a link across a sphere is pushed out to %.4f m from its center." % nearest[true])
 
 
-# link_spacing: 두 chain이 2 cm 떨어져 매달려 있다. joint 반지름이 2 cm라서 반지름 합(4 cm)보다 가깝다.
 #   r +-- a0 - a1 - a2   (x -0.01)
 #     +-- c0 - c1 - c2   (x 0.01)
-# 끄면 두 끝은 2 cm 그대로, 켜면 반지름 합 쪽으로 벌어진다.
 static func _link_spacing(t) -> void:
-	var gap := {} # 경우마다, 60 frame 뒤 두 끝(a2, c2) 사이의 거리 (m)
+	var gap := {}
 	for spacing in [0.0, 1.0]:
 		var skeleton := Skeleton3D.new()
 		t.root.add_child(skeleton)
@@ -597,11 +581,9 @@ static func _link_spacing(t) -> void:
 	t.check(gap[1.0] > 0.03, "Link spacing: two chains 2 cm apart with 2 cm joints are pushed %.4f m apart." % gap[1.0])
 
 
-# 같은 자리에 있는 chain: a와 b는 같은 곳(x -0.05)에, c는 x 0.05에 매달려 있다. VRoid 치마의 겹친 chain과 같다.
 #   r +-- a0 - a1 - a2   (x -0.05)
 #     +-- b0 - b1 - b2   (x -0.05)
 #     +-- c0 - c1 - c2   (x 0.05)
-#   구는 b1과 c1 사이, 조금 앞(z 0.01)에 있다. a와 b는 같이 움직이고, link는 구 밖으로 밀린다.
 static func _same_place_chains(t) -> void:
 	var center := Vector3(0.0, -BONE_LENGTH, 0.01)
 	var skeleton := Skeleton3D.new()
@@ -632,7 +614,7 @@ static func _same_place_chains(t) -> void:
 		joints[0] = skeleton.get_bone_global_pose(2).origin
 		joints[1] = skeleton.get_bone_global_pose(5).origin
 		joints[2] = skeleton.get_bone_global_pose(8).origin)
-	var apart := 0.0 # a1과 b1이 가장 멀리 떨어진 거리 (m)
+	var apart := 0.0
 	for frame in 60:
 		skeleton.advance(1.0 / 60.0)
 		await t.process_frame
@@ -643,11 +625,51 @@ static func _same_place_chains(t) -> void:
 	t.check(apart < LENGTH_TOLERANCE, "Same place chains: two chains at the same place move %.4f m apart." % apart)
 	t.check(nearest > 0.03, "Same place chains: the link next to them stays %.4f m from the sphere's center." % nearest)
 
+#        n (z -0.05)
+#   w          e    (x -0.05, x 0.05)
+#        s (z 0.05)
+static func _loop_order(t) -> void:
+	var center := Vector3(0.03 / sqrt(2.0), -BONE_LENGTH, -0.03 / sqrt(2.0))
+	var skeleton := Skeleton3D.new()
+	t.root.add_child(skeleton)
+	skeleton.add_bone("r")
+	var sides := [["e", Vector3(0.05, 0, 0)], ["w", Vector3(-0.05, 0, 0)], ["n", Vector3(0, 0, -0.05)], ["s", Vector3(0, 0, 0.05)]]
+	for side in sides:
+		for i in 3:
+			var bone := skeleton.add_bone("%s%d" % [side[0], i])
+			skeleton.set_bone_parent(bone, 0 if i == 0 else bone - 1)
+			skeleton.set_bone_rest(bone, Transform3D(Basis(), side[1] if i == 0 else Vector3(0, -BONE_LENGTH, 0)))
+			skeleton.set_bone_pose(bone, skeleton.get_bone_rest(bone))
+	skeleton.modifier_callback_mode_process = Skeleton3D.MODIFIER_CALLBACK_MODE_PROCESS_MANUAL
+	var simulator: Node = ClassDB.instantiate("BoneClothSimulator3D")
+	skeleton.add_child(simulator)
+	simulator.set("chain_count", 4)
+	for c in 4:
+		simulator.set("chains/%d/root_bone_name" % c, "%s0" % sides[c][0])
+		simulator.set("chains/%d/end_bone_name" % c, "%s2" % sides[c][0])
+	simulator.set("link_mode", 2)
+	simulator.set("stiffness/value", 0.2)
+	simulator.set("radius/value", 0.01)
+	var sphere: Node = ClassDB.instantiate("BoneClothCollisionSphere3D")
+	simulator.add_child(sphere)
+	sphere.set("position", center)
+	sphere.set("radius", 0.02)
+	var joints: Array[Vector3] = [Vector3(), Vector3()] # e1, n1 (skeleton 공간)
+	skeleton.skeleton_updated.connect(func() -> void:
+		joints[0] = skeleton.get_bone_global_pose(2).origin
+		joints[1] = skeleton.get_bone_global_pose(8).origin)
+	for frame in 60:
+		skeleton.advance(1.0 / 60.0)
+		await t.process_frame
+	var nearest := center.distance_to(Geometry3D.get_closest_point_to_segment(center, joints[0], joints[1]))
+	skeleton.free()
 
-# root spring이 있으면 root bone(b0)도 흔들린다.
+	t.check(nearest > 0.02, "Loop order: the link between two neighbors listed apart stays %.4f m from the sphere's center." % nearest)
+
+
 static func _root_spring(t) -> void:
-	var moved := {} # stiffness마다, 움직이는 동안 root가 pose에서 가장 멀리 간 거리 (m)
-	var settled := {} # stiffness마다, 멈추고 2초 뒤 root가 pose에서 떨어진 거리 (m)
+	var moved := {}
+	var settled := {}
 	for stiffness in [0.0, 0.15]:
 		var rig := Rig.new(t)
 		rig.simulator.set("root_spring_stiffness", stiffness)

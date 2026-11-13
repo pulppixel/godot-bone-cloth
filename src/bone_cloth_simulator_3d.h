@@ -227,6 +227,7 @@ private:
 	bool _build_joints(Skeleton3D *p_skeleton, Chain &p_chain);
 	void _build_branches();
 	void _build_same_chains();
+	void _sort_around(LocalVector<uint32_t> &r_chains) const;
 	void _build_links();
 	void _build_sync(Skeleton3D *p_skeleton);
 	bool _is_child_collision(const NodePath &p_node_path) const;

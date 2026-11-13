@@ -329,7 +329,7 @@
 			To see the limits, check [b]Show Limit Angle[/b] in the node's toolbar menu.
 		</member>
 		<member name="link_mode" type="int" setter="set_link_mode" getter="get_link_mode" enum="BoneClothSimulator3D.LinkMode" default="0">
-			Links neighboring chains, in list order, so that a collision cannot pass between them. A branch that starts below its trunk's root is not linked.
+			Links neighboring chains so that a collision cannot pass between them. A branch that starts below its trunk's root is not linked.
 		</member>
 		<member name="link_spacing/damping_curve" type="Curve" setter="set_link_spacing_damping_curve" getter="get_link_spacing_damping_curve">
 			Scales [member link_spacing/value] from the roots ([code]0.0[/code]) to the tips ([code]1.0[/code]). For long hair, keep it at [code]0.0[/code] until past the middle.
@@ -424,10 +424,10 @@
 			The chains are not linked.
 		</constant>
 		<constant name="LINK_MODE_SEQUENTIAL" value="1" enum="LinkMode">
-			Each chain is linked to the next one, for a cape or a skirt open at the front.
+			Each chain is linked to the next one in the list, for a cape or a skirt open at the front.
 		</constant>
 		<constant name="LINK_MODE_LOOP" value="2" enum="LinkMode">
-			Each chain is linked to the next one and the last to the first, for a skirt all around.
+			The chains are linked all around, in their order around the direction they hang, whatever their list order. For a skirt all around.
 		</constant>
 	</constants>
 </class>

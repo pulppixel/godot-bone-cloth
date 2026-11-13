@@ -12,6 +12,10 @@
 _data = [Vector2(0, 0.5), 0.0, 0.5, 1, 1, Vector2(1, 1), 0.5, 0.0, 1, 1]
 point_count = 2
 
+[sub_resource type="Curve" id="Curve_wind_coat"]
+_data = [Vector2(0, 0.5), 0.0, 0.0, 0, 0, Vector2(1, 1), 1.0, 0.0, 0, 0]
+point_count = 2
+
 [sub_resource type="Curve" id="Curve_hair_limit"]
 _data = [Vector2(0, 0.2), 0.0, 0.8000001, 1, 1, Vector2(1, 1), 0.8000001, 0.0, 1, 1]
 point_count = 2
@@ -25,23 +29,20 @@ point_count = 2
 _data = [Vector2(0, 0.05), 0.0, 0.08333333, 1, 1, Vector2(0.6, 0.1), 0.08333333, 2.2500002, 1, 1, Vector2(1, 1), 2.2500002, 0.0, 1, 1]
 point_count = 3
 
-[sub_resource type="Curve" id="Curve_wind_coat"]
-_data = [Vector2(0, 0.5), 0.0, 0.0, 0, 0, Vector2(1, 1), 1.0, 0.0, 0, 0]
-point_count = 2
-
 [node name="demo_d" unique_id=783295312 instance=ExtResource("1_1kcjk")]
 script = ExtResource("7_skin")
 
 [node name="Coat" type="BoneClothSimulator3D" parent="GeneralSkeleton" parent_id_path=PackedInt32Array(952394679) index="3" unique_id=1918345316]
+link_mode = 2
 drag/value = 0.15
 stiffness/value = 0.15
 limit_angle/value = 0.7853982
 limit_angle/damping_curve = SubResource("Curve_skirt_limit")
-depth_inertia = 0.7
-movement_speed_limit = 4.0
 wind_influence/value = 2.0
 wind_influence/damping_curve = SubResource("Curve_wind_coat")
 wind_sync = 0.9
+depth_inertia = 0.7
+movement_speed_limit = 4.0
 chain_count = 30
 chains/0/root_bone_name = "J_Sec_L_CoatSkirtBack_01"
 chains/0/root_bone = 97
@@ -263,10 +264,10 @@ limit_angle/value = 0.7853982
 limit_angle/damping_curve = SubResource("Curve_hair_limit")
 limit_angle/stiffness = 0.66
 gravity/value = 5.0
+wind_sync = 0.5
 local_movement_speed_limit = 3.0
 local_rotation_speed_limit = 6.2831855
 joint_speed_limit = 3.0
-wind_sync = 0.5
 chain_count = 4
 chains/0/root_bone_name = "J_Sec_Hair1_08"
 chains/0/root_bone = 35

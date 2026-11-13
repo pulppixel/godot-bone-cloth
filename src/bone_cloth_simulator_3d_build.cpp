@@ -159,6 +159,48 @@ void BoneClothSimulator3D::_build_same_chains() {
 	}
 }
 
+void BoneClothSimulator3D::_sort_around(LocalVector<uint32_t> &r_chains) const {
+	struct Around {
+		float angle = 0.0f;
+		uint32_t chain = 0;
+
+		bool operator<(const Around &p_other) const {
+			return angle < p_other.angle;
+		}
+	};
+
+	Vector3 center;
+	Vector3 axis;
+	LocalVector<Around> around;
+	for (const uint32_t c : r_chains) {
+		const LocalVector<Joint> &joints = chains[c].joints;
+		if (!joints.is_empty()) {
+			center += joints[0].rest_location;
+			axis += joints[joints.size() - 1].rest_location - joints[0].rest_location;
+			around.push_back({ 0.0f, c });
+		}
+	}
+	if (around.is_empty() || axis.is_zero_approx()) {
+		return;
+	}
+
+	center /= float(around.size());
+	axis.normalize();
+	const Vector3 side = axis.cross(Math::abs(axis.z) < 0.9f ? Vector3(0, 0, 1) : Vector3(1, 0, 0)).normalized();
+	const Vector3 forward = side.cross(axis);
+	for (Around &entry : around) {
+		const LocalVector<Joint> &joints = chains[entry.chain].joints;
+		const Vector3 offset = joints[MIN(1u, joints.size() - 1)].rest_location - center;
+		entry.angle = Math::atan2(offset.dot(forward), offset.dot(side));
+	}
+	around.sort();
+
+	r_chains.clear();
+	for (const Around &entry : around) {
+		r_chains.push_back(entry.chain);
+	}
+}
+
 void BoneClothSimulator3D::_build_links() {
 	links.clear();
 	LocalVector<uint32_t> linked;
@@ -166,6 +208,10 @@ void BoneClothSimulator3D::_build_links() {
 		if ((chains[c].parent_chain < 0 || chains[c].parent_joint == 0) && chains[c].same_as < 0) {
 			linked.push_back(c);
 		}
+	}
+
+	if (link_mode == LINK_MODE_LOOP) {
+		_sort_around(linked);
 	}
 
 	const uint32_t count = linked.size();
