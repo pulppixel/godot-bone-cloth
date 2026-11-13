@@ -9,12 +9,12 @@ const TestChain := preload("res://tests/test_chain.gd")
 const TestWarnings := preload("res://tests/test_warnings.gd")
 
 const TIMEOUT_MSEC := 300000
-const EDITOR_PROJECT := "godot-bone-cloth-editor-tests" # OS 임시 폴더 안에 만드는 에디터 테스트용 프로젝트
+const EDITOR_PROJECT := "godot-bone-cloth-editor-tests"
 
 var passes := 0
 var failures := 0
 var _start_msec := 0
-var _delta := 0.0 # 이번 frame의 시간(초)
+var _delta := 0.0
 var _errors := ErrorCount.new()
 
 
@@ -60,7 +60,6 @@ func check(condition: bool, message: String) -> void:
 
 
 func _run() -> void:
-	# 플러그인이 로드되었는지 체크한다.
 	if not ClassDB.class_exists(&"BoneClothSimulator3D"):
 		check(false, "The plugin is not loaded (no BoneClothSimulator3D class). In a new clone, run --headless --import first.")
 		_finish()
@@ -84,7 +83,6 @@ func _run() -> void:
 	_finish()
 
 
-# 임시 폴더에 addon과 tests만 든 프로젝트를 만들고, 거기서 headless 에디터로 이 파일을 다시 실행한다.
 func _run_editor_tests() -> void:
 	var project := OS.get_temp_dir().path_join(EDITOR_PROJECT)
 	_remove(project)
@@ -112,7 +110,6 @@ func _run_editor_tests() -> void:
 	failures += counts.get_string(2).to_int()
 
 
-# 폴더를 통째로 복사한다. 빌드가 남기는 디버그 파일과 에디터가 쓰는 DLL 사본(~로 시작)은 뺀다.
 func _copy(p_from: String, p_to: String) -> void:
 	DirAccess.make_dir_recursive_absolute(p_to)
 	for file in DirAccess.get_files_at(p_from):
@@ -122,7 +119,6 @@ func _copy(p_from: String, p_to: String) -> void:
 		_copy(p_from.path_join(folder), p_to.path_join(folder))
 
 
-# 폴더를 통째로 지운다. 지난 실행의 파일과 에디터 캐시(.godot)가 남지 않게 한다.
 func _remove(p_path: String) -> void:
 	if not DirAccess.dir_exists_absolute(p_path):
 		return

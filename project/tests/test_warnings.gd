@@ -110,9 +110,7 @@ static func _skeleton() -> Skeleton3D:
 	return skeleton
 
 
-# 경우에 맞게 chain과 collision 목록을 넣는다. 따로 적지 않은 경우는 b0에서 b4까지 chain 하나다.
 static func _set_up(p_case: String, p_simulator: Node) -> void:
-	# chain마다 root bone, end bone. EmptyNames는 막 더한 chain처럼 둘 다 비워 둔다.
 	var chains := {
 		"NoChains": [],
 		"EmptyNames": [["", ""]],
@@ -178,7 +176,6 @@ static func _compare(t, p_cases: Node3D, p_label: String, p_column: int) -> void
 		t.check(shown[path] == expected, "Warnings, %s, %s: shows %s, expected %s." % [case_name, p_label, shown[path], expected])
 
 
-# Scene dock의 항목마다 경고를 읽는다. 결과는 node path -> 경고 목록.
 static func _read_scene_dock(p_cases: Node3D) -> Dictionary:
 	var dock: Node = EditorInterface.get_base_control().find_children("*", "SceneTreeDock", true, false)[0]
 	var shown := {}

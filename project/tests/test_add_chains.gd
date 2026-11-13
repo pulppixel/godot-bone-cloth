@@ -34,7 +34,6 @@ static func run(t) -> void:
 	t.check(simulator.chain_count == 0, "Edit Chains: %d chains after undo, expected 0." % simulator.chain_count)
 	history.redo()
 
-	# 다시 열면 chain에 든 bone은 체크로 보인다.
 	simulator.set("chains/3/extend_end_bone", false)
 	tree = _press_edit_chains(t)
 	if tree == null:
@@ -46,7 +45,6 @@ static func run(t) -> void:
 		var expected := [bone_name != "d0", bone_name in ["a0", "d1"]]
 		t.check(state == expected, "Edit Chains, reopened: %s checked and editable %s, expected %s." % [bone_name, state, expected])
 
-	# a0의 체크를 풀면 a0 아래 chain 3개가 빠진다.
 	_find_item(tree, "a0").set_checked(0, false)
 	tree.get_parent().confirmed.emit()
 	t.check(_chains(simulator) == [["d1", "d1"]], "Edit Chains, a0 unchecked: %s, expected [[d1, d1]]." % [_chains(simulator)])

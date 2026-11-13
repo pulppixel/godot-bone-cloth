@@ -39,9 +39,8 @@ class Rig:
 	var character := Node3D.new()
 	var skeleton := Skeleton3D.new()
 	var simulator: Node
-	var poses: Array[Transform3D] = [] # 지난 frame에 시뮬레이터가 쓴 bone pose (skeleton 공간)
+	var poses: Array[Transform3D] = []
 
-	# p_owner: "model"이면 simulator가 모델(character)에 저장된 경우, "stage"면 Stage에서 더한 경우, ""이면 owner가 없는 경우.
 	func _init(p_tree: SceneTree, p_character_scale := 1.0, p_armature_scale := 1.0, p_owner := "model", p_collision := false) -> void:
 		var armature := Node3D.new()
 		stage.name = "Stage"
@@ -92,12 +91,10 @@ class Rig:
 
 		skeleton.skeleton_updated.connect(_read_poses)
 
-	# 시뮬레이터를 p_delta초 진행하고, 결과가 skeleton에 쓰일 때까지 기다린다.
 	func advance(p_delta: float) -> void:
 		skeleton.advance(p_delta)
 		await skeleton.get_tree().process_frame
 
-	# 끝 bone의 위치. character 기준이고, 캐릭터 크기로 나눈 m 단위다(scale 1과 바로 비교할 수 있다).
 	func tip() -> Vector3:
 		var world := skeleton.global_transform * poses[TIP].origin
 		return character.global_transform.affine_inverse() * world
@@ -111,7 +108,6 @@ class Rig:
 			poses.append(skeleton.get_bone_global_pose(i))
 
 
-# t: run_tests.gd.
 static func run(t) -> void:
 	await _frame_rate(t)
 	await _teleport(t)
@@ -154,7 +150,7 @@ static func _move(p_rig: Rig, p_time: float) -> void:
 
 
 static func _frame_rate(t) -> void:
-	var tips := {} # fps마다, 1/30초마다 읽은 끝 bone 위치
+	var tips := {}
 	for fps in [30, 60, 120]:
 		var rig := Rig.new(t)
 		rig.simulator.set("gravity/direction", Vector3(-1, 0, 0))
@@ -225,8 +221,8 @@ static func _limits_and_lengths(t) -> void:
 
 static func _soft_limit(t) -> void:
 	var limit := deg_to_rad(30.0)
-	var widest := {} # stiffness별, pose 방향과 가장 많이 벌어진 각 (rad)
-	var longest := 0.0 # pose 길이와 가장 많이 다른 양 (m)
+	var widest := {}
+	var longest := 0.0
 	for stiffness in [0.0, 0.3]:
 		var rig := Rig.new(t)
 		rig.simulator.set("limit_angle/value", limit)
@@ -694,8 +690,8 @@ static func _root_spring_forward(t) -> void:
 	rig.simulator.set("root_spring_stiffness", 0.15)
 	rig.simulator.set("root_spring_limit", ROOT_SPRING_LIMIT)
 	rig.simulator.set("root_spring_forward_limit", ROOT_SPRING_FORWARD_LIMIT)
-	var down := 0.0 # root가 pose보다 아래(bone 방향)로 간 가장 큰 거리 (m)
-	var up := 0.0 # root가 pose보다 위로 간 가장 큰 거리 (m)
+	var down := 0.0
+	var up := 0.0
 	for frame in 120:
 		rig.character.position = Vector3(0, sin(float(frame + 1) / 60.0 * 12.0) * 0.1, 0)
 		await rig.advance(1.0 / 60.0)
