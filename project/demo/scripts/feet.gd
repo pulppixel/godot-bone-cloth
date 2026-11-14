@@ -18,6 +18,7 @@ const MAX_OFFSET := 0.5
 const SAMPLES := 60
 const LIFTED := 0.04
 const SUPPORT := 0.05
+const PADS: Array[NodePath] = [^"LeftPad", ^"RightPad"]
 const MOVING := 0.1
 const SHIFT := 0.3
 const STEP := 0.02
@@ -36,6 +37,8 @@ var _hips := -1
 var _legs: Array[Leg] = []
 var _hip := Vector2.ZERO
 var _floor_y := NAN
+var _riding := false
+var board: Node3D
 var _skin: CharacterSkin
 var _cycles := []
 var _phase := 0.0
@@ -240,6 +243,16 @@ func _cycle(delta: float) -> Array[Cycle]:
 
 func _ground(delta: float) -> void:
 	var space := _skeleton.get_global_transform_interpolated()
+	if board != null:
+		_ride(space)
+		return
+	if _riding:
+		_riding = false
+		_hip = Vector2.ZERO
+		_floor_y = NAN
+		for leg in _legs:
+			leg.offset = Vector3.ZERO
+			leg.lift = Vector2.ZERO
 	var floor_y := space.origin.y
 	var grounded := _skin.body.is_on_floor()
 	var moved := 0.0
@@ -283,6 +296,21 @@ func _ground(delta: float) -> void:
 	for i in LEGS.size():
 		_aim(_legs[i], space, heights[i], grounded and cycle.is_empty())
 	_raise_hips(space)
+
+
+func _ride(space: Transform3D) -> void:
+	_riding = true
+	_hip = Vector2.ZERO
+	var ankle_height := _skeleton.get_bone_global_rest(_legs[0].ankle).origin.y * space.basis.get_scale().y
+	for i in LEGS.size():
+		var leg := _legs[i]
+		var pad := board.get_node(PADS[i]) as Node3D
+		var at := pad.get_global_transform_interpolated()
+		var ankle := space * _skeleton.get_bone_global_pose(leg.ankle).origin
+		leg.offset = at.origin + at.basis.y.normalized() * ankle_height - ankle
+		leg.lift = Vector2.ZERO
+		leg.planted = false
+		_aim(leg, space, 0.0, false)
 
 
 func _swing(leg: Leg, cycle: Cycle, space: Transform3D, floor_y: float, delta: float) -> float:

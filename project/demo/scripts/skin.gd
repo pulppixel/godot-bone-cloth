@@ -19,6 +19,7 @@ const LEAN_ADD := &"parameters/Lean/add_amount"
 const LEAN_PHASE := &"parameters/LeanPhase/seek_request"
 const IDLE_FOOT := &"parameters/IdleFoot/blend_amount"
 const EXIT_FOOT := &"parameters/ExitFoot/blend_amount"
+const BOARD_CROUCH := &"parameters/Board/blend_amount"
 
 var tree: AnimationTree
 var skeleton: Skeleton3D
@@ -80,6 +81,10 @@ func set_move(p_clip_speed: float, p_rate: float) -> void:
 
 func set_lean(p_amount: float) -> void:
 	tree.set(SIDE, p_amount)
+
+
+func set_board_crouch(p_amount: float) -> void:
+	tree.set(BOARD_CROUCH, p_amount)
 
 
 func seek_lean(p_phase: float) -> void:

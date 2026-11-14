@@ -2,17 +2,20 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://ey0iplx3ivsr"
-path.s3tc="res://.godot/imported/colormap.png-b48baf2d948b6200b80ce2238345abc8.s3tc.ctex"
+uid="uid://uub1xvnikhul"
+path.s3tc="res://.godot/imported/hoverboard_1.png-938eab79acadf1c52c25e6e2f4884034.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
 }
+generator_parameters={
+"md5": "c029bed94aedb2f4499188ad3edc1436"
+}
 
 [deps]
 
-source_file="res://demo/stage/skate/Textures/colormap.png"
-dest_files=["res://.godot/imported/colormap.png-b48baf2d948b6200b80ce2238345abc8.s3tc.ctex"]
+source_file="res://demo/stage/board/hoverboard_1.png"
+dest_files=["res://.godot/imported/hoverboard_1.png-938eab79acadf1c52c25e6e2f4884034.s3tc.ctex"]
 
 [params]
 

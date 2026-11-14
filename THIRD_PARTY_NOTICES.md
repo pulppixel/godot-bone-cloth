@@ -57,3 +57,9 @@ SOFTWARE.
 
 The demo characters are VRoid Studio sample models by pixiv VRoid Project, not covered by this repository's license.
 Conditions of use: https://vroid.pixiv.help/hc/en-us/articles/4402394424089
+
+## Hover board
+
+"XYZ Daily. Day 4. Hoverboard" by Olyona Kuznetsova, https://sketchfab.com/3d-models/xyz-daily-day-4-hoverboard-e34bc891297145f181a66595b478e55b
+Licensed under CC BY 4.0: https://creativecommons.org/licenses/by/4.0/
+Changes: leveled and scaled to 1.5 m.

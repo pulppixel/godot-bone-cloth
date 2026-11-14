@@ -4,8 +4,8 @@ const CharacterSkin := preload("res://demo/scripts/skin.gd")
 const CameraRig := preload("res://demo/scripts/camera_rig.gd")
 
 
-enum Anim { IDLE, MOVE, STOP, JUMP_START, FALL, LAND }
-const TREE_STATE: Array[StringName] = [&"idle", &"move", &"idle", &"jump_start", &"fall", &"land"]
+enum Anim { IDLE, MOVE, STOP, JUMP_START, FALL, LAND, BOARD }
+const TREE_STATE: Array[StringName] = [&"idle", &"move", &"idle", &"jump_start", &"fall", &"land", &"board"]
 
 const WALK := 1.064
 const RUN := 7.65
@@ -30,6 +30,26 @@ const GROUND_RAY_UP := 0.3
 const GROUND_RAY_DOWN := 0.6
 const BLOCK_CHECK := 0.1
 const BLOCK_HOLD := 0.2
+const STANCE := deg_to_rad(90.0)
+const AIR_TURN_DEG := 270.0
+const TURN_ACCEL_DEG := 720.0
+const TURN_GAIN := 6.0
+const QUICK_JUMP := 0.75
+const QUICK_TIME := 0.5
+const BOUNCE_SPEED := 4.0
+const SQUASH := 0.25
+const LANDING_SHARE := 0.5
+const LEAN_TIME := 0.1
+const TILT_TIME := 0.08
+const BOARD_REACH := 0.6
+const BOARD_RAY_UP := 0.8
+const BOARD_RAY_DOWN := 1.6
+const BOARD_BOTTOM := -0.03
+const BOARD_SAMPLES: Array[float] = [-0.75, -0.375, 0.0, 0.375, 0.75]
+const BOARD_CLEARANCE := 0.15
+const LIFT_FALL := 0.15
+const LIFT_MAX := 0.2
+const FOOT_GROUND := 2
 
 @export_group("Speed")
 @export var walk_speed := WALK
@@ -54,13 +74,18 @@ const BLOCK_HOLD := 0.2
 @export var step_lag := 0.15
 
 @export_group("Board")
-@export var board_height := 0.4
+@export var board_height := 0.35
 @export var board_speed := 12.0
-@export var board_acceleration := 8.0
-@export var board_jump := 6.0
-@export var board_spring := 6.0
-@export var board_damping := 0.4
-@export var board_reach := 3.0
+@export var board_thrust := 12.0
+@export var board_grip := 1.8
+@export var board_turn_deg := 180.0
+@export var board_gravity := 30.0
+@export var board_jump := 1.0
+@export var board_jump_held := 2.5
+@export var board_spring := 14.0
+@export var board_damping := 0.3
+@export var board_crouch := 0.5
+@export var board_lean_deg := 18.0
 
 @export var camera_rig: Node3D
 @export var board: Node3D
@@ -89,6 +114,17 @@ var _state_age := 0.0
 var _boarding := false
 var _floor_body: Object
 var _ride: Node3D
+var _heading := 0.0
+var _yaw_speed := 0.0
+var _hover := 0.0
+var _hover_speed := 0.0
+var _held_gravity := 1.0
+var _jump_held := false
+var _in_air := false
+var _since_landed := INF
+var _lean_roll := 0.0
+var _tilt := Quaternion.IDENTITY
+var _lift := 0.0
 
 @onready var _skin: Node3D = $Skin
 @onready var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
@@ -116,6 +152,7 @@ func use(character: Node3D) -> void:
 	_right_foot = _skeleton.find_bone(&"RightFoot")
 	_character.request(TREE_STATE[_anim])
 	_character.rest(&"still")
+	_character.feet.board = board if _boarding else null
 	(camera_rig as CameraRig).frame(_character)
 	_anchor_cloth()
 
@@ -135,7 +172,7 @@ func _physics_process(delta: float) -> void:
 	if Input.is_action_just_pressed("board"):
 		_set_boarding(not _boarding)
 	if _boarding:
-		_fly(direction, delta)
+		_ride_board(direction, delta)
 		_follow_ride()
 		return
 	
@@ -378,39 +415,136 @@ func _ground() -> Vector3:
 func _set_boarding(on: bool) -> void:
 	_boarding = on
 	board.visible = on
+	_character.feet.board = board if on else null
 	_stop = null
-	_enter(Anim.IDLE if on else Anim.FALL)
-	var hit := _board_ground()
-	if on and not hit.is_empty():
-		global_position.y = maxf(global_position.y, hit.position.y + board_height)
-		velocity.y = 0.0
-
-
-func _board_ground() -> Dictionary:
-	var from := global_position + Vector3.UP * GROUND_RAY_UP
-	var query := PhysicsRayQueryParameters3D.create(from, from + Vector3.DOWN * board_reach, collision_mask, [get_rid()])
-	return get_world_3d().direct_space_state.intersect_ray(query)
-
-
-func _fly(direction: Vector3, delta: float) -> void:
-	var flat := Vector3(velocity.x, 0.0, velocity.z).move_toward(direction * board_speed * _scale, board_acceleration * _scale * delta)
-	var hit := _board_ground()
-	if hit.is_empty():
-		velocity.y = maxf(velocity.y - _gravity * delta, -max_fall_speed)
+	if on:
+		var flat := Vector3(velocity.x, 0.0, velocity.z)
+		_heading = atan2(flat.x, flat.z) if flat.length() > STOP_SPEED else _skin.rotation.y
+		_yaw_speed = 0.0
+		_hover = -SQUASH
+		_hover_speed = 0.0
+		_lift = 0.0
+		_lean_roll = 0.0
+		_tilt = Quaternion.IDENTITY
+		_in_air = not is_on_floor()
+		_enter(Anim.BOARD)
 	else:
-		var offset: float = global_position.y - hit.position.y - board_height
-		velocity.y += (-board_spring * board_spring * offset - 2.0 * board_damping * board_spring * velocity.y) * delta
-		if Input.is_action_just_pressed("jump") and absf(offset) < board_height:
-			velocity.y = board_jump
+		_step_offset = _skin.position.y - _skin_y
+		_step_speed = 0.0
+		_skin.basis = Basis(Vector3.UP, _heading - STANCE)
+		_enter(Anim.FALL)
+
+
+func _ride_board(direction: Vector3, delta: float) -> void:
+	var grounded := is_on_floor()
+	var throttle := minf(direction.length(), 1.0)
+	var rate := deg_to_rad(board_turn_deg if grounded else AIR_TURN_DEG)
+	var want := 0.0
+	if throttle > 0.0:
+		want = clampf(angle_difference(_heading, atan2(direction.x, direction.z)) * TURN_GAIN, -rate, rate)
+	_yaw_speed = move_toward(_yaw_speed, want, deg_to_rad(TURN_ACCEL_DEG) * delta)
+	_heading = wrapf(_heading + _yaw_speed * delta, -PI, PI)
+
+	var flat := Vector3(velocity.x, 0.0, velocity.z)
+	var forward := Vector3(sin(_heading), 0.0, cos(_heading))
+	if grounded:
+		if flat.length() > STOP_SPEED:
+			var slip := angle_difference(atan2(flat.x, flat.z), _heading)
+			flat = flat.rotated(Vector3.UP, slip * (1.0 - exp(-board_grip * delta)))
+		flat += forward * board_thrust * _scale * throttle * delta
+		flat *= maxf(1.0 - board_thrust * delta / board_speed, 0.0)
+
+	_since_landed += delta
+	if grounded and Input.is_action_just_pressed("jump"):
+		var height := board_jump + (QUICK_JUMP if _since_landed <= QUICK_TIME else 0.0)
+		velocity.y = sqrt(2.0 * board_gravity * height * _scale)
+		_held_gravity = height / (height + board_jump_held - board_jump)
+		_jump_held = true
+	elif not grounded:
+		_jump_held = _jump_held and velocity.y > 0.0 and Input.is_action_pressed("jump")
+		velocity.y = maxf(velocity.y - board_gravity * (_held_gravity if _jump_held else 1.0) * delta, -max_fall_speed)
 	velocity.x = flat.x
 	velocity.z = flat.z
+	var before := velocity
 	move_and_slide()
-	_turn_skin(flat if flat.length() > STOP_SPEED else direction, delta)
-	_character.set_move(0.0, 1.0)
+	_bounce(before)
+	_ground()
+	if is_on_floor() and _in_air:
+		_hover_speed += minf(before.y, 0.0) * LANDING_SHARE
+		_since_landed = 0.0
+	_in_air = not is_on_floor()
+	_pose_board(delta)
+
+
+func _bounce(before: Vector3) -> void:
+	var flat := Vector3(before.x, 0.0, before.z)
+	if flat.length() < BOUNCE_SPEED * _scale:
+		return
+	for i in get_slide_collision_count():
+		var normal := get_slide_collision(i).get_normal()
+		var wall := Vector3(normal.x, 0.0, normal.z)
+		if absf(normal.y) > 0.5 or flat.dot(wall) >= 0.0:
+			continue
+		flat = flat.bounce(wall.normalized())
+		velocity.x = flat.x
+		velocity.z = flat.z
+		_heading = atan2(flat.x, flat.z)
+		_yaw_speed = 0.0
+		return
+
+
+func _board_normal() -> Vector3:
+	if not is_on_floor():
+		return Vector3.UP
+	var forward := Vector3(sin(_heading), 0.0, cos(_heading)) * BOARD_REACH
+	var space := get_world_3d().direct_space_state
+	var ends: Array[Vector3] = []
+	for along in [forward, -forward]:
+		var from: Vector3 = global_position + along + Vector3.UP * BOARD_RAY_UP
+		var hit := space.intersect_ray(PhysicsRayQueryParameters3D.create(from, from + Vector3.DOWN * BOARD_RAY_DOWN, collision_mask, [get_rid()]))
+		if hit.is_empty():
+			return Vector3.UP
+		ends.append(hit.position)
+	var side := Vector3.UP.cross(forward)
+	var normal := (ends[0] - ends[1]).cross(side).normalized()
+	return normal if normal.y >= cos(floor_max_angle) else Vector3.UP
+
+
+func _board_lift() -> float:
+	var space := get_world_3d().direct_space_state
+	var needed := 0.0
+	for along in BOARD_SAMPLES:
+		var bottom := board.global_transform * Vector3(along, BOARD_BOTTOM, 0.0)
+		var query := PhysicsRayQueryParameters3D.create(bottom + Vector3.UP * BOARD_RAY_UP, bottom + Vector3.DOWN * BOARD_RAY_DOWN, collision_mask | FOOT_GROUND, [get_rid()])
+		var hit := space.intersect_ray(query)
+		if not hit.is_empty():
+			needed = maxf(needed, hit.position.y + BOARD_CLEARANCE - bottom.y)
+	return minf(needed, LIFT_MAX)
+
+
+func _pose_board(delta: float) -> void:
+	var w := board_spring
+	_hover_speed += (-w * w * _hover - 2.0 * board_damping * w * _hover_speed) * delta
+	_hover += _hover_speed * delta
+	if _hover < -SQUASH:
+		_hover = -SQUASH
+		_hover_speed = maxf(_hover_speed, 0.0)
+
+	_tilt = _tilt.slerp(Quaternion(Vector3.UP, _board_normal()), 1.0 - exp(-delta / TILT_TIME))
+	var speed := Vector2(velocity.x, velocity.z).length()
+	var lean := clampf(atan(_yaw_speed * speed / _gravity), -deg_to_rad(board_lean_deg), deg_to_rad(board_lean_deg))
+	_lean_roll = lerpf(_lean_roll, -lean, 1.0 - exp(-delta / LEAN_TIME))
+
+	_skin.basis = Basis(_tilt) * Basis(Vector3.UP, _heading) * Basis(Vector3.BACK, _lean_roll) * Basis(Vector3.UP, -STANCE)
+	_skin.position.y = _skin_y + board_height + _hover
+	var needed := _board_lift()
+	_lift = needed if needed > _lift else lerpf(_lift, needed, 1.0 - exp(-delta / LIFT_FALL))
+	_skin.position.y += _lift
+	_character.set_board_crouch(board_crouch + (1.0 - board_crouch) * 0.5 * clampf(-_hover / SQUASH, 0.0, 1.0))
 
 
 func _follow_ride() -> void:
-	var ride: Node3D = board if _boarding else (_floor_body as AnimatableBody3D if is_on_floor() else null)
+	var ride: Node3D = _floor_body as AnimatableBody3D if is_on_floor() else null
 	if ride == _ride:
 		return
 	_ride = ride

@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://b0td0684qbrdk"
-path="res://.godot/imported/skateboard.glb-d0e4bcc07a37d53ce47f28257716fb6a.scn"
+uid="uid://bnkgmy1oi0103"
+path="res://.godot/imported/hoverboard.glb-022c3cfd7537be16392dd623659952c4.scn"
 
 [deps]
 
-source_file="res://demo/stage/skate/skateboard.glb"
-dest_files=["res://.godot/imported/skateboard.glb-d0e4bcc07a37d53ce47f28257716fb6a.scn"]
+source_file="res://demo/stage/board/hoverboard.glb"
+dest_files=["res://.godot/imported/hoverboard.glb-022c3cfd7537be16392dd623659952c4.scn"]
 
 [params]
 

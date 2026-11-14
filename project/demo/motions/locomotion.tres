@@ -49,6 +49,14 @@ animation = &"demo_motions/Walk"
 [sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_tumy4"]
 animation = &"demo_motions/Sprint"
 
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_bstand"]
+animation = &"demo_motions/Idle"
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_bcrouch"]
+animation = &"demo_motions/Crouch_Idle"
+
+[sub_resource type="AnimationNodeBlend2" id="AnimationNodeBlend2_board"]
+
 [sub_resource type="AnimationNodeBlendSpace1D" id="AnimationNodeBlendSpace1D_g8oy1"]
 min_space = 0.0
 max_space = 9.0
@@ -101,6 +109,10 @@ input_4/name = "land"
 input_4/auto_advance = true
 input_4/break_loop_at_end = false
 input_4/reset = true
+input_5/name = "board"
+input_5/auto_advance = false
+input_5/break_loop_at_end = false
+input_5/reset = true
 
 [resource]
 nodes/output/position = Vector2(2480, -133.33333)
@@ -146,4 +158,10 @@ nodes/ExitFoot/node = SubResource("AnimationNodeBlend2_6bjqp")
 nodes/ExitFoot/position = Vector2(853.3333, -306.66666)
 nodes/Exit/node = SubResource("AnimationNodeAnimation_7jeql")
 nodes/Exit/position = Vector2(466.66666, -266.66666)
-node_connections = [&"output", 0, &"State", &"State", 0, &"Rest", &"State", 1, &"Lean", &"State", 2, &"JumpStart", &"State", 3, &"Fall", &"State", 4, &"Land", &"Side", 0, &"LeanL", &"Side", 1, &"LeanJog", &"Side", 2, &"LeanR", &"LeanOnly", 0, &"Side", &"LeanOnly", 1, &"LeanBase", &"LeanPhase", 0, &"LeanOnly", &"Lean", 0, &"MoveRate", &"Lean", 1, &"LeanPhase", &"IdleFoot", 0, &"Idle", &"IdleFoot", 1, &"IdleMirror", &"MoveRate", 0, &"Move", &"Rest", 0, &"IdleFoot", &"Rest", 1, &"ExitFoot", &"ExitFoot", 0, &"Exit", &"ExitFoot", 1, &"ExitMirror"]
+nodes/BoardStand/node = SubResource("AnimationNodeAnimation_bstand")
+nodes/BoardStand/position = Vector2(1240, 1040)
+nodes/BoardCrouch/node = SubResource("AnimationNodeAnimation_bcrouch")
+nodes/BoardCrouch/position = Vector2(1240, 1240)
+nodes/Board/node = SubResource("AnimationNodeBlend2_board")
+nodes/Board/position = Vector2(1600, 1100)
+node_connections = [&"output", 0, &"State", &"State", 0, &"Rest", &"State", 1, &"Lean", &"State", 2, &"JumpStart", &"State", 3, &"Fall", &"State", 4, &"Land", &"Side", 0, &"LeanL", &"Side", 1, &"LeanJog", &"Side", 2, &"LeanR", &"LeanOnly", 0, &"Side", &"LeanOnly", 1, &"LeanBase", &"LeanPhase", 0, &"LeanOnly", &"Lean", 0, &"MoveRate", &"Lean", 1, &"LeanPhase", &"IdleFoot", 0, &"Idle", &"IdleFoot", 1, &"IdleMirror", &"MoveRate", 0, &"Move", &"Rest", 0, &"IdleFoot", &"Rest", 1, &"ExitFoot", &"ExitFoot", 0, &"Exit", &"ExitFoot", 1, &"ExitMirror", &"State", 5, &"Board", &"Board", 0, &"BoardStand", &"Board", 1, &"BoardCrouch"]

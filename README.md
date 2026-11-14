@@ -51,6 +51,7 @@ To try the demo, open `project/` in Godot 4.7 and run it.
 
 The solver and the sphere and capsule collisions are ported from [KawaiiPhysics](https://github.com/pafuhana1213/KawaiiPhysics).
 The demo characters are [VRoid Studio](https://vroid.com/en/studio) sample models.
+The demo hover board is [XYZ Daily. Day 4. Hoverboard](https://sketchfab.com/3d-models/xyz-daily-day-4-hoverboard-e34bc891297145f181a66595b478e55b) by Olyona Kuznetsova.
 
 ## License
 
