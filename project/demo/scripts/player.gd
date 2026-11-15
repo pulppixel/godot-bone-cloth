@@ -84,7 +84,7 @@ const FOOT_GROUND := 2
 @export var board_jump_held := 2.5
 @export var board_spring := 14.0
 @export var board_damping := 0.3
-@export var board_crouch := 0.5
+@export var board_crouch := 0.3
 @export var board_lean_deg := 18.0
 
 @export var camera_rig: Node3D
