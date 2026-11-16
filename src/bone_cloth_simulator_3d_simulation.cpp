@@ -21,6 +21,7 @@ static constexpr float WIND_SWELL_MIN = 0.6f;
 static constexpr float WIND_CONTACT_DECAY = 0.6f;
 
 static constexpr float MOVEMENT_LIMIT_CARRY = 0.95f;
+static constexpr float CENTRIFUGAL_RATE = 1.8f;
 
 void BoneClothSimulator3D::_read_pose(Skeleton3D *p_skeleton, Chain &p_chain) {
 	for (Joint &joint : p_chain.joints) {
@@ -290,6 +291,26 @@ void BoneClothSimulator3D::_follow_parent_chain(Chain &p_chain) {
 	root.location = chains[p_chain.parent_chain].joints[p_chain.parent_joint].location;
 }
 
+Vector3 BoneClothSimulator3D::_get_centrifugal_push(const Joint &p_joint, const StepMotion &p_step, const Vector3 &p_velocity) const {
+	const float spin_speed = p_step.spin.length();
+	if (centrifugal_acceleration <= 0.0f || spin_speed < 1e-6f || p_velocity.is_zero_approx()) {
+		return Vector3();
+	}
+
+	const Vector3 axis = p_step.spin / spin_speed;
+	const Vector3 offset = p_joint.location - step_center - p_step.center_move;
+	const Vector3 away = offset - axis * axis.dot(offset);
+	const float radius = away.length();
+	if (radius < 1e-6f) {
+		return Vector3();
+	}
+
+	const Vector3 outward = away / radius;
+	const float weight = 2.0f - p_joint.length_rate;
+	const float taut = CLAMP(p_velocity.normalized().dot(axis.cross(outward)), 0.0f, 1.0f);
+	return outward * (weight * spin_speed * spin_speed * radius * taut * centrifugal_acceleration * CENTRIFUGAL_RATE * float(STEP));
+}
+
 void BoneClothSimulator3D::_move_joint(Joint &r_joint, const StepMotion &p_step, const Vector3 &p_force) {
 	const float dt = float(STEP);
 
@@ -305,16 +326,17 @@ void BoneClothSimulator3D::_move_joint(Joint &r_joint, const StepMotion &p_step,
 
 	Vector3 velocity = (r_joint.location - r_joint.prev_location) / dt;
 
+	const Vector3 carried = (prev_step_move + prev_step_turn.xform(r_joint.prev_location) - r_joint.prev_location) / dt * (1.0f - share);
 	if (joint_speed_limit > 0.0f) {
-		const Vector3 carried = (prev_step_move + prev_step_turn.xform(r_joint.prev_location) - r_joint.prev_location) / dt * (1.0f - share);
 		velocity = (velocity - carried).limit_length(joint_speed_limit * units_per_meter) + carried;
 	}
+	velocity += _get_centrifugal_push(r_joint, p_step, velocity - carried);
 
 	r_joint.prev_location = r_joint.location;
 	velocity *= 1.0f - r_joint.drag;
 	velocity += p_force * dt;
-	r_joint.location += velocity * dt;
 
+	r_joint.location += velocity * dt;
 	r_joint.location += (p_step.move - prev_step_move) * (1.0f - share);
 	r_joint.location += (p_step.turn.xform(r_joint.prev_location) - prev_step_turn.xform(r_joint.prev_location)) * (1.0f - turn_share);
 }
@@ -756,6 +778,11 @@ void BoneClothSimulator3D::_run_steps(FrameMotion &r_motion, const LocalVector<P
 		step_motion.turn = r_motion.step_turn;
 		step_motion.center_move = center - step_center;
 		step_motion.center_turn = (center_rotation * step_center_rotation.inverse()).normalized();
+		Quaternion spin = (step_motion.center_turn * r_motion.step_turn.inverse()).normalized();
+		if (spin.w < 0.0f) {
+			spin = -spin;
+		}
+		step_motion.spin = spin.get_axis() * (spin.get_angle() / float(STEP));
 		step_motion.backstop_center = prev_backstop_center.lerp(backstop_center, weight);
 
 		_update_local_shares(step_motion, center, center_rotation);

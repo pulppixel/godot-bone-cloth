@@ -22,7 +22,7 @@
 [ext_resource type="Texture2D" uid="uid://cbog7f1qgnaot" path="res://demo/ui/keys/keyboard_1_outline.png" id="18_lb125"]
 [ext_resource type="Texture2D" uid="uid://173yvgydhqv5" path="res://demo/ui/keys/keyboard_2_outline.png" id="19_3d2ym"]
 [ext_resource type="PackedScene" uid="uid://o0h0hpn8qdfh" path="res://demo/stage/moving_platform.tscn" id="20_platform"]
-[ext_resource type="PackedScene" path="res://demo/stage/board/hoverboard.glb" id="21_board"]
+[ext_resource type="PackedScene" uid="uid://bnkgmy1oi0103" path="res://demo/stage/board/hoverboard.glb" id="21_board"]
 [ext_resource type="Texture2D" uid="uid://do0dpsdh67srm" path="res://demo/ui/keys/keyboard_f_outline.png" id="22_key_f"]
 [ext_resource type="Texture2D" uid="uid://04lqnp5qyr0h" path="res://demo/ui/keys/keyboard_3_outline.png" id="22_tlscf"]
 [ext_resource type="Texture2D" uid="uid://byuia2fb5a0r" path="res://demo/ui/keys/keyboard_4_outline.png" id="23_u37yy"]

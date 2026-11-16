@@ -305,6 +305,7 @@ chains/3/end_bone/direction = 6
 chains/3/end_bone/length = 0.1
 chains/3/enable_all_child_collisions = true
 chains/3/exclude_collision_count = 0
+centrifugal_acceleration = 0.1
 
 [node name="Head" type="BoneClothCollisionSphere3D" parent="GeneralSkeleton/BackHair" index="0" unique_id=1570875426]
 radius = 0.092

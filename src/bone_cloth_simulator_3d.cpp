@@ -139,6 +139,8 @@ void BoneClothSimulator3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_inertia_smoothing"), &BoneClothSimulator3D::get_inertia_smoothing);
 	ClassDB::bind_method(D_METHOD("set_depth_inertia", "depth_inertia"), &BoneClothSimulator3D::set_depth_inertia);
 	ClassDB::bind_method(D_METHOD("get_depth_inertia"), &BoneClothSimulator3D::get_depth_inertia);
+	ClassDB::bind_method(D_METHOD("set_centrifugal_acceleration", "acceleration"), &BoneClothSimulator3D::set_centrifugal_acceleration);
+	ClassDB::bind_method(D_METHOD("get_centrifugal_acceleration"), &BoneClothSimulator3D::get_centrifugal_acceleration);
 	ClassDB::bind_method(D_METHOD("set_local_movement_speed_limit", "limit"), &BoneClothSimulator3D::set_local_movement_speed_limit);
 	ClassDB::bind_method(D_METHOD("get_local_movement_speed_limit"), &BoneClothSimulator3D::get_local_movement_speed_limit);
 	ClassDB::bind_method(D_METHOD("set_local_rotation_speed_limit", "limit"), &BoneClothSimulator3D::set_local_rotation_speed_limit);
@@ -215,6 +217,7 @@ void BoneClothSimulator3D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "inertia", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_inertia", "get_inertia");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "inertia_smoothing", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_inertia_smoothing", "get_inertia_smoothing");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "depth_inertia", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_depth_inertia", "get_depth_inertia");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "centrifugal_acceleration", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_centrifugal_acceleration", "get_centrifugal_acceleration");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "local_movement_speed_limit", PROPERTY_HINT_RANGE, "0,20,0.01,or_greater,suffix:m/s"), "set_local_movement_speed_limit", "get_local_movement_speed_limit");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "local_rotation_speed_limit", PROPERTY_HINT_RANGE, "0,1440,0.1,radians_as_degrees,suffix:/s"), "set_local_rotation_speed_limit", "get_local_rotation_speed_limit");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "movement_speed_limit", PROPERTY_HINT_RANGE, "0,20,0.01,or_greater,suffix:m/s"), "set_movement_speed_limit", "get_movement_speed_limit");
@@ -923,6 +926,14 @@ void BoneClothSimulator3D::set_depth_inertia(float p_depth_inertia) {
 
 float BoneClothSimulator3D::get_depth_inertia() const {
 	return depth_inertia;
+}
+
+void BoneClothSimulator3D::set_centrifugal_acceleration(float p_acceleration) {
+	centrifugal_acceleration = p_acceleration;
+}
+
+float BoneClothSimulator3D::get_centrifugal_acceleration() const {
+	return centrifugal_acceleration;
 }
 
 void BoneClothSimulator3D::set_local_movement_speed_limit(float p_limit) {

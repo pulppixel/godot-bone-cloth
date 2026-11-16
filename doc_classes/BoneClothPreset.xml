@@ -19,6 +19,9 @@
 		<member name="backstop/radius" type="float" setter="set_backstop_radius" getter="get_backstop_radius" default="10.0">
 			See [member BoneClothSimulator3D.backstop/radius].
 		</member>
+		<member name="centrifugal_acceleration" type="float" setter="set_centrifugal_acceleration" getter="get_centrifugal_acceleration" default="0.0">
+			See [member BoneClothSimulator3D.centrifugal_acceleration].
+		</member>
 		<member name="depth_inertia" type="float" setter="set_depth_inertia" getter="get_depth_inertia" default="0.0">
 			See [member BoneClothSimulator3D.depth_inertia].
 		</member>

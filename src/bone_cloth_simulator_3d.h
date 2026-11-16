@@ -141,6 +141,7 @@ private:
 		Quaternion turn;
 		Vector3 center_move;
 		Quaternion center_turn;
+		Vector3 spin;
 		float move_share = 0.0f;
 		float turn_share = 0.0f;
 		Vector3 backstop_center;
@@ -181,6 +182,7 @@ private:
 	float inertia = 1.0f;
 	float inertia_smoothing = 0.4f;
 	float depth_inertia = 0.0f;
+	float centrifugal_acceleration = 0.0f;
 	float local_movement_speed_limit = 0.0f;
 	float local_rotation_speed_limit = 0.0f;
 	float movement_speed_limit = 5.0f;
@@ -245,6 +247,7 @@ private:
 	void _apply_sync(Skeleton3D *p_skeleton);
 	void _step(const StepMotion &p_step, const LocalVector<PosedCollision> &p_collisions);
 	void _follow_parent_chain(Chain &p_chain);
+	Vector3 _get_centrifugal_push(const Joint &p_joint, const StepMotion &p_step, const Vector3 &p_velocity) const;
 	void _move_joint(Joint &r_joint, const StepMotion &p_step, const Vector3 &p_force);
 	void _move_root(Chain &r_chain, const StepMotion &p_step);
 	void _simulate(Chain &p_chain, const StepMotion &p_step);
@@ -375,6 +378,8 @@ public:
 	float get_inertia_smoothing() const;
 	void set_depth_inertia(float p_depth_inertia);
 	float get_depth_inertia() const;
+	void set_centrifugal_acceleration(float p_acceleration);
+	float get_centrifugal_acceleration() const;
 	void set_local_movement_speed_limit(float p_limit);
 	float get_local_movement_speed_limit() const;
 	void set_local_rotation_speed_limit(float p_limit);

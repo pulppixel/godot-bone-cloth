@@ -121,6 +121,7 @@ static func run(t) -> void:
 	await _depth_speed_limit(t)
 	await _local_speed_limit(t)
 	await _local_rotation_limit(t)
+	await _centrifugal(t)
 	await _sync_bone(t)
 	await _squeeze(t)
 	await _rest_overlap(t)
@@ -381,6 +382,25 @@ static func _local_rotation_limit(t) -> void:
 		rig.remove()
 
 	t.check(offsets[0.5] < offsets[0.0] * LOCAL_SPEED_LIMIT_RATIO, "Local rotation speed limit 0.5 rad/s: the tip is %.4f m off its place, against %.4f m without the limit." % [offsets[0.5], offsets[0.0]])
+
+
+static func _centrifugal(t) -> void:
+	var reach := {}
+	for acceleration in [0.0, 0.5]:
+		var rig := Rig.new(t)
+		rig.simulator.set("centrifugal_acceleration", acceleration)
+		rig.skeleton.set_bone_pose_rotation(0, Quaternion(Vector3.BACK, 0.5))
+		var sum := 0.0
+		for frame in 120:
+			rig.character.rotation = Vector3(0, float(frame + 1) / 60.0 * 9.0, 0)
+			await rig.advance(1.0 / 60.0)
+			if frame >= 60:
+				var tip := rig.poses[TIP].origin
+				sum += Vector2(tip.x, tip.z).length()
+		reach[acceleration] = sum / 60.0
+		rig.remove()
+
+	t.check(reach[0.5] > reach[0.0] + SWING_MIN, "Centrifugal acceleration 0.5: the tip turns %.4f m from the axis, as without it (%.4f m)." % [reach[0.5], reach[0.0]])
 
 
 static func _sync_bone(t) -> void:

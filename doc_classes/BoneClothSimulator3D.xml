@@ -293,6 +293,9 @@
 		<member name="backstop/radius" type="float" setter="set_backstop_radius" getter="get_backstop_radius" default="10.0">
 			The radius, in meters, of the wall behind each joint. The default [code]10.0[/code] is almost flat, and smaller values curve it. [code]0.0[/code] disables the backstop.
 		</member>
+		<member name="centrifugal_acceleration" type="float" setter="set_centrifugal_acceleration" getter="get_centrifugal_acceleration" default="0.0">
+			How far the chains swing outward while the character turns, from [code]0.0[/code] to [code]1.0[/code]. A skirt flares in a spin, and long hair fans out. Joints near the roots are pushed harder, and only while the turn pulls the chain along. [code]0.3[/code] suits skirts. [code]0.0[/code] disables it.
+		</member>
 		<member name="chain_count" type="int" setter="set_chain_count" getter="get_chain_count" default="0">
 			The number of chains.
 		</member>
