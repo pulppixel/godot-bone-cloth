@@ -278,6 +278,7 @@ void BoneClothSimulator3D::_build_sync(Skeleton3D *p_skeleton) {
 
 	for (Chain &chain : chains) {
 		chain.sync_shares.clear();
+		chain.sync_inherited.clear();
 		if (chain.joints.size() < 2) {
 			continue;
 		}
@@ -285,9 +286,18 @@ void BoneClothSimulator3D::_build_sync(Skeleton3D *p_skeleton) {
 		Vector3 outward = p_skeleton->get_bone_global_rest(chain.end_bone).origin - rest_center;
 		outward.y = 0.0f;
 		outward.normalize();
-		for (const Vector3 &direction : bone_directions) {
-			const float share = 0.5f + 0.5f * outward.dot(direction);
+		for (uint32_t s = 0; s < sync_bones.size(); s++) {
+			const float share = 0.5f + 0.5f * outward.dot(bone_directions[s]);
 			chain.sync_shares.push_back(share * share);
+
+			bool inherited = false;
+			for (int bone = p_skeleton->get_bone_parent(chain.joints[0].bone); bone >= 0; bone = p_skeleton->get_bone_parent(bone)) {
+				if (bone == sync_bones[s].bone) {
+					inherited = true;
+					break;
+				}
+			}
+			chain.sync_inherited.push_back(inherited);
 		}
 	}
 }

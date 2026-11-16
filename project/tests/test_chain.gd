@@ -123,6 +123,7 @@ static func run(t) -> void:
 	await _local_rotation_limit(t)
 	await _centrifugal(t)
 	await _sync_bone(t)
+	await _sync_bone_above(t)
 	await _squeeze(t)
 	await _rest_overlap(t)
 	await _rest_overlap_off(t)
@@ -441,6 +442,25 @@ static func _sync_bone(t) -> void:
 		t.check(tips[case].distance_to(expected) < SYNC_TOLERANCE, "Sync bone, %s: the chain end is %.5f m off the chain turned from its root." % [case, tips[case].distance_to(expected)])
 	t.check(tips["swing"].distance_to(tips["rest"]) > SWING_MIN, "Sync bone, swing: the chain end moves %.4f m." % tips["swing"].distance_to(tips["rest"]))
 	t.check(tilt < ANGLE_TOLERANCE, "Sync bone, swing: the root bone's rotation points %.4f rad off the moved joint." % tilt)
+
+
+static func _sync_bone_above(t) -> void:
+	var swing := Quaternion(Vector3.RIGHT, 0.5)
+	for value in [1.0, 0.5, 0.0]:
+		var rig := Rig.new(t)
+		rig.simulator.set("chains/0/root_bone_name", "b1")
+		rig.skeleton.set_bone_pose_rotation(0, swing)
+		rig.simulator.set("gravity/value", 0.0)
+		rig.simulator.set("stiffness/value", 1.0)
+		rig.simulator.set("sync/bone_count", 1)
+		rig.simulator.set("sync/bones/0/bone_name", "b0")
+		rig.simulator.set("sync/value", value)
+		for frame in 30:
+			await rig.advance(1.0 / 60.0)
+		var root := swing * Vector3(0, -BONE_LENGTH, 0)
+		var expected := root + Quaternion().slerp(swing, value) * Vector3(0, -BONE_LENGTH * (TIP - 1), 0)
+		t.check(rig.tip().distance_to(expected) < SYNC_TOLERANCE, "Sync bone above the chain, value %.1f: the chain end is %.5f m off the chain that follows that share of the bone's swing." % [value, rig.tip().distance_to(expected)])
+		rig.remove()
 
 
 static func _squeeze(t) -> void:

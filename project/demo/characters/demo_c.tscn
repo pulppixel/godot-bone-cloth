@@ -42,9 +42,16 @@ drag/value = 0.15
 limit_angle/value = 1.3089969
 limit_angle/damping_curve = SubResource("Curve_skirt_limit")
 wind_influence/damping_curve = SubResource("Curve_wind_skirt")
+sync/value = 0.5
+sync/bone_count = 2
 depth_inertia = 0.7
+centrifugal_acceleration = 0.4
 movement_speed_limit = 4.0
 chain_count = 30
+sync/bones/0/bone_name = "LeftUpperLeg"
+sync/bones/0/bone = 128
+sync/bones/1/bone_name = "RightUpperLeg"
+sync/bones/1/bone = 186
 chains/0/root_bone_name = "J_Sec_L_SkirtBack1_01"
 chains/0/root_bone = 130
 chains/0/end_bone_name = "J_Sec_L_SkirtBack2_end_01"
@@ -255,7 +262,6 @@ chains/29/end_bone = 41
 chains/29/extend_end_bone = false
 chains/29/enable_all_child_collisions = true
 chains/29/exclude_collision_count = 0
-centrifugal_acceleration = 0.4
 
 [node name="Thighs" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/Skirt" index="0" unique_id=1912974352]
 radius = 0.082
@@ -277,6 +283,7 @@ wind_influence/value = 2.0
 wind_influence/damping_curve = SubResource("Curve_wind_coat")
 wind_sync = 0.9
 depth_inertia = 0.7
+centrifugal_acceleration = 0.3
 movement_speed_limit = 4.0
 chain_count = 12
 chains/0/root_bone_name = "J_Sec_L_CoatSkirtBack_01"
@@ -363,7 +370,6 @@ chains/11/end_bone = 241
 chains/11/extend_end_bone = false
 chains/11/enable_all_child_collisions = true
 chains/11/exclude_collision_count = 0
-centrifugal_acceleration = 0.3
 
 [node name="BackHair" type="BoneClothSimulator3D" parent="GeneralSkeleton" parent_id_path=PackedInt32Array(688702054) index="5" unique_id=1552933325]
 link_mode = 1
@@ -376,6 +382,7 @@ limit_angle/damping_curve = SubResource("Curve_hair_limit")
 limit_angle/stiffness = 0.66
 gravity/value = 5.0
 wind_sync = 0.5
+centrifugal_acceleration = 0.4
 local_movement_speed_limit = 3.0
 local_rotation_speed_limit = 6.2831855
 joint_speed_limit = 3.0
@@ -416,7 +423,6 @@ chains/3/end_bone/direction = 6
 chains/3/end_bone/length = 0.1
 chains/3/enable_all_child_collisions = true
 chains/3/exclude_collision_count = 0
-centrifugal_acceleration = 0.4
 
 [node name="Head" type="BoneClothCollisionSphere3D" parent="GeneralSkeleton/BackHair" index="0" unique_id=1511945761]
 radius = 0.089
@@ -603,6 +609,7 @@ parameters/Rest/current_state = ""
 parameters/Rest/transition_request = ""
 parameters/Rest/current_index = -1
 parameters/ExitFoot/blend_amount = 0.0
+parameters/Board/blend_amount = 0.0
 
 [node name="Expression" type="Node" parent="." index="3" unique_id=1778109856]
 script = ExtResource("4_lxmsp")

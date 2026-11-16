@@ -76,6 +76,7 @@ private:
 		Vector3 end_axis;
 
 		LocalVector<float> sync_shares;
+		LocalVector<bool> sync_inherited;
 
 		uint32_t wind_index = 0;
 

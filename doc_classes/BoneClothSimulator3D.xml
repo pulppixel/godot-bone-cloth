@@ -402,9 +402,10 @@
 		<member name="sync/bone_count" type="int" setter="set_sync_bone_count" getter="get_sync_bone_count" default="0">
 			The number of sync bones. The chains turn from their roots as these bones swing, as a skirt follows the thighs so that the legs do not pass through it. Add both thighs for a skirt or a long coat.
 			Each chain follows each sync bone by where it hangs around the body: fully on the bone's side, a quarter at a right angle to it, not at all on the opposite side. A bone turning around its own length does not turn the chains.
+			A chain that already hangs from a sync bone, as VRoid hangs the front and back of a skirt from the thighs, follows that bone by [member sync/value] instead, so a lower value lets it hang down rather than lift with the leg. Add both thighs, and for a coat hanging from the shins both shins too.
 		</member>
 		<member name="sync/value" type="float" setter="set_sync" getter="get_sync" default="1.0">
-			How far the chains turn with the sync bones ([member sync/bone_count]), from [code]0.0[/code] to [code]1.0[/code]. At [code]1.0[/code], a chain on a bone's side turns as far as the bone swings. [code]0.7[/code] suits a skirt.
+			How far the chains turn with the sync bones ([member sync/bone_count]), from [code]0.0[/code] to [code]1.0[/code]. At [code]1.0[/code], a chain on a bone's side turns as far as the bone swings, and a chain hanging from a bone moves with it as without sync bones. [code]0.7[/code] suits a skirt, [code]0.5[/code] a VRoid skirt.
 		</member>
 		<member name="teleport_angle" type="float" setter="set_teleport_angle" getter="get_teleport_angle" default="1.5707964">
 			A turn of the character larger than this in one frame, in radians, is a teleport, and the cloth ignores it.

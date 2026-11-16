@@ -152,7 +152,9 @@ void BoneClothSimulator3D::_apply_sync(Skeleton3D *p_skeleton) {
 		} else {
 			Quaternion turn;
 			for (uint32_t s = 0; s < chain.sync_shares.size(); s++) {
-				turn = turn * Quaternion().slerp(swings[s], sync * chain.sync_shares[s]);
+				const Quaternion swing = chain.sync_inherited[s] ? swings[s].inverse() : swings[s];
+				const float share = chain.sync_inherited[s] ? 1.0f - sync : sync * chain.sync_shares[s];
+				turn = turn * Quaternion().slerp(swing, share);
 			}
 			turns[c] = turn;
 			pivots[c] = chain.joints[0].current_pose_location;

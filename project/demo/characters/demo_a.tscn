@@ -38,9 +38,16 @@ drag/value = 0.15
 limit_angle/value = 1.3089969
 limit_angle/damping_curve = SubResource("Curve_skirt_limit")
 wind_influence/damping_curve = SubResource("Curve_wind_skirt")
+sync/value = 0.5
+sync/bone_count = 2
 depth_inertia = 0.7
+centrifugal_acceleration = 0.4
 movement_speed_limit = 4.0
 chain_count = 24
+sync/bones/0/bone_name = "LeftUpperLeg"
+sync/bones/0/bone = 125
+sync/bones/1/bone_name = "RightUpperLeg"
+sync/bones/1/bone = 161
 chains/0/root_bone_name = "J_Sec_L_SkirtBack1_01"
 chains/0/root_bone = 127
 chains/0/end_bone_name = "J_Sec_L_SkirtBack2_end_01"
@@ -209,7 +216,6 @@ chains/23/end_bone = 33
 chains/23/extend_end_bone = false
 chains/23/enable_all_child_collisions = true
 chains/23/exclude_collision_count = 0
-centrifugal_acceleration = 0.4
 
 [node name="Thighs" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/Skirt" index="0" unique_id=873784829]
 radius = 0.088
@@ -234,6 +240,7 @@ limit_angle/damping_curve = SubResource("Curve_hair_limit")
 limit_angle/stiffness = 0.66
 gravity/value = 5.0
 wind_sync = 0.5
+centrifugal_acceleration = 0.4
 local_movement_speed_limit = 3.0
 local_rotation_speed_limit = 6.2831855
 joint_speed_limit = 3.0
@@ -283,7 +290,6 @@ chains/4/end_bone/direction = 6
 chains/4/end_bone/length = 0.1
 chains/4/enable_all_child_collisions = true
 chains/4/exclude_collision_count = 0
-centrifugal_acceleration = 0.4
 
 [node name="Head" type="BoneClothCollisionSphere3D" parent="GeneralSkeleton/BackHair" index="0" unique_id=1897290495]
 radius = 0.101
@@ -467,6 +473,7 @@ parameters/Rest/current_state = ""
 parameters/Rest/transition_request = ""
 parameters/Rest/current_index = -1
 parameters/ExitFoot/blend_amount = 0.0
+parameters/Board/blend_amount = 0.0
 
 [node name="Expression" type="Node" parent="." index="3" unique_id=957265259]
 script = ExtResource("4_q8l8q")
