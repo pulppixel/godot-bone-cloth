@@ -255,7 +255,7 @@ chains/29/end_bone = 41
 chains/29/extend_end_bone = false
 chains/29/enable_all_child_collisions = true
 chains/29/exclude_collision_count = 0
-centrifugal_acceleration = 0.3
+centrifugal_acceleration = 0.4
 
 [node name="Thighs" type="BoneClothCollisionCapsule3D" parent="GeneralSkeleton/Skirt" index="0" unique_id=1912974352]
 radius = 0.082
@@ -363,6 +363,7 @@ chains/11/end_bone = 241
 chains/11/extend_end_bone = false
 chains/11/enable_all_child_collisions = true
 chains/11/exclude_collision_count = 0
+centrifugal_acceleration = 0.3
 
 [node name="BackHair" type="BoneClothSimulator3D" parent="GeneralSkeleton" parent_id_path=PackedInt32Array(688702054) index="5" unique_id=1552933325]
 link_mode = 1
@@ -415,7 +416,7 @@ chains/3/end_bone/direction = 6
 chains/3/end_bone/length = 0.1
 chains/3/enable_all_child_collisions = true
 chains/3/exclude_collision_count = 0
-centrifugal_acceleration = 0.1
+centrifugal_acceleration = 0.4
 
 [node name="Head" type="BoneClothCollisionSphere3D" parent="GeneralSkeleton/BackHair" index="0" unique_id=1511945761]
 radius = 0.089

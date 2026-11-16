@@ -1005,7 +1005,7 @@ static func _preset_round_trip(t) -> void:
 	for property in ClassDB.class_get_property_list("BoneClothPreset", true):
 		if property.usage & PROPERTY_USAGE_STORAGE:
 			names.append(property.name)
-	t.check(names.size() == 41, "Preset round trip: the preset stores %d values." % names.size())
+	t.check(names.size() == 42, "Preset round trip: the preset stores %d values." % names.size())
 	
 	var source: Node = ClassDB.instantiate("BoneClothSimulator3D")
 	var target: Node = ClassDB.instantiate("BoneClothSimulator3D")

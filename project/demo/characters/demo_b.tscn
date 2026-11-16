@@ -124,7 +124,7 @@ chains/5/end_bone/direction = 6
 chains/5/end_bone/length = 0.1
 chains/5/enable_all_child_collisions = true
 chains/5/exclude_collision_count = 0
-centrifugal_acceleration = 0.1
+centrifugal_acceleration = 0.4
 
 [node name="Head" type="BoneClothCollisionSphere3D" parent="GeneralSkeleton/BackHair" index="0" unique_id=620861061]
 radius = 0.093
@@ -232,7 +232,7 @@ chains/1/end_bone/direction = 6
 chains/1/end_bone/length = 0.1
 chains/1/enable_all_child_collisions = true
 chains/1/exclude_collision_count = 0
-centrifugal_acceleration = 0.1
+centrifugal_acceleration = 0.4
 
 [node name="Head" type="BoneClothCollisionSphere3D" parent="GeneralSkeleton/SideHair" index="0" unique_id=264554078]
 radius = 0.093
