@@ -157,7 +157,7 @@ func _process(delta: float) -> void:
 	_weight = move_toward(_weight, 0.0 if to_clip else 1.0, delta * HAND_OVER)
 	_chest_weight = move_toward(_chest_weight, BODY[0][2] if not stepping else 0.0, delta * CHEST_FOLLOW)
 	for i in _looks.size():
-		var base: float = 1.0 if i >= BODY.size() else (_chest_weight if i == 0 else BODY[i][2])
+		var base: float = 1.0 if i >= BODY.size() else (_chest_weight if i == 0 else BODY[i][2]) * (1.0 - _skin.aim)
 		_looks[i].influence = base * _weight
 	
 	# 3

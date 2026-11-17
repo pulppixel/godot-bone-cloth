@@ -10,9 +10,13 @@ const TIME_STEP := 0.1
 @export var zoom_min := 1.0
 @export var zoom_max := 6.0
 @export var zoom_step := 0.25
+@export var aim_length := 1.2
+@export var aim_shoulder := 0.45
 
 var _last_ticks := 0
 var _home_length := 0.0
+var _length := 0.0
+var _aim := 0.0
 var _chest := 0.0
 var _neck := 0.0
 
@@ -23,6 +27,7 @@ func _ready() -> void:
 	_arm.add_excluded_object((get_parent() as CollisionObject3D).get_rid())
 	_last_ticks = Time.get_ticks_usec()
 	_home_length = _arm.spring_length
+	_length = _home_length
 
 
 func frame(character: CharacterSkin) -> void:
@@ -30,7 +35,7 @@ func frame(character: CharacterSkin) -> void:
 	var to_feet := character.global_transform.affine_inverse() * skeleton.global_transform
 	_chest = (to_feet * skeleton.get_bone_global_rest(skeleton.find_bone(&"UpperChest")).origin).y
 	_neck = (to_feet * skeleton.get_bone_global_rest(skeleton.find_bone(&"Neck")).origin).y
-	_aim()
+	_place()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -67,14 +72,24 @@ func _turn(degrees: Vector2) -> void:
 	_arm.rotation.x = clampf(pitch, deg_to_rad(pitch_min_deg), deg_to_rad(pitch_max_deg))
 
 
+func set_aim(amount: float) -> void:
+	_aim = amount
+	_place()
+
+
+func pitch() -> float:
+	return _arm.rotation.x
+
+
 func _zoom(step: float) -> void:
-	_arm.spring_length = clampf(_arm.spring_length + step, zoom_min, zoom_max)
-	_aim()
+	_length = clampf(_length + step, zoom_min, zoom_max)
+	_place()
 
 
-func _aim() -> void:
+func _place() -> void:
+	_arm.spring_length = lerpf(_length, aim_length, _aim)
 	var near := clampf(inverse_lerp(_home_length, zoom_min, _arm.spring_length), 0.0, 1.0)
-	_arm.position.y = lerpf(_chest, _neck, near)
+	_arm.position = Vector3(aim_shoulder * _aim, lerpf(_chest, _neck, near), 0.0)
 
 
 func _set_time_scale(value: float) -> void:

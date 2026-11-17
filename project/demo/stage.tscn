@@ -26,6 +26,8 @@
 [ext_resource type="Texture2D" uid="uid://do0dpsdh67srm" path="res://demo/ui/keys/keyboard_f_outline.png" id="22_key_f"]
 [ext_resource type="Texture2D" uid="uid://04lqnp5qyr0h" path="res://demo/ui/keys/keyboard_3_outline.png" id="22_tlscf"]
 [ext_resource type="Texture2D" uid="uid://byuia2fb5a0r" path="res://demo/ui/keys/keyboard_4_outline.png" id="23_u37yy"]
+[ext_resource type="Texture2D" path="res://demo/ui/keys/mouse_right_outline.png" id="24_mouse_right"]
+[ext_resource type="Texture2D" path="res://demo/ui/crosshair.png" id="25_crosshair"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_i76fu"]
 radius = 0.25
@@ -84,11 +86,12 @@ anchor_inertia_value = NodePath("CanvasLayer/Panel/Column/Rows/AnchorInertia/Val
 wind_direction_slider = NodePath("CanvasLayer/Panel/Column/Rows/WindDirection/Slider")
 wind_direction_value = NodePath("CanvasLayer/Panel/Column/Rows/WindDirection/Value")
 
-[node name="Player" type="CharacterBody3D" parent="." unique_id=1170255093 node_paths=PackedStringArray("camera_rig", "board")]
+[node name="Player" type="CharacterBody3D" parent="." unique_id=1170255093 node_paths=PackedStringArray("camera_rig", "board", "crosshair")]
 floor_snap_length = 0.3
 script = ExtResource("2_r7osq")
 camera_rig = NodePath("CameraRig")
 board = NodePath("Skin/Board")
+crosshair = NodePath("../CanvasLayer/Crosshair")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Player" unique_id=1783795205]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
@@ -186,6 +189,24 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 1.8, 7.5)
 pause = 2.5
 
 [node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=1159000478]
+
+[node name="Crosshair" type="TextureRect" parent="CanvasLayer" unique_id=1820447401]
+visible = false
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("25_crosshair")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="Panel" type="PanelContainer" parent="CanvasLayer" unique_id=798988651]
 offset_left = 24.0
@@ -439,6 +460,23 @@ stretch_mode = 5
 self_modulate = Color(1, 1, 1, 0.7490196)
 layout_mode = 2
 text = "Board"
+vertical_alignment = 1
+
+[node name="GapAim" type="Control" parent="CanvasLayer/Prompts" unique_id=1820447402]
+custom_minimum_size = Vector2(18, 0)
+layout_mode = 2
+
+[node name="RightButton" type="TextureRect" parent="CanvasLayer/Prompts" unique_id=1820447403]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+texture = ExtResource("24_mouse_right")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Aim" type="Label" parent="CanvasLayer/Prompts" unique_id=1820447404]
+self_modulate = Color(1, 1, 1, 0.7490196)
+layout_mode = 2
+text = "Aim"
 vertical_alignment = 1
 
 [node name="Gap3" type="Control" parent="CanvasLayer/Prompts" unique_id=31362993]

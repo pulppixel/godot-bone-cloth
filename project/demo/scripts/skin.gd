@@ -4,6 +4,8 @@ extends Node3D
 const Feet := preload("res://demo/scripts/feet.gd")
 const Look := preload("res://demo/scripts/look.gd")
 const Face := preload("res://demo/scripts/face.gd")
+const GUN := preload("res://demo/shooter/blaster.glb")
+const GUN_GRIP := Transform3D(Vector3(0.016, 0.0505, -0.5977), Vector3(0.5955, 0.0704, 0.0219), Vector3(0.0719, -0.5937, -0.0483), Vector3(0.0228, 0.1758, 0.0229))
 
 const STATE := &"parameters/State/transition_request"
 const STATE_NOW := &"parameters/State/current_state"
@@ -20,6 +22,13 @@ const LEAN_PHASE := &"parameters/LeanPhase/seek_request"
 const IDLE_FOOT := &"parameters/IdleFoot/blend_amount"
 const EXIT_FOOT := &"parameters/ExitFoot/blend_amount"
 const BOARD_CROUCH := &"parameters/Board/blend_amount"
+const AIM := &"parameters/Aim/blend_amount"
+const AIM_PITCH := &"parameters/AimPitch/blend_amount"
+const PITCH_RANGE := deg_to_rad(70.0)
+const HOLD := Transform3D(Vector3(-0.0309, 0.9923, -0.1198), Vector3(-0.0848, 0.1169, 0.9895), Vector3(0.9959, 0.0408, 0.0805), Vector3(-0.0854, 0.0404, 0.2557))
+const LEFT_GRIP := Transform3D(Vector3(-0.9986, 0.0045, -0.0531), Vector3(-0.0045, 0.9858, 0.1678), Vector3(0.0531, 0.1678, -0.9844), Vector3(-0.012, 0.1744, 0.027))
+const POLES: Array[Vector3] = [Vector3(-0.5, 0.8, 0.2), Vector3(0.5, 0.8, 0.2)]
+const ARMS := [["RightUpperArm", "RightLowerArm", "RightHand"], ["LeftUpperArm", "LeftLowerArm", "LeftHand"]]
 
 var tree: AnimationTree
 var skeleton: Skeleton3D
@@ -34,10 +43,29 @@ var body: CharacterBody3D
 @onready var sprint_at: float = move.get_blend_point_position(1)
 
 var half := 0.0
+var aim := 0.0
+var _grip: HandGrip
+var _arms: TwoBoneIK3D
+var _hands: CopyTransformModifier3D
 
 var state: StringName:
 	get:
 		return tree.get(STATE_NOW)
+
+
+class HandGrip extends SkeletonModifier3D:
+	var chest := -1
+	var pitch := 0.0
+	var hold := Transform3D()
+	var left_grip := Transform3D()
+	var targets: Array[Node3D] = []
+
+	func _process_modification_with_delta(_delta: float) -> void:
+		var skeleton := get_skeleton()
+		var at := skeleton.global_transform * skeleton.get_bone_global_pose(chest).origin
+		var right := Transform3D(skeleton.global_basis * Basis(Vector3.RIGHT, -pitch), at) * hold
+		targets[0].global_transform = right
+		targets[1].global_transform = right * left_grip
 
 
 func _enter_tree() -> void:
@@ -51,6 +79,53 @@ func _ready() -> void:
 	tree.set(LEAN_ONLY, 1.0)
 	tree.set(LEAN_ADD, 1.0)
 	look.glanced.connect(expression.blink)
+	var hand := BoneAttachment3D.new()
+	hand.bone_name = &"RightHand"
+	skeleton.add_child(hand)
+	var gun := GUN.instantiate() as Node3D
+	gun.transform = GUN_GRIP
+	hand.add_child(gun)
+	_hold_with_both_hands()
+
+
+func _hold_with_both_hands() -> void:
+	_grip = HandGrip.new()
+	_grip.chest = skeleton.find_bone(&"UpperChest")
+	_grip.hold = HOLD
+	_grip.left_grip = LEFT_GRIP
+	_arms = TwoBoneIK3D.new()
+	_hands = CopyTransformModifier3D.new()
+	var cloth := skeleton.get_child_count()
+	for child in skeleton.get_children():
+		if child is BoneClothSimulator3D:
+			cloth = child.get_index()
+			break
+	for modifier in [_grip, _arms, _hands]:
+		skeleton.add_child(modifier)
+		skeleton.move_child(modifier, cloth)
+		cloth += 1
+	_arms.setting_count = ARMS.size()
+	_hands.setting_count = ARMS.size()
+	for i in ARMS.size():
+		var target := Node3D.new()
+		var pole := Node3D.new()
+		for marker in [target, pole]:
+			marker.visible = false
+			marker.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
+			add_child(marker)
+		pole.position = POLES[i]
+		_grip.targets.append(target)
+		_arms.set_root_bone_name(i, ARMS[i][0])
+		_arms.set_middle_bone_name(i, ARMS[i][1])
+		_arms.set_end_bone_name(i, ARMS[i][2])
+		_arms.set_target_node(i, _arms.get_path_to(target))
+		_arms.set_pole_node(i, _arms.get_path_to(pole))
+		_hands.set_apply_bone_name(i, ARMS[i][2])
+		_hands.set_reference_type(i, BoneConstraint3D.REFERENCE_TYPE_NODE)
+		_hands.set_reference_node(i, _hands.get_path_to(target))
+		_hands.set_copy_position(i, false)
+		_hands.set_copy_scale(i, false)
+	set_aim(0.0, 0.0)
 
 
 func request(p_state: StringName) -> void:
@@ -85,6 +160,16 @@ func set_lean(p_amount: float) -> void:
 
 func set_board_crouch(p_amount: float) -> void:
 	tree.set(BOARD_CROUCH, p_amount)
+
+
+func set_aim(p_amount: float, p_pitch: float) -> void:
+	aim = p_amount
+	_grip.pitch = p_pitch
+	tree.set(AIM, p_amount)
+	for modifier: SkeletonModifier3D in [_grip, _arms, _hands]:
+		modifier.active = p_amount > 0.0
+		modifier.influence = p_amount
+	tree.set(AIM_PITCH, clampf(p_pitch / PITCH_RANGE, -1.0, 1.0))
 
 
 func seek_lean(p_phase: float) -> void:

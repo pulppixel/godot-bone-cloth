@@ -85,8 +85,12 @@ const FOOT_GROUND := 2
 @export var board_crouch := 0.3
 @export var board_lean_deg := 18.0
 
+@export_group("Aim")
+@export var aim_time := 0.15
+
 @export var camera_rig: Node3D
 @export var board: Node3D
+@export var crosshair: Control
 
 var _character: CharacterSkin
 var _skeleton: Skeleton3D
@@ -112,6 +116,7 @@ var _state_age := 0.0
 var _riding: BoardRide
 var _floor_body: Object
 var _ride: Node3D
+var _aim := 0.0
 
 @onready var _skin: Node3D = $Skin
 @onready var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
@@ -171,6 +176,9 @@ func _physics_process(delta: float) -> void:
 	var direction := Basis(Vector3.UP, camera_rig.rotation.y) * Vector3(input.x, 0.0, input.y)
 	if Input.is_action_just_pressed("board"):
 		_set_boarding(_riding == null)
+	var aiming := _aim_toward(delta)
+	if aiming:
+		direction = Vector3.ZERO
 	if _riding:
 		_ride_board(direction, delta)
 		_follow_ride()
@@ -206,8 +214,20 @@ func _physics_process(delta: float) -> void:
 	_transition(pressing, speed, exit_wait)
 
 	var facing := Vector3(velocity.x, 0.0, velocity.z) if speed > STOP_SPEED else direction
+	if aiming:
+		facing = Basis(Vector3.UP, camera_rig.rotation.y) * Vector3.FORWARD
 	_turn_skin(facing, delta)
 	_animate(speed, turned, delta)
+
+
+func _aim_toward(delta: float) -> bool:
+	var aiming := Input.is_action_pressed("aim") and _riding == null and not _airborne()
+	_aim = move_toward(_aim, 1.0 if aiming else 0.0, delta / aim_time)
+	var rig := camera_rig as CameraRig
+	rig.set_aim(_aim)
+	_character.set_aim(_aim, rig.pitch())
+	crosshair.visible = aiming
+	return aiming
 
 
 func _airborne() -> bool:
