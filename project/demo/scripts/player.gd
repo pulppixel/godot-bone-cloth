@@ -88,6 +88,8 @@ const FOOT_GROUND := 2
 
 @export_group("Aim")
 @export var aim_time := 0.15
+@export var fire_rate := 8.0
+@export var reach := 100.0
 
 @export var camera_rig: Node3D
 @export var board: Node3D
@@ -118,6 +120,7 @@ var _riding: BoardRide
 var _floor_body: Object
 var _ride: Node3D
 var _aim := 0.0
+var _cooldown := 0.0
 
 @onready var _skin: Node3D = $Skin
 @onready var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
@@ -178,6 +181,7 @@ func _physics_process(delta: float) -> void:
 	if Input.is_action_just_pressed("board"):
 		_set_boarding(_riding == null)
 	if _aim_toward(delta):
+		_fire(delta)
 		_strafe(direction, delta)
 		return
 	if _riding:
@@ -213,20 +217,35 @@ func _physics_process(delta: float) -> void:
 	var pressing := not direction.is_zero_approx() and not _block_held
 	var speed := Vector2(velocity.x, velocity.z).length()
 	_transition(pressing, speed, exit_wait)
-
+	
 	var facing := Vector3(velocity.x, 0.0, velocity.z) if speed > STOP_SPEED else direction
 	_turn_skin(facing, delta)
 	_animate(speed, turned, delta)
 
 
 func _aim_toward(delta: float) -> bool:
-	var aiming := Input.is_action_pressed("aim") and _riding == null and not _airborne()
+	var aiming := (Input.is_action_pressed("aim") or Input.is_action_pressed("fire")) and _riding == null and not _airborne()
 	_aim = move_toward(_aim, 1.0 if aiming else 0.0, delta / aim_time)
 	var rig := camera_rig as CameraRig
 	rig.set_aim(_aim)
 	_character.set_aim(_aim, rig.pitch())
 	crosshair.visible = aiming
 	return aiming
+
+
+func _fire(delta: float) -> void:
+	_cooldown = maxf(_cooldown - delta, 0.0)
+	if _aim < 1.0 or _cooldown > 0.0 or not Input.is_action_pressed("fire"):
+		return
+	_cooldown = 1.0 / fire_rate
+	var camera := get_viewport().get_camera_3d()
+	var far := camera.global_position - camera.global_basis.z * reach
+	var hit := _ray(camera.global_position, far)
+	var near := _ray(_character.muzzle(), hit.get("position", far))
+	if not near.is_empty():
+		hit = near
+	_character.shoot(hit.get("position", far), hit.get("normal", Vector3.ZERO))
+	(camera_rig as CameraRig).kick()
 
 
 func _strafe(direction: Vector3, delta: float) -> void:

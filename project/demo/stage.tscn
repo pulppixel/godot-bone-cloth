@@ -25,6 +25,7 @@
 [ext_resource type="PackedScene" uid="uid://bnkgmy1oi0103" path="res://demo/stage/board/hoverboard.glb" id="21_board"]
 [ext_resource type="Texture2D" uid="uid://do0dpsdh67srm" path="res://demo/ui/keys/keyboard_f_outline.png" id="22_key_f"]
 [ext_resource type="Texture2D" uid="uid://04lqnp5qyr0h" path="res://demo/ui/keys/keyboard_3_outline.png" id="22_tlscf"]
+[ext_resource type="Texture2D" uid="uid://blgbom7tg1g31" path="res://demo/ui/keys/mouse_left_outline.png" id="23_1oj43"]
 [ext_resource type="Texture2D" uid="uid://byuia2fb5a0r" path="res://demo/ui/keys/keyboard_4_outline.png" id="23_u37yy"]
 [ext_resource type="Texture2D" uid="uid://hr1usfsdlnli" path="res://demo/ui/keys/mouse_right_outline.png" id="24_mouse_right"]
 [ext_resource type="Texture2D" uid="uid://dmqf7isvx57t7" path="res://demo/ui/crosshair.png" id="25_crosshair"]
@@ -477,6 +478,23 @@ stretch_mode = 5
 self_modulate = Color(1, 1, 1, 0.7490196)
 layout_mode = 2
 text = "Aim"
+vertical_alignment = 1
+
+[node name="GapFire" type="Control" parent="CanvasLayer/Prompts" unique_id=196588951]
+custom_minimum_size = Vector2(18, 0)
+layout_mode = 2
+
+[node name="LeftButton" type="TextureRect" parent="CanvasLayer/Prompts" unique_id=255569728]
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
+texture = ExtResource("23_1oj43")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Fire" type="Label" parent="CanvasLayer/Prompts" unique_id=870446263]
+self_modulate = Color(1, 1, 1, 0.7490196)
+layout_mode = 2
+text = "Fire"
 vertical_alignment = 1
 
 [node name="Gap3" type="Control" parent="CanvasLayer/Prompts" unique_id=31362993]

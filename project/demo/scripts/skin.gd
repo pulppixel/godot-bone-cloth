@@ -5,6 +5,8 @@ const Feet := preload("res://demo/scripts/feet.gd")
 const Look := preload("res://demo/scripts/look.gd")
 const Face := preload("res://demo/scripts/face.gd")
 const GUN := preload("res://demo/shooter/blaster.glb")
+const MuzzleFlash := preload("res://demo/shooter/muzzle_flash.tscn")
+const Bolt := preload("res://demo/shooter/bolt.tscn")
 const GUN_GRIP := Transform3D(Vector3(0.016, 0.0505, -0.5977), Vector3(0.5955, 0.0704, 0.0219), Vector3(0.0719, -0.5937, -0.0483), Vector3(0.0228, 0.1758, 0.0229))
 
 const STATE := &"parameters/State/transition_request"
@@ -28,6 +30,8 @@ const STRAFE := &"parameters/Strafe/blend_position"
 const PITCH_RANGE := deg_to_rad(70.0)
 const HOLD := Transform3D(Vector3(-0.0309, 0.9923, -0.1198), Vector3(-0.0848, 0.1169, 0.9895), Vector3(0.9959, 0.0408, 0.0805), Vector3(-0.1654, 0.0404, 0.2557))
 const LEFT_GRIP := Transform3D(Vector3(-0.9986, 0.0045, -0.0531), Vector3(-0.0045, 0.9858, 0.1678), Vector3(0.0531, 0.1678, -0.9844), Vector3(-0.012, 0.1744, 0.027))
+const MUZZLE := Vector3(0.0, 0.039, -0.29)
+const KICK_MAX := 1.5
 const POLES: Array[Vector3] = [Vector3(-0.5, 0.8, 0.2), Vector3(0.5, 0.8, 0.2)]
 const ARMS := [["RightUpperArm", "RightLowerArm", "RightHand"], ["LeftUpperArm", "LeftLowerArm", "LeftHand"]]
 
@@ -48,23 +52,35 @@ var aim := 0.0
 var _grip: HandGrip
 var _arms: TwoBoneIK3D
 var _hands: CopyTransformModifier3D
-
+var _muzzle: Node3D
 var state: StringName:
 	get:
 		return tree.get(STATE_NOW)
 
 
 class HandGrip extends SkeletonModifier3D:
+	const KICK_TIME := 0.1
+	const KICK_RISE := deg_to_rad(14.0)
+	const KICK_BACK := 0.07
+	const KICK_BEND := deg_to_rad(7.0)
+	
 	var chest := -1
+	var spine := -1
 	var pitch := 0.0
+	var kick := 0.0
 	var hold := Transform3D()
 	var left_grip := Transform3D()
 	var targets: Array[Node3D] = []
-
-	func _process_modification_with_delta(_delta: float) -> void:
+	
+	func _process_modification_with_delta(delta: float) -> void:
 		var skeleton := get_skeleton()
+		kick *= exp(-delta / KICK_TIME)
+		var parent := skeleton.get_bone_global_pose(skeleton.get_bone_parent(spine)).basis.get_rotation_quaternion()
+		var bent := Quaternion(Vector3.RIGHT, -kick * KICK_BEND) * skeleton.get_bone_global_pose(spine).basis.get_rotation_quaternion()
+		skeleton.set_bone_pose_rotation(spine, parent.inverse() * bent)
 		var at := skeleton.global_transform * skeleton.get_bone_global_pose(chest).origin
-		var right := Transform3D(skeleton.global_basis * Basis(Vector3.RIGHT, -pitch), at) * hold
+		at += skeleton.global_basis * Vector3(0.0, 0.0, -kick * KICK_BACK)
+		var right := Transform3D(skeleton.global_basis * Basis(Vector3.RIGHT, -pitch - kick * KICK_RISE), at) * hold
 		targets[0].global_transform = right
 		targets[1].global_transform = right * left_grip
 
@@ -86,12 +102,16 @@ func _ready() -> void:
 	var gun := GUN.instantiate() as Node3D
 	gun.transform = GUN_GRIP
 	hand.add_child(gun)
+	_muzzle = MuzzleFlash.instantiate()
+	_muzzle.position = MUZZLE
+	gun.add_child(_muzzle)
 	_hold_with_both_hands()
 
 
 func _hold_with_both_hands() -> void:
 	_grip = HandGrip.new()
 	_grip.chest = skeleton.find_bone(&"UpperChest")
+	_grip.spine = skeleton.find_bone(&"Chest")
 	_grip.hold = HOLD
 	_grip.left_grip = LEFT_GRIP
 	_arms = TwoBoneIK3D.new()
@@ -171,6 +191,18 @@ func set_aim(p_amount: float, p_pitch: float) -> void:
 		modifier.active = p_amount > 0.0
 		modifier.influence = p_amount
 	tree.set(AIM_PITCH, clampf(p_pitch / PITCH_RANGE, -1.0, 1.0))
+
+
+func muzzle() -> Vector3:
+	return _muzzle.global_position
+
+
+func shoot(p_at: Vector3, p_normal: Vector3) -> void:
+	_muzzle.flash()
+	_grip.kick = minf(_grip.kick + 1.0, KICK_MAX)
+	var bolt := Bolt.instantiate()
+	body.add_sibling(bolt)
+	bolt.launch(_muzzle.global_position, p_at, p_normal)
 
 
 func set_strafe(p_at: Vector2) -> void:

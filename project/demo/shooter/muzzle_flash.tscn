@@ -1,0 +1,55 @@
+[gd_scene format=3 uid="uid://dp646ypdhsdcm"]
+
+[ext_resource type="Script" uid="uid://c7ygmu7a6rs0j" path="res://demo/scripts/muzzle_flash.gd" id="1_reo2h"]
+[ext_resource type="Texture2D" uid="uid://c7sc6qicqu1fo" path="res://demo/shooter/vfx/muzzle_02.png" id="2_iv5ek"]
+[ext_resource type="Texture2D" uid="uid://dm7gpn0tajyw8" path="res://demo/shooter/vfx/star_07.png" id="3_nnhj8"]
+
+[sub_resource type="QuadMesh" id="QuadMesh_g4v7s"]
+size = Vector2(0.35, 0.8)
+orientation = 1
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_reo2h"]
+transparency = 1
+blend_mode = 1
+cull_mode = 2
+shading_mode = 0
+albedo_color = Color(4, 2, 0.6, 1)
+albedo_texture = ExtResource("2_iv5ek")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_iv5ek"]
+transparency = 1
+blend_mode = 1
+shading_mode = 0
+albedo_color = Color(4, 2.4, 1, 1)
+albedo_texture = ExtResource("3_nnhj8")
+billboard_mode = 1
+billboard_keep_scale = true
+
+[sub_resource type="QuadMesh" id="QuadMesh_yf5fn"]
+material = SubResource("StandardMaterial3D_iv5ek")
+size = Vector2(0.6, 0.6)
+
+[node name="MuzzleFlash" type="Node3D" unique_id=387177467]
+script = ExtResource("1_reo2h")
+
+[node name="Flame" type="MeshInstance3D" parent="." unique_id=453682106]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.35)
+cast_shadow = 0
+mesh = SubResource("QuadMesh_g4v7s")
+surface_material_override/0 = SubResource("StandardMaterial3D_reo2h")
+
+[node name="Flame2" type="MeshInstance3D" parent="." unique_id=91691321]
+transform = Transform3D(-4.371139e-08, 1, 0, -1, -4.371139e-08, 0, 0, 0, 1, 0, 0, -0.35)
+cast_shadow = 0
+mesh = SubResource("QuadMesh_g4v7s")
+surface_material_override/0 = SubResource("StandardMaterial3D_reo2h")
+
+[node name="Core" type="MeshInstance3D" parent="." unique_id=1115827238]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.1)
+cast_shadow = 0
+mesh = SubResource("QuadMesh_yf5fn")
+
+[node name="Light" type="OmniLight3D" parent="." unique_id=1347818630]
+light_color = Color(1, 0.6, 0.2509804, 1)
+light_energy = 3.0
+omni_range = 2.0

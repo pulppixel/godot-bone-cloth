@@ -1,0 +1,31 @@
+[gd_scene format=3 uid="uid://ca8jado7njn4j"]
+
+[ext_resource type="Script" uid="uid://cyu8a16atuwrh" path="res://demo/scripts/bolt.gd" id="1_hdpc4"]
+[ext_resource type="Texture2D" uid="uid://b0nn1cwyq0ick" path="res://demo/shooter/vfx/trace_07.png" id="2_nujea"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hdpc4"]
+transparency = 1
+blend_mode = 1
+cull_mode = 2
+shading_mode = 0
+albedo_color = Color(6, 3, 1, 1)
+albedo_texture = ExtResource("2_nujea")
+
+[sub_resource type="QuadMesh" id="QuadMesh_g4v7s"]
+material = SubResource("StandardMaterial3D_hdpc4")
+size = Vector2(0.14, 1.6)
+orientation = 1
+
+[node name="Bolt" type="Node3D" unique_id=1397216743]
+physics_interpolation_mode = 2
+script = ExtResource("1_hdpc4")
+
+[node name="Streak" type="MeshInstance3D" parent="." unique_id=1109638161]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.8)
+cast_shadow = 0
+mesh = SubResource("QuadMesh_g4v7s")
+
+[node name="Streak2" type="MeshInstance3D" parent="." unique_id=1300227349]
+transform = Transform3D(-4.371139e-08, 1, 0, -1, -4.371139e-08, 0, 0, 0, 1, 0, 0, 0.8)
+cast_shadow = 0
+mesh = SubResource("QuadMesh_g4v7s")

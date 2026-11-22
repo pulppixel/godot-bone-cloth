@@ -12,6 +12,8 @@ const TIME_STEP := 0.1
 @export var zoom_step := 0.25
 @export var aim_length := 1.2
 @export var aim_shoulder := 0.45
+@export var kick_deg := 1.2
+@export var kick_time := 0.12
 
 var _last_ticks := 0
 var _home_length := 0.0
@@ -19,8 +21,10 @@ var _length := 0.0
 var _aim := 0.0
 var _chest := 0.0
 var _neck := 0.0
+var _kick := 0.0
 
 @onready var _arm: SpringArm3D = $SpringArm3D
+@onready var _camera: Camera3D = $SpringArm3D/Camera3D
 
 
 func _ready() -> void:
@@ -64,12 +68,18 @@ func _process(_delta: float) -> void:
 	
 	var look := Input.get_vector("look_left", "look_right", "look_up", "look_down")
 	_turn(look * stick_deg_per_sec * real_delta)
+	_kick *= exp(-real_delta / kick_time)
+	_camera.rotation.x = _kick
 
 
 func _turn(degrees: Vector2) -> void:
 	rotation.y -= deg_to_rad(degrees.x)
 	var pitch := _arm.rotation.x - deg_to_rad(degrees.y)
 	_arm.rotation.x = clampf(pitch, deg_to_rad(pitch_min_deg), deg_to_rad(pitch_max_deg))
+
+
+func kick() -> void:
+	_kick += deg_to_rad(kick_deg)
 
 
 func set_aim(amount: float) -> void:

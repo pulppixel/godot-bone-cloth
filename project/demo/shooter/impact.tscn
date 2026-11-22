@@ -1,0 +1,146 @@
+[gd_scene format=3 uid="uid://c74pxs2ylccwe"]
+
+[ext_resource type="Script" uid="uid://bxcl56uhgcr6t" path="res://demo/scripts/impact.gd" id="1_4eia7"]
+[ext_resource type="Texture2D" uid="uid://4ctbnl1y8enb" path="res://demo/shooter/vfx/star_08.png" id="2_upy2o"]
+[ext_resource type="Texture2D" uid="uid://lrrvfiy84fx8" path="res://demo/shooter/vfx/circle_02.png" id="3_nwnau"]
+[ext_resource type="Texture2D" uid="uid://d0jfxbalx25a4" path="res://demo/shooter/vfx/smoke_03.png" id="4_vtn1n"]
+[ext_resource type="Texture2D" uid="uid://ctcsbayxvhwp7" path="res://demo/shooter/vfx/scorch_01.png" id="5_4p688"]
+
+[sub_resource type="QuadMesh" id="QuadMesh_g4v7s"]
+size = Vector2(0.9, 0.9)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_4eia7"]
+transparency = 1
+blend_mode = 1
+shading_mode = 0
+albedo_color = Color(5, 3, 1, 1)
+albedo_texture = ExtResource("2_upy2o")
+billboard_mode = 1
+billboard_keep_scale = true
+
+[sub_resource type="QuadMesh" id="QuadMesh_upy2o"]
+size = Vector2(0.5, 0.5)
+orientation = 1
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_upy2o"]
+transparency = 1
+blend_mode = 1
+cull_mode = 2
+shading_mode = 0
+albedo_color = Color(3, 1.6, 0.5, 1)
+albedo_texture = ExtResource("3_nwnau")
+
+[sub_resource type="Gradient" id="Gradient_nwnau"]
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_nwnau"]
+gradient = SubResource("Gradient_nwnau")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_nwnau"]
+direction = Vector3(0, 1, 0)
+spread = 60.0
+initial_velocity_min = 3.0
+initial_velocity_max = 7.0
+color = Color(5, 2.5, 0.8, 1)
+color_ramp = SubResource("GradientTexture1D_nwnau")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_nwnau"]
+transparency = 1
+blend_mode = 1
+cull_mode = 2
+shading_mode = 0
+vertex_color_use_as_albedo = true
+use_particle_trails = true
+
+[sub_resource type="RibbonTrailMesh" id="RibbonTrailMesh_vtn1n"]
+material = SubResource("StandardMaterial3D_nwnau")
+shape = 0
+size = 0.02
+
+[sub_resource type="Gradient" id="Gradient_vtn1n"]
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_vtn1n"]
+gradient = SubResource("Gradient_vtn1n")
+
+[sub_resource type="Curve" id="Curve_nwnau"]
+_data = [Vector2(0, 0.5), 0.0, 0.0, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_nwnau"]
+curve = SubResource("Curve_nwnau")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_vtn1n"]
+angle_min = -179.99998
+angle_max = 180.00002
+direction = Vector3(0, 1, 0)
+spread = 30.0
+initial_velocity_min = 0.29999998
+initial_velocity_max = 0.7
+gravity = Vector3(0, 0.5, 0)
+scale_min = 0.59999996
+scale_curve = SubResource("CurveTexture_nwnau")
+color = Color(0.54901963, 0.54901963, 0.54901963, 0.5019608)
+color_ramp = SubResource("GradientTexture1D_vtn1n")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_4p688"]
+transparency = 1
+shading_mode = 0
+vertex_color_use_as_albedo = true
+albedo_texture = ExtResource("4_vtn1n")
+billboard_mode = 3
+particles_anim_h_frames = 1
+particles_anim_v_frames = 1
+particles_anim_loop = false
+
+[sub_resource type="QuadMesh" id="QuadMesh_4p688"]
+material = SubResource("StandardMaterial3D_4p688")
+size = Vector2(0.35, 0.35)
+
+[node name="Impact" type="Node3D" unique_id=627772698]
+script = ExtResource("1_4eia7")
+
+[node name="Flash" type="MeshInstance3D" parent="." unique_id=1528603782]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.03, 0)
+cast_shadow = 0
+mesh = SubResource("QuadMesh_g4v7s")
+surface_material_override/0 = SubResource("StandardMaterial3D_4eia7")
+
+[node name="Ring" type="MeshInstance3D" parent="." unique_id=722844593]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.02, 0)
+cast_shadow = 0
+mesh = SubResource("QuadMesh_upy2o")
+surface_material_override/0 = SubResource("StandardMaterial3D_upy2o")
+
+[node name="Light" type="OmniLight3D" parent="." unique_id=438816522]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.2, 0)
+light_color = Color(1, 0.6, 0.2509804, 1)
+light_energy = 4.0
+omni_range = 2.5
+
+[node name="Sparks" type="GPUParticles3D" parent="." unique_id=1335749976]
+cast_shadow = 0
+emitting = false
+amount = 12
+lifetime = 0.4
+one_shot = true
+explosiveness = 1.0
+trail_enabled = true
+trail_lifetime = 0.08
+process_material = SubResource("ParticleProcessMaterial_nwnau")
+draw_pass_1 = SubResource("RibbonTrailMesh_vtn1n")
+
+[node name="Smoke" type="GPUParticles3D" parent="." unique_id=1074337369]
+cast_shadow = 0
+emitting = false
+amount = 3
+lifetime = 0.8
+one_shot = true
+explosiveness = 0.8
+process_material = SubResource("ParticleProcessMaterial_vtn1n")
+draw_pass_1 = SubResource("QuadMesh_4p688")
+
+[node name="Mark" type="Decal" parent="." unique_id=1254403493]
+size = Vector3(0.4, 0.2, 0.4)
+texture_albedo = ExtResource("5_4p688")
+modulate = Color(0.078431375, 0.07058824, 0.05882353, 0.8509804)
