@@ -24,8 +24,9 @@ const EXIT_FOOT := &"parameters/ExitFoot/blend_amount"
 const BOARD_CROUCH := &"parameters/Board/blend_amount"
 const AIM := &"parameters/Aim/blend_amount"
 const AIM_PITCH := &"parameters/AimPitch/blend_amount"
+const STRAFE := &"parameters/Strafe/blend_position"
 const PITCH_RANGE := deg_to_rad(70.0)
-const HOLD := Transform3D(Vector3(-0.0309, 0.9923, -0.1198), Vector3(-0.0848, 0.1169, 0.9895), Vector3(0.9959, 0.0408, 0.0805), Vector3(-0.0854, 0.0404, 0.2557))
+const HOLD := Transform3D(Vector3(-0.0309, 0.9923, -0.1198), Vector3(-0.0848, 0.1169, 0.9895), Vector3(0.9959, 0.0408, 0.0805), Vector3(-0.1654, 0.0404, 0.2557))
 const LEFT_GRIP := Transform3D(Vector3(-0.9986, 0.0045, -0.0531), Vector3(-0.0045, 0.9858, 0.1678), Vector3(0.0531, 0.1678, -0.9844), Vector3(-0.012, 0.1744, 0.027))
 const POLES: Array[Vector3] = [Vector3(-0.5, 0.8, 0.2), Vector3(0.5, 0.8, 0.2)]
 const ARMS := [["RightUpperArm", "RightLowerArm", "RightHand"], ["LeftUpperArm", "LeftLowerArm", "LeftHand"]]
@@ -170,6 +171,10 @@ func set_aim(p_amount: float, p_pitch: float) -> void:
 		modifier.active = p_amount > 0.0
 		modifier.influence = p_amount
 	tree.set(AIM_PITCH, clampf(p_pitch / PITCH_RANGE, -1.0, 1.0))
+
+
+func set_strafe(p_at: Vector2) -> void:
+	tree.set(STRAFE, p_at)
 
 
 func seek_lean(p_phase: float) -> void:

@@ -4,12 +4,13 @@ const CharacterSkin := preload("res://demo/scripts/skin.gd")
 const CameraRig := preload("res://demo/scripts/camera_rig.gd")
 
 
-enum Anim { IDLE, MOVE, STOP, JUMP_START, FALL, LAND, BOARD }
-const TREE_STATE: Array[StringName] = [&"idle", &"move", &"idle", &"jump_start", &"fall", &"land", &"board"]
+enum Anim { IDLE, MOVE, STOP, JUMP_START, FALL, LAND, BOARD, STRAFE }
+const TREE_STATE: Array[StringName] = [&"idle", &"move", &"idle", &"jump_start", &"fall", &"land", &"board", &"strafe"]
 
 const WALK := 1.064
-const RUN := 7.65
+const STRAFE_SPEEDS: Array[float] = [1.064, 1.064, 0.761, 1.143, 1.143, 1.143, 0.610, 1.064]
 
+const RUN := 7.65
 const STOP_SPEED := 0.2
 const SHARP_TURN := deg_to_rad(140.0)
 const SPEED_SLACK := 0.01
@@ -176,9 +177,9 @@ func _physics_process(delta: float) -> void:
 	var direction := Basis(Vector3.UP, camera_rig.rotation.y) * Vector3(input.x, 0.0, input.y)
 	if Input.is_action_just_pressed("board"):
 		_set_boarding(_riding == null)
-	var aiming := _aim_toward(delta)
-	if aiming:
-		direction = Vector3.ZERO
+	if _aim_toward(delta):
+		_strafe(direction, delta)
+		return
 	if _riding:
 		_ride_board(direction, delta)
 		_follow_ride()
@@ -214,8 +215,6 @@ func _physics_process(delta: float) -> void:
 	_transition(pressing, speed, exit_wait)
 
 	var facing := Vector3(velocity.x, 0.0, velocity.z) if speed > STOP_SPEED else direction
-	if aiming:
-		facing = Basis(Vector3.UP, camera_rig.rotation.y) * Vector3.FORWARD
 	_turn_skin(facing, delta)
 	_animate(speed, turned, delta)
 
@@ -228,6 +227,34 @@ func _aim_toward(delta: float) -> bool:
 	_character.set_aim(_aim, rig.pitch())
 	crosshair.visible = aiming
 	return aiming
+
+
+func _strafe(direction: Vector3, delta: float) -> void:
+	_turn_skin(Basis(Vector3.UP, camera_rig.rotation.y) * Vector3.FORWARD, delta)
+	var to_skin := Basis(Vector3.UP, -_skin.rotation.y)
+	var wanted := to_skin * direction
+	var top_speed := _strafe_speed(atan2(-wanted.x, wanted.z)) * _scale
+	var flat := Vector3(velocity.x, 0.0, velocity.z)
+	var target := direction * top_speed
+	var change := acceleration if target.length() >= flat.length() else deceleration
+	flat = flat.move_toward(target, change * delta)
+	velocity = Vector3(flat.x, velocity.y if not is_on_floor() else 0.0, flat.z)
+	if not is_on_floor():
+		velocity.y = maxf(velocity.y - _gravity * delta, -max_fall_speed)
+	_slide(delta)
+	if not is_on_floor():
+		_enter(Anim.FALL)
+		return
+	var moving := to_skin * flat
+	var at := Vector2(-moving.x, moving.z) / (_strafe_speed(atan2(-moving.x, moving.z)) * _scale)
+	_character.set_strafe(at)
+	_enter(Anim.STRAFE if at.length() > STOP_SPEED else Anim.IDLE)
+
+
+func _strafe_speed(angle: float) -> float:
+	var at := fposmod(angle / (TAU / STRAFE_SPEEDS.size()), STRAFE_SPEEDS.size())
+	var i := int(at)
+	return lerpf(STRAFE_SPEEDS[i], STRAFE_SPEEDS[(i + 1) % STRAFE_SPEEDS.size()], at - i)
 
 
 func _airborne() -> bool:

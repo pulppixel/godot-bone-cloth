@@ -26,8 +26,8 @@
 [ext_resource type="Texture2D" uid="uid://do0dpsdh67srm" path="res://demo/ui/keys/keyboard_f_outline.png" id="22_key_f"]
 [ext_resource type="Texture2D" uid="uid://04lqnp5qyr0h" path="res://demo/ui/keys/keyboard_3_outline.png" id="22_tlscf"]
 [ext_resource type="Texture2D" uid="uid://byuia2fb5a0r" path="res://demo/ui/keys/keyboard_4_outline.png" id="23_u37yy"]
-[ext_resource type="Texture2D" path="res://demo/ui/keys/mouse_right_outline.png" id="24_mouse_right"]
-[ext_resource type="Texture2D" path="res://demo/ui/crosshair.png" id="25_crosshair"]
+[ext_resource type="Texture2D" uid="uid://hr1usfsdlnli" path="res://demo/ui/keys/mouse_right_outline.png" id="24_mouse_right"]
+[ext_resource type="Texture2D" uid="uid://dmqf7isvx57t7" path="res://demo/ui/crosshair.png" id="25_crosshair"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_i76fu"]
 radius = 0.25

@@ -1,19 +1,19 @@
 [gd_resource type="AnimationNodeBlendTree" format=3 uid="uid://bcsixpyfun3ks"]
 
-[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_aimup"]
-animation = &"demo_motions/Pistol_Aim_Up"
-
-[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_aimhold"]
-animation = &"demo_motions/Pistol_Idle"
+[sub_resource type="AnimationNodeBlend2" id="AnimationNodeBlend2_aim"]
+filter_enabled = true
+filters = ["%GeneralSkeleton:Chest", "%GeneralSkeleton:Head", "%GeneralSkeleton:LeftHand", "%GeneralSkeleton:LeftLowerArm", "%GeneralSkeleton:LeftShoulder", "%GeneralSkeleton:LeftUpperArm", "%GeneralSkeleton:Neck", "%GeneralSkeleton:RightHand", "%GeneralSkeleton:RightIndexDistal", "%GeneralSkeleton:RightIndexIntermediate", "%GeneralSkeleton:RightIndexProximal", "%GeneralSkeleton:RightLittleDistal", "%GeneralSkeleton:RightLittleIntermediate", "%GeneralSkeleton:RightLittleProximal", "%GeneralSkeleton:RightLowerArm", "%GeneralSkeleton:RightMiddleDistal", "%GeneralSkeleton:RightMiddleIntermediate", "%GeneralSkeleton:RightMiddleProximal", "%GeneralSkeleton:RightRingDistal", "%GeneralSkeleton:RightRingIntermediate", "%GeneralSkeleton:RightRingProximal", "%GeneralSkeleton:RightShoulder", "%GeneralSkeleton:RightThumbDistal", "%GeneralSkeleton:RightThumbMetacarpal", "%GeneralSkeleton:RightThumbProximal", "%GeneralSkeleton:RightUpperArm", "%GeneralSkeleton:UpperChest"]
 
 [sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_aimdown"]
 animation = &"demo_motions/Pistol_Aim_Down"
 
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_aimhold"]
+animation = &"demo_motions/Pistol_Idle"
+
 [sub_resource type="AnimationNodeBlend3" id="AnimationNodeBlend3_aimpitch"]
 
-[sub_resource type="AnimationNodeBlend2" id="AnimationNodeBlend2_aim"]
-filter_enabled = true
-filters = [NodePath("%GeneralSkeleton:Chest"), NodePath("%GeneralSkeleton:UpperChest"), NodePath("%GeneralSkeleton:Neck"), NodePath("%GeneralSkeleton:Head"), NodePath("%GeneralSkeleton:LeftShoulder"), NodePath("%GeneralSkeleton:LeftUpperArm"), NodePath("%GeneralSkeleton:LeftLowerArm"), NodePath("%GeneralSkeleton:LeftHand"), NodePath("%GeneralSkeleton:RightShoulder"), NodePath("%GeneralSkeleton:RightUpperArm"), NodePath("%GeneralSkeleton:RightLowerArm"), NodePath("%GeneralSkeleton:RightHand"), NodePath("%GeneralSkeleton:RightIndexProximal"), NodePath("%GeneralSkeleton:RightIndexIntermediate"), NodePath("%GeneralSkeleton:RightIndexDistal"), NodePath("%GeneralSkeleton:RightMiddleProximal"), NodePath("%GeneralSkeleton:RightMiddleIntermediate"), NodePath("%GeneralSkeleton:RightMiddleDistal"), NodePath("%GeneralSkeleton:RightLittleProximal"), NodePath("%GeneralSkeleton:RightLittleIntermediate"), NodePath("%GeneralSkeleton:RightLittleDistal"), NodePath("%GeneralSkeleton:RightRingProximal"), NodePath("%GeneralSkeleton:RightRingIntermediate"), NodePath("%GeneralSkeleton:RightRingDistal"), NodePath("%GeneralSkeleton:RightThumbMetacarpal"), NodePath("%GeneralSkeleton:RightThumbProximal"), NodePath("%GeneralSkeleton:RightThumbDistal")]
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_aimup"]
+animation = &"demo_motions/Pistol_Aim_Up"
 
 [sub_resource type="AnimationNodeBlend2" id="AnimationNodeBlend2_board"]
 
@@ -128,6 +128,67 @@ input_5/name = "board"
 input_5/auto_advance = false
 input_5/break_loop_at_end = false
 input_5/reset = true
+input_6/name = "strafe"
+input_6/auto_advance = false
+input_6/break_loop_at_end = false
+input_6/reset = true
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_strafeidle"]
+animation = &"demo_motions/Idle"
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_walk_fwd"]
+animation = &"demo_motions/Walk_Fwd"
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_walk_fwd_r"]
+animation = &"demo_motions/Walk_Fwd_R"
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_walk_r"]
+animation = &"demo_motions/Walk_R"
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_walk_bwd_r"]
+animation = &"demo_motions/Walk_Bwd_R"
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_walk_bwd"]
+animation = &"demo_motions/Walk_Bwd"
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_walk_bwd_l"]
+animation = &"demo_motions/Walk_Bwd_L"
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_walk_l"]
+animation = &"demo_motions/Walk_L"
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_walk_fwd_l"]
+animation = &"demo_motions/Walk_Fwd_L"
+
+[sub_resource type="AnimationNodeBlendSpace2D" id="AnimationNodeBlendSpace2D_strafe"]
+sync_mode = 1
+blend_point_0/node = SubResource("AnimationNodeAnimation_strafeidle")
+blend_point_0/pos = Vector2(0, 0)
+blend_point_0/name = &"0"
+blend_point_1/node = SubResource("AnimationNodeAnimation_walk_fwd")
+blend_point_1/pos = Vector2(0, 1)
+blend_point_1/name = &"1"
+blend_point_2/node = SubResource("AnimationNodeAnimation_walk_fwd_r")
+blend_point_2/pos = Vector2(0.7071, 0.7071)
+blend_point_2/name = &"2"
+blend_point_3/node = SubResource("AnimationNodeAnimation_walk_r")
+blend_point_3/pos = Vector2(1, 0)
+blend_point_3/name = &"3"
+blend_point_4/node = SubResource("AnimationNodeAnimation_walk_bwd_r")
+blend_point_4/pos = Vector2(0.7071, -0.7071)
+blend_point_4/name = &"4"
+blend_point_5/node = SubResource("AnimationNodeAnimation_walk_bwd")
+blend_point_5/pos = Vector2(0, -1)
+blend_point_5/name = &"5"
+blend_point_6/node = SubResource("AnimationNodeAnimation_walk_bwd_l")
+blend_point_6/pos = Vector2(-0.7071, -0.7071)
+blend_point_6/name = &"6"
+blend_point_7/node = SubResource("AnimationNodeAnimation_walk_l")
+blend_point_7/pos = Vector2(-1, 0)
+blend_point_7/name = &"7"
+blend_point_8/node = SubResource("AnimationNodeAnimation_walk_fwd_l")
+blend_point_8/pos = Vector2(-0.7071, 0.7071)
+blend_point_8/name = &"8"
 
 [resource]
 nodes/output/position = Vector2(2900, -133.33333)
@@ -179,6 +240,8 @@ nodes/BoardCrouch/node = SubResource("AnimationNodeAnimation_bcrouch")
 nodes/BoardCrouch/position = Vector2(1240, 1240)
 nodes/Board/node = SubResource("AnimationNodeBlend2_board")
 nodes/Board/position = Vector2(1600, 1100)
+nodes/Strafe/node = SubResource("AnimationNodeBlendSpace2D_strafe")
+nodes/Strafe/position = Vector2(1600, 1400)
 nodes/AimDown/node = SubResource("AnimationNodeAnimation_aimdown")
 nodes/AimDown/position = Vector2(1946.6666, 1000)
 nodes/AimHold/node = SubResource("AnimationNodeAnimation_aimhold")
@@ -189,4 +252,4 @@ nodes/AimPitch/node = SubResource("AnimationNodeBlend3_aimpitch")
 nodes/AimPitch/position = Vector2(2300, 1100)
 nodes/Aim/node = SubResource("AnimationNodeBlend2_aim")
 nodes/Aim/position = Vector2(2600, -133.33333)
-node_connections = [&"output", 0, &"Aim", &"Aim", 0, &"State", &"Aim", 1, &"AimPitch", &"AimPitch", 0, &"AimDown", &"AimPitch", 1, &"AimHold", &"AimPitch", 2, &"AimUp", &"State", 0, &"Rest", &"State", 1, &"Lean", &"State", 2, &"JumpStart", &"State", 3, &"Fall", &"State", 4, &"Land", &"State", 5, &"Board", &"Side", 0, &"LeanL", &"Side", 1, &"LeanJog", &"Side", 2, &"LeanR", &"LeanOnly", 0, &"Side", &"LeanOnly", 1, &"LeanBase", &"LeanPhase", 0, &"LeanOnly", &"Lean", 0, &"MoveRate", &"Lean", 1, &"LeanPhase", &"IdleFoot", 0, &"Idle", &"IdleFoot", 1, &"IdleMirror", &"MoveRate", 0, &"Move", &"Rest", 0, &"IdleFoot", &"Rest", 1, &"ExitFoot", &"ExitFoot", 0, &"Exit", &"ExitFoot", 1, &"ExitMirror", &"Board", 0, &"BoardStand", &"Board", 1, &"BoardCrouch"]
+node_connections = [&"output", 0, &"Aim", &"State", 0, &"Rest", &"State", 1, &"Lean", &"State", 2, &"JumpStart", &"State", 3, &"Fall", &"State", 4, &"Land", &"State", 5, &"Board", &"State", 6, &"Strafe", &"Side", 0, &"LeanL", &"Side", 1, &"LeanJog", &"Side", 2, &"LeanR", &"LeanOnly", 0, &"Side", &"LeanOnly", 1, &"LeanBase", &"LeanPhase", 0, &"LeanOnly", &"Lean", 0, &"MoveRate", &"Lean", 1, &"LeanPhase", &"IdleFoot", 0, &"Idle", &"IdleFoot", 1, &"IdleMirror", &"MoveRate", 0, &"Move", &"Rest", 0, &"IdleFoot", &"Rest", 1, &"ExitFoot", &"ExitFoot", 0, &"Exit", &"ExitFoot", 1, &"ExitMirror", &"Board", 0, &"BoardStand", &"Board", 1, &"BoardCrouch", &"AimPitch", 0, &"AimDown", &"AimPitch", 1, &"AimHold", &"AimPitch", 2, &"AimUp", &"Aim", 0, &"State", &"Aim", 1, &"AimPitch"]
