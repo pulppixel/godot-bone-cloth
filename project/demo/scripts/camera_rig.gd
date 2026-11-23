@@ -12,8 +12,8 @@ const TIME_STEP := 0.1
 @export var zoom_step := 0.25
 @export var aim_length := 1.2
 @export var aim_shoulder := 0.45
-@export var kick_deg := 1.2
-@export var kick_time := 0.12
+@export var kick_deg := 0.3
+@export var kick_time := 0.08
 
 var _last_ticks := 0
 var _home_length := 0.0

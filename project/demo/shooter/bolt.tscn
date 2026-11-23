@@ -13,7 +13,7 @@ albedo_texture = ExtResource("2_nujea")
 
 [sub_resource type="QuadMesh" id="QuadMesh_g4v7s"]
 material = SubResource("StandardMaterial3D_hdpc4")
-size = Vector2(0.14, 1.6)
+size = Vector2(0.06, 1.2)
 orientation = 1
 
 [node name="Bolt" type="Node3D" unique_id=1397216743]
@@ -21,11 +21,11 @@ physics_interpolation_mode = 2
 script = ExtResource("1_hdpc4")
 
 [node name="Streak" type="MeshInstance3D" parent="." unique_id=1109638161]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.8)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.6)
 cast_shadow = 0
 mesh = SubResource("QuadMesh_g4v7s")
 
 [node name="Streak2" type="MeshInstance3D" parent="." unique_id=1300227349]
-transform = Transform3D(-4.371139e-08, 1, 0, -1, -4.371139e-08, 0, 0, 0, 1, 0, 0, 0.8)
+transform = Transform3D(-4.371139e-08, 1, 0, -1, -4.371139e-08, 0, 0, 0, 1, 0, 0, 0.6)
 cast_shadow = 0
 mesh = SubResource("QuadMesh_g4v7s")

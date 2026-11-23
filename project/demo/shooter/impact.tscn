@@ -11,7 +11,7 @@
 [ext_resource type="AudioStream" uid="uid://c2tq6d3tt0212" path="res://demo/shooter/sfx/hit_3.ogg" id="9_bnss0"]
 
 [sub_resource type="QuadMesh" id="QuadMesh_g4v7s"]
-size = Vector2(0.9, 0.9)
+size = Vector2(0.4, 0.4)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_4eia7"]
 transparency = 1
@@ -23,7 +23,7 @@ billboard_mode = 1
 billboard_keep_scale = true
 
 [sub_resource type="QuadMesh" id="QuadMesh_upy2o"]
-size = Vector2(0.5, 0.5)
+size = Vector2(0.25, 0.25)
 orientation = 1
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_upy2o"]
@@ -43,8 +43,8 @@ gradient = SubResource("Gradient_nwnau")
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_nwnau"]
 direction = Vector3(0, 1, 0)
 spread = 60.0
-initial_velocity_min = 3.0
-initial_velocity_max = 7.0
+initial_velocity_min = 1.5
+initial_velocity_max = 3.0
 color = Color(5, 2.5, 0.8, 1)
 color_ramp = SubResource("GradientTexture1D_nwnau")
 
@@ -99,7 +99,7 @@ particles_anim_loop = false
 
 [sub_resource type="QuadMesh" id="QuadMesh_4p688"]
 material = SubResource("StandardMaterial3D_4p688")
-size = Vector2(0.35, 0.35)
+size = Vector2(0.25, 0.25)
 
 [sub_resource type="AudioStreamRandomizer" id="AudioStreamRandomizer_4p688"]
 random_pitch = 1.0799766
@@ -128,14 +128,14 @@ surface_material_override/0 = SubResource("StandardMaterial3D_upy2o")
 [node name="Light" type="OmniLight3D" parent="." unique_id=438816522]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.2, 0)
 light_color = Color(1, 0.6, 0.2509804, 1)
-light_energy = 4.0
-omni_range = 2.5
+light_energy = 1.5
+omni_range = 1.5
 
 [node name="Sparks" type="GPUParticles3D" parent="." unique_id=1335749976]
 cast_shadow = 0
 emitting = false
-amount = 12
-lifetime = 0.4
+amount = 5
+lifetime = 0.25
 one_shot = true
 explosiveness = 1.0
 trail_enabled = true
@@ -146,7 +146,7 @@ draw_pass_1 = SubResource("RibbonTrailMesh_vtn1n")
 [node name="Smoke" type="GPUParticles3D" parent="." unique_id=1074337369]
 cast_shadow = 0
 emitting = false
-amount = 3
+amount = 2
 lifetime = 0.8
 one_shot = true
 explosiveness = 0.8
@@ -154,7 +154,7 @@ process_material = SubResource("ParticleProcessMaterial_vtn1n")
 draw_pass_1 = SubResource("QuadMesh_4p688")
 
 [node name="Mark" type="Decal" parent="." unique_id=1254403493]
-size = Vector3(0.4, 0.2, 0.4)
+size = Vector3(0.2, 0.1, 0.2)
 texture_albedo = ExtResource("5_4p688")
 modulate = Color(0.078431375, 0.07058824, 0.05882353, 0.8509804)
 
