@@ -133,6 +133,7 @@ var _pull := false
 var _spread := 0.0
 var _since_shot := INF
 var _slot: GunSlot
+var _used_here := false
 
 @onready var _skin: Node3D = $Skin
 @onready var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
@@ -242,8 +243,11 @@ func _physics_process(delta: float) -> void:
 
 func _pick() -> void:
 	var slot := _slot_in_reach()
-	pick_prompt.visible = slot != null
 	if slot == null:
+		_used_here = false
+	var busy := _riding != null or _aim > 0.0
+	pick_prompt.visible = slot != null and not busy and not _used_here
+	if slot == null or busy:
 		return
 	pick_prompt.global_position = slot.global_position + Vector3.UP * prompt_rise
 	if not Input.is_action_just_pressed("interact"):
@@ -254,11 +258,10 @@ func _pick() -> void:
 	if _slot:
 		_slot.take()
 	_character.hold(_slot.gun if _slot else null)
+	_used_here = true
 
 
 func _slot_in_reach() -> GunSlot:
-	if _riding or _aim > 0.0:
-		return null
 	var nearest: GunSlot = null
 	var best := pick_reach
 	for slot: GunSlot in get_tree().get_nodes_in_group(&"gun_slots"):

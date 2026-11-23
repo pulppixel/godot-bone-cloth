@@ -152,6 +152,6 @@ gun = ExtResource("gun_m")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.5, 0, -10.4)
 
 [node name="SlotH" type="Node3D" parent="Benches/Bench4"]
-transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, 0.0, 0.8092, 0)
+transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, -0.45, 0.8092, 0)
 script = ExtResource("slot")
 gun = ExtResource("gun_h")

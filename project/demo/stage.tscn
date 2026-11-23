@@ -32,7 +32,7 @@
 [ext_resource type="Texture2D" uid="uid://dmqf7isvx57t7" path="res://demo/ui/crosshair.png" id="25_crosshair"]
 [ext_resource type="PackedScene" path="res://demo/shooter/radio.tscn" id="91_radio"]
 [ext_resource type="PackedScene" path="res://demo/stage/range.tscn" id="92_range"]
-[ext_resource type="Texture2D" path="res://demo/ui/keys/keyboard_e_outline.png" id="93_key_e"]
+[ext_resource type="Texture2D" uid="uid://dvm43idenr8wp" path="res://demo/ui/keys/keyboard_e_outline.png" id="93_key_e"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_i76fu"]
 radius = 0.25
@@ -196,9 +196,9 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 1.8, 7.5)
 pause = 2.5
 
 [node name="Radio" parent="." unique_id=1606988635 instance=ExtResource("91_radio")]
-transform = Transform3D(0.5735764, 0, 0.819152, 0, 1, 0, -0.819152, 0, 0.5735764, -3.25, 0.728, 2.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.05, 0.988, -10.4)
 
-[node name="Range" parent="." instance=ExtResource("92_range")]
+[node name="Range" parent="." unique_id=1708724993 instance=ExtResource("92_range")]
 
 [node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=1159000478]
 
@@ -585,7 +585,7 @@ strength = 8.0
 direction_noise_angle = 0.2617994
 transform = Transform3D(0.8660254, 0, -0.5, 0, 1, 0, 0.5, 0, 0.8660254, 0, 0, 0)
 
-[node name="PickPrompt" type="Sprite3D" parent="."]
+[node name="PickPrompt" type="Sprite3D" parent="." unique_id=1397844952]
 visible = false
 pixel_size = 0.004
 billboard = 1
