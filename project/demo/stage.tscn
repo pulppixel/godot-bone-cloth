@@ -32,6 +32,7 @@
 [ext_resource type="Texture2D" uid="uid://dmqf7isvx57t7" path="res://demo/ui/crosshair.png" id="25_crosshair"]
 [ext_resource type="PackedScene" path="res://demo/shooter/radio.tscn" id="91_radio"]
 [ext_resource type="PackedScene" path="res://demo/stage/range.tscn" id="92_range"]
+[ext_resource type="Texture2D" path="res://demo/ui/keys/keyboard_e_outline.png" id="93_key_e"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_i76fu"]
 radius = 0.25
@@ -90,13 +91,14 @@ anchor_inertia_value = NodePath("CanvasLayer/Panel/Column/Rows/AnchorInertia/Val
 wind_direction_slider = NodePath("CanvasLayer/Panel/Column/Rows/WindDirection/Slider")
 wind_direction_value = NodePath("CanvasLayer/Panel/Column/Rows/WindDirection/Value")
 
-[node name="Player" type="CharacterBody3D" parent="." unique_id=1170255093 node_paths=PackedStringArray("camera_rig", "board", "crosshair")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.5, 0, -9)
+[node name="Player" type="CharacterBody3D" parent="." unique_id=1170255093 node_paths=PackedStringArray("camera_rig", "board", "crosshair", "pick_prompt")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.9, 0, -9)
 floor_snap_length = 0.3
 script = ExtResource("2_r7osq")
 camera_rig = NodePath("CameraRig")
 board = NodePath("Skin/Board")
 crosshair = NodePath("../CanvasLayer/Crosshair")
+pick_prompt = NodePath("../PickPrompt")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Player" unique_id=1783795205]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
@@ -582,3 +584,10 @@ vertical_alignment = 1
 strength = 8.0
 direction_noise_angle = 0.2617994
 transform = Transform3D(0.8660254, 0, -0.5, 0, 1, 0, 0.5, 0, 0.8660254, 0, 0, 0)
+
+[node name="PickPrompt" type="Sprite3D" parent="."]
+visible = false
+pixel_size = 0.004
+billboard = 1
+no_depth_test = true
+texture = ExtResource("93_key_e")

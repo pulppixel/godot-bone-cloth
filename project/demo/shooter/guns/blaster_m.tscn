@@ -1,0 +1,38 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://demo/shooter/guns/blaster_m.glb" id="1_cbufo"]
+[ext_resource type="Script" path="res://demo/scripts/gun.gd" id="2_gun"]
+[ext_resource type="PackedScene" path="res://demo/shooter/bolt.tscn" id="3_shot"]
+[ext_resource type="AudioStream" path="res://demo/shooter/sfx/shot_m_0.ogg" id="4_sound"]
+[ext_resource type="AudioStream" path="res://demo/shooter/sfx/shot_m_1.ogg" id="5_sound"]
+
+[sub_resource type="AudioStreamRandomizer" id="AudioStreamRandomizer_shot"]
+random_pitch = 1.05
+random_volume_offset_db = 1.0
+streams_count = 2
+stream_0/stream = ExtResource("4_sound")
+stream_1/stream = ExtResource("5_sound")
+
+[node name="BlasterM" type="Node3D" unique_id=1650933961]
+script = ExtResource("2_gun")
+automatic = false
+fire_rate = 1.5
+pellets = 6
+pellet_spread_deg = 4.0
+spread_per_shot_deg = 1.0
+spread_max_deg = 2.0
+kick = 3.0
+shot = ExtResource("3_shot")
+sound = SubResource("AudioStreamRandomizer_shot")
+
+[node name="Model" parent="." unique_id=782702797 instance=ExtResource("1_cbufo")]
+transform = Transform3D(0.6, 0, 0, 0, 0.6, 0, 0, 0, 0.6, 0, 0, 0)
+
+[node name="Grip" type="Marker3D" parent="." unique_id=19213075]
+transform = Transform3D(0.0267, 0.0842, -0.9961, 0.9924, 0.1173, 0.0365, 0.1199, -0.9895, -0.0804, 0.0074, -0.0513, 0.1767)
+
+[node name="Fore" type="Marker3D" parent="." unique_id=1989963481]
+transform = Transform3D(0.0267, -0.0842, 0.9961, -0.9924, 0.1173, 0.0365, -0.1199, -0.9895, -0.0804, -0.0324, -0.0563, 0.1567)
+
+[node name="Muzzle" type="Marker3D" parent="." unique_id=895407738]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.0438, -0.1956)

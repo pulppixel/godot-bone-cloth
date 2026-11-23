@@ -10,12 +10,14 @@ func _ready() -> void:
 	visible = false
 
 
-func flash() -> void:
+func flash(p_show: bool) -> void:
+	_shot.play()
+	if not p_show:
+		return
 	rotation.z = randf() * TAU
 	scale = Vector3.ONE * randf_range(0.8, 1.2)
 	visible = true
 	_left = shown
-	_shot.play()
 
 
 func _process(delta: float) -> void:

@@ -1,0 +1,24 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://demo/scripts/dart.gd" id="1_dart"]
+[ext_resource type="PackedScene" path="res://demo/shooter/dart.glb" id="2_model"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_dart"]
+radius = 0.03
+height = 0.18
+
+[node name="Dart" type="RigidBody3D"]
+collision_layer = 4
+mass = 0.01
+angular_damp = 5.0
+continuous_cd = true
+contact_monitor = true
+max_contacts_reported = 1
+script = ExtResource("1_dart")
+
+[node name="Model" parent="." instance=ExtResource("2_model")]
+transform = Transform3D(3, 0, 0, 0, 0, 3, 0, -3, 0, 0, 0, 0.09)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0, 1, 0, -1, 0, 0, 0, 0)
+shape = SubResource("CapsuleShape3D_dart")

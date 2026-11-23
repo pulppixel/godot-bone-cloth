@@ -4,10 +4,8 @@ extends Node3D
 const Feet := preload("res://demo/scripts/feet.gd")
 const Look := preload("res://demo/scripts/look.gd")
 const Face := preload("res://demo/scripts/face.gd")
-const GUN := preload("res://demo/shooter/blaster.glb")
+const Gun := preload("res://demo/scripts/gun.gd")
 const MuzzleFlash := preload("res://demo/shooter/muzzle_flash.tscn")
-const Bolt := preload("res://demo/shooter/bolt.tscn")
-const GUN_GRIP := Transform3D(Vector3(0.016, 0.0505, -0.5977), Vector3(0.5955, 0.0704, 0.0219), Vector3(0.0719, -0.5937, -0.0483), Vector3(0.0228, 0.1758, 0.0229))
 
 const STATE := &"parameters/State/transition_request"
 const STATE_NOW := &"parameters/State/current_state"
@@ -29,8 +27,6 @@ const AIM_PITCH := &"parameters/AimPitch/blend_amount"
 const STRAFE := &"parameters/Strafe/blend_position"
 const PITCH_RANGE := deg_to_rad(70.0)
 const HOLD := Transform3D(Vector3(-0.0309, 0.9923, -0.1198), Vector3(-0.0848, 0.1169, 0.9895), Vector3(0.9959, 0.0408, 0.0805), Vector3(-0.1654, 0.0404, 0.2557))
-const LEFT_GRIP := Transform3D(Vector3(-0.9986, 0.0045, -0.0531), Vector3(-0.0045, 0.9858, 0.1678), Vector3(0.0531, 0.1678, -0.9844), Vector3(-0.012, 0.1744, 0.027))
-const MUZZLE := Vector3(0.0, 0.039, -0.29)
 const KICK_MAX := 1.5
 const POLES: Array[Vector3] = [Vector3(-0.5, 0.8, 0.2), Vector3(0.5, 0.8, 0.2)]
 const ARMS := [["RightUpperArm", "RightLowerArm", "RightHand"], ["LeftUpperArm", "LeftLowerArm", "LeftHand"]]
@@ -40,6 +36,7 @@ var skeleton: Skeleton3D
 var move: AnimationNodeBlendSpace1D
 var face: MeshInstance3D
 var body: CharacterBody3D
+var gun: Gun
 @onready var feet: Feet = $Feet
 @onready var look: Look = $Look
 @onready var expression: Face = $Expression
@@ -53,6 +50,7 @@ var aim := 0.0
 var _grip: HandGrip
 var _arms: TwoBoneIK3D
 var _hands: CopyTransformModifier3D
+var _hand: BoneAttachment3D
 var _muzzle: Node3D
 var state: StringName:
 	get:
@@ -100,16 +98,27 @@ func _ready() -> void:
 	tree.set(LEAN_ONLY, 1.0)
 	tree.set(LEAN_ADD, 1.0)
 	look.glanced.connect(expression.blink)
-	var hand := BoneAttachment3D.new()
-	hand.bone_name = &"RightHand"
-	skeleton.add_child(hand)
-	var gun := GUN.instantiate() as Node3D
-	gun.transform = GUN_GRIP
-	hand.add_child(gun)
-	_muzzle = MuzzleFlash.instantiate()
-	_muzzle.position = MUZZLE
-	gun.add_child(_muzzle)
+	_hand = BoneAttachment3D.new()
+	_hand.bone_name = &"RightHand"
+	skeleton.add_child(_hand)
 	_hold_with_both_hands()
+
+
+func hold(p_gun: PackedScene) -> void:
+	if gun:
+		gun.queue_free()
+		gun = null
+	if p_gun == null:
+		return
+	gun = p_gun.instantiate()
+	var grip := (gun.get_node(^"Grip") as Node3D).transform.affine_inverse()
+	gun.transform = grip
+	_grip.left_grip = grip * (gun.get_node(^"Fore") as Node3D).transform
+	_hand.add_child(gun)
+	_muzzle = MuzzleFlash.instantiate()
+	_muzzle.position = (gun.get_node(^"Muzzle") as Node3D).position
+	(_muzzle.get_node(^"Shot") as AudioStreamPlayer3D).stream = gun.sound
+	gun.add_child(_muzzle)
 
 
 func _hold_with_both_hands() -> void:
@@ -118,7 +127,6 @@ func _hold_with_both_hands() -> void:
 	_grip.spine = skeleton.find_bone(&"Chest")
 	_grip.upright = _pose_in(&"demo_motions/Idle", skeleton.get_bone_parent(_grip.spine))
 	_grip.hold = HOLD
-	_grip.left_grip = LEFT_GRIP
 	_arms = TwoBoneIK3D.new()
 	_hands = CopyTransformModifier3D.new()
 	var cloth := skeleton.get_child_count()
@@ -215,12 +223,17 @@ func muzzle() -> Vector3:
 	return _muzzle.global_position
 
 
-func shoot(p_at: Vector3, p_normal: Vector3, p_target: Object) -> void:
-	_muzzle.flash()
-	_grip.kick = minf(_grip.kick + 1.0, KICK_MAX)
-	var bolt := Bolt.instantiate()
-	body.add_sibling(bolt)
-	bolt.launch(_muzzle.global_position, p_at, p_normal, p_target)
+func shoot() -> void:
+	_muzzle.flash(gun.flash)
+	_grip.kick = minf(_grip.kick + gun.kick, KICK_MAX * gun.kick)
+
+
+func launch(p_at: Vector3, p_normal: Vector3, p_target: Object) -> void:
+	var shot := gun.shot.instantiate()
+	body.add_sibling(shot)
+	if shot is PhysicsBody3D:
+		shot.add_collision_exception_with(body)
+	shot.launch(_muzzle.global_position, p_at, p_normal, p_target)
 
 
 func set_strafe(p_at: Vector2) -> void:

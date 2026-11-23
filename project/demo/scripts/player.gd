@@ -3,6 +3,7 @@ extends CharacterBody3D
 const CharacterSkin := preload("res://demo/scripts/skin.gd")
 const CameraRig := preload("res://demo/scripts/camera_rig.gd")
 const Crosshair := preload("res://demo/scripts/crosshair.gd")
+const GunSlot := preload("res://demo/scripts/gun_slot.gd")
 
 
 enum Anim { IDLE, MOVE, STOP, JUMP_START, FALL, LAND, BOARD, STRAFE }
@@ -89,16 +90,18 @@ const FOOT_GROUND := 2
 
 @export_group("Aim")
 @export var aim_time := 0.15
-@export var fire_rate := 8.0
 @export var reach := 100.0
-@export var spread_per_shot_deg := 0.5
-@export var spread_max_deg := 3.0
 @export var spread_delay := 0.2
 @export var spread_recover_deg := 12.0
+
+@export_group("Pick")
+@export var pick_reach := 1.5
+@export var prompt_rise := 0.35
 
 @export var camera_rig: Node3D
 @export var board: Node3D
 @export var crosshair: Crosshair
+@export var pick_prompt: Node3D
 
 var _character: CharacterSkin
 var _skeleton: Skeleton3D
@@ -126,8 +129,10 @@ var _floor_body: Object
 var _ride: Node3D
 var _aim := 0.0
 var _cooldown := 0.0
+var _pull := false
 var _spread := 0.0
 var _since_shot := INF
+var _slot: GunSlot
 
 @onready var _skin: Node3D = $Skin
 @onready var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
@@ -161,7 +166,10 @@ func use(character: Node3D) -> void:
 		_anim = Anim.IDLE
 		_stop = null
 		velocity = Vector3(0.0, velocity.y, 0.0)
+	if _character:
+		_character.hold(null)
 	_character = character as CharacterSkin
+	_character.hold(_slot.gun if _slot else null)
 	_skeleton = _character.skeleton
 	_scale = _skeleton.motion_scale
 	_left_foot = _skeleton.find_bone(&"LeftFoot")
@@ -187,6 +195,7 @@ func _physics_process(delta: float) -> void:
 	var direction := Basis(Vector3.UP, camera_rig.rotation.y) * Vector3(input.x, 0.0, input.y)
 	if Input.is_action_just_pressed("board"):
 		_set_boarding(_riding == null)
+	_pick()
 	_recover_spread(delta)
 	if _aim_toward(delta):
 		_fire(delta)
@@ -231,8 +240,38 @@ func _physics_process(delta: float) -> void:
 	_animate(speed, turned, delta)
 
 
+func _pick() -> void:
+	var slot := _slot_in_reach()
+	pick_prompt.visible = slot != null
+	if slot == null:
+		return
+	pick_prompt.global_position = slot.global_position + Vector3.UP * prompt_rise
+	if not Input.is_action_just_pressed("interact"):
+		return
+	if _slot:
+		_slot.put_back()
+	_slot = null if slot == _slot else slot
+	if _slot:
+		_slot.take()
+	_character.hold(_slot.gun if _slot else null)
+
+
+func _slot_in_reach() -> GunSlot:
+	if _riding or _aim > 0.0:
+		return null
+	var nearest: GunSlot = null
+	var best := pick_reach
+	for slot: GunSlot in get_tree().get_nodes_in_group(&"gun_slots"):
+		var gap := slot.global_position - global_position
+		var flat := Vector2(gap.x, gap.z).length()
+		if flat < best:
+			best = flat
+			nearest = slot
+	return nearest
+
+
 func _aim_toward(delta: float) -> bool:
-	var aiming := (Input.is_action_pressed("aim") or Input.is_action_pressed("fire")) and _riding == null
+	var aiming := (Input.is_action_pressed("aim") or Input.is_action_pressed("fire")) and _riding == null and _slot != null
 	_aim = move_toward(_aim, 1.0 if aiming else 0.0, delta / aim_time)
 	var rig := camera_rig as CameraRig
 	rig.set_aim(_aim)
@@ -242,24 +281,30 @@ func _aim_toward(delta: float) -> bool:
 
 
 func _fire(delta: float) -> void:
-	_cooldown = maxf(_cooldown - delta, 0.0)
-	if _aim < 1.0 or _cooldown > 0.0 or not Input.is_action_pressed("fire"):
+	var gun := _character.gun
+	_cooldown -= delta
+	_pull = Input.is_action_pressed("fire") if gun.automatic else _pull or Input.is_action_just_pressed("fire")
+	if _aim < 1.0 or _cooldown > 0.0 or not _pull:
+		_cooldown = maxf(_cooldown, 0.0)
 		return
-	_cooldown = 1.0 / fire_rate
+	_pull = false
+	_cooldown += 1.0 / gun.fire_rate
+	_character.shoot()
 	var camera := get_viewport().get_camera_3d()
-	var far := camera.global_position + _scatter(camera.global_basis) * reach
-	var hit := _ray(camera.global_position, far)
-	var near := _ray(_character.muzzle(), hit.get("position", far))
-	if not near.is_empty():
-		hit = near
-	_character.shoot(hit.get("position", far), hit.get("normal", Vector3.ZERO), hit.get("collider"))
+	for i in gun.pellets:
+		var far := camera.global_position + _scatter(camera.global_basis, _spread + gun.pellet_spread_deg) * reach
+		var hit := _ray(camera.global_position, far)
+		var near := _ray(_character.muzzle(), hit.get("position", far))
+		if not near.is_empty():
+			hit = near
+		_character.launch(hit.get("position", far), hit.get("normal", Vector3.ZERO), hit.get("collider"))
 	(camera_rig as CameraRig).kick()
-	_spread = minf(_spread + spread_per_shot_deg, spread_max_deg)
+	_spread = minf(_spread + gun.spread_per_shot_deg, gun.spread_max_deg)
 	_since_shot = 0.0
 
 
-func _scatter(view: Basis) -> Vector3:
-	var off := deg_to_rad(_spread) * randf()
+func _scatter(view: Basis, spread_deg: float) -> Vector3:
+	var off := deg_to_rad(spread_deg) * randf()
 	var around := randf() * TAU
 	return view * Vector3(sin(off) * cos(around), sin(off) * sin(around), -cos(off))
 
@@ -268,7 +313,7 @@ func _recover_spread(delta: float) -> void:
 	_since_shot += delta
 	if _since_shot > spread_delay:
 		_spread = maxf(_spread - spread_recover_deg * delta, 0.0)
-	crosshair.spread_deg = _spread
+	crosshair.spread_deg = _spread + (_character.gun.pellet_spread_deg if _character.gun else 0.0)
 
 
 func _strafe(direction: Vector3, delta: float) -> void:
