@@ -30,6 +30,7 @@
 [ext_resource type="Texture2D" uid="uid://byuia2fb5a0r" path="res://demo/ui/keys/keyboard_4_outline.png" id="23_u37yy"]
 [ext_resource type="Texture2D" uid="uid://hr1usfsdlnli" path="res://demo/ui/keys/mouse_right_outline.png" id="24_mouse_right"]
 [ext_resource type="Texture2D" uid="uid://dmqf7isvx57t7" path="res://demo/ui/crosshair.png" id="25_crosshair"]
+[ext_resource type="PackedScene" path="res://demo/shooter/radio.tscn" id="91_radio"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_i76fu"]
 radius = 0.25
@@ -189,6 +190,9 @@ transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0, 0
 [node name="MovingPlatform" parent="." unique_id=1720447002 instance=ExtResource("20_platform")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 1.8, 7.5)
 pause = 2.5
+
+[node name="Radio" parent="." unique_id=1606988635 instance=ExtResource("91_radio")]
+transform = Transform3D(0.5735764, 0, 0.819152, 0, 1, 0, -0.819152, 0, 0.5735764, -3.25, 0.728, 2.5)
 
 [node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=1159000478]
 

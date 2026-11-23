@@ -215,12 +215,12 @@ func muzzle() -> Vector3:
 	return _muzzle.global_position
 
 
-func shoot(p_at: Vector3, p_normal: Vector3) -> void:
+func shoot(p_at: Vector3, p_normal: Vector3, p_target: Object) -> void:
 	_muzzle.flash()
 	_grip.kick = minf(_grip.kick + 1.0, KICK_MAX)
 	var bolt := Bolt.instantiate()
 	body.add_sibling(bolt)
-	bolt.launch(_muzzle.global_position, p_at, p_normal)
+	bolt.launch(_muzzle.global_position, p_at, p_normal, p_target)
 
 
 func set_strafe(p_at: Vector2) -> void:

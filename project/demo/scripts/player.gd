@@ -252,7 +252,7 @@ func _fire(delta: float) -> void:
 	var near := _ray(_character.muzzle(), hit.get("position", far))
 	if not near.is_empty():
 		hit = near
-	_character.shoot(hit.get("position", far), hit.get("normal", Vector3.ZERO))
+	_character.shoot(hit.get("position", far), hit.get("normal", Vector3.ZERO), hit.get("collider"))
 	(camera_rig as CameraRig).kick()
 	_spread = minf(_spread + spread_per_shot_deg, spread_max_deg)
 	_since_shot = 0.0
