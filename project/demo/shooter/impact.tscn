@@ -5,6 +5,10 @@
 [ext_resource type="Texture2D" uid="uid://lrrvfiy84fx8" path="res://demo/shooter/vfx/circle_02.png" id="3_nwnau"]
 [ext_resource type="Texture2D" uid="uid://d0jfxbalx25a4" path="res://demo/shooter/vfx/smoke_03.png" id="4_vtn1n"]
 [ext_resource type="Texture2D" uid="uid://ctcsbayxvhwp7" path="res://demo/shooter/vfx/scorch_01.png" id="5_4p688"]
+[ext_resource type="AudioStream" uid="uid://dtxo4yeq7xh4c" path="res://demo/shooter/sfx/hit_0.ogg" id="6_jcpgq"]
+[ext_resource type="AudioStream" uid="uid://ccrqxi1w22bie" path="res://demo/shooter/sfx/hit_1.ogg" id="7_imet1"]
+[ext_resource type="AudioStream" uid="uid://2s6nwprc7esi" path="res://demo/shooter/sfx/hit_2.ogg" id="8_g2c1q"]
+[ext_resource type="AudioStream" uid="uid://c2tq6d3tt0212" path="res://demo/shooter/sfx/hit_3.ogg" id="9_bnss0"]
 
 [sub_resource type="QuadMesh" id="QuadMesh_g4v7s"]
 size = Vector2(0.9, 0.9)
@@ -97,6 +101,15 @@ particles_anim_loop = false
 material = SubResource("StandardMaterial3D_4p688")
 size = Vector2(0.35, 0.35)
 
+[sub_resource type="AudioStreamRandomizer" id="AudioStreamRandomizer_4p688"]
+random_pitch = 1.0799766
+random_volume_offset_db = 1.0
+streams_count = 4
+stream_0/stream = ExtResource("6_jcpgq")
+stream_1/stream = ExtResource("7_imet1")
+stream_2/stream = ExtResource("8_g2c1q")
+stream_3/stream = ExtResource("9_bnss0")
+
 [node name="Impact" type="Node3D" unique_id=627772698]
 script = ExtResource("1_4eia7")
 
@@ -144,3 +157,8 @@ draw_pass_1 = SubResource("QuadMesh_4p688")
 size = Vector3(0.4, 0.2, 0.4)
 texture_albedo = ExtResource("5_4p688")
 modulate = Color(0.078431375, 0.07058824, 0.05882353, 0.8509804)
+
+[node name="Hit" type="AudioStreamPlayer3D" parent="." unique_id=827135136]
+stream = SubResource("AudioStreamRandomizer_4p688")
+volume_db = -6.0
+autoplay = true
