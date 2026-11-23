@@ -224,7 +224,7 @@ func _physics_process(delta: float) -> void:
 
 
 func _aim_toward(delta: float) -> bool:
-	var aiming := (Input.is_action_pressed("aim") or Input.is_action_pressed("fire")) and _riding == null and not _airborne()
+	var aiming := (Input.is_action_pressed("aim") or Input.is_action_pressed("fire")) and _riding == null
 	_aim = move_toward(_aim, 1.0 if aiming else 0.0, delta / aim_time)
 	var rig := camera_rig as CameraRig
 	rig.set_aim(_aim)
@@ -258,11 +258,15 @@ func _strafe(direction: Vector3, delta: float) -> void:
 	var change := acceleration if target.length() >= flat.length() else deceleration
 	flat = flat.move_toward(target, change * delta)
 	velocity = Vector3(flat.x, velocity.y if not is_on_floor() else 0.0, flat.z)
-	if not is_on_floor():
+	if not _airborne() and is_on_floor() and Input.is_action_just_pressed("jump"):
+		velocity.y = sqrt(2.0 * _gravity * jump_height)
+		_enter(Anim.JUMP_START)
+	elif not is_on_floor():
 		velocity.y = maxf(velocity.y - _gravity * delta, -max_fall_speed)
 	_slide(delta)
 	if not is_on_floor():
-		_enter(Anim.FALL)
+		if not _airborne():
+			_enter(Anim.FALL)
 		return
 	var moving := to_skin * flat
 	var at := Vector2(-moving.x, moving.z) / (_strafe_speed(atan2(-moving.x, moving.z)) * _scale)
@@ -320,6 +324,8 @@ func _transition(pressing: bool, speed: float, exit_wait: bool) -> void:
 	elif _airborne() and is_on_floor():
 		_character.set_idle_foot(false)
 		_enter(Anim.MOVE if pressing else Anim.LAND)
+	elif _anim == Anim.LAND and not pressing and _state_age >= _character.land_end:
+		_enter(Anim.IDLE)
 	elif _anim == Anim.STOP:
 		if pressing:
 			_enter(Anim.MOVE)

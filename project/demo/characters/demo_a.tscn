@@ -474,6 +474,9 @@ parameters/Rest/transition_request = ""
 parameters/Rest/current_index = -1
 parameters/ExitFoot/blend_amount = 0.0
 parameters/Board/blend_amount = 0.0
+parameters/Strafe/blend_position = Vector2(0, 0)
+parameters/AimPitch/blend_amount = 0.0
+parameters/Aim/blend_amount = 0.0
 
 [node name="Expression" type="Node" parent="." index="3" unique_id=957265259]
 script = ExtResource("4_q8l8q")

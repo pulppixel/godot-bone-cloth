@@ -46,6 +46,7 @@ var body: CharacterBody3D
 @onready var lean_length: float = tree.get_animation(&"demo_motions/Jog_Fwd_LeanR").length
 @onready var exit_length: float = tree.get_animation(&"demo_motions/Sprint_Exit").length
 @onready var sprint_at: float = move.get_blend_point_position(1)
+@onready var land_end: float = tree.get_animation(&"demo_motions/Jump_Land").length - (tree.tree_root as AnimationNodeBlendTree).get_node(&"State").xfade_time
 
 var half := 0.0
 var aim := 0.0
@@ -68,6 +69,7 @@ class HandGrip extends SkeletonModifier3D:
 	var spine := -1
 	var pitch := 0.0
 	var kick := 0.0
+	var upright := Quaternion.IDENTITY
 	var hold := Transform3D()
 	var left_grip := Transform3D()
 	var targets: Array[Node3D] = []
@@ -76,7 +78,9 @@ class HandGrip extends SkeletonModifier3D:
 		var skeleton := get_skeleton()
 		kick *= exp(-delta / KICK_TIME)
 		var parent := skeleton.get_bone_global_pose(skeleton.get_bone_parent(spine)).basis.get_rotation_quaternion()
-		var bent := Quaternion(Vector3.RIGHT, -kick * KICK_BEND) * skeleton.get_bone_global_pose(spine).basis.get_rotation_quaternion()
+		var turn := upright * parent.inverse()
+		var untwist := Quaternion(0.0, turn.y, 0.0, turn.w).normalized()
+		var bent := Quaternion(Vector3.RIGHT, -kick * KICK_BEND) * untwist * skeleton.get_bone_global_pose(spine).basis.get_rotation_quaternion()
 		skeleton.set_bone_pose_rotation(spine, parent.inverse() * bent)
 		var at := skeleton.global_transform * skeleton.get_bone_global_pose(chest).origin
 		at += skeleton.global_basis * Vector3(0.0, 0.0, -kick * KICK_BACK)
@@ -112,6 +116,7 @@ func _hold_with_both_hands() -> void:
 	_grip = HandGrip.new()
 	_grip.chest = skeleton.find_bone(&"UpperChest")
 	_grip.spine = skeleton.find_bone(&"Chest")
+	_grip.upright = _pose_in(&"demo_motions/Idle", skeleton.get_bone_parent(_grip.spine))
 	_grip.hold = HOLD
 	_grip.left_grip = LEFT_GRIP
 	_arms = TwoBoneIK3D.new()
@@ -147,6 +152,19 @@ func _hold_with_both_hands() -> void:
 		_hands.set_copy_position(i, false)
 		_hands.set_copy_scale(i, false)
 	set_aim(0.0, 0.0)
+
+
+func _pose_in(p_clip: StringName, p_bone: int) -> Quaternion:
+	var clip := tree.get_animation(p_clip)
+	var chain: Array[int] = []
+	while p_bone >= 0:
+		chain.push_front(p_bone)
+		p_bone = skeleton.get_bone_parent(p_bone)
+	var pose := Quaternion.IDENTITY
+	for bone in chain:
+		var track := clip.find_track(NodePath("%GeneralSkeleton:" + skeleton.get_bone_name(bone)), Animation.TYPE_ROTATION_3D)
+		pose *= clip.rotation_track_interpolate(track, 0.0) if track >= 0 else skeleton.get_bone_rest(bone).basis.get_rotation_quaternion()
+	return pose
 
 
 func request(p_state: StringName) -> void:
