@@ -2,6 +2,7 @@ extends CharacterBody3D
 
 const CharacterSkin := preload("res://demo/scripts/skin.gd")
 const CameraRig := preload("res://demo/scripts/camera_rig.gd")
+const Crosshair := preload("res://demo/scripts/crosshair.gd")
 
 
 enum Anim { IDLE, MOVE, STOP, JUMP_START, FALL, LAND, BOARD, STRAFE }
@@ -90,10 +91,14 @@ const FOOT_GROUND := 2
 @export var aim_time := 0.15
 @export var fire_rate := 8.0
 @export var reach := 100.0
+@export var spread_per_shot_deg := 0.5
+@export var spread_max_deg := 3.0
+@export var spread_delay := 0.2
+@export var spread_recover_deg := 12.0
 
 @export var camera_rig: Node3D
 @export var board: Node3D
-@export var crosshair: Control
+@export var crosshair: Crosshair
 
 var _character: CharacterSkin
 var _skeleton: Skeleton3D
@@ -121,6 +126,8 @@ var _floor_body: Object
 var _ride: Node3D
 var _aim := 0.0
 var _cooldown := 0.0
+var _spread := 0.0
+var _since_shot := INF
 
 @onready var _skin: Node3D = $Skin
 @onready var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
@@ -180,6 +187,7 @@ func _physics_process(delta: float) -> void:
 	var direction := Basis(Vector3.UP, camera_rig.rotation.y) * Vector3(input.x, 0.0, input.y)
 	if Input.is_action_just_pressed("board"):
 		_set_boarding(_riding == null)
+	_recover_spread(delta)
 	if _aim_toward(delta):
 		_fire(delta)
 		_strafe(direction, delta)
@@ -239,13 +247,28 @@ func _fire(delta: float) -> void:
 		return
 	_cooldown = 1.0 / fire_rate
 	var camera := get_viewport().get_camera_3d()
-	var far := camera.global_position - camera.global_basis.z * reach
+	var far := camera.global_position + _scatter(camera.global_basis) * reach
 	var hit := _ray(camera.global_position, far)
 	var near := _ray(_character.muzzle(), hit.get("position", far))
 	if not near.is_empty():
 		hit = near
 	_character.shoot(hit.get("position", far), hit.get("normal", Vector3.ZERO))
 	(camera_rig as CameraRig).kick()
+	_spread = minf(_spread + spread_per_shot_deg, spread_max_deg)
+	_since_shot = 0.0
+
+
+func _scatter(view: Basis) -> Vector3:
+	var off := deg_to_rad(_spread) * randf()
+	var around := randf() * TAU
+	return view * Vector3(sin(off) * cos(around), sin(off) * sin(around), -cos(off))
+
+
+func _recover_spread(delta: float) -> void:
+	_since_shot += delta
+	if _since_shot > spread_delay:
+		_spread = maxf(_spread - spread_recover_deg * delta, 0.0)
+	crosshair.spread_deg = _spread
 
 
 func _strafe(direction: Vector3, delta: float) -> void:

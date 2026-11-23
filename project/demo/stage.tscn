@@ -15,6 +15,7 @@
 [ext_resource type="Texture2D" uid="uid://rvhy4q3py6hl" path="res://demo/ui/keys/keyboard_s_outline.png" id="12_s2bi8"]
 [ext_resource type="Texture2D" uid="uid://c2d32r6j00kl3" path="res://demo/ui/keys/keyboard_d_outline.png" id="13_awah3"]
 [ext_resource type="PackedScene" path="res://demo/stage/stairs.tscn" id="13_chd14"]
+[ext_resource type="Script" uid="uid://ci0v3ruvhcbi7" path="res://demo/scripts/crosshair.gd" id="13_ng14b"]
 [ext_resource type="Texture2D" uid="uid://d1phktve4owui" path="res://demo/ui/keys/keyboard_shift_icon_outline.png" id="14_s2bi8"]
 [ext_resource type="Texture2D" uid="uid://bgjubw3qbppbb" path="res://demo/ui/keys/keyboard_space_icon_outline.png" id="15_awah3"]
 [ext_resource type="Texture2D" uid="uid://2jifiy5s4572" path="res://demo/ui/keys/mouse_move.png" id="16_as1by"]
@@ -191,8 +192,9 @@ pause = 2.5
 
 [node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=1159000478]
 
-[node name="Crosshair" type="TextureRect" parent="CanvasLayer" unique_id=1820447401]
+[node name="Crosshair" type="Control" parent="CanvasLayer" unique_id=133946053]
 visible = false
+layout_mode = 3
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
@@ -205,9 +207,8 @@ offset_bottom = 20.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+script = ExtResource("13_ng14b")
 texture = ExtResource("25_crosshair")
-expand_mode = 1
-stretch_mode = 5
 
 [node name="Panel" type="PanelContainer" parent="CanvasLayer" unique_id=798988651]
 offset_left = 24.0
