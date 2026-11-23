@@ -1,0 +1,99 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://demo/shooter/target.tscn" id="1"]
+[ext_resource type="PackedScene" path="res://demo/stage/kit/indicator-special-lines.glb" id="2"]
+[ext_resource type="PackedScene" path="res://demo/stage/kit/number-0.glb" id="n0"]
+[ext_resource type="PackedScene" path="res://demo/stage/kit/number-1.glb" id="n1"]
+[ext_resource type="PackedScene" path="res://demo/stage/kit/number-5.glb" id="n5"]
+
+[node name="Range" type="Node3D"]
+
+[node name="Line" type="Node3D" parent="."]
+
+[node name="Stripe0" parent="Line" instance=ExtResource("2")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.5, 0.005, -11.5)
+
+[node name="Stripe1" parent="Line" instance=ExtResource("2")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.5, 0.005, -11.5)
+
+[node name="Stripe2" parent="Line" instance=ExtResource("2")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.5, 0.005, -11.5)
+
+[node name="Stripe3" parent="Line" instance=ExtResource("2")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.5, 0.005, -11.5)
+
+[node name="Stripe4" parent="Line" instance=ExtResource("2")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.5, 0.005, -11.5)
+
+[node name="Stripe5" parent="Line" instance=ExtResource("2")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.5, 0.005, -11.5)
+
+[node name="Stripe6" parent="Line" instance=ExtResource("2")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0.005, -11.5)
+
+[node name="Stripe7" parent="Line" instance=ExtResource("2")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 0.005, -11.5)
+
+[node name="Stripe8" parent="Line" instance=ExtResource("2")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 0.005, -11.5)
+
+[node name="Stripe9" parent="Line" instance=ExtResource("2")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.5, 0.005, -11.5)
+
+[node name="Stripe10" parent="Line" instance=ExtResource("2")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.5, 0.005, -11.5)
+
+[node name="Stripe11" parent="Line" instance=ExtResource("2")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.5, 0.005, -11.5)
+
+[node name="Distances" type="Node3D" parent="."]
+
+[node name="D5L_0" parent="Distances" instance=ExtResource("n5")]
+transform = Transform3D(0, 0, 2, 0, 2, 0, -2, 0, 0, -7.5, 2, -16)
+
+[node name="D5R_0" parent="Distances" instance=ExtResource("n5")]
+transform = Transform3D(0, 0, 2, 0, 2, 0, -2, 0, 0, 7.5, 2, -16)
+
+[node name="D10L_0" parent="Distances" instance=ExtResource("n1")]
+transform = Transform3D(0, 0, 2, 0, 2, 0, -2, 0, 0, -7.8, 2, -21)
+
+[node name="D10L_1" parent="Distances" instance=ExtResource("n0")]
+transform = Transform3D(0, 0, 2, 0, 2, 0, -2, 0, 0, -7.2, 2, -21)
+
+[node name="D10R_0" parent="Distances" instance=ExtResource("n1")]
+transform = Transform3D(0, 0, 2, 0, 2, 0, -2, 0, 0, 7.2, 2, -21)
+
+[node name="D10R_1" parent="Distances" instance=ExtResource("n0")]
+transform = Transform3D(0, 0, 2, 0, 2, 0, -2, 0, 0, 7.8, 2, -21)
+
+[node name="D15L_0" parent="Distances" instance=ExtResource("n1")]
+transform = Transform3D(0, 0, 2, 0, 2, 0, -2, 0, 0, -7.8, 2, -26)
+
+[node name="D15L_1" parent="Distances" instance=ExtResource("n5")]
+transform = Transform3D(0, 0, 2, 0, 2, 0, -2, 0, 0, -7.2, 2, -26)
+
+[node name="D15R_0" parent="Distances" instance=ExtResource("n1")]
+transform = Transform3D(0, 0, 2, 0, 2, 0, -2, 0, 0, 7.2, 2, -26)
+
+[node name="D15R_1" parent="Distances" instance=ExtResource("n5")]
+transform = Transform3D(0, 0, 2, 0, 2, 0, -2, 0, 0, 7.8, 2, -26)
+
+[node name="Targets" type="Node3D" parent="."]
+
+[node name="Target1" parent="Targets" instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 0, -16)
+
+[node name="Target2" parent="Targets" instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.5, 1, -26.6)
+
+[node name="Target3" parent="Targets" instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.5, 0, -21)
+
+[node name="Target4" parent="Targets" instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, -16)
+
+[node name="Target5" parent="Targets" instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 1, -26.6)
+
+[node name="Target6" parent="Targets" instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.5, 0, -21)

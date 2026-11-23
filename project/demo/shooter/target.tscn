@@ -1,0 +1,49 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://demo/scripts/target.gd" id="1"]
+[ext_resource type="PackedScene" path="res://demo/shooter/target.glb" id="2"]
+[ext_resource type="AudioStream" path="res://demo/shooter/sfx/target_hit_0.ogg" id="3"]
+[ext_resource type="AudioStream" path="res://demo/shooter/sfx/target_hit_1.ogg" id="4"]
+[ext_resource type="AudioStream" path="res://demo/shooter/sfx/target_hit_2.ogg" id="5"]
+[ext_resource type="AudioStream" path="res://demo/shooter/sfx/target_hit_3.ogg" id="6"]
+[ext_resource type="AudioStream" path="res://demo/shooter/sfx/target_break_0.ogg" id="7"]
+[ext_resource type="AudioStream" path="res://demo/shooter/sfx/target_break_1.ogg" id="8"]
+[ext_resource type="AudioStream" path="res://demo/shooter/sfx/target_break_2.ogg" id="9"]
+
+[sub_resource type="BoxShape3D" id="box"]
+size = Vector3(1.08, 1.08, 0.13)
+
+[sub_resource type="AudioStreamRandomizer" id="hits"]
+random_pitch = 1.08
+random_volume_offset_db = 1.0
+streams_count = 4
+stream_0/stream = ExtResource("3")
+stream_1/stream = ExtResource("4")
+stream_2/stream = ExtResource("5")
+stream_3/stream = ExtResource("6")
+
+[sub_resource type="AudioStreamRandomizer" id="breaks"]
+random_pitch = 1.08
+streams_count = 3
+stream_0/stream = ExtResource("7")
+stream_1/stream = ExtResource("8")
+stream_2/stream = ExtResource("9")
+
+[node name="Target" type="StaticBody3D"]
+script = ExtResource("1")
+
+[node name="Model" parent="." instance=ExtResource("2")]
+transform = Transform3D(0, 0, 3, 0, 3, 0, -1, 0, 0, -0.54, 0, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.54, 0.065)
+shape = SubResource("box")
+
+[node name="Hit" type="AudioStreamPlayer3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.54, 0.07)
+stream = SubResource("hits")
+max_polyphony = 4
+
+[node name="Break" type="AudioStreamPlayer3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.54, 0.07)
+stream = SubResource("breaks")
