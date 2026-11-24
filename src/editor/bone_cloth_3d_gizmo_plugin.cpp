@@ -19,6 +19,12 @@
 
 using namespace godot;
 
+static constexpr float MIN_SIZE = 0.001f;
+
+bool is_bone_cloth_shown(BoneClothShow p_show) {
+	return EditorInterface::get_singleton()->get_editor_settings()->get_project_metadata("bone_cloth", BONE_CLOTH_SHOW[p_show].key, BONE_CLOTH_SHOW[p_show].shown);
+}
+
 static void add_arc(PackedVector3Array &r_lines, const Vector3 &p_center, const Vector3 &p_axis_x, const Vector3 &p_axis_y, float p_radius, float p_from, float p_to) {
 	static constexpr float STEP_ANGLE = (float)Math::TAU / 16.0f;
 
@@ -50,6 +56,73 @@ static void add_box(PackedVector3Array &r_lines, const Vector3 &p_size) {
 		box.get_edge(i, from, to);
 		r_lines.push_back(from);
 		r_lines.push_back(to);
+	}
+}
+
+static void add_tapered_capsule(PackedVector3Array &r_lines, float p_top_radius, float p_bottom_radius, float p_height) {
+	const Vector3 up(0, 1, 0);
+	const Vector3 top_center = up * (p_height * 0.5f - p_top_radius);
+	const Vector3 bottom_center = up * (p_bottom_radius - p_height * 0.5f);
+
+	const float distance = top_center.y - bottom_center.y;
+	const float slope = distance > CMP_EPSILON ? Math::asin((p_bottom_radius - p_top_radius) / distance) : 0.0f;
+	const float side_cos = Math::cos(slope);
+	const float side_sin = Math::sin(slope);
+
+	const Vector3 sides[2] = { Vector3(1, 0, 0), Vector3(0, 0, 1) };
+	for (const Vector3 &side : sides) {
+		add_arc(r_lines, top_center, side, up, p_top_radius, slope, (float)Math::PI - slope);
+		add_arc(r_lines, bottom_center, side, up, p_bottom_radius, (float)Math::PI - slope, (float)Math::TAU + slope);
+	}
+
+	if (side_cos < CMP_EPSILON) {
+		return;
+	}
+	add_arc(r_lines, top_center + up * (p_top_radius * side_sin), Vector3(0, 0, 1), Vector3(1, 0, 0), p_top_radius * side_cos, 0.0f, Math::TAU);
+	add_arc(r_lines, bottom_center + up * (p_bottom_radius * side_sin), Vector3(0, 0, 1), Vector3(1, 0, 0), p_bottom_radius * side_cos, 0.0f, Math::TAU);
+
+	const Vector3 directions[4] = { Vector3(1, 0, 0), Vector3(-1, 0, 0), Vector3(0, 0, 1), Vector3(0, 0, -1) };
+	for (const Vector3 &direction : directions) {
+		const Vector3 normal = direction * side_cos + up * side_sin;
+		r_lines.push_back(top_center + normal * p_top_radius);
+		r_lines.push_back(bottom_center + normal * p_bottom_radius);
+	}
+}
+
+static void add_plane(PackedVector3Array &r_lines) {
+	static constexpr float HALF_PI = (float)Math::PI * 0.5f;
+	static constexpr float ARROW_LENGTH = 0.3f;
+	static constexpr float ARROW_HALF_WIDTH = 0.05f;
+	static constexpr float ARROW_TOP_HALF_WIDTH = 0.1f;
+	static constexpr float ARROW_TOP = 0.5f;
+	static constexpr float RECT_SIZE = 1.0f;
+	static constexpr int RECT_STEP_COUNT = 9;
+	static constexpr float RECT_HALF_SIZE = RECT_SIZE * 0.5f;
+	static constexpr float RECT_STEP = RECT_SIZE / RECT_STEP_COUNT;
+
+	const Vector3 arrow[7] = {
+		Vector3(0, ARROW_TOP, 0),
+		Vector3(-ARROW_TOP_HALF_WIDTH, ARROW_LENGTH, 0),
+		Vector3(-ARROW_HALF_WIDTH, ARROW_LENGTH, 0),
+		Vector3(-ARROW_HALF_WIDTH, 0, 0),
+		Vector3(ARROW_HALF_WIDTH, 0, 0),
+		Vector3(ARROW_HALF_WIDTH, ARROW_LENGTH, 0),
+		Vector3(ARROW_TOP_HALF_WIDTH, ARROW_LENGTH, 0),
+	};
+	for (int i = 0; i < 2; i++) {
+		const Basis turn(Vector3(0, 1, 0), HALF_PI * i);
+		for (int j = 0; j < 7; j++) {
+			r_lines.push_back(turn.xform(arrow[j]));
+			r_lines.push_back(turn.xform(arrow[(j + 1) % 7]));
+		}
+	}
+
+	for (int i = 0; i < 4; i++) {
+		const Basis turn(Vector3(0, 1, 0), HALF_PI * i);
+		for (int j = 0; j < RECT_STEP_COUNT; j += 2) {
+			r_lines.push_back(turn.xform(Vector3(RECT_HALF_SIZE, 0, RECT_HALF_SIZE - RECT_STEP * j)));
+			r_lines.push_back(turn.xform(Vector3(RECT_HALF_SIZE, 0, RECT_HALF_SIZE - RECT_STEP * (j + 1))));
+		}
 	}
 }
 
@@ -103,7 +176,7 @@ Variant BoneClothCollision3DGizmoPlugin::_get_handle_value(const Ref<EditorNode3
 	}
 	BoneClothCollisionCapsule3D *capsule = Object::cast_to<BoneClothCollisionCapsule3D>(node);
 	if (capsule) {
-		return Vector2(capsule->get_radius(), capsule->get_height());
+		return Vector3(capsule->get_radius(), capsule->get_radius(), capsule->get_height());
 	}
 	BoneClothCollisionTaperedCapsule3D *tapered_capsule = Object::cast_to<BoneClothCollisionTaperedCapsule3D>(node);
 	if (tapered_capsule) {
@@ -119,6 +192,9 @@ Variant BoneClothCollision3DGizmoPlugin::_get_handle_value(const Ref<EditorNode3
 void BoneClothCollision3DGizmoPlugin::_begin_handle_action(const Ref<EditorNode3DGizmo> &p_gizmo, int32_t p_handle_id, bool p_secondary) {
 	initial_value = _get_handle_value(p_gizmo, p_handle_id, p_secondary);
 	initial_transform = p_gizmo->get_node_3d()->get_global_transform();
+	const BoneClothCollision3D *collision = Object::cast_to<BoneClothCollision3D>(p_gizmo->get_node_3d());
+	initial_position_offset = collision->get_position_offset();
+	initial_rotation_offset = collision->get_rotation_offset();
 }
 
 float BoneClothCollision3DGizmoPlugin::_get_distance_along(const Vector3 &p_from, const Vector3 &p_direction, Camera3D *p_camera, const Vector2 &p_screen_pos) const {
@@ -129,9 +205,15 @@ float BoneClothCollision3DGizmoPlugin::_get_distance_along(const Vector3 &p_from
 	return p_direction.dot(closest[0] - p_from);
 }
 
-void BoneClothCollision3DGizmoPlugin::_set_handle(const Ref<EditorNode3DGizmo> &p_gizmo, int32_t p_handle_id, bool p_secondary, Camera3D *p_camera, const Vector2 &p_screen_pos) {
-	static constexpr float MIN_SIZE = 0.001f;
+float BoneClothCollision3DGizmoPlugin::_drag_face(Node3D *p_node, const Vector3 &p_direction, float p_initial_size, Camera3D *p_camera, const Vector2 &p_screen_pos) const {
+	const float distance = _get_distance_along(Vector3(), p_direction, p_camera, p_screen_pos);
+	const bool keep_center = Input::get_singleton()->is_key_pressed(KEY_ALT);
+	const float size = MAX(keep_center ? distance * 2.0f : p_initial_size * 0.5f + distance, MIN_SIZE);
+	p_node->set_global_position(keep_center ? initial_transform.origin : initial_transform.xform(p_direction * ((size - p_initial_size) * 0.5f)));
+	return size;
+}
 
+void BoneClothCollision3DGizmoPlugin::_set_handle(const Ref<EditorNode3DGizmo> &p_gizmo, int32_t p_handle_id, bool p_secondary, Camera3D *p_camera, const Vector2 &p_screen_pos) {
 	Node3D *node = p_gizmo->get_node_3d();
 	const Vector3 up(0, 1, 0);
 	const Vector3 side(1, 0, 0);
@@ -145,16 +227,11 @@ void BoneClothCollision3DGizmoPlugin::_set_handle(const Ref<EditorNode3DGizmo> &
 	BoneClothCollisionBox3D *box = Object::cast_to<BoneClothCollisionBox3D>(node);
 	if (box) {
 		const int axis = p_handle_id / 2;
-		const float sign = p_handle_id % 2 == 0 ? 1.0f : -1.0f;
 		Vector3 direction;
-		direction[axis] = sign;
-		const Vector3 initial_size = initial_value;
-		const float distance = _get_distance_along(Vector3(), direction, p_camera, p_screen_pos);
-		const bool keep_center = Input::get_singleton()->is_key_pressed(KEY_ALT);
-		Vector3 size = initial_size;
-		size[axis] = MAX(keep_center ? distance * 2.0f : initial_size[axis] * 0.5f + distance, MIN_SIZE);
+		direction[axis] = p_handle_id % 2 == 0 ? 1.0f : -1.0f;
+		Vector3 size = initial_value;
+		size[axis] = _drag_face(node, direction, size[axis], p_camera, p_screen_pos);
 		box->set_size(size);
-		node->set_global_position(keep_center ? initial_transform.origin : initial_transform.xform(direction * ((size[axis] - initial_size[axis]) * 0.5f)));
 		return;
 	}
 
@@ -164,30 +241,14 @@ void BoneClothCollision3DGizmoPlugin::_set_handle(const Ref<EditorNode3DGizmo> &
 		return;
 	}
 
-	float top_radius;
-	float bottom_radius;
-	float height;
-	if (capsule) {
-		const Vector2 initial = initial_value;
-		top_radius = initial.x;
-		bottom_radius = initial.x;
-		height = initial.y;
-	} else {
-		const Vector3 initial = initial_value;
-		top_radius = initial.x;
-		bottom_radius = initial.y;
-		height = initial.z;
-	}
-
+	const Vector3 initial = initial_value;
+	float top_radius = initial.x;
+	float bottom_radius = initial.y;
+	float height = initial.z;
 	if (p_handle_id < 2) {
-		const float sign = p_handle_id == 0 ? 1.0f : -1.0f;
-		const float distance = _get_distance_along(Vector3(), up * sign, p_camera, p_screen_pos);
-		const bool keep_center = Input::get_singleton()->is_key_pressed(KEY_ALT);
-		const float initial_height = height;
-		height = MAX(keep_center ? distance * 2.0f : initial_height * 0.5f + distance, MIN_SIZE);
+		height = _drag_face(node, up * (p_handle_id == 0 ? 1.0f : -1.0f), height, p_camera, p_screen_pos);
 		top_radius = MIN(top_radius, height * 0.5f);
 		bottom_radius = MIN(bottom_radius, height * 0.5f);
-		node->set_global_position(keep_center ? initial_transform.origin : initial_transform.xform(up * ((height - initial_height) * 0.5f * sign)));
 	} else if (capsule) {
 		top_radius = MAX(_get_distance_along(Vector3(), side, p_camera, p_screen_pos), MIN_SIZE);
 		height = MAX(height, top_radius * 2.0f);
@@ -201,7 +262,6 @@ void BoneClothCollision3DGizmoPlugin::_set_handle(const Ref<EditorNode3DGizmo> &
 		height = MAX(height, bottom_radius * 2.0f);
 	}
 
-	// 반지름을 먼저 넣으면 set_radius가 옛 height에 맞춰 반지름을 줄인다.
 	if (capsule) {
 		capsule->set_height(height);
 		capsule->set_radius(top_radius);
@@ -221,18 +281,27 @@ void BoneClothCollision3DGizmoPlugin::_commit_handle(const Ref<EditorNode3DGizmo
 		properties = { "radius" };
 		initial_values = { initial_value };
 	} else if (Object::cast_to<BoneClothCollisionCapsule3D>(node)) {
-		const Vector2 initial = initial_value;
-		properties = { "radius", "height", "global_position" };
-		initial_values = { initial.x, initial.y, initial_transform.origin };
+		const Vector3 initial = initial_value;
+		properties = { "radius", "height" };
+		initial_values = { initial.x, initial.z };
 	} else if (Object::cast_to<BoneClothCollisionTaperedCapsule3D>(node)) {
 		const Vector3 initial = initial_value;
-		properties = { "top_radius", "bottom_radius", "height", "global_position" };
-		initial_values = { initial.x, initial.y, initial.z, initial_transform.origin };
+		properties = { "top_radius", "bottom_radius", "height" };
+		initial_values = { initial.x, initial.y, initial.z };
 	} else if (Object::cast_to<BoneClothCollisionBox3D>(node)) {
-		properties = { "size", "global_position" };
-		initial_values = { initial_value, initial_transform.origin };
+		properties = { "size" };
+		initial_values = { initial_value };
 	} else {
 		return;
+	}
+
+	// 본에 붙은 콜라이더는 global_position을 되돌리면 그때의 본 포즈로 offset을 다시 계산한다.
+	if (Object::cast_to<BoneClothCollision3D>(node)->get_bone() >= 0) {
+		properties.append_array({ "position_offset", "rotation_offset" });
+		initial_values.append_array({ initial_position_offset, initial_rotation_offset });
+	} else {
+		properties.push_back("global_position");
+		initial_values.push_back(initial_transform.origin);
 	}
 
 	if (p_cancel) {
@@ -270,7 +339,7 @@ void BoneClothCollision3DGizmoPlugin::_redraw(const Ref<EditorNode3DGizmo> &p_gi
 
 	BoneClothCollisionCapsule3D *capsule = Object::cast_to<BoneClothCollisionCapsule3D>(node);
 	if (capsule) {
-		_add_tapered_capsule(lines, capsule->get_radius(), capsule->get_radius(), capsule->get_height());
+		add_tapered_capsule(lines, capsule->get_radius(), capsule->get_radius(), capsule->get_height());
 		handles.push_back(Vector3(0, capsule->get_height() * 0.5f, 0));
 		handles.push_back(Vector3(0, capsule->get_height() * -0.5f, 0));
 		handles.push_back(Vector3(capsule->get_radius(), 0, 0));
@@ -282,7 +351,7 @@ void BoneClothCollision3DGizmoPlugin::_redraw(const Ref<EditorNode3DGizmo> &p_gi
 		const float top_radius = tapered_capsule->get_top_radius();
 		const float bottom_radius = tapered_capsule->get_bottom_radius();
 		const float half_height = tapered_capsule->get_height() * 0.5f;
-		_add_tapered_capsule(lines, top_radius, bottom_radius, tapered_capsule->get_height());
+		add_tapered_capsule(lines, top_radius, bottom_radius, tapered_capsule->get_height());
 		handles.push_back(Vector3(0, half_height, 0));
 		handles.push_back(Vector3(0, -half_height, 0));
 		handles.push_back(Vector3(top_radius, half_height - top_radius, 0));
@@ -292,7 +361,7 @@ void BoneClothCollision3DGizmoPlugin::_redraw(const Ref<EditorNode3DGizmo> &p_gi
 
 	BoneClothCollisionPlane3D *plane = Object::cast_to<BoneClothCollisionPlane3D>(node);
 	if (plane) {
-		_add_plane(lines);
+		add_plane(lines);
 	}
 
 	BoneClothCollisionBox3D *box = Object::cast_to<BoneClothCollisionBox3D>(node);
@@ -307,6 +376,9 @@ void BoneClothCollision3DGizmoPlugin::_redraw(const Ref<EditorNode3DGizmo> &p_gi
 		}
 	}
 
+	if (!handles.is_empty()) {
+		p_gizmo->add_handles(handles, get_material("handles"), PackedInt32Array());
+	}
 	if (lines.is_empty()) {
 		return;
 	}
@@ -326,77 +398,6 @@ void BoneClothCollision3DGizmoPlugin::_redraw(const Ref<EditorNode3DGizmo> &p_gi
 
 		p_gizmo->add_lines(mirror_lines, get_material("mirror_collision", p_gizmo));
 		p_gizmo->add_collision_segments(mirror_lines);
-	}
-
-	if (!handles.is_empty()) {
-		p_gizmo->add_handles(handles, get_material("handles"), PackedInt32Array());
-	}
-}
-
-void BoneClothCollision3DGizmoPlugin::_add_tapered_capsule(PackedVector3Array &r_lines, float p_top_radius, float p_bottom_radius, float p_height) {
-	const Vector3 up(0, 1, 0);
-	const Vector3 top_center = up * (p_height * 0.5f - p_top_radius);
-	const Vector3 bottom_center = up * (p_bottom_radius - p_height * 0.5f);
-
-	const float distance = top_center.y - bottom_center.y;
-	const float slope = distance > CMP_EPSILON ? Math::asin((p_bottom_radius - p_top_radius) / distance) : 0.0f;
-	const float side_cos = Math::cos(slope);
-	const float side_sin = Math::sin(slope);
-
-	const Vector3 sides[2] = { Vector3(1, 0, 0), Vector3(0, 0, 1) };
-	for (const Vector3 &side : sides) {
-		add_arc(r_lines, top_center, side, up, p_top_radius, slope, (float)Math::PI - slope);
-		add_arc(r_lines, bottom_center, side, up, p_bottom_radius, (float)Math::PI - slope, (float)Math::TAU + slope);
-	}
-
-	if (side_cos < CMP_EPSILON) {
-		return;
-	}
-	add_arc(r_lines, top_center + up * (p_top_radius * side_sin), Vector3(0, 0, 1), Vector3(1, 0, 0), p_top_radius * side_cos, 0.0f, Math::TAU);
-	add_arc(r_lines, bottom_center + up * (p_bottom_radius * side_sin), Vector3(0, 0, 1), Vector3(1, 0, 0), p_bottom_radius * side_cos, 0.0f, Math::TAU);
-
-	const Vector3 directions[4] = { Vector3(1, 0, 0), Vector3(-1, 0, 0), Vector3(0, 0, 1), Vector3(0, 0, -1) };
-	for (const Vector3 &direction : directions) {
-		const Vector3 normal = direction * side_cos + up * side_sin;
-		r_lines.push_back(top_center + normal * p_top_radius);
-		r_lines.push_back(bottom_center + normal * p_bottom_radius);
-	}
-}
-
-void BoneClothCollision3DGizmoPlugin::_add_plane(PackedVector3Array &r_lines) {
-	static constexpr float HALF_PI = (float)Math::PI * 0.5f;
-	static constexpr float ARROW_LENGTH = 0.3f;
-	static constexpr float ARROW_HALF_WIDTH = 0.05f;
-	static constexpr float ARROW_TOP_HALF_WIDTH = 0.1f;
-	static constexpr float ARROW_TOP = 0.5f;
-	static constexpr float RECT_SIZE = 1.0f;
-	static constexpr int RECT_STEP_COUNT = 9;
-	static constexpr float RECT_HALF_SIZE = RECT_SIZE * 0.5f;
-	static constexpr float RECT_STEP = RECT_SIZE / RECT_STEP_COUNT;
-
-	const Vector3 arrow[7] = {
-		Vector3(0, ARROW_TOP, 0),
-		Vector3(-ARROW_TOP_HALF_WIDTH, ARROW_LENGTH, 0),
-		Vector3(-ARROW_HALF_WIDTH, ARROW_LENGTH, 0),
-		Vector3(-ARROW_HALF_WIDTH, 0, 0),
-		Vector3(ARROW_HALF_WIDTH, 0, 0),
-		Vector3(ARROW_HALF_WIDTH, ARROW_LENGTH, 0),
-		Vector3(ARROW_TOP_HALF_WIDTH, ARROW_LENGTH, 0),
-	};
-	for (int i = 0; i < 2; i++) {
-		const Basis turn(Vector3(0, 1, 0), HALF_PI * i);
-		for (int j = 0; j < 7; j++) {
-			r_lines.push_back(turn.xform(arrow[j]));
-			r_lines.push_back(turn.xform(arrow[(j + 1) % 7]));
-		}
-	}
-
-	for (int i = 0; i < 4; i++) {
-		const Basis turn(Vector3(0, 1, 0), HALF_PI * i);
-		for (int j = 0; j < RECT_STEP_COUNT; j += 2) {
-			r_lines.push_back(turn.xform(Vector3(RECT_HALF_SIZE, 0, RECT_HALF_SIZE - RECT_STEP * j)));
-			r_lines.push_back(turn.xform(Vector3(RECT_HALF_SIZE, 0, RECT_HALF_SIZE - RECT_STEP * (j + 1))));
-		}
 	}
 }
 
@@ -461,10 +462,10 @@ void BoneClothSimulator3DGizmoPlugin::_redraw(const Ref<EditorNode3DGizmo> &p_gi
 		return;
 	}
 
-	const bool show_radius = EditorInterface::get_singleton()->get_editor_settings()->get_project_metadata("bone_cloth", "show_radius", true);
-	const bool show_limit_angle = EditorInterface::get_singleton()->get_editor_settings()->get_project_metadata("bone_cloth", "show_limit_angle", false);
-	const bool show_max_distance = EditorInterface::get_singleton()->get_editor_settings()->get_project_metadata("bone_cloth", "show_max_distance", false);
-	const bool show_backstop = EditorInterface::get_singleton()->get_editor_settings()->get_project_metadata("bone_cloth", "show_backstop", false) && simulator->backstop_bone >= 0;
+	const bool show_radius = is_bone_cloth_shown(SHOW_RADIUS);
+	const bool show_limit_angle = is_bone_cloth_shown(SHOW_LIMIT_ANGLE);
+	const bool show_max_distance = is_bone_cloth_shown(SHOW_MAX_DISTANCE);
+	const bool show_backstop = is_bone_cloth_shown(SHOW_BACKSTOP) && simulator->backstop_bone >= 0;
 	const float mark = BACKSTOP_MARK * simulator->units_per_meter;
 
 	PackedVector3Array lines;

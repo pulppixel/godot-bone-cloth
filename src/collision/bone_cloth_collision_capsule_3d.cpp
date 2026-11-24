@@ -1,7 +1,5 @@
 #include "collision/bone_cloth_collision_capsule_3d.h"
 
-#include "collision/bone_cloth_collision_sphere_3d.h"
-
 #include <godot_cpp/classes/geometry3d.hpp>
 #include <godot_cpp/core/class_db.hpp>
 
@@ -24,6 +22,7 @@ void BoneClothCollisionCapsule3D::_bind_methods() {
 }
 
 void BoneClothCollisionCapsule3D::set_radius(float p_radius) {
+	ERR_FAIL_COND_MSG(p_radius < 0.0f, "BoneClothCollisionCapsule3D radius cannot be negative.");
 	radius = p_radius;
 	if (radius > height * 0.5f) {
 		height = radius * 2.0f;
@@ -37,6 +36,7 @@ float BoneClothCollisionCapsule3D::get_radius() const {
 }
 
 void BoneClothCollisionCapsule3D::set_height(float p_height) {
+	ERR_FAIL_COND_MSG(p_height < 0.0f, "BoneClothCollisionCapsule3D height cannot be negative.");
 	height = p_height;
 	if (radius > height * 0.5f) {
 		radius = height * 0.5f;
@@ -81,7 +81,8 @@ Vector3 BoneClothCollisionCapsule3D::_collide(const Transform3D &p_pose, const V
 	const Vector3 axis = tail - head;
 	const float axis_length_squared = axis.length_squared();
 	const float t = axis_length_squared > 0.0f ? CLAMP((p_point - head).dot(axis) / axis_length_squared, 0.0f, 1.0f) : 0.0f;
-	return BoneClothCollisionSphere3D::_collide_sphere(head + axis * t, radius, inside, p_pose.basis.get_column(0).normalized(), p_point, p_radius);
+	const Vector3 scale = _get_scale(p_pose.basis);
+	return _collide_sphere(head + axis * t, radius * (scale.x + scale.z) * 0.5f, inside, p_pose.basis.get_column(0).normalized(), p_point, p_radius);
 }
 
 void BoneClothCollisionCapsule3D::_collide_segment(const Transform3D &p_pose, Vector3 &r_a, Vector3 &r_b, float p_radius) const {
@@ -93,8 +94,9 @@ void BoneClothCollisionCapsule3D::_collide_segment(const Transform3D &p_pose, Ve
 	Vector3 head;
 	Vector3 tail;
 	_get_head_and_tail(p_pose, head, tail);
-	const PackedVector3Array closest = Geometry3D::get_singleton()->get_closest_points_between_segments(r_a, r_b, head, tail);
-	_push_segment_out(r_a, r_b, closest[0], closest[1], radius + p_radius, p_pose.basis.get_column(0).normalized());
+	const Vector3 scale = _get_scale(p_pose.basis);
+	const PackedVector3Array closest = _get_closest_points(r_a, r_b, head, tail);
+	_push_segment_out(r_a, r_b, closest[0], closest[1], radius * (scale.x + scale.z) * 0.5f + p_radius, p_pose.basis.get_column(0).normalized());
 }
 
 float BoneClothCollisionCapsule3D::_segment_depth(const Transform3D &p_pose, const Vector3 &p_a, const Vector3 &p_b, float p_radius) const {
@@ -105,6 +107,7 @@ float BoneClothCollisionCapsule3D::_segment_depth(const Transform3D &p_pose, con
 	Vector3 head;
 	Vector3 tail;
 	_get_head_and_tail(p_pose, head, tail);
-	const PackedVector3Array closest = Geometry3D::get_singleton()->get_closest_points_between_segments(p_a, p_b, head, tail);
-	return MAX(radius + p_radius - closest[0].distance_to(closest[1]), 0.0f);
+	const Vector3 scale = _get_scale(p_pose.basis);
+	const PackedVector3Array closest = _get_closest_points(p_a, p_b, head, tail);
+	return MAX(radius * (scale.x + scale.z) * 0.5f + p_radius - closest[0].distance_to(closest[1]), 0.0f);
 }

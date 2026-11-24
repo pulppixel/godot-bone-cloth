@@ -14,6 +14,14 @@
 
 using namespace godot;
 
+#define BONE_CLOTH_VALUE(m_type, m_name) \
+	void set_##m_name(m_type p_value) { \
+		m_name = p_value; \
+	} \
+	m_type get_##m_name() const { \
+		return m_name; \
+	}
+
 class BoneClothSimulator3DGizmoPlugin;
 
 class BoneClothSimulator3D : public SkeletonModifier3D {
@@ -171,8 +179,6 @@ private:
 
 	struct FrameMotion {
 		Transform3D skeleton_transform;
-		Vector3 move_location;
-		Quaternion move_rotation;
 		bool teleported = false;
 		double elapsed = 0.0;
 		double dropped = 0.0;
@@ -306,7 +312,6 @@ private:
 	Quaternion frame_center_rotation;
 	Vector3 step_center;
 	Quaternion step_center_rotation;
-	Vector3 rest_center;
 	Vector3 prev_backstop_center;
 	Vector3 backstop_center;
 
@@ -331,7 +336,6 @@ private:
 	Quaternion _get_sync_swing(Skeleton3D *p_skeleton, const SyncBone &p_sync_bone) const;
 	Quaternion _get_sync_turn(const Chain &p_chain, const LocalVector<Quaternion> &p_swings, const LocalVector<Vector3> &p_origins, const Vector3 &p_location) const;
 	void _apply_sync(Skeleton3D *p_skeleton);
-	void _keep_shock_pose(Chain &r_chain);
 	void _propagate_shock();
 	void _step(const StepMotion &p_step, const LocalVector<PosedCollision> &p_collisions);
 	void _follow_parent_chain(Chain &p_chain);
@@ -356,7 +360,11 @@ private:
 	void _update_display(Chain &p_chain, float p_follow);
 	void _write_rotations(Skeleton3D *p_skeleton, const Chain &p_chain, float p_weight);
 
+	bool _can_edit_collisions(int p_index, bool p_exclude) const;
+	void _set_collision_count(int p_index, int p_count, bool p_exclude);
+	void _set_collision_path(int p_index, int p_collision, const NodePath &p_node_path, bool p_exclude);
 	void _rebuild_if_changed(Skeleton3D *p_skeleton);
+	void _make_joints_dirty();
 	void _read_frame(Skeleton3D *p_skeleton);
 	bool _update_culling(Skeleton3D *p_skeleton);
 	bool _is_on_screen(const Skeleton3D *p_skeleton, const Camera3D *p_camera) const;
@@ -365,7 +373,7 @@ private:
 	bool _is_teleported(const Transform3D &p_skeleton_transform) const;
 	void _gather_collisions(LocalVector<PosedCollision> &r_collisions) const;
 	void _follow_anchor();
-	FrameMotion _measure_motion(double p_delta, const Transform3D &p_skeleton_transform);
+	FrameMotion _measure_motion(double p_delta, const Transform3D &p_skeleton_transform, bool p_teleported);
 	void _run_steps(FrameMotion &r_motion, const LocalVector<PosedCollision> &p_collisions);
 	void _settle_display(double p_delta, const FrameMotion &p_motion, const LocalVector<PosedCollision> &p_collisions);
 	void _copy_same_chains();
@@ -413,64 +421,39 @@ public:
 	void clear_collisions(int p_index);
 	void set_link_mode(LinkMode p_mode);
 	LinkMode get_link_mode() const;
-	void set_link_stiffness(float p_stiffness);
-	float get_link_stiffness() const;
+	BONE_CLOTH_VALUE(float, link_stiffness)
 	void set_link_split_enabled(bool p_enabled);
 	bool is_link_split_enabled() const;
-	void set_link_spacing(float p_spacing);
-	float get_link_spacing() const;
-	void set_link_spacing_damping_curve(const Ref<Curve> &p_curve);
-	Ref<Curve> get_link_spacing_damping_curve() const;
-	void set_link_bending(float p_bending);
-	float get_link_bending() const;
-	void set_drag(float p_drag);
-	float get_drag() const;
-	void set_drag_damping_curve(const Ref<Curve> &p_curve);
-	Ref<Curve> get_drag_damping_curve() const;
-	void set_stiffness(float p_stiffness);
-	float get_stiffness() const;
-	void set_stiffness_damping_curve(const Ref<Curve> &p_curve);
-	Ref<Curve> get_stiffness_damping_curve() const;
-	void set_stiffness_velocity_damping(float p_damping);
-	float get_stiffness_velocity_damping() const;
-	void set_radius(float p_radius);
-	float get_radius() const;
-	void set_radius_damping_curve(const Ref<Curve> &p_curve);
-	Ref<Curve> get_radius_damping_curve() const;
+	BONE_CLOTH_VALUE(float, link_spacing)
+	BONE_CLOTH_VALUE(Ref<Curve>, link_spacing_damping_curve)
+	BONE_CLOTH_VALUE(float, link_bending)
+	BONE_CLOTH_VALUE(float, drag)
+	BONE_CLOTH_VALUE(Ref<Curve>, drag_damping_curve)
+	BONE_CLOTH_VALUE(float, stiffness)
+	BONE_CLOTH_VALUE(Ref<Curve>, stiffness_damping_curve)
+	BONE_CLOTH_VALUE(float, stiffness_velocity_damping)
+	BONE_CLOTH_VALUE(float, radius)
+	BONE_CLOTH_VALUE(Ref<Curve>, radius_damping_curve)
 	void set_rest_overlap_enabled(bool p_enabled);
 	bool is_rest_overlap_enabled() const;
-	void set_collision_friction(float p_friction);
-	float get_collision_friction() const;
-	void set_limit_angle(float p_angle);
-	float get_limit_angle() const;
-	void set_limit_angle_damping_curve(const Ref<Curve> &p_curve);
-	Ref<Curve> get_limit_angle_damping_curve() const;
-	void set_limit_angle_stiffness(float p_stiffness);
-	float get_limit_angle_stiffness() const;
+	BONE_CLOTH_VALUE(float, collision_friction)
+	BONE_CLOTH_VALUE(float, limit_angle)
+	BONE_CLOTH_VALUE(Ref<Curve>, limit_angle_damping_curve)
+	BONE_CLOTH_VALUE(float, limit_angle_stiffness)
 	void set_limit_angle_mode(LimitAngleMode p_mode);
 	LimitAngleMode get_limit_angle_mode() const;
-	void set_limit_angle_lower(const Vector3 &p_lower);
-	Vector3 get_limit_angle_lower() const;
-	void set_limit_angle_upper(const Vector3 &p_upper);
-	Vector3 get_limit_angle_upper() const;
-	void set_gravity(float p_gravity);
-	float get_gravity() const;
-	void set_gravity_damping_curve(const Ref<Curve> &p_curve);
-	Ref<Curve> get_gravity_damping_curve() const;
+	BONE_CLOTH_VALUE(Vector3, limit_angle_lower)
+	BONE_CLOTH_VALUE(Vector3, limit_angle_upper)
+	BONE_CLOTH_VALUE(float, gravity)
+	BONE_CLOTH_VALUE(Ref<Curve>, gravity_damping_curve)
 	void set_gravity_direction(const Vector3 &p_direction);
 	Vector3 get_gravity_direction() const;
-	void set_gravity_falloff(float p_falloff);
-	float get_gravity_falloff() const;
-	void set_wind_influence(float p_influence);
-	float get_wind_influence() const;
-	void set_wind_influence_damping_curve(const Ref<Curve> &p_curve);
-	Ref<Curve> get_wind_influence_damping_curve() const;
-	void set_wind_sync(float p_sync);
-	float get_wind_sync() const;
-	void set_wind_turbulence(float p_turbulence);
-	float get_wind_turbulence() const;
-	void set_wind_frequency(float p_frequency);
-	float get_wind_frequency() const;
+	BONE_CLOTH_VALUE(float, gravity_falloff)
+	BONE_CLOTH_VALUE(float, wind_influence)
+	BONE_CLOTH_VALUE(Ref<Curve>, wind_influence_damping_curve)
+	BONE_CLOTH_VALUE(float, wind_sync)
+	BONE_CLOTH_VALUE(float, wind_turbulence)
+	BONE_CLOTH_VALUE(float, wind_frequency)
 	void set_sync_bone_count(int p_count);
 	int get_sync_bone_count() const;
 	void set_sync_bone_name(int p_index, const String &p_bone_name);
@@ -485,68 +468,40 @@ public:
 	float get_sync_bone_falloff_outer(int p_index) const;
 	void set_sync_bone_falloff_amount(int p_index, float p_amount);
 	float get_sync_bone_falloff_amount(int p_index) const;
-	void set_sync(float p_sync);
-	float get_sync() const;
+	BONE_CLOTH_VALUE(float, sync)
 	void set_anchor(const NodePath &p_anchor);
 	NodePath get_anchor() const;
-	void set_anchor_inertia(float p_inertia);
-	float get_anchor_inertia() const;
-	void set_inertia(float p_inertia);
-	float get_inertia() const;
-	void set_inertia_smoothing(float p_smoothing);
-	float get_inertia_smoothing() const;
-	void set_depth_inertia(float p_depth_inertia);
-	float get_depth_inertia() const;
-	void set_centrifugal_acceleration(float p_acceleration);
-	float get_centrifugal_acceleration() const;
-	void set_local_movement_speed_limit(float p_limit);
-	float get_local_movement_speed_limit() const;
-	void set_local_rotation_speed_limit(float p_limit);
-	float get_local_rotation_speed_limit() const;
-	void set_movement_speed_limit(float p_limit);
-	float get_movement_speed_limit() const;
-	void set_rotation_speed_limit(float p_limit);
-	float get_rotation_speed_limit() const;
-	void set_joint_speed_limit(float p_limit);
-	float get_joint_speed_limit() const;
-	void set_shock_propagation(float p_propagation);
-	float get_shock_propagation() const;
-	void set_shock_threshold(float p_threshold);
-	float get_shock_threshold() const;
-	void set_teleport_distance(float p_distance);
-	float get_teleport_distance() const;
-	void set_teleport_angle(float p_angle);
-	float get_teleport_angle() const;
-	void set_teleport_mode(TeleportMode p_mode);
-	TeleportMode get_teleport_mode() const;
-	void set_root_spring_stiffness(float p_stiffness);
-	float get_root_spring_stiffness() const;
-	void set_root_spring_limit(float p_limit);
-	float get_root_spring_limit() const;
-	void set_root_spring_forward_limit(float p_limit);
-	float get_root_spring_forward_limit() const;
-	void set_root_spring_noise(float p_noise);
-	float get_root_spring_noise() const;
-	void set_max_distance(float p_distance);
-	float get_max_distance() const;
-	void set_max_distance_damping_curve(const Ref<Curve> &p_curve);
-	Ref<Curve> get_max_distance_damping_curve() const;
+	BONE_CLOTH_VALUE(float, anchor_inertia)
+	BONE_CLOTH_VALUE(float, inertia)
+	BONE_CLOTH_VALUE(float, inertia_smoothing)
+	BONE_CLOTH_VALUE(float, depth_inertia)
+	BONE_CLOTH_VALUE(float, centrifugal_acceleration)
+	BONE_CLOTH_VALUE(float, local_movement_speed_limit)
+	BONE_CLOTH_VALUE(float, local_rotation_speed_limit)
+	BONE_CLOTH_VALUE(float, movement_speed_limit)
+	BONE_CLOTH_VALUE(float, rotation_speed_limit)
+	BONE_CLOTH_VALUE(float, joint_speed_limit)
+	BONE_CLOTH_VALUE(float, shock_propagation)
+	BONE_CLOTH_VALUE(float, shock_threshold)
+	BONE_CLOTH_VALUE(float, teleport_distance)
+	BONE_CLOTH_VALUE(float, teleport_angle)
+	BONE_CLOTH_VALUE(TeleportMode, teleport_mode)
+	BONE_CLOTH_VALUE(float, root_spring_stiffness)
+	BONE_CLOTH_VALUE(float, root_spring_limit)
+	BONE_CLOTH_VALUE(float, root_spring_forward_limit)
+	BONE_CLOTH_VALUE(float, root_spring_noise)
+	BONE_CLOTH_VALUE(float, max_distance)
+	BONE_CLOTH_VALUE(Ref<Curve>, max_distance_damping_curve)
 	void set_backstop_bone_name(const String &p_bone_name);
 	String get_backstop_bone_name() const;
 	void set_backstop_bone(int p_bone);
 	int get_backstop_bone() const;
-	void set_backstop_position_offset(const Vector3 &p_offset);
-	Vector3 get_backstop_position_offset() const;
-	void set_backstop_distance(float p_distance);
-	float get_backstop_distance() const;
-	void set_backstop_damping_curve(const Ref<Curve> &p_curve);
-	Ref<Curve> get_backstop_damping_curve() const;
-	void set_backstop_radius(float p_radius);
-	float get_backstop_radius() const;
-	void set_movement_limit_stiffness(float p_stiffness);
-	float get_movement_limit_stiffness() const;
-	void set_tether_limit(float p_limit);
-	float get_tether_limit() const;
+	BONE_CLOTH_VALUE(Vector3, backstop_position_offset)
+	BONE_CLOTH_VALUE(float, backstop_distance)
+	BONE_CLOTH_VALUE(Ref<Curve>, backstop_damping_curve)
+	BONE_CLOTH_VALUE(float, backstop_radius)
+	BONE_CLOTH_VALUE(float, movement_limit_stiffness)
+	BONE_CLOTH_VALUE(float, tether_limit)
 
 	void set_ticks_per_second(int p_ticks);
 	int get_ticks_per_second() const;
@@ -555,8 +510,7 @@ public:
 	void set_stabilization_time(float p_seconds);
 	float get_stabilization_time() const;
 
-	void set_camera_culling(CameraCulling p_mode);
-	CameraCulling get_camera_culling() const;
+	BONE_CLOTH_VALUE(CameraCulling, camera_culling)
 	void set_distance_culling(float p_distance);
 	float get_distance_culling() const;
 	void set_distance_culling_fade(float p_fade);
@@ -566,6 +520,7 @@ public:
 	float get_units_per_meter() const;
 	PackedStringArray _get_configuration_warnings() const override;
 	void _validate_bone_names() override;
+	void _skeleton_changed(Skeleton3D *p_old_skeleton, Skeleton3D *p_new_skeleton) override;
 	void _process_modification_with_delta(double p_delta) override;
 
 	static void add_monitors();

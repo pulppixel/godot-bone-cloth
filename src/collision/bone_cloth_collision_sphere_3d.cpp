@@ -16,6 +16,7 @@ void BoneClothCollisionSphere3D::_bind_methods() {
 }
 
 void BoneClothCollisionSphere3D::set_radius(float p_radius) {
+	ERR_FAIL_COND_MSG(p_radius < 0.0f, "BoneClothCollisionSphere3D radius cannot be negative.");
 	radius = p_radius;
 	update_gizmos();
 }
@@ -33,28 +34,9 @@ bool BoneClothCollisionSphere3D::is_inside() const {
 	return inside;
 }
 
-Vector3 BoneClothCollisionSphere3D::_collide_sphere(const Vector3 &p_center, float p_radius, bool p_inside, const Vector3 &p_fallback, const Vector3 &p_point, float p_point_radius) {
-	const Vector3 offset = p_point - p_center;
-	const float distance_squared = offset.length_squared();
-	if (p_inside) {
-		const float limit = MAX(p_radius - p_point_radius, 0.0f);
-		if (distance_squared <= limit * limit) {
-			return p_point;
-		}
-		return p_center + offset / Math::sqrt(distance_squared) * limit;
-	}
-
-	const float limit = p_radius + p_point_radius;
-	if (distance_squared >= limit * limit) {
-		return p_point;
-	}
-
-	const Vector3 direction = distance_squared > CMP_EPSILON2 ? offset / Math::sqrt(distance_squared) : p_fallback;
-	return p_center + direction * limit;
-}
-
 Vector3 BoneClothCollisionSphere3D::_collide(const Transform3D &p_pose, const Vector3 &p_point, float p_radius) const {
-	return _collide_sphere(p_pose.origin, radius, inside, p_pose.basis.get_column(0).normalized(), p_point, p_radius);
+	const Vector3 scale = _get_scale(p_pose.basis);
+	return _collide_sphere(p_pose.origin, radius * (scale.x + scale.y + scale.z) / 3.0f, inside, p_pose.basis.get_column(0).normalized(), p_point, p_radius);
 }
 
 void BoneClothCollisionSphere3D::_collide_segment(const Transform3D &p_pose, Vector3 &r_a, Vector3 &r_b, float p_radius) const {
@@ -63,8 +45,9 @@ void BoneClothCollisionSphere3D::_collide_segment(const Transform3D &p_pose, Vec
 		return;
 	}
 
+	const Vector3 scale = _get_scale(p_pose.basis);
 	const Vector3 on_segment = Geometry3D::get_singleton()->get_closest_point_to_segment(p_pose.origin, r_a, r_b);
-	_push_segment_out(r_a, r_b, on_segment, p_pose.origin, radius + p_radius, p_pose.basis.get_column(0).normalized());
+	_push_segment_out(r_a, r_b, on_segment, p_pose.origin, radius * (scale.x + scale.y + scale.z) / 3.0f + p_radius, p_pose.basis.get_column(0).normalized());
 }
 
 float BoneClothCollisionSphere3D::_segment_depth(const Transform3D &p_pose, const Vector3 &p_a, const Vector3 &p_b, float p_radius) const {
@@ -72,6 +55,7 @@ float BoneClothCollisionSphere3D::_segment_depth(const Transform3D &p_pose, cons
 		return BoneClothCollision3D::_segment_depth(p_pose, p_a, p_b, p_radius);
 	}
 
+	const Vector3 scale = _get_scale(p_pose.basis);
 	const Vector3 on_segment = Geometry3D::get_singleton()->get_closest_point_to_segment(p_pose.origin, p_a, p_b);
-	return MAX(radius + p_radius - on_segment.distance_to(p_pose.origin), 0.0f);
+	return MAX(radius * (scale.x + scale.y + scale.z) / 3.0f + p_radius - on_segment.distance_to(p_pose.origin), 0.0f);
 }

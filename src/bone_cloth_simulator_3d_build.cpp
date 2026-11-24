@@ -105,10 +105,7 @@ void BoneClothSimulator3D::_build_branches() {
 	}
 
 	LocalVector<float> longest;
-	longest.resize(chains.size());
-	for (uint32_t c = 0; c < chains.size(); c++) {
-		longest[c] = 0.0f;
-	}
+	longest.resize_initialized(chains.size());
 
 	for (uint32_t c = 0; c < chains.size(); c++) {
 		Chain &chain = chains[c];
@@ -155,7 +152,7 @@ void BoneClothSimulator3D::_build_same_chains() {
 
 		for (uint32_t other = 0; other < c && chain.same_as < 0; other++) {
 			const Chain &first = chains[other];
-			if (first.same_as >= 0 || first.parent_chain >= 0 || first.joints.size() != chain.joints.size() || first.enable_all_child_collisions != chain.enable_all_child_collisions || !same_paths(first.exclude_collisions, chain.exclude_collisions) || !same_paths(first.collisions, chain.collisions)) {
+			if (first.same_as >= 0 || first.parent_chain >= 0 || first.joints.size() != chain.joints.size() || first.enable_all_child_collisions != chain.enable_all_child_collisions || !same_paths(chain.enable_all_child_collisions ? first.exclude_collisions : first.collisions, chain.enable_all_child_collisions ? chain.exclude_collisions : chain.collisions)) {
 				continue;
 			}
 
@@ -422,7 +419,7 @@ void BoneClothSimulator3D::_build_wind(Skeleton3D *p_skeleton) {
 }
 
 void BoneClothSimulator3D::_build_sync(Skeleton3D *p_skeleton) {
-	rest_center = Vector3();
+	Vector3 rest_center;
 	int count = 0;
 	for (const Chain &chain : chains) {
 		if (!chain.joints.is_empty() && chain.parent_chain < 0) {

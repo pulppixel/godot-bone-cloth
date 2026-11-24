@@ -11,7 +11,6 @@ class BoneClothCollisionBox3D : public BoneClothCollision3D {
 
 	Vector3 size = Vector3(0.2f, 0.2f, 0.2f);
 
-	float _get_distance(const Transform3D &p_pose, const Vector3 &p_point, Vector3 &r_normal) const;
 	float _find_deepest(const Transform3D &p_pose, const Vector3 &p_a, const Vector3 &p_b, Vector3 &r_point, Vector3 &r_normal) const;
 
 protected:

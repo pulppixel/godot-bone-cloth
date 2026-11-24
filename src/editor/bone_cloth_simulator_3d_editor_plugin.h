@@ -24,10 +24,11 @@ class BoneClothSimulator3DMenu : public MenuButton {
 	ConfirmationDialog *chains_dialog = nullptr;
 	Tree *bones_tree = nullptr;
 	PackedInt32Array top_roots;
+	PackedInt32Array in_chain;
 
 	void _fill_bones_tree(BoneClothSimulator3D *p_simulator);
-	TreeItem *_add_bone_item(Skeleton3D *p_skeleton, int p_bone, TreeItem *p_parent, const PackedInt32Array &p_in_chain, const PackedInt32Array &p_locked, bool p_covered);
-	void _set_covered(TreeItem *p_first, bool p_covered);
+	TreeItem *_add_bone_item(Skeleton3D *p_skeleton, int p_bone, TreeItem *p_parent, const PackedInt32Array &p_locked, bool p_covered);
+	void _set_covered(TreeItem *p_first, bool p_covered, bool p_as_saved);
 	void _on_bone_edited();
 	void _on_chains_confirmed();
 	void _find_presets(EditorFileSystemDirectory *p_directory);

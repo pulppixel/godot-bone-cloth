@@ -4,13 +4,9 @@
 		A [SkeletonModifier3D] that sways bone chains such as hair, skirts and capes.
 	</brief_description>
 	<description>
-		This node sways hair, skirts, capes and tails, and returns them toward the animated pose.
-		Each chain runs from its root bone down to its end bone. The root bone follows the pose and the bones below it sway. A chain can branch from a bone of an earlier chain; list the trunk before its branches. Chains whose bones sit at the same places, as in the stacked skirt chains of a VRoid model, move as one.
-		The values apply to every chain. Use a separate node for parts that need other values.
-		To tune a node, start from a preset in the [b]Presets[/b] submenu of the node's toolbar menu. Then set how far the chains swing with [member stiffness/value] and [member limit_angle/value], and how soon they settle with [member drag/value].
-		Add [BoneClothCollision3D] nodes as children to keep the chains out of the body.
-		Lengths and speeds are in meters at the size of the character's model, so a centimeter rig takes the same values as a meter rig.
-		While the project runs, the [b]Monitors[/b] tab of the [b]Debugger[/b] shows the cost under [b]Bone Cloth[/b].
+		Each chain runs from its root bone, which follows the pose, down to its end bone, and can branch from a bone of an earlier chain. The values apply to every chain, so parts that need others take a separate node. [BoneClothCollision3D] children keep the chains out of the body.
+		Start from a preset in the node's toolbar menu and tune [member stiffness/value] and [member drag/value]. The menu's [b]Show[/b] items draw the radius, the limits and the backstop.
+		Lengths and speeds are in meters at the model's size, so a centimeter rig takes the same values as a meter rig.
 		[b]Note:[/b] Most methods in this class take an [code]index[/code] parameter. This parameter specifies which chain to use (e.g. [code]chains/&lt;index&gt;/root_bone_name[/code]), except in the sync bone methods, where it specifies which sync bone to use (e.g. [code]sync/bones/&lt;index&gt;/bone_name[/code]).
 	</description>
 	<tutorials>
@@ -20,7 +16,7 @@
 			<return type="void" />
 			<param index="0" name="preset" type="BoneClothPreset" />
 			<description>
-				Copies the values of [param preset] to this node. The chains, [member link_mode], the backstop's bone and offset, and the collisions are not changed.
+				Copies the values of [param preset] to this node, except those that [BoneClothPreset] leaves out.
 			</description>
 		</method>
 		<method name="are_all_child_collisions_enabled" qualifiers="const">
@@ -175,7 +171,7 @@
 		<method name="reset">
 			<return type="void" />
 			<description>
-				Resets the chains to the current pose, at rest. Call it when the pose jumps, such as after [method AnimationPlayer.play] without blending.
+				Resets the chains to the current pose, at rest. Call it when the pose jumps, such as after [method AnimationPlayer.play] without blending, and after turning [member SkeletonModifier3D.active] back on.
 			</description>
 		</method>
 		<method name="set_collision_count">
@@ -330,7 +326,7 @@
 	</methods>
 	<members>
 		<member name="anchor" type="NodePath" setter="set_anchor" getter="get_anchor" default="NodePath(&quot;&quot;)">
-			A [Node3D] the character rides, such as a vehicle, a ship or a moving platform. Its movement and rotation are left out of the cloth's inertia, so the cloth reacts only to the character's own movement on it. Set it from a script when the character gets on and clear it when the character gets off. An empty path disables it.
+			A [Node3D] the character rides, such as a vehicle or a moving platform. The cloth leaves out the anchor's movement and rotation, and reacts only to the character's own moves on it. An empty path disables it.
 		</member>
 		<member name="anchor_inertia" type="float" setter="set_anchor_inertia" getter="get_anchor_inertia" default="0.0">
 			How much the cloth still reacts to the [member anchor]'s movement and rotation, from [code]0.0[/code] (not at all) to [code]1.0[/code] (as if there were no anchor).
@@ -339,9 +335,7 @@
 			The index of [member backstop/bone_name]. [code]-1[/code] is no bone.
 		</member>
 		<member name="backstop/bone_name" type="String" setter="set_backstop_bone_name" getter="get_backstop_bone_name" default="&quot;&quot;">
-			The bone at the center of the backstop, such as the head for bangs. The backstop is a wall behind each joint's pose that keeps the joint from moving toward this center, so bangs stay out of the head without a collision. An empty name disables it.
-			On a long chain in a violent move, joints far from the root can still pass the wall slightly, because each joint is placed after the one above it.
-			To see the walls, check [b]Show Backstop[/b] in the node's toolbar menu.
+			The bone at the center of the backstop, such as the head for bangs. A wall behind each joint's pose keeps it from moving toward this center, so bangs stay out of the head without a collision. An empty name disables it.
 		</member>
 		<member name="backstop/damping_curve" type="Curve" setter="set_backstop_damping_curve" getter="get_backstop_damping_curve">
 			Scales [member backstop/distance] from the roots ([code]0.0[/code]) to the tips ([code]1.0[/code]).
@@ -359,7 +353,7 @@
 			Stops the simulation while this node's bones are outside the camera view. Saves the cost of characters the camera does not see. [constant CAMERA_CULLING_OFF] disables it.
 		</member>
 		<member name="centrifugal_acceleration" type="float" setter="set_centrifugal_acceleration" getter="get_centrifugal_acceleration" default="0.0">
-			How far the chains swing outward while the character turns, from [code]0.0[/code] to [code]1.0[/code]. A skirt flares in a spin, and long hair fans out. Joints near the roots are pushed harder, and only while the turn pulls the chain along. [code]0.3[/code] suits skirts. [code]0.0[/code] disables it.
+			How far the chains swing outward while the character turns, from [code]0.0[/code] to [code]1.0[/code]. A skirt flares in a spin and long hair fans out. [code]0.0[/code] disables it.
 		</member>
 		<member name="chain_count" type="int" setter="set_chain_count" getter="get_chain_count" default="0">
 			The number of chains.
@@ -368,13 +362,13 @@
 			How firmly joints grip a collision they touch, from [code]0.0[/code] to [code]0.5[/code]. A skirt clings to the thighs instead of slipping off them. [code]0.0[/code] disables it.
 		</member>
 		<member name="depth_inertia" type="float" setter="set_depth_inertia" getter="get_depth_inertia" default="0.0">
-			How steady the part near the roots stays while the character moves, from [code]0.0[/code] to [code]1.0[/code]. The tips still sway. Raise it to keep a skirt's waist steady while its hem swings.
+			How steady the part near the roots stays while the character moves, from [code]0.0[/code] to [code]1.0[/code]. Keeps a skirt's waist steady while its hem swings. [code]0.0[/code] disables it.
 		</member>
 		<member name="distance_culling" type="float" setter="set_distance_culling" getter="get_distance_culling" default="0.0">
 			Stops the simulation while the camera is farther than this from the skeleton, in meters, and starts it again from the animation when it comes back. Saves the cost of crowds and distant characters. [code]0.0[/code] disables it.
 		</member>
 		<member name="distance_culling_fade" type="float" setter="set_distance_culling_fade" getter="get_distance_culling_fade" default="0.0">
-			Share of [member distance_culling], from 0.0 to 1.0, over which the motion fades into the animation before it stops. Keeps hair and skirts from snapping still at the cut. [code]0.0[/code] disables it.
+			Share of [member distance_culling], from [code]0.0[/code] to [code]1.0[/code], over which the motion fades into the animation before it stops. Keeps hair and skirts from snapping still at the cut. [code]0.0[/code] disables it.
 		</member>
 		<member name="drag/damping_curve" type="Curve" setter="set_drag_damping_curve" getter="get_drag_damping_curve">
 			Scales [member drag/value] from the roots ([code]0.0[/code]) to the tips ([code]1.0[/code]).
@@ -392,17 +386,17 @@
 			How much weaker gravity is while the chains hang as in the rest pose, from [code]0.0[/code] to [code]1.0[/code]. Hair keeps its shape while the head is upright and falls when the character bends over. [code]0.0[/code] disables it.
 		</member>
 		<member name="gravity/value" type="float" setter="set_gravity" getter="get_gravity" default="0.0">
-			The gravity, in m/s^2. [code]9.8[/code] is the earth's gravity. [code]0.0[/code] disables it.
+			The gravity, in meters per second squared. [code]9.8[/code] is the earth's gravity. [code]0.0[/code] disables it.
 			[b]Note:[/b] Unlike [SpringBoneSimulator3D], this is an acceleration, not a velocity.
 		</member>
 		<member name="inertia" type="float" setter="set_inertia" getter="get_inertia" default="1.0">
 			How much the cloth reacts to the character's movement and rotation, from [code]0.0[/code] to [code]1.0[/code]. Lower it if the cloth reacts too much.
 		</member>
 		<member name="inertia_smoothing" type="float" setter="set_inertia_smoothing" getter="get_inertia_smoothing" default="0.4">
-			Softens the cloth's reaction to sudden starts and stops. [code]0.0[/code] disables it.
+			Softens the cloth's reaction to the character's sudden starts and stops, from [code]0.0[/code] to [code]1.0[/code]. Keeps hair and skirts from jolting when a run starts or ends. [code]0.0[/code] disables it.
 		</member>
 		<member name="joint_speed_limit" type="float" setter="set_joint_speed_limit" getter="get_joint_speed_limit" default="4.0">
-			The maximum speed of each joint, in m/s. Keeps the tips of long chains from swinging out too far. Low values weaken the push out of collisions. [code]3.0[/code] suits long hair. [code]0.0[/code] disables it.
+			The maximum speed of each joint, in meters per second. Keeps the tips of long hair from swinging out too far, and [code]3.0[/code] suits it. [code]0.0[/code] disables it.
 		</member>
 		<member name="limit_angle/damping_curve" type="Curve" setter="set_limit_angle_damping_curve" getter="get_limit_angle_damping_curve">
 			Scales [member limit_angle/value], or [member limit_angle/lower] and [member limit_angle/upper], from the roots ([code]0.0[/code]) to the tips ([code]1.0[/code]).
@@ -421,7 +415,6 @@
 		</member>
 		<member name="limit_angle/value" type="float" setter="set_limit_angle" getter="get_limit_angle" default="0.0">
 			The maximum angle each bone can swing from the pose, in radians. Recommended values are between [code]0.5[/code] (30 degrees) and [code]1.3[/code] (75 degrees). [code]0.0[/code] disables it.
-			To see the limits, check [b]Show Limit Angle[/b] in the node's toolbar menu.
 		</member>
 		<member name="link_bending" type="float" setter="set_link_bending" getter="get_link_bending" default="0.0">
 			How strongly linked chains keep the bends between them as in the pose, from [code]0.0[/code] to [code]1.0[/code]. Keeps a skirt round when a leg pushes one of its chains. [code]0.0[/code] disables it.
@@ -442,7 +435,7 @@
 			How strongly the links hold neighboring chains together, from [code]0.0[/code] to [code]1.0[/code]. Recommended values are between [code]0.0[/code] and [code]0.5[/code]. At [code]0.0[/code], the links only collide.
 		</member>
 		<member name="local_movement_speed_limit" type="float" setter="set_local_movement_speed_limit" getter="get_local_movement_speed_limit" default="0.0">
-			The speed of the roots, in m/s, above which the chains move with them instead of swaying. Keeps long hair from flapping with every stride of a run. [code]3.0[/code] suits long hair. [code]0.0[/code] disables it.
+			The speed of the roots, in meters per second, above which the chains move with them instead of swaying. Keeps long hair from flapping with every stride of a run, and [code]3.0[/code] suits it. [code]0.0[/code] disables it.
 		</member>
 		<member name="local_rotation_speed_limit" type="float" setter="set_local_rotation_speed_limit" getter="get_local_rotation_speed_limit" default="0.0">
 			Like [member local_movement_speed_limit], for rotation, in radians per second. [code]6.283[/code] (360 degrees) suits long hair. [code]0.0[/code] disables it.
@@ -451,17 +444,16 @@
 			Scales [member max_distance/value] from the roots ([code]0.0[/code]) to the tips ([code]1.0[/code]).
 		</member>
 		<member name="max_distance/value" type="float" setter="set_max_distance" getter="get_max_distance" default="0.0">
-			How far, in meters, each joint can move from its pose. It keeps chains from flying off in fast moves, such as a dash or a sudden stop. [code]0.0[/code] disables it.
-			To see the limits, check [b]Show Max Distance[/b] in the node's toolbar menu.
+			How far, in meters, each joint can move from its pose. Keeps chains from flying off in a dash or a sudden stop. [code]0.0[/code] disables it.
 		</member>
 		<member name="max_steps_per_frame" type="int" setter="set_max_steps_per_frame" getter="get_max_steps_per_frame" default="4">
-			The most simulation steps one frame may run, from 1 up. A slow frame runs this many and drops the rest of its time, so one hitch does not slow the next frames. Lower it to cap the cost.
+			The most simulation steps one frame may run, from [code]1[/code] up. A slow frame runs this many and drops the rest of its time, so one hitch does not slow the next frames. Lower it to cap the cost.
 		</member>
 		<member name="movement_limit_stiffness" type="float" setter="set_movement_limit_stiffness" getter="get_movement_limit_stiffness" default="1.0">
 			How firmly [member max_distance/value] and the backstop hold, from [code]0.0[/code] to [code]1.0[/code]. Lower values let a joint pass the limit and come back over the next steps.
 		</member>
 		<member name="movement_speed_limit" type="float" setter="set_movement_speed_limit" getter="get_movement_speed_limit" default="5.0">
-			The character speed, in m/s, above which the cloth stops reacting to faster movement.
+			The character speed, in meters per second, above which the cloth stops reacting to faster movement.
 		</member>
 		<member name="radius/damping_curve" type="Curve" setter="set_radius_damping_curve" getter="get_radius_damping_curve">
 			Scales [member radius/value] from the roots ([code]0.0[/code]) to the tips ([code]1.0[/code]).
@@ -482,7 +474,7 @@
 			How much the root spring's strength wavers over time, from [code]0.0[/code] to [code]1.0[/code], differently in each chain. Keeps two breasts from bouncing in step. [code]0.0[/code] disables it.
 		</member>
 		<member name="root_spring_stiffness" type="float" setter="set_root_spring_stiffness" getter="get_root_spring_stiffness" default="0.0">
-			Lets the root bone sway too, for a part that moves as a lump, such as a breast. Lower values bounce longer. [code]0.0[/code] disables it.
+			Lets the root bone sway too, from [code]0.0[/code] to [code]1.0[/code], for a part that moves as a lump, such as a breast. Lower values bounce longer. [code]0.0[/code] disables it.
 		</member>
 		<member name="rotation_speed_limit" type="float" setter="set_rotation_speed_limit" getter="get_rotation_speed_limit" default="12.566371">
 			The character rotation speed, in radians per second, above which the cloth stops reacting to faster turns.
@@ -500,25 +492,22 @@
 			Scales [member stiffness/value] from the roots ([code]0.0[/code]) to the tips ([code]1.0[/code]).
 		</member>
 		<member name="stiffness/value" type="float" setter="set_stiffness" getter="get_stiffness" default="0.05">
-			How strongly the chains return to the pose, from [code]0.0[/code] to [code]1.0[/code]. Higher values swing less. Recommended values are between [code]0.05[/code] and [code]0.2[/code].
-			[b]Note:[/b] Values from [SpringBoneSimulator3D] do not carry over.
+			How strongly the chains return to the pose, from [code]0.0[/code] to [code]1.0[/code]. Higher values swing less. Recommended values are between [code]0.05[/code] and [code]0.2[/code], not those of [SpringBoneSimulator3D].
 		</member>
 		<member name="stiffness/velocity_damping" type="float" setter="set_stiffness_velocity_damping" getter="get_stiffness_velocity_damping" default="0.0">
 			Keeps the pull of [member stiffness/value] from building speed, from [code]0.0[/code] to [code]1.0[/code]. The chains return to the pose more slowly, without swinging past it. [code]0.0[/code] disables it.
 		</member>
 		<member name="sync/bone_count" type="int" setter="set_sync_bone_count" getter="get_sync_bone_count" default="0">
-			The number of sync bones. The chains turn from their roots as these bones swing, as a skirt follows the thighs so that the legs do not pass through it. Add both thighs for a skirt or a long coat.
-			Each chain follows each sync bone by where it hangs around the body: fully on the bone's side, a quarter at a right angle to it, not at all on the opposite side. A bone turning around its own length does not turn the chains.
-			A chain that already hangs from a sync bone, as VRoid hangs the front and back of a skirt from the thighs, follows that bone by [member sync/value] instead, so a lower value lets it hang down rather than lift with the leg. Add both thighs, and for a coat hanging from the shins both shins too.
+			The number of sync bones, such as both thighs for a skirt or a long coat. The chains on a bone's side turn from their roots as it swings, so the legs do not pass through the cloth. [code]0[/code] disables it.
 		</member>
 		<member name="sync/value" type="float" setter="set_sync" getter="get_sync" default="1.0">
-			How far the chains turn with the sync bones ([member sync/bone_count]), from [code]0.0[/code] to [code]1.0[/code]. At [code]1.0[/code], a chain on a bone's side turns as far as the bone swings, and a chain hanging from a bone moves with it as without sync bones. [code]0.7[/code] suits a skirt, [code]0.5[/code] a VRoid skirt.
+			How far the chains turn with the sync bones, from [code]0.0[/code] to [code]1.0[/code]. [code]0.7[/code] suits a skirt. A VRoid skirt hangs from the thighs and lifts less with them at lower values, and [code]0.5[/code] suits it.
 		</member>
 		<member name="teleport_angle" type="float" setter="set_teleport_angle" getter="get_teleport_angle" default="1.5707964">
-			A turn of the character larger than this in one frame, in radians, is a teleport, handled by [member teleport_mode].
+			A turn of the character larger than this in one frame, in radians, is a teleport, such as a snap to a new facing. [member teleport_mode] handles it. [code]0.0[/code] disables it.
 		</member>
 		<member name="teleport_distance" type="float" setter="set_teleport_distance" getter="get_teleport_distance" default="0.5">
-			A move of the character farther than this in one frame, in meters, is a teleport, handled by [member teleport_mode].
+			A move of the character farther than this in one frame, in meters, is a teleport, such as a respawn. [member teleport_mode] handles it. [code]0.0[/code] disables it.
 		</member>
 		<member name="teleport_mode" type="int" setter="set_teleport_mode" getter="get_teleport_mode" enum="BoneClothSimulator3D.TeleportMode" default="0">
 			What the cloth does after a teleport, see [member teleport_distance] and [member teleport_angle].
@@ -527,22 +516,22 @@
 			How close a joint may come to its chain's root, as a share of their distance in the pose, from [code]0.0[/code] to [code]1.0[/code]. Keeps tips from folding back toward the root on violent moves. [code]0.0[/code] disables it.
 		</member>
 		<member name="ticks_per_second" type="int" setter="set_ticks_per_second" getter="get_ticks_per_second" default="60">
-			How many simulation steps run each second. More steps follow fast moves more closely and cost more time, and fewer save time. The cloth hangs and swings about the same at any value.
+			How many simulation steps run each second, from [code]30[/code] up. More steps follow fast moves more closely and cost more time. The cloth hangs and swings about the same at any value.
 		</member>
 		<member name="wind_frequency" type="float" setter="set_wind_frequency" getter="get_wind_frequency" default="1.0">
-			How fast this simulator's chains waver in the wind, multiplied by [member BoneClothWind3D.frequency].
+			How fast this simulator's chains waver in the wind, from [code]0.0[/code] to [code]2.0[/code], multiplied by [member BoneClothWind3D.frequency].
 		</member>
 		<member name="wind_influence/damping_curve" type="Curve" setter="set_wind_influence_damping_curve" getter="get_wind_influence_damping_curve">
-			Scales [code]wind_influence/value[/code] along the chain, from the root (0) to the tip (1). Lower the start of the curve to keep the waist of a skirt or the roots of bangs steady.
+			Scales [member wind_influence/value] from the roots ([code]0.0[/code]) to the tips ([code]1.0[/code]). Lower its start to keep the waist of a skirt or the roots of bangs steady.
 		</member>
 		<member name="wind_influence/value" type="float" setter="set_wind_influence" getter="get_wind_influence" default="1.0">
-			How much wind this simulator receives. [code]0.0[/code] ignores wind. The root of a chain never receives wind.
+			How hard the wind pushes this simulator's chains, from [code]0.0[/code] up, as a multiple of [member BoneClothWind3D.strength]. Lower it for heavy cloth such as a coat. [code]0.0[/code] disables it.
 		</member>
 		<member name="wind_sync" type="float" setter="set_wind_sync" getter="get_wind_sync" default="0.7">
 			How closely neighboring chains move together in the wind. [code]1.0[/code] moves them as one, [code]0.0[/code] moves them separately.
 		</member>
 		<member name="wind_turbulence" type="float" setter="set_wind_turbulence" getter="get_wind_turbulence" default="1.0">
-			How much this simulator's chains waver in the wind, multiplied by [member BoneClothWind3D.turbulence].
+			How much this simulator's chains waver in the wind, from [code]0.0[/code] to [code]2.0[/code], multiplied by [member BoneClothWind3D.turbulence].
 		</member>
 	</members>
 	<constants>

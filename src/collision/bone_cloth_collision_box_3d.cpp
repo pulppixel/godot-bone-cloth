@@ -24,10 +24,10 @@ Vector3 BoneClothCollisionBox3D::get_size() const {
 	return size;
 }
 
-float BoneClothCollisionBox3D::_get_distance(const Transform3D &p_pose, const Vector3 &p_point, Vector3 &r_normal) const {
-	const Basis rotation = p_pose.basis.orthonormalized();
-	const Vector3 local = rotation.xform_inv(p_point - p_pose.origin);
-	const Vector3 over = local.abs() - size * 0.5f;
+static float get_box_distance(const Transform3D &p_frame, const Vector3 &p_half, const Vector3 &p_point, Vector3 &r_normal) {
+	const Basis &rotation = p_frame.basis;
+	const Vector3 local = rotation.xform_inv(p_point - p_frame.origin);
+	const Vector3 over = local.abs() - p_half;
 	if (over.x > 0.0f || over.y > 0.0f || over.z > 0.0f) {
 		const Vector3 outside(SIGN(local.x) * MAX(over.x, 0.0f), SIGN(local.y) * MAX(over.y, 0.0f), SIGN(local.z) * MAX(over.z, 0.0f));
 		const float distance = outside.length();
@@ -42,14 +42,20 @@ float BoneClothCollisionBox3D::_get_distance(const Transform3D &p_pose, const Ve
 	return over[axis];
 }
 
+static Transform3D get_box_frame(const Transform3D &p_pose) {
+	return Transform3D(p_pose.basis.orthonormalized(), p_pose.origin);
+}
+
 float BoneClothCollisionBox3D::_find_deepest(const Transform3D &p_pose, const Vector3 &p_a, const Vector3 &p_b, Vector3 &r_point, Vector3 &r_normal) const {
+	const Transform3D frame = get_box_frame(p_pose);
+	const Vector3 half = size * 0.5f * _get_scale(p_pose.basis);
 	float low = 0.0f;
 	float high = 1.0f;
 	Vector3 normal;
 	for (int i = 0; i < SEGMENT_SEARCH_STEPS; i++) {
 		const float left = high - (high - low) * GOLDEN_SHARE;
 		const float right = low + (high - low) * GOLDEN_SHARE;
-		if (_get_distance(p_pose, p_a.lerp(p_b, left), normal) < _get_distance(p_pose, p_a.lerp(p_b, right), normal)) {
+		if (get_box_distance(frame, half, p_a.lerp(p_b, left), normal) < get_box_distance(frame, half, p_a.lerp(p_b, right), normal)) {
 			high = right;
 		} else {
 			low = left;
@@ -57,12 +63,12 @@ float BoneClothCollisionBox3D::_find_deepest(const Transform3D &p_pose, const Ve
 	}
 
 	r_point = p_a.lerp(p_b, (low + high) * 0.5f);
-	return _get_distance(p_pose, r_point, r_normal);
+	return get_box_distance(frame, half, r_point, r_normal);
 }
 
 Vector3 BoneClothCollisionBox3D::_collide(const Transform3D &p_pose, const Vector3 &p_point, float p_radius) const {
 	Vector3 normal;
-	const float distance = _get_distance(p_pose, p_point, normal);
+	const float distance = get_box_distance(get_box_frame(p_pose), size * 0.5f * _get_scale(p_pose.basis), p_point, normal);
 	if (distance >= p_radius) {
 		return p_point;
 	}

@@ -37,6 +37,9 @@ protected:
 
 	static void _push_segment_out(Vector3 &r_a, Vector3 &r_b, const Vector3 &p_on_segment, const Vector3 &p_on_shape, float p_limit, const Vector3 &p_fallback);
 	static void _push_segment(Vector3 &r_a, Vector3 &r_b, const Vector3 &p_on_segment, const Vector3 &p_push);
+	static Vector3 _get_scale(const Basis &p_basis);
+	static PackedVector3Array _get_closest_points(const Vector3 &p_a, const Vector3 &p_b, const Vector3 &p_head, const Vector3 &p_tail);
+	static Vector3 _collide_sphere(const Vector3 &p_center, float p_radius, bool p_inside, const Vector3 &p_fallback, const Vector3 &p_point, float p_point_radius);
 
 	virtual Vector3 _collide(const Transform3D &p_pose, const Vector3 &p_point, float p_radius) const;
 	virtual void _collide_segment(const Transform3D &p_pose, Vector3 &r_a, Vector3 &r_b, float p_radius) const;

@@ -17,10 +17,7 @@ enum {
 	OPTION_EDIT_CHAINS,
 	OPTION_PRESETS,
 	OPTION_SAVE_PRESET,
-	OPTION_SHOW_RADIUS,
-	OPTION_SHOW_LIMIT_ANGLE,
-	OPTION_SHOW_MAX_DISTANCE,
-	OPTION_SHOW_BACKSTOP,
+	OPTION_SHOW,
 };
 
 void BoneClothSimulator3DMenu::_bind_methods() {
@@ -53,14 +50,10 @@ BoneClothSimulator3DMenu::BoneClothSimulator3DMenu() {
 	options->add_submenu_node_item("Presets", presets_menu, OPTION_PRESETS);
 	options->add_item("Save Preset...", OPTION_SAVE_PRESET);
 	options->add_separator();
-	options->add_check_item("Show Radius", OPTION_SHOW_RADIUS);
-	options->set_item_checked(options->get_item_index(OPTION_SHOW_RADIUS), EditorInterface::get_singleton()->get_editor_settings()->get_project_metadata("bone_cloth", "show_radius", true));
-	options->add_check_item("Show Limit Angle", OPTION_SHOW_LIMIT_ANGLE);
-	options->set_item_checked(options->get_item_index(OPTION_SHOW_LIMIT_ANGLE), EditorInterface::get_singleton()->get_editor_settings()->get_project_metadata("bone_cloth", "show_limit_angle", false));
-	options->add_check_item("Show Max Distance", OPTION_SHOW_MAX_DISTANCE);
-	options->set_item_checked(options->get_item_index(OPTION_SHOW_MAX_DISTANCE), EditorInterface::get_singleton()->get_editor_settings()->get_project_metadata("bone_cloth", "show_max_distance", false));
-	options->add_check_item("Show Backstop", OPTION_SHOW_BACKSTOP);
-	options->set_item_checked(options->get_item_index(OPTION_SHOW_BACKSTOP), EditorInterface::get_singleton()->get_editor_settings()->get_project_metadata("bone_cloth", "show_backstop", false));
+	for (int i = 0; i < SHOW_COUNT; i++) {
+		options->add_check_item(BONE_CLOTH_SHOW[i].label, OPTION_SHOW + i);
+		options->set_item_checked(options->get_item_index(OPTION_SHOW + i), is_bone_cloth_shown(BoneClothShow(i)));
+	}
 	options->connect("id_pressed", callable_mp(this, &BoneClothSimulator3DMenu::_on_option_pressed));
 
 	save_dialog = memnew(EditorFileDialog);
@@ -117,7 +110,7 @@ void BoneClothSimulator3DMenu::_fill_bones_tree(BoneClothSimulator3D *p_simulato
 	Skeleton3D *skeleton = p_simulator->get_skeleton();
 
 	PackedInt32Array roots;
-	PackedInt32Array in_chain;
+	in_chain.clear();
 	for (int i = 0; i < p_simulator->get_chain_count(); i++) {
 		const int root = skeleton->find_bone(p_simulator->get_root_bone_name(i));
 		if (root < 0) {
@@ -150,18 +143,18 @@ void BoneClothSimulator3DMenu::_fill_bones_tree(BoneClothSimulator3D *p_simulato
 	TreeItem *tree_root = bones_tree->create_item();
 	const PackedInt32Array top = skeleton->get_parentless_bones();
 	for (int i = 0; i < top.size(); i++) {
-		TreeItem *item = _add_bone_item(skeleton, top[i], tree_root, in_chain, locked, false);
+		TreeItem *item = _add_bone_item(skeleton, top[i], tree_root, locked, false);
 		item->set_collapsed(i > 0);
 	}
 }
 
-TreeItem *BoneClothSimulator3DMenu::_add_bone_item(Skeleton3D *p_skeleton, int p_bone, TreeItem *p_parent, const PackedInt32Array &p_in_chain, const PackedInt32Array &p_locked, bool p_covered) {
+TreeItem *BoneClothSimulator3DMenu::_add_bone_item(Skeleton3D *p_skeleton, int p_bone, TreeItem *p_parent, const PackedInt32Array &p_locked, bool p_covered) {
 	TreeItem *item = bones_tree->create_item(p_parent);
 	item->set_cell_mode(0, TreeItem::CELL_MODE_CHECK);
 	item->set_text(0, p_skeleton->get_bone_name(p_bone));
 	item->set_icon(0, EditorInterface::get_singleton()->get_editor_theme()->get_icon("Bone", "EditorIcons"));
 	item->set_metadata(0, p_bone);
-	item->set_checked(0, p_covered ? p_in_chain.has(p_bone) : top_roots.has(p_bone));
+	item->set_checked(0, p_covered ? in_chain.has(p_bone) : top_roots.has(p_bone));
 	item->set_editable(0, !p_covered && !p_locked.has(p_bone));
 	item->set_collapsed(true);
 
@@ -181,22 +174,22 @@ TreeItem *BoneClothSimulator3DMenu::_add_bone_item(Skeleton3D *p_skeleton, int p
 
 	const PackedInt32Array children = p_skeleton->get_bone_children(p_bone);
 	for (int child : children) {
-		_add_bone_item(p_skeleton, child, item, p_in_chain, p_locked, p_covered || item->is_checked(0));
+		_add_bone_item(p_skeleton, child, item, p_locked, p_covered || item->is_checked(0));
 	}
 	return item;
 }
 
-void BoneClothSimulator3DMenu::_set_covered(TreeItem *p_first, bool p_covered) {
+void BoneClothSimulator3DMenu::_set_covered(TreeItem *p_first, bool p_covered, bool p_as_saved) {
 	for (TreeItem *item = p_first; item; item = item->get_next()) {
-		item->set_checked(0, p_covered);
+		item->set_checked(0, p_covered && (!p_as_saved || in_chain.has(int(item->get_metadata(0)))));
 		item->set_editable(0, !p_covered);
-		_set_covered(item->get_first_child(), p_covered);
+		_set_covered(item->get_first_child(), p_covered, p_as_saved);
 	}
 }
 
 void BoneClothSimulator3DMenu::_on_bone_edited() {
 	TreeItem *item = bones_tree->get_edited();
-	_set_covered(item->get_first_child(), item->is_checked(0));
+	_set_covered(item->get_first_child(), item->is_checked(0), top_roots.has(int(item->get_metadata(0))));
 }
 
 static void add_chains_step(EditorUndoRedoManager *p_undo_redo, Object *p_simulator, const Array &p_chains, bool p_do) {
@@ -327,33 +320,20 @@ void BoneClothSimulator3DMenu::_on_preset_pressed(int p_id) {
 	undo_redo->commit_action();
 }
 
-static String get_show_setting(int p_id) {
-	switch (p_id) {
-		case OPTION_SHOW_RADIUS:
-			return "show_radius";
-		case OPTION_SHOW_LIMIT_ANGLE:
-			return "show_limit_angle";
-		case OPTION_SHOW_MAX_DISTANCE:
-			return "show_max_distance";
-		case OPTION_SHOW_BACKSTOP:
-			return "show_backstop";
-		default:
-			return String();
-	}
-}
-
 void BoneClothSimulator3DMenu::_on_option_pressed(int p_id) {
-	const String show_setting = get_show_setting(p_id);
-	if (!show_setting.is_empty()) {
+	BoneClothSimulator3D *simulator = Object::cast_to<BoneClothSimulator3D>(ObjectDB::get_instance(simulator_id));
+	if (p_id >= OPTION_SHOW) {
 		PopupMenu *options = get_popup();
 		const int index = options->get_item_index(p_id);
 		const bool show = !options->is_item_checked(index);
 		options->set_item_checked(index, show);
-		EditorInterface::get_singleton()->get_editor_settings()->set_project_metadata("bone_cloth", show_setting, show);
+		EditorInterface::get_singleton()->get_editor_settings()->set_project_metadata("bone_cloth", BONE_CLOTH_SHOW[p_id - OPTION_SHOW].key, show);
+		if (simulator) {
+			simulator->update_gizmos();
+		}
 		return;
 	}
 
-	BoneClothSimulator3D *simulator = Object::cast_to<BoneClothSimulator3D>(ObjectDB::get_instance(simulator_id));
 	ERR_FAIL_NULL(simulator);
 
 	if (p_id == OPTION_EDIT_CHAINS) {

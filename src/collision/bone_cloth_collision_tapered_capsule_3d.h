@@ -16,7 +16,7 @@ class BoneClothCollisionTaperedCapsule3D : public BoneClothCollision3D {
 	bool inside = false;
 
 	void _get_head_and_tail(const Transform3D &p_pose, Vector3 &r_head, Vector3 &r_tail) const;
-	void _get_nearest_sphere(const Vector3 &p_head, const Vector3 &p_tail, const Vector3 &p_point, Vector3 &r_center, float &r_radius) const;
+	void _get_nearest_sphere(const Transform3D &p_pose, const Vector3 &p_head, const Vector3 &p_tail, const Vector3 &p_point, Vector3 &r_center, float &r_radius) const;
 
 protected:
 	static void _bind_methods();

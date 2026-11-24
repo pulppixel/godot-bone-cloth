@@ -10,19 +10,19 @@
 	</tutorials>
 	<members>
 		<member name="direction_noise_angle" type="float" setter="set_direction_noise_angle" getter="get_direction_noise_angle" default="0.0">
-			How far the wind's direction drifts from the node's -Z axis. [code]0.0[/code] keeps the direction fixed.
+			How far, in radians, the wind's direction drifts from the node's -Z axis. A breeze then comes from slightly different sides over time. [code]0.0[/code] disables it.
 		</member>
 		<member name="direction_noise_period" type="float" setter="set_direction_noise_period" getter="get_direction_noise_period" default="5.0">
 			How long the direction takes to drift, in seconds.
 		</member>
 		<member name="frequency" type="float" setter="set_frequency" getter="get_frequency" default="1.0">
-			How fast the wind wavers. The rate also rises with [member strength].
+			How fast the wind wavers, from [code]0.0[/code] to [code]2.0[/code]. The rate also rises with [member strength].
 		</member>
 		<member name="strength" type="float" setter="set_strength" getter="get_strength" default="5.0">
-			How hard the wind pushes, as an acceleration. Each simulator scales it by its [code]wind_influence/value[/code].
+			How hard the wind pushes, in meters per second squared. Each simulator scales it by its [member BoneClothSimulator3D.wind_influence/value]. [code]0.0[/code] disables it.
 		</member>
 		<member name="turbulence" type="float" setter="set_turbulence" getter="get_turbulence" default="1.0">
-			How much the wind wavers in direction and strength. [code]0.0[/code] blows steadily, and a steady wind makes hair and clothes settle and hold still.
+			How much the wind wavers in direction and strength, from [code]0.0[/code] to [code]2.0[/code]. At [code]0.0[/code] the wind blows steadily, and hair and clothes settle and hold still.
 		</member>
 	</members>
 </class>

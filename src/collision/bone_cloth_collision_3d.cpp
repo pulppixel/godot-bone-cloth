@@ -4,6 +4,7 @@
 #include "bone_cloth_simulator_3d.h"
 
 #include <godot_cpp/classes/engine.hpp>
+#include <godot_cpp/classes/geometry3d.hpp>
 #include <godot_cpp/core/class_db.hpp>
 
 using namespace godot;
@@ -210,8 +211,10 @@ void BoneClothCollision3D::sync_pose() {
 	const Quaternion rotation = rest * rotation_offset;
 	const Vector3 mirrored_position(-position.x, position.y, position.z);
 	const Quaternion mirrored_rotation(rotation.x, -rotation.y, -rotation.z, rotation.w);
-	mirror_pose = get_pose_on_bone(skeleton, mirror_bone, mirror_rest.inverse().xform(mirrored_position), mirror_rest.inverse() * mirrored_rotation, units_per_meter);
-	mirror_rest_pose = get_pose_on_bone(skeleton, mirror_bone, mirror_rest.inverse().xform(mirrored_position), mirror_rest.inverse() * mirrored_rotation, units_per_meter, true);
+	const Vector3 mirror_offset = mirror_rest.inverse().xform(mirrored_position);
+	const Quaternion mirror_rotation = mirror_rest.inverse() * mirrored_rotation;
+	mirror_pose = get_pose_on_bone(skeleton, mirror_bone, mirror_offset, mirror_rotation, units_per_meter);
+	mirror_rest_pose = get_pose_on_bone(skeleton, mirror_bone, mirror_offset, mirror_rotation, units_per_meter, true);
 	update_gizmos();
 }
 
@@ -239,11 +242,16 @@ void BoneClothCollision3D::_take_offsets_from_transform() {
 void BoneClothCollision3D::collide_segment(Vector3 &r_a, Vector3 &r_b, float p_radius, bool p_mirror) const {
 	const float meters = 1.0f / units_per_meter;
 	const Transform3D &shape = p_mirror ? mirror_pose : pose;
-	r_a *= meters;
-	r_b *= meters;
-	_collide_segment(Transform3D(shape.basis * meters, shape.origin * meters), r_a, r_b, p_radius * meters);
-	r_a *= units_per_meter;
-	r_b *= units_per_meter;
+	const Vector3 a = r_a * meters;
+	const Vector3 b = r_b * meters;
+	Vector3 pushed_a = a;
+	Vector3 pushed_b = b;
+	_collide_segment(Transform3D(shape.basis * meters, shape.origin * meters), pushed_a, pushed_b, p_radius * meters);
+	// meters를 곱했다 되돌리면 float 오차가 생겨서, 닿지 않은 관절도 밀린 것으로 보인다.
+	if (pushed_a != a || pushed_b != b) {
+		r_a = pushed_a * units_per_meter;
+		r_b = pushed_b * units_per_meter;
+	}
 }
 
 float BoneClothCollision3D::get_rest_depth(const Vector3 &p_a, const Vector3 &p_b, float p_radius, bool p_mirror) const {
@@ -290,6 +298,51 @@ void BoneClothCollision3D::_push_segment_out(Vector3 &r_a, Vector3 &r_b, const V
 	const float distance = Math::sqrt(distance_squared);
 	const Vector3 direction = distance > CMP_EPSILON ? offset / distance : p_fallback;
 	_push_segment(r_a, r_b, p_on_segment, direction * (p_limit - distance));
+}
+
+// 회전만 있는 basis의 float 오차를 scale로 읽지 않도록, 1에 가까우면 1로 둔다.
+Vector3 BoneClothCollision3D::_get_scale(const Basis &p_basis) {
+	const Vector3 scale = p_basis.get_scale_abs();
+	return scale.is_equal_approx(Vector3(1, 1, 1)) ? Vector3(1, 1, 1) : scale;
+}
+
+PackedVector3Array BoneClothCollision3D::_get_closest_points(const Vector3 &p_a, const Vector3 &p_b, const Vector3 &p_head, const Vector3 &p_tail) {
+	const Vector3 segment = p_b - p_a;
+	const Vector3 axis = p_tail - p_head;
+	const float a = segment.dot(segment);
+	const float b = segment.dot(axis);
+	const float c = axis.dot(axis);
+	const float det = a * c - b * b;
+	// Geometry3D는 det를 고정값 1e-5 m^4와 비교해서, 짧은 마디와 짧은 캡슐은 직각으로 만나도 평행으로 본다.
+	if (det > CMP_EPSILON || det <= CMP_EPSILON * a * c) {
+		return Geometry3D::get_singleton()->get_closest_points_between_segments(p_a, p_b, p_head, p_tail);
+	}
+
+	const float scale = 1.0f / Math::sqrt(Math::sqrt(a * c));
+	PackedVector3Array closest = Geometry3D::get_singleton()->get_closest_points_between_segments(p_a * scale, p_b * scale, p_head * scale, p_tail * scale);
+	closest[0] /= scale;
+	closest[1] /= scale;
+	return closest;
+}
+
+Vector3 BoneClothCollision3D::_collide_sphere(const Vector3 &p_center, float p_radius, bool p_inside, const Vector3 &p_fallback, const Vector3 &p_point, float p_point_radius) {
+	const Vector3 offset = p_point - p_center;
+	const float distance_squared = offset.length_squared();
+	if (p_inside) {
+		const float limit = MAX(p_radius - p_point_radius, 0.0f);
+		if (distance_squared <= limit * limit) {
+			return p_point;
+		}
+		return p_center + offset / Math::sqrt(distance_squared) * limit;
+	}
+
+	const float limit = p_radius + p_point_radius;
+	if (distance_squared >= limit * limit) {
+		return p_point;
+	}
+
+	const Vector3 direction = distance_squared > CMP_EPSILON2 ? offset / Math::sqrt(distance_squared) : p_fallback;
+	return p_center + direction * limit;
 }
 
 void BoneClothCollision3D::_push_segment(Vector3 &r_a, Vector3 &r_b, const Vector3 &p_on_segment, const Vector3 &p_push) {

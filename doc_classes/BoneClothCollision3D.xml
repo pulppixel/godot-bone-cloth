@@ -5,7 +5,7 @@
 	</brief_description>
 	<description>
 		A collision works only as a child of [BoneClothSimulator3D], and pushes its chains out.
-		Set [member bone_name] to make the collision follow a bone. Moving or rotating the node then updates the offsets. On a bone, sizes are in meters, as the simulator's values are, and the node's scale is ignored. Without a bone, the node's own transform is used, scale included.
+		Set [member bone_name] to make the collision follow a bone. Moving or rotating the node then updates the offsets. On a bone, sizes are in meters, as the simulator's values are, and scale with the bone, not with the node. Without a bone, the node's own transform is used, scale included.
 	</description>
 	<tutorials>
 	</tutorials>

@@ -15,6 +15,7 @@ var passes := 0
 var failures := 0
 var _start_msec := 0
 var _delta := 0.0
+var expected_errors := 0
 var _errors := ErrorCount.new()
 
 
@@ -28,7 +29,9 @@ class ErrorCount extends Logger:
 
 	func _log_error(_function: String, file: String, line: int, code: String, rationale: String, _editor_notify: bool, error_type: int, _script_backtraces: Array[ScriptBacktrace]) -> void:
 		# 엔진 오류는 세지 않는다. headless 에디터는 Edit Chains 창을 띄울 때마다 화면 밖이라는 오류를 찍는다.
-		if error_type == ERROR_TYPE_WARNING or (error_type != ERROR_TYPE_SCRIPT and not file.contains("bone_cloth")):
+		# godot-cpp의 경고는 플러그인 계산에서 나온 NaN이나 0 벡터라서 센다.
+		var from_math := file.contains("godot_cpp")
+		if (error_type == ERROR_TYPE_WARNING and not from_math) or (error_type != ERROR_TYPE_SCRIPT and not file.contains("bone_cloth") and not from_math):
 			return
 		_mutex.lock()
 		if count == 0:
@@ -70,7 +73,7 @@ func _run() -> void:
 		await TestAddChains.run(self)
 		_finish()
 		return
-	
+
 	for frame in 3:
 		await process_frame
 		if absf(_delta - 1.0 / 60.0) > 1e-9:
@@ -130,6 +133,6 @@ func _remove(p_path: String) -> void:
 
 
 func _finish() -> void:
-	check(_errors.count == 0, "%d errors were printed during the run; the first: %s" % [_errors.count, _errors.first])
+	check(_errors.count == expected_errors, "%d errors were printed during the run, %d expected; the first: %s" % [_errors.count, expected_errors, _errors.first])
 	print("==== TESTS FINISHED ==== passes %d, failures %d" % [passes, failures])
 	quit(1 if failures > 0 else 0)
