@@ -4,24 +4,26 @@
 _data = [Vector2(0, 0.2), 0.0, 0.8000001, 1, 1, Vector2(1, 1), 0.8000001, 0.0, 1, 1]
 point_count = 2
 
-[sub_resource type="Curve" id="Curve_hair_spacing"]
+[sub_resource type="Curve" id="Curve_anr7p"]
 _data = [Vector2(0, 0), 0.0, 0.0, 0, 1, Vector2(0.5, 0), 0.0, 10.0, 1, 1, Vector2(0.6, 1), 10.0, 0.0, 1, 1, Vector2(1, 1), 0.0, 0.0, 1, 0]
 point_count = 4
 
 [resource]
-link_split = true
-link_spacing/value = 1.0
-link_spacing/damping_curve = SubResource("Curve_hair_spacing")
-drag/value = 0.2
 stiffness/value = 0.02
-radius/value = 0.035
-radius/rest_overlap = false
+stiffness/velocity_damping = 0.8
+drag/value = 0.2
+gravity/value = 5.0
 limit_angle/value = 1.3089969
 limit_angle/damping_curve = SubResource("Curve_6lddl")
 limit_angle/stiffness = 0.66
-gravity/value = 5.0
-centrifugal_acceleration = 0.1
+radius/value = 0.035
+radius/rest_overlap = false
+collision_friction = 0.05
+link_split = true
+link_spacing/value = 1.0
+link_spacing/damping_curve = SubResource("Curve_anr7p")
+wind_sync = 0.5
+centrifugal_acceleration = 0.4
 local_movement_speed_limit = 3.0
 local_rotation_speed_limit = 6.2831855
 joint_speed_limit = 3.0
-wind_sync = 0.5

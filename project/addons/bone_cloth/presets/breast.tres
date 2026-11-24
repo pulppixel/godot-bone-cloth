@@ -1,10 +1,11 @@
 [gd_resource type="BoneClothPreset" format=3 uid="uid://dsw23jn6w6gwe"]
 
 [resource]
-drag/value = 0.3
 stiffness/value = 0.25
-radius/value = 0.05
+drag/value = 0.3
 limit_angle/value = 0.5235988
+radius/value = 0.05
+wind_influence/value = 0.0
 joint_speed_limit = 0.0
 root_spring_stiffness = 0.15
-wind_influence/value = 0.0
+root_spring_noise = 0.5

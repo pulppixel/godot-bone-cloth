@@ -1,0 +1,23 @@
+[gd_resource type="BoneClothPreset" format=3 uid="uid://tnfm6bqhwk73"]
+
+[sub_resource type="Curve" id="Curve_gof18"]
+_data = [Vector2(0, 0.5), 0.0, 0.5, 1, 1, Vector2(1, 1), 0.5, 0.0, 1, 1]
+point_count = 2
+
+[sub_resource type="Curve" id="Curve_6316s"]
+_data = [Vector2(0, 0.5), 0.0, 0.0, 0, 0, Vector2(1, 1), 1.0, 0.0, 0, 0]
+point_count = 2
+
+[resource]
+stiffness/value = 0.15
+stiffness/velocity_damping = 0.8
+drag/value = 0.15
+limit_angle/value = 0.7853982
+limit_angle/damping_curve = SubResource("Curve_gof18")
+collision_friction = 0.1
+wind_influence/value = 2.0
+wind_influence/damping_curve = SubResource("Curve_6316s")
+wind_sync = 0.9
+depth_inertia = 0.7
+centrifugal_acceleration = 0.3
+movement_speed_limit = 4.0

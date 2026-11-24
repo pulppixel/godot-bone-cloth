@@ -1,0 +1,21 @@
+[gd_resource type="BoneClothPreset" format=3 uid="uid://bu2ciie1xsoem"]
+
+[sub_resource type="Curve" id="Curve_lwwta"]
+_data = [Vector2(0, 0.05), 0.0, 0.08333333, 1, 1, Vector2(0.6, 0.1), 0.08333333, 2.2500002, 1, 1, Vector2(1, 1), 2.2500002, 0.0, 1, 1]
+point_count = 3
+
+[sub_resource type="Curve" id="Curve_cpfed"]
+_limits = [0.0, 2.0, 0.0, 1.0]
+_data = [Vector2(0, 2), 0.0, -1.0, 1, 1, Vector2(1, 1), -1.0, 0.0, 1, 1]
+point_count = 2
+
+[resource]
+stiffness/value = 0.035
+stiffness/damping_curve = SubResource("Curve_cpfed")
+stiffness/velocity_damping = 0.7
+drag/value = 0.135
+limit_angle/value = 1.0471976
+limit_angle/damping_curve = SubResource("Curve_lwwta")
+radius/value = 0.02
+collision_friction = 0.05
+joint_speed_limit = 0.0

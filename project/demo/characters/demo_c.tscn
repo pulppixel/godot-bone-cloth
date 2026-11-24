@@ -33,20 +33,27 @@ point_count = 2
 _data = [Vector2(0, 0.05), 0.0, 0.08333333, 1, 1, Vector2(0.6, 0.1), 0.08333333, 2.2500002, 1, 1, Vector2(1, 1), 2.2500002, 0.0, 1, 1]
 point_count = 3
 
+[sub_resource type="Curve" id="Curve_hair_spacing"]
+_data = [Vector2(0, 0), 0.0, 0.0, 0, 1, Vector2(0.5, 0), 0.0, 10.0, 1, 1, Vector2(0.6, 1), 10.0, 0.0, 1, 1, Vector2(1, 1), 0.0, 0.0, 1, 0]
+point_count = 4
+
 [node name="demo_c" unique_id=234296301 instance=ExtResource("1_63s8f")]
 script = ExtResource("7_skin")
 
 [node name="Skirt" type="BoneClothSimulator3D" parent="GeneralSkeleton" parent_id_path=PackedInt32Array(688702054) index="3" unique_id=1533405991]
 link_mode = 2
+stiffness/velocity_damping = 0.7
 drag/value = 0.15
 limit_angle/value = 1.3089969
 limit_angle/damping_curve = SubResource("Curve_skirt_limit")
+collision_friction = 0.05
+link_bending = 0.5
 wind_influence/damping_curve = SubResource("Curve_wind_skirt")
-sync/value = 0.5
-sync/bone_count = 2
 depth_inertia = 0.7
 centrifugal_acceleration = 0.4
 movement_speed_limit = 4.0
+sync/value = 0.5
+sync/bone_count = 2
 chain_count = 30
 sync/bones/0/bone_name = "LeftUpperLeg"
 sync/bones/0/bone = 128
@@ -275,10 +282,12 @@ rotation_offset = Quaternion(0, 0, 0, 1)
 transform = Transform3D(-1, 0, 0, 0, -1, 0, 0, 0, 1, 0.08008866, 0.8556236, -0.00027204794)
 
 [node name="Coat" type="BoneClothSimulator3D" parent="GeneralSkeleton" parent_id_path=PackedInt32Array(688702054) index="4" unique_id=1591229449]
-drag/value = 0.15
 stiffness/value = 0.15
+stiffness/velocity_damping = 0.8
+drag/value = 0.15
 limit_angle/value = 0.7853982
 limit_angle/damping_curve = SubResource("Curve_skirt_limit")
+collision_friction = 0.1
 wind_influence/value = 2.0
 wind_influence/damping_curve = SubResource("Curve_wind_coat")
 wind_sync = 0.9
@@ -373,14 +382,19 @@ chains/11/exclude_collision_count = 0
 
 [node name="BackHair" type="BoneClothSimulator3D" parent="GeneralSkeleton" parent_id_path=PackedInt32Array(688702054) index="5" unique_id=1552933325]
 link_mode = 1
-link_split = true
-drag/value = 0.2
 stiffness/value = 0.02
-radius/value = 0.05
+stiffness/velocity_damping = 0.8
+drag/value = 0.2
+gravity/value = 5.0
 limit_angle/value = 1.3089969
 limit_angle/damping_curve = SubResource("Curve_hair_limit")
 limit_angle/stiffness = 0.66
-gravity/value = 5.0
+radius/value = 0.035
+radius/rest_overlap = false
+collision_friction = 0.05
+link_split = true
+link_spacing/value = 1.0
+link_spacing/damping_curve = SubResource("Curve_hair_spacing")
 wind_sync = 0.5
 centrifugal_acceleration = 0.4
 local_movement_speed_limit = 3.0
@@ -467,12 +481,14 @@ rotation_offset = Quaternion(0, 0, 0.70710677, 0.70710677)
 transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, 2.251064e-17, 1.1866916, -0.029484218)
 
 [node name="Bangs" type="BoneClothSimulator3D" parent="GeneralSkeleton" parent_id_path=PackedInt32Array(688702054) index="6" unique_id=1398568271]
-drag/value = 0.135
 stiffness/value = 0.035
 stiffness/damping_curve = SubResource("Curve_bangs_stiffness")
-radius/value = 0.02
+stiffness/velocity_damping = 0.7
+drag/value = 0.135
 limit_angle/value = 1.0471976
 limit_angle/damping_curve = SubResource("Curve_bangs_limit")
+radius/value = 0.02
+collision_friction = 0.05
 joint_speed_limit = 0.0
 chain_count = 7
 chains/0/root_bone_name = "J_Sec_Hair1_07"
@@ -548,13 +564,12 @@ rotation_offset = Quaternion(0, 0, 0, 1)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.3992775e-16, 1.6126678, -0.008631074)
 
 [node name="FoxTail" type="BoneClothSimulator3D" parent="GeneralSkeleton" parent_id_path=PackedInt32Array(688702054) index="7" unique_id=15198977]
-drag/value = 0.2
-stiffness/value = 0.1
-limit_angle/value = 0.7853982
+stiffness/value = 0.08
+stiffness/velocity_damping = 0.5
+drag/value = 0.12
+radius/value = 0.04
+collision_friction = 0.05
 wind_sync = 0.35
-local_movement_speed_limit = 3.0
-local_rotation_speed_limit = 6.2831855
-joint_speed_limit = 0.0
 chain_count = 1
 chains/0/root_bone_name = "J_Opt_C_FoxTail1_01"
 chains/0/root_bone = 244
@@ -565,14 +580,14 @@ chains/0/enable_all_child_collisions = true
 chains/0/exclude_collision_count = 0
 
 [node name="Bust" type="BoneClothSimulator3D" parent="GeneralSkeleton" parent_id_path=PackedInt32Array(688702054) index="8" unique_id=271177114]
-drag/value = 0.45
 stiffness/value = 0.25
-radius/value = 0.05
+drag/value = 0.3
 limit_angle/value = 0.5235988
+radius/value = 0.05
 wind_influence/value = 0.0
 joint_speed_limit = 0.0
-root_spring_stiffness = 0.45
-root_spring_limit = 0.02
+root_spring_stiffness = 0.15
+root_spring_noise = 0.5
 chain_count = 2
 chains/0/root_bone_name = "J_Sec_L_Bust1"
 chains/0/root_bone = 45

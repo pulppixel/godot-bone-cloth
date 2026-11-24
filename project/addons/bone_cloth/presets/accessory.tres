@@ -1,9 +1,11 @@
 [gd_resource type="BoneClothPreset" format=3 uid="uid://cexx36g80glfv"]
 
 [resource]
-drag/value = 0.2
 stiffness/value = 0.15
-radius/value = 0.015
+stiffness/velocity_damping = 0.6
+drag/value = 0.2
 limit_angle/value = 0.7853982
+radius/value = 0.015
+collision_friction = 0.05
 centrifugal_acceleration = 0.2
 joint_speed_limit = 0.0

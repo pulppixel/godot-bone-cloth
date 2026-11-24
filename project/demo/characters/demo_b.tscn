@@ -29,13 +29,14 @@ point_count = 3
 script = ExtResource("7_skin")
 
 [node name="Bust" type="BoneClothSimulator3D" parent="GeneralSkeleton" parent_id_path=PackedInt32Array(1274707729) index="3" unique_id=2001629724]
-drag/value = 0.3
 stiffness/value = 0.25
-radius/value = 0.05
+drag/value = 0.3
 limit_angle/value = 0.5235988
+radius/value = 0.05
+wind_influence/value = 0.0
 joint_speed_limit = 0.0
 root_spring_stiffness = 0.15
-wind_influence/value = 0.0
+root_spring_noise = 0.5
 chain_count = 2
 chains/0/root_bone_name = "J_Sec_L_Bust1"
 chains/0/root_bone = 5
@@ -54,21 +55,24 @@ chains/1/exclude_collision_count = 0
 
 [node name="BackHair" type="BoneClothSimulator3D" parent="GeneralSkeleton" parent_id_path=PackedInt32Array(1274707729) index="4" unique_id=1523706013]
 link_mode = 1
-link_split = true
-link_spacing/value = 1.0
-link_spacing/damping_curve = SubResource("Curve_hair_spacing")
-drag/value = 0.2
 stiffness/value = 0.02
-radius/value = 0.035
-radius/rest_overlap = false
+stiffness/velocity_damping = 0.8
+drag/value = 0.2
+gravity/value = 5.0
 limit_angle/value = 1.3089969
 limit_angle/damping_curve = SubResource("Curve_hair_limit")
 limit_angle/stiffness = 0.66
-gravity/value = 5.0
+radius/value = 0.035
+radius/rest_overlap = false
+collision_friction = 0.05
+link_split = true
+link_spacing/value = 1.0
+link_spacing/damping_curve = SubResource("Curve_hair_spacing")
+wind_sync = 0.5
+centrifugal_acceleration = 0.4
 local_movement_speed_limit = 3.0
 local_rotation_speed_limit = 6.2831855
 joint_speed_limit = 3.0
-wind_sync = 0.5
 chain_count = 6
 chains/0/root_bone_name = "J_Sec_Hair1_01"
 chains/0/root_bone = 13
@@ -124,7 +128,6 @@ chains/5/end_bone/direction = 6
 chains/5/end_bone/length = 0.1
 chains/5/enable_all_child_collisions = true
 chains/5/exclude_collision_count = 0
-centrifugal_acceleration = 0.4
 
 [node name="Head" type="BoneClothCollisionSphere3D" parent="GeneralSkeleton/BackHair" index="0" unique_id=620861061]
 radius = 0.093
@@ -201,18 +204,24 @@ rotation_offset = Quaternion(0, 0, 0, 1)
 transform = Transform3D(-1, -8.0019997e-17, -1.1218756e-17, -8.0019997e-17, 0.96144605, 0.2749936, -1.12187595e-17, 0.2749936, -0.96144605, 0.04625324, 1.2735289, 0.051913932)
 
 [node name="SideHair" type="BoneClothSimulator3D" parent="GeneralSkeleton" parent_id_path=PackedInt32Array(1274707729) index="5" unique_id=1487933093]
-drag/value = 0.2
 stiffness/value = 0.02
-radius/value = 0.035
-radius/rest_overlap = false
+stiffness/velocity_damping = 0.8
+drag/value = 0.2
+gravity/value = 5.0
 limit_angle/value = 1.3089969
 limit_angle/damping_curve = SubResource("Curve_hair_limit")
 limit_angle/stiffness = 0.66
-gravity/value = 5.0
+radius/value = 0.035
+radius/rest_overlap = false
+collision_friction = 0.05
+link_split = true
+link_spacing/value = 1.0
+link_spacing/damping_curve = SubResource("Curve_hair_spacing")
+wind_sync = 0.5
+centrifugal_acceleration = 0.4
 local_movement_speed_limit = 3.0
 local_rotation_speed_limit = 6.2831855
-joint_speed_limit = 0.0
-wind_sync = 0.5
+joint_speed_limit = 3.0
 chain_count = 2
 chains/0/root_bone_name = "J_Sec_Hair1_07"
 chains/0/root_bone = 50
@@ -232,7 +241,6 @@ chains/1/end_bone/direction = 6
 chains/1/end_bone/length = 0.1
 chains/1/enable_all_child_collisions = true
 chains/1/exclude_collision_count = 0
-centrifugal_acceleration = 0.4
 
 [node name="Head" type="BoneClothCollisionSphere3D" parent="GeneralSkeleton/SideHair" index="0" unique_id=264554078]
 radius = 0.093
@@ -309,12 +317,14 @@ rotation_offset = Quaternion(0, 0, 0, 1)
 transform = Transform3D(-1, -8.0019997e-17, -1.1218756e-17, -8.0019997e-17, 0.96144605, 0.2749936, -1.12187595e-17, 0.2749936, -0.96144605, 0.04625324, 1.2735289, 0.051913932)
 
 [node name="Bangs" type="BoneClothSimulator3D" parent="GeneralSkeleton" parent_id_path=PackedInt32Array(1274707729) index="6" unique_id=1036091408]
-drag/value = 0.135
 stiffness/value = 0.035
 stiffness/damping_curve = SubResource("Curve_bangs_stiffness")
-radius/value = 0.02
+stiffness/velocity_damping = 0.7
+drag/value = 0.135
 limit_angle/value = 1.0471976
 limit_angle/damping_curve = SubResource("Curve_bangs_limit")
+radius/value = 0.02
+collision_friction = 0.05
 joint_speed_limit = 0.0
 chain_count = 4
 chains/0/root_bone_name = "J_Sec_Hair1_09"

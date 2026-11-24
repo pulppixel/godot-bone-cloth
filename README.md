@@ -7,11 +7,14 @@ Bone-based cloth for Godot 4.7: hair, skirts, capes, tails and breasts that sway
 <img width="33%" alt="A skirt swinging as she stops" src="media/skirt.gif" /><img width="33%" alt="A tail whipping through a vault" src="media/tail_vault.gif" /><img width="33%" alt="Hair flowing over the shoulders" src="media/collision.gif" />
 </p>
 
-- Sphere, capsule and plane collisions keep cloth out of the body.
-- Chains can be linked for skirts and capes, and long hair can part over the shoulders.
+- Sphere, capsule, box and plane collisions keep cloth out of the body, and skirts can cling to the thighs (`collision_friction`).
+- Chains can be linked for skirts and capes, skirts keep their round shape (`link_bending`), and long hair can part over the shoulders.
 - A `BoneClothWind3D` node blows hair and clothes, and keeps them moving while the character stands still.
 - Hair and skirts flare out when the character spins (`centrifugal_acceleration`).
-- Eight presets to start from, editor gizmos, and docs in the editor (F1).
+- Cloth rides moving platforms without being thrown about (`anchor`).
+- Limits for wild moves: a max distance and a backstop, hinge and one-way bends, and a tether against folding.
+- Its own tick rate per node, culling by camera and distance, and a smooth start after a teleport or reset.
+- Ten presets to start from, editor gizmos, and docs in the editor (F1).
 
 ## Videos
 
