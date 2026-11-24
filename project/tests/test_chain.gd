@@ -36,6 +36,8 @@ const TICKS_TOLERANCE := 0.005 # m
 const STABILIZATION_RATIO := 0.5
 const CULLING_TOLERANCE := 0.00001 # m
 const BENDING_RATIO := 1.5
+const SHOCK_RATIO := 0.2
+const SHOCK_SNAP := 0.6 # rad
 const TIME_MONITOR := &"bone_cloth/time"
 const JOINTS_MONITOR := &"bone_cloth/joints"
 
@@ -122,6 +124,7 @@ class Rig:
 static func run(t) -> void:
 	await _frame_rate(t)
 	await _teleport(t)
+	await _teleport_reset(t)
 	await _limits_and_lengths(t)
 	await _soft_limit(t)
 	await _long_step(t)
@@ -132,8 +135,12 @@ static func run(t) -> void:
 	await _local_speed_limit(t)
 	await _local_rotation_limit(t)
 	await _centrifugal(t)
+	await _shock_propagation(t)
+	await _shock_threshold(t)
 	await _sync_bone(t)
 	await _sync_bone_above(t)
+	await _sync_bone_direction(t)
+	await _sync_bone_falloff(t)
 	await _squeeze(t)
 	await _rest_overlap(t)
 	await _rest_overlap_off(t)
@@ -143,6 +150,8 @@ static func run(t) -> void:
 	await _loop_order(t)
 	await _root_spring(t)
 	await _root_spring_forward(t)
+	await _root_spring_noise(t)
+	await _root_spring_ellipse(t)
 	await _wind(t)
 	await _wind_frame_rate(t)
 	await _wind_direction_noise(t)
@@ -390,6 +399,53 @@ static func _local_speed_limit(t) -> void:
 	t.check(offsets[0.1] < offsets[0.0] * LOCAL_SPEED_LIMIT_RATIO, "Local movement speed limit 0.1 m/s: the tip is %.4f m off its place, against %.4f m without the limit." % [offsets[0.1], offsets[0.0]])
 
 
+static func _root_spring_ellipse(t) -> void:
+	var rig := Rig.new(t)
+	rig.simulator.set("root_spring_stiffness", 0.15)
+	rig.simulator.set("root_spring_limit", ROOT_SPRING_LIMIT)
+	rig.simulator.set("root_spring_forward_limit", ROOT_SPRING_FORWARD_LIMIT)
+	var over := -INF
+	var tested := false
+	for frame in 240:
+		var time := float(frame + 1) / 60.0
+		rig.character.position = Vector3(sin(time * 9.0) * 0.3, sin(time * 12.0) * 0.1, 0)
+		await rig.advance(1.0 / 60.0)
+		if rig.poses.is_empty():
+			continue
+		var offset := rig.poses[0].origin
+		var side := minf(Vector2(offset.x, offset.z).length() / ROOT_SPRING_LIMIT, 1.0)
+		var along := -offset.y
+		over = maxf(over, along - ROOT_SPRING_FORWARD_LIMIT * sqrt(1.0 - side * side))
+		tested = tested or (side > 0.5 and along > 0.0)
+	rig.remove()
+
+	t.check(over < LENGTH_TOLERANCE, "Root spring forward limit: the root moves %.5f m past the ellipse along its bone." % over)
+	t.check(tested, "Root spring forward limit: the root never moved forward while far to the side, so the ellipse was not tested.")
+
+
+static func _root_spring_noise(t) -> void:
+	var paths := {}
+	var largest := 0.0
+	for noise in [0.0, 1.0]:
+		var rig := Rig.new(t)
+		rig.simulator.set("root_spring_stiffness", 0.15)
+		rig.simulator.set("root_spring_limit", ROOT_SPRING_LIMIT)
+		rig.simulator.set("root_spring_noise", noise)
+		paths[noise] = []
+		for frame in 120:
+			_move(rig, float(frame + 1) / 60.0)
+			await rig.advance(1.0 / 60.0)
+			paths[noise].append(rig.poses[0].origin)
+			largest = maxf(largest, rig.poses[0].origin.length())
+		rig.remove()
+
+	var apart := 0.0
+	for i in paths[0.0].size():
+		apart = maxf(apart, paths[0.0][i].distance_to(paths[1.0][i]))
+	t.check(apart > ROOT_SPRING_TOLERANCE, "Root spring noise 1: the root's path is at most %.5f m from the path without noise." % apart)
+	t.check(largest < ROOT_SPRING_LIMIT + LENGTH_TOLERANCE, "Root spring noise: the root moves up to %.4f m (limit %.2f m)." % [largest, ROOT_SPRING_LIMIT])
+
+
 static func _local_rotation_limit(t) -> void:
 	var offsets := {}
 	for limit in [0.0, 0.5]:
@@ -424,6 +480,60 @@ static func _centrifugal(t) -> void:
 		rig.remove()
 
 	t.check(reach[0.5] > reach[0.0] + SWING_MIN, "Centrifugal acceleration 0.5: the tip turns %.4f m from the axis, as without it (%.4f m)." % [reach[0.5], reach[0.0]])
+
+
+static func _teleport_reset(t) -> void:
+	var offsets := {}
+	for mode in [0, 1]:
+		var rig := Rig.new(t)
+		rig.simulator.set("gravity/value", 0.0)
+		rig.simulator.set("teleport_mode", mode)
+		for frame in 20:
+			_move(rig, float(frame + 1) / 60.0)
+			await rig.advance(1.0 / 60.0)
+		rig.character.position += Vector3(2, 0, 0)
+		for frame in 2:
+			await rig.advance(1.0 / 60.0)
+		offsets[mode] = rig.tip().distance_to(Vector3(0, -BONE_LENGTH * TIP, 0))
+		rig.remove()
+
+	t.check(offsets[1] < TELEPORT_TOLERANCE, "Teleport mode Reset: on the teleport frame the tip is %.6f m off its pose." % offsets[1])
+	t.check(offsets[0] > SWING_MIN, "Teleport mode Keep: on the teleport frame the tip is only %.6f m off its pose, so the swing was not kept." % offsets[0])
+
+
+static func _shock_propagation(t) -> void:
+	var offsets := {}
+	for value in [0.0, 1.0]:
+		var rig := Rig.new(t)
+		rig.simulator.set("gravity/value", 0.0)
+		rig.simulator.set("shock_propagation", value)
+		var sum := 0.0
+		for frame in 120:
+			rig.skeleton.set_bone_pose_rotation(0, Quaternion(Vector3.BACK, sin(float(frame + 1) / 60.0 * 12.0) * 0.3))
+			await rig.advance(1.0 / 60.0)
+			sum += rig.poses[TIP].origin.distance_to(rig.poses[0] * Vector3(0, -BONE_LENGTH * TIP, 0))
+		offsets[value] = sum / 120.0
+		rig.remove()
+
+	t.check(offsets[1.0] < offsets[0.0] * SHOCK_RATIO, "Shock propagation 1: the tip is %.5f m off its place, against %.5f m without it." % [offsets[1.0], offsets[0.0]])
+
+
+static func _shock_threshold(t) -> void:
+	var offsets := {}
+	for threshold in [0.0, 1000.0, 5.0]:
+		var rig := Rig.new(t)
+		rig.simulator.set("gravity/value", 0.0)
+		rig.simulator.set("shock_threshold", threshold)
+		for frame in 10:
+			await rig.advance(1.0 / 60.0)
+		rig.skeleton.set_bone_pose_rotation(0, Quaternion(Vector3.BACK, SHOCK_SNAP))
+		for frame in 2:
+			await rig.advance(1.0 / 60.0)
+		offsets[threshold] = rig.poses[TIP].origin.distance_to(rig.poses[0] * Vector3(0, -BONE_LENGTH * TIP, 0))
+		rig.remove()
+
+	t.check(offsets[5.0] < offsets[0.0] * SHOCK_RATIO, "Shock threshold 5 m/s^2: after a %.1f rad snap the tip is %.5f m off its place, against %.5f m without it." % [SHOCK_SNAP, offsets[5.0], offsets[0.0]])
+	t.check(is_equal_approx(offsets[1000.0], offsets[0.0]), "Shock threshold 1000 m/s^2: the snap passed it, the tip is %.5f m off against %.5f m." % [offsets[1000.0], offsets[0.0]])
 
 
 static func _sync_bone(t) -> void:
@@ -725,6 +835,57 @@ static func _loop_order(t) -> void:
 	skeleton.free()
 
 	t.check(nearest > 0.02, "Loop order: the link between two neighbors listed apart stays %.4f m from the sphere's center." % nearest)
+
+
+static func _sync_rig(t, p_turn: Quaternion) -> Rig:
+	var rig := Rig.new(t)
+	rig.skeleton.set_bone_rest(1, Transform3D(Basis(), Vector3(0, -BONE_LENGTH, 0.05)))
+	rig.skeleton.set_bone_pose(1, rig.skeleton.get_bone_rest(1))
+	var thigh := rig.skeleton.add_bone("thigh")
+	rig.skeleton.set_bone_parent(thigh, 0)
+	rig.skeleton.set_bone_rest(thigh, Transform3D(Basis(Vector3.BACK, PI), Vector3(0, 0, 0.05)))
+	rig.skeleton.set_bone_pose(thigh, rig.skeleton.get_bone_rest(thigh))
+	rig.skeleton.set_bone_pose_rotation(thigh, p_turn * Quaternion(Vector3.BACK, PI))
+	rig.simulator.set("gravity/value", 0.0)
+	rig.simulator.set("stiffness/value", 1.0)
+	rig.simulator.set("sync/bone_count", 1)
+	rig.simulator.set("sync/bones/0/bone_name", "thigh")
+	return rig
+
+
+static func _sync_bone_direction(t) -> void:
+	var rest := Vector3(0, -BONE_LENGTH, 0.05) + Vector3(0, -BONE_LENGTH * (TIP - 1), 0)
+	var cases := {
+		"positive z, tip to -z": [1, 0.5, Quaternion()],
+		"positive z, tip to +z": [1, -0.5, Quaternion(Vector3.RIGHT, -0.5)],
+		"negative z, tip to -z": [2, 0.5, Quaternion(Vector3.RIGHT, 0.5)],
+		"none z": [3, -0.5, Quaternion()],
+	}
+	for c in cases:
+		var rig := _sync_rig(t, Quaternion(Vector3.RIGHT, cases[c][1]))
+		rig.simulator.set("sync/bones/0/direction_z", cases[c][0])
+		for frame in 30:
+			await rig.advance(1.0 / 60.0)
+		var expected: Vector3 = cases[c][2] * rest
+		t.check(rig.tip().distance_to(expected) < SYNC_TOLERANCE, "Sync bone direction, %s: the chain end is %.5f m off the chain turned from its root." % [c, rig.tip().distance_to(expected)])
+		rig.remove()
+
+
+static func _sync_bone_falloff(t) -> void:
+	var swing := Quaternion(Vector3.RIGHT, 0.5)
+	var rig := _sync_rig(t, swing)
+	rig.simulator.set("sync/bones/0/falloff_inner", 0.15)
+	rig.simulator.set("sync/bones/0/falloff_outer", 0.25)
+	for frame in 30:
+		await rig.advance(1.0 / 60.0)
+	var expected := swing * Vector3(0, -BONE_LENGTH, 0.05) + Quaternion().slerp(swing, 0.5) * Vector3(0, -BONE_LENGTH, 0) + Vector3(0, -BONE_LENGTH * 2.0, 0)
+	t.check(rig.tip().distance_to(expected) < SYNC_TOLERANCE, "Sync bone falloff: the chain end is %.5f m off the chain bent by distance." % rig.tip().distance_to(expected))
+	var length := 0.0
+	for i in range(1, TIP + 1):
+		length += rig.poses[i].origin.distance_to(rig.poses[i - 1].origin)
+	var rest_length := Vector3(0, -BONE_LENGTH, 0.05).length() + BONE_LENGTH * (TIP - 1)
+	t.check(absf(length - rest_length) < LENGTH_TOLERANCE * 10.0, "Sync bone falloff: the chain is %.6f m long, at rest %.6f m." % [length, rest_length])
+	rig.remove()
 
 
 static func _root_spring(t) -> void:
@@ -1379,7 +1540,7 @@ static func _preset_round_trip(t) -> void:
 	for property in ClassDB.instantiate("BoneClothPreset").get_property_list():
 		if property.usage & PROPERTY_USAGE_EDITOR and not property.name in resource_names:
 			names.append(property.name)
-	t.check(names.size() == 53, "Preset round trip: the preset holds %d values." % names.size())
+	t.check(names.size() == 57, "Preset round trip: the preset holds %d values." % names.size())
 
 	var source: Node = ClassDB.instantiate("BoneClothSimulator3D")
 	var target: Node = ClassDB.instantiate("BoneClothSimulator3D")

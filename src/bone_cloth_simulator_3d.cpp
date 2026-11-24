@@ -140,6 +140,14 @@ void BoneClothSimulator3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_sync_bone_name", "index"), &BoneClothSimulator3D::get_sync_bone_name);
 	ClassDB::bind_method(D_METHOD("set_sync_bone", "index", "bone"), &BoneClothSimulator3D::set_sync_bone);
 	ClassDB::bind_method(D_METHOD("get_sync_bone", "index"), &BoneClothSimulator3D::get_sync_bone);
+	ClassDB::bind_method(D_METHOD("set_sync_bone_direction", "index", "axis", "direction"), &BoneClothSimulator3D::set_sync_bone_direction);
+	ClassDB::bind_method(D_METHOD("get_sync_bone_direction", "index", "axis"), &BoneClothSimulator3D::get_sync_bone_direction);
+	ClassDB::bind_method(D_METHOD("set_sync_bone_falloff_inner", "index", "radius"), &BoneClothSimulator3D::set_sync_bone_falloff_inner);
+	ClassDB::bind_method(D_METHOD("get_sync_bone_falloff_inner", "index"), &BoneClothSimulator3D::get_sync_bone_falloff_inner);
+	ClassDB::bind_method(D_METHOD("set_sync_bone_falloff_outer", "index", "radius"), &BoneClothSimulator3D::set_sync_bone_falloff_outer);
+	ClassDB::bind_method(D_METHOD("get_sync_bone_falloff_outer", "index"), &BoneClothSimulator3D::get_sync_bone_falloff_outer);
+	ClassDB::bind_method(D_METHOD("set_sync_bone_falloff_amount", "index", "amount"), &BoneClothSimulator3D::set_sync_bone_falloff_amount);
+	ClassDB::bind_method(D_METHOD("get_sync_bone_falloff_amount", "index"), &BoneClothSimulator3D::get_sync_bone_falloff_amount);
 	ClassDB::bind_method(D_METHOD("set_sync", "sync"), &BoneClothSimulator3D::set_sync);
 	ClassDB::bind_method(D_METHOD("get_sync"), &BoneClothSimulator3D::get_sync);
 
@@ -165,16 +173,24 @@ void BoneClothSimulator3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_rotation_speed_limit"), &BoneClothSimulator3D::get_rotation_speed_limit);
 	ClassDB::bind_method(D_METHOD("set_joint_speed_limit", "limit"), &BoneClothSimulator3D::set_joint_speed_limit);
 	ClassDB::bind_method(D_METHOD("get_joint_speed_limit"), &BoneClothSimulator3D::get_joint_speed_limit);
+	ClassDB::bind_method(D_METHOD("set_shock_propagation", "propagation"), &BoneClothSimulator3D::set_shock_propagation);
+	ClassDB::bind_method(D_METHOD("get_shock_propagation"), &BoneClothSimulator3D::get_shock_propagation);
+	ClassDB::bind_method(D_METHOD("set_shock_threshold", "threshold"), &BoneClothSimulator3D::set_shock_threshold);
+	ClassDB::bind_method(D_METHOD("get_shock_threshold"), &BoneClothSimulator3D::get_shock_threshold);
 	ClassDB::bind_method(D_METHOD("set_teleport_distance", "distance"), &BoneClothSimulator3D::set_teleport_distance);
 	ClassDB::bind_method(D_METHOD("get_teleport_distance"), &BoneClothSimulator3D::get_teleport_distance);
 	ClassDB::bind_method(D_METHOD("set_teleport_angle", "angle"), &BoneClothSimulator3D::set_teleport_angle);
 	ClassDB::bind_method(D_METHOD("get_teleport_angle"), &BoneClothSimulator3D::get_teleport_angle);
+	ClassDB::bind_method(D_METHOD("set_teleport_mode", "mode"), &BoneClothSimulator3D::set_teleport_mode);
+	ClassDB::bind_method(D_METHOD("get_teleport_mode"), &BoneClothSimulator3D::get_teleport_mode);
 	ClassDB::bind_method(D_METHOD("set_root_spring_stiffness", "stiffness"), &BoneClothSimulator3D::set_root_spring_stiffness);
 	ClassDB::bind_method(D_METHOD("get_root_spring_stiffness"), &BoneClothSimulator3D::get_root_spring_stiffness);
 	ClassDB::bind_method(D_METHOD("set_root_spring_limit", "limit"), &BoneClothSimulator3D::set_root_spring_limit);
 	ClassDB::bind_method(D_METHOD("get_root_spring_limit"), &BoneClothSimulator3D::get_root_spring_limit);
 	ClassDB::bind_method(D_METHOD("set_root_spring_forward_limit", "limit"), &BoneClothSimulator3D::set_root_spring_forward_limit);
 	ClassDB::bind_method(D_METHOD("get_root_spring_forward_limit"), &BoneClothSimulator3D::get_root_spring_forward_limit);
+	ClassDB::bind_method(D_METHOD("set_root_spring_noise", "noise"), &BoneClothSimulator3D::set_root_spring_noise);
+	ClassDB::bind_method(D_METHOD("get_root_spring_noise"), &BoneClothSimulator3D::get_root_spring_noise);
 	ClassDB::bind_method(D_METHOD("set_max_distance", "distance"), &BoneClothSimulator3D::set_max_distance);
 	ClassDB::bind_method(D_METHOD("get_max_distance"), &BoneClothSimulator3D::get_max_distance);
 	ClassDB::bind_method(D_METHOD("set_max_distance_damping_curve", "curve"), &BoneClothSimulator3D::set_max_distance_damping_curve);
@@ -258,13 +274,17 @@ void BoneClothSimulator3D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "movement_speed_limit", PROPERTY_HINT_RANGE, "0,20,0.01,or_greater,suffix:m/s"), "set_movement_speed_limit", "get_movement_speed_limit");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "rotation_speed_limit", PROPERTY_HINT_RANGE, "0,1440,0.1,radians_as_degrees,suffix:/s"), "set_rotation_speed_limit", "get_rotation_speed_limit");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "joint_speed_limit", PROPERTY_HINT_RANGE, "0,10,0.01,or_greater,suffix:m/s"), "set_joint_speed_limit", "get_joint_speed_limit");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "shock_propagation", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_shock_propagation", "get_shock_propagation");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "shock_threshold", PROPERTY_HINT_RANGE, "0,200,0.1,or_greater,suffix:m/s^2"), "set_shock_threshold", "get_shock_threshold");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "teleport_distance", PROPERTY_HINT_RANGE, "0,10,0.01,or_greater,suffix:m"), "set_teleport_distance", "get_teleport_distance");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "teleport_angle", PROPERTY_HINT_RANGE, "0,180,0.1,radians_as_degrees"), "set_teleport_angle", "get_teleport_angle");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "teleport_mode", PROPERTY_HINT_ENUM, "Keep,Reset"), "set_teleport_mode", "get_teleport_mode");
 
 	ADD_GROUP("Root Spring", "root_spring_");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "root_spring_stiffness", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_root_spring_stiffness", "get_root_spring_stiffness");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "root_spring_limit", PROPERTY_HINT_RANGE, "0,0.2,0.001,or_greater,suffix:m"), "set_root_spring_limit", "get_root_spring_limit");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "root_spring_forward_limit", PROPERTY_HINT_RANGE, "0,0.2,0.001,or_greater,suffix:m"), "set_root_spring_forward_limit", "get_root_spring_forward_limit");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "root_spring_noise", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_root_spring_noise", "get_root_spring_noise");
 
 	ADD_GROUP("Movement Limit", "");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "max_distance/value", PROPERTY_HINT_RANGE, "0,1,0.001,or_greater,suffix:m"), "set_max_distance", "get_max_distance");
@@ -301,6 +321,12 @@ void BoneClothSimulator3D::_bind_methods() {
 	BIND_ENUM_CONSTANT(CAMERA_CULLING_KEEP);
 	BIND_ENUM_CONSTANT(LIMIT_ANGLE_MODE_CONE);
 	BIND_ENUM_CONSTANT(LIMIT_ANGLE_MODE_PER_AXIS);
+	BIND_ENUM_CONSTANT(TELEPORT_MODE_KEEP);
+	BIND_ENUM_CONSTANT(TELEPORT_MODE_RESET);
+	BIND_ENUM_CONSTANT(SYNC_DIRECTION_BOTH);
+	BIND_ENUM_CONSTANT(SYNC_DIRECTION_POSITIVE);
+	BIND_ENUM_CONSTANT(SYNC_DIRECTION_NEGATIVE);
+	BIND_ENUM_CONSTANT(SYNC_DIRECTION_NONE);
 }
 
 void BoneClothSimulator3D::_notification(int p_what) {
@@ -328,6 +354,14 @@ bool BoneClothSimulator3D::_set(const StringName &p_name, const Variant &p_value
 			set_sync_bone_name(which, p_value);
 		} else if (what == "bone") {
 			set_sync_bone(which, p_value);
+		} else if (what.begins_with("direction_")) {
+			set_sync_bone_direction(which, Vector3::Axis(what.unicode_at(10) - 'x'), SyncDirection(int(p_value)));
+		} else if (what == "falloff_inner") {
+			set_sync_bone_falloff_inner(which, p_value);
+		} else if (what == "falloff_outer") {
+			set_sync_bone_falloff_outer(which, p_value);
+		} else if (what == "falloff_amount") {
+			set_sync_bone_falloff_amount(which, p_value);
 		} else {
 			return false;
 		}
@@ -390,6 +424,14 @@ bool BoneClothSimulator3D::_get(const StringName &p_name, Variant &r_ret) const 
 			r_ret = get_sync_bone_name(which);
 		} else if (what == "bone") {
 			r_ret = get_sync_bone(which);
+		} else if (what.begins_with("direction_")) {
+			r_ret = int(get_sync_bone_direction(which, Vector3::Axis(what.unicode_at(10) - 'x')));
+		} else if (what == "falloff_inner") {
+			r_ret = get_sync_bone_falloff_inner(which);
+		} else if (what == "falloff_outer") {
+			r_ret = get_sync_bone_falloff_outer(which);
+		} else if (what == "falloff_amount") {
+			r_ret = get_sync_bone_falloff_amount(which);
 		} else {
 			return false;
 		}
@@ -450,6 +492,13 @@ void BoneClothSimulator3D::_get_property_list(List<PropertyInfo> *p_list) const 
 		const String path = "sync/bones/" + itos(i) + "/";
 		p_list->push_back(PropertyInfo(Variant::STRING, path + String("bone_name"), hint, bone_names));
 		p_list->push_back(PropertyInfo(Variant::INT, path + String("bone"), PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR));
+		for (const String axis : { "x", "y", "z" }) {
+			p_list->push_back(PropertyInfo(Variant::INT, path + String("direction_") + axis, PROPERTY_HINT_ENUM, "Both,Positive,Negative,None"));
+		}
+		const uint32_t falloff_usage = sync_bones[i].falloff_outer > 0.0f ? PROPERTY_USAGE_DEFAULT : PROPERTY_USAGE_NO_EDITOR;
+		p_list->push_back(PropertyInfo(Variant::FLOAT, path + String("falloff_inner"), PROPERTY_HINT_RANGE, "0,1,0.001,or_greater,suffix:m", falloff_usage));
+		p_list->push_back(PropertyInfo(Variant::FLOAT, path + String("falloff_outer"), PROPERTY_HINT_RANGE, "0,1,0.001,or_greater,suffix:m"));
+		p_list->push_back(PropertyInfo(Variant::FLOAT, path + String("falloff_amount"), PROPERTY_HINT_RANGE, "0,1,0.001", falloff_usage));
 	}
 
 	for (uint32_t i = 0; i < chains.size(); i++) {
@@ -990,6 +1039,52 @@ int BoneClothSimulator3D::get_sync_bone(int p_index) const {
 	return sync_bones[p_index].bone;
 }
 
+void BoneClothSimulator3D::set_sync_bone_direction(int p_index, Vector3::Axis p_axis, SyncDirection p_direction) {
+	ERR_FAIL_INDEX(p_index, int(sync_bones.size()));
+	ERR_FAIL_INDEX(int(p_axis), 3);
+	sync_bones[p_index].directions[p_axis] = p_direction;
+}
+
+BoneClothSimulator3D::SyncDirection BoneClothSimulator3D::get_sync_bone_direction(int p_index, Vector3::Axis p_axis) const {
+	ERR_FAIL_INDEX_V(p_index, int(sync_bones.size()), SYNC_DIRECTION_BOTH);
+	ERR_FAIL_INDEX_V(int(p_axis), 3, SYNC_DIRECTION_BOTH);
+	return sync_bones[p_index].directions[p_axis];
+}
+
+void BoneClothSimulator3D::set_sync_bone_falloff_inner(int p_index, float p_radius) {
+	ERR_FAIL_INDEX(p_index, int(sync_bones.size()));
+	sync_bones[p_index].falloff_inner = p_radius;
+}
+
+float BoneClothSimulator3D::get_sync_bone_falloff_inner(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, int(sync_bones.size()), 0.0f);
+	return sync_bones[p_index].falloff_inner;
+}
+
+void BoneClothSimulator3D::set_sync_bone_falloff_outer(int p_index, float p_radius) {
+	ERR_FAIL_INDEX(p_index, int(sync_bones.size()));
+	const bool was_on = sync_bones[p_index].falloff_outer > 0.0f;
+	sync_bones[p_index].falloff_outer = p_radius;
+	if (was_on != (p_radius > 0.0f)) {
+		notify_property_list_changed();
+	}
+}
+
+float BoneClothSimulator3D::get_sync_bone_falloff_outer(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, int(sync_bones.size()), 0.0f);
+	return sync_bones[p_index].falloff_outer;
+}
+
+void BoneClothSimulator3D::set_sync_bone_falloff_amount(int p_index, float p_amount) {
+	ERR_FAIL_INDEX(p_index, int(sync_bones.size()));
+	sync_bones[p_index].falloff_amount = p_amount;
+}
+
+float BoneClothSimulator3D::get_sync_bone_falloff_amount(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, int(sync_bones.size()), 1.0f);
+	return sync_bones[p_index].falloff_amount;
+}
+
 void BoneClothSimulator3D::set_sync(float p_sync) {
 	sync = p_sync;
 }
@@ -1089,6 +1184,22 @@ float BoneClothSimulator3D::get_rotation_speed_limit() const {
 	return rotation_speed_limit;
 }
 
+void BoneClothSimulator3D::set_shock_propagation(float p_propagation) {
+	shock_propagation = p_propagation;
+}
+
+float BoneClothSimulator3D::get_shock_propagation() const {
+	return shock_propagation;
+}
+
+void BoneClothSimulator3D::set_shock_threshold(float p_threshold) {
+	shock_threshold = p_threshold;
+}
+
+float BoneClothSimulator3D::get_shock_threshold() const {
+	return shock_threshold;
+}
+
 void BoneClothSimulator3D::set_teleport_distance(float p_distance) {
 	teleport_distance = p_distance;
 }
@@ -1103,6 +1214,14 @@ void BoneClothSimulator3D::set_teleport_angle(float p_angle) {
 
 float BoneClothSimulator3D::get_teleport_angle() const {
 	return teleport_angle;
+}
+
+void BoneClothSimulator3D::set_teleport_mode(TeleportMode p_mode) {
+	teleport_mode = p_mode;
+}
+
+BoneClothSimulator3D::TeleportMode BoneClothSimulator3D::get_teleport_mode() const {
+	return teleport_mode;
 }
 
 void BoneClothSimulator3D::set_root_spring_stiffness(float p_stiffness) {
@@ -1127,6 +1246,14 @@ void BoneClothSimulator3D::set_root_spring_forward_limit(float p_limit) {
 
 float BoneClothSimulator3D::get_root_spring_forward_limit() const {
 	return root_spring_forward_limit;
+}
+
+void BoneClothSimulator3D::set_root_spring_noise(float p_noise) {
+	root_spring_noise = p_noise;
+}
+
+float BoneClothSimulator3D::get_root_spring_noise() const {
+	return root_spring_noise;
 }
 
 void BoneClothSimulator3D::set_max_distance(float p_distance) {
@@ -1445,6 +1572,9 @@ void BoneClothSimulator3D::_process_modification_with_delta(double p_delta) {
 
 	if (p_delta > 0.0) {
 		_follow_anchor();
+		if (teleport_mode == TELEPORT_MODE_RESET && _is_teleported(skeleton_transform)) {
+			_reset(skeleton_transform);
+		}
 		FrameMotion motion = _measure_motion(p_delta, skeleton_transform);
 		_run_steps(motion, collisions);
 		_settle_display(p_delta, motion, collisions);

@@ -123,6 +123,35 @@
 				Returns the bone index of the sync bone.
 			</description>
 		</method>
+		<method name="get_sync_bone_direction" qualifiers="const">
+			<return type="int" enum="BoneClothSimulator3D.SyncDirection" />
+			<param index="0" name="index" type="int" />
+			<param index="1" name="axis" type="int" enum="Vector3.Axis" />
+			<description>
+				Returns which way the chains follow the sync bone's swing along [param axis].
+			</description>
+		</method>
+		<method name="get_sync_bone_falloff_amount" qualifiers="const">
+			<return type="float" />
+			<param index="0" name="index" type="int" />
+			<description>
+				Returns how much less the joints past the outer radius follow the sync bone.
+			</description>
+		</method>
+		<method name="get_sync_bone_falloff_inner" qualifiers="const">
+			<return type="float" />
+			<param index="0" name="index" type="int" />
+			<description>
+				Returns the distance from the sync bone, in meters, within which joints follow it fully.
+			</description>
+		</method>
+		<method name="get_sync_bone_falloff_outer" qualifiers="const">
+			<return type="float" />
+			<param index="0" name="index" type="int" />
+			<description>
+				Returns the distance from the sync bone, in meters, past which joints follow it least.
+			</description>
+		</method>
 		<method name="get_sync_bone_name" qualifiers="const">
 			<return type="String" />
 			<param index="0" name="index" type="int" />
@@ -255,6 +284,39 @@
 			<param index="1" name="bone" type="int" />
 			<description>
 				Sets the bone index of the sync bone. [code]-1[/code] is no bone.
+			</description>
+		</method>
+		<method name="set_sync_bone_direction">
+			<return type="void" />
+			<param index="0" name="index" type="int" />
+			<param index="1" name="axis" type="int" enum="Vector3.Axis" />
+			<param index="2" name="direction" type="int" enum="BoneClothSimulator3D.SyncDirection" />
+			<description>
+				Sets which way the chains follow the sync bone's swing along one skeleton axis. On a character facing +Z, [constant SYNC_DIRECTION_POSITIVE] on Z lets a skirt follow a thigh forward but not back.
+			</description>
+		</method>
+		<method name="set_sync_bone_falloff_amount">
+			<return type="void" />
+			<param index="0" name="index" type="int" />
+			<param index="1" name="amount" type="float" />
+			<description>
+				Sets how much less the joints past [method set_sync_bone_falloff_outer] follow the sync bone, from [code]0.0[/code] to [code]1.0[/code]. At [code]1.0[/code], they do not follow it.
+			</description>
+		</method>
+		<method name="set_sync_bone_falloff_inner">
+			<return type="void" />
+			<param index="0" name="index" type="int" />
+			<param index="1" name="radius" type="float" />
+			<description>
+				Sets the distance from the sync bone, in meters, within which joints follow it fully. See [method set_sync_bone_falloff_outer].
+			</description>
+		</method>
+		<method name="set_sync_bone_falloff_outer">
+			<return type="void" />
+			<param index="0" name="index" type="int" />
+			<param index="1" name="radius" type="float" />
+			<description>
+				Sets the distance from the sync bone, in meters, past which joints follow it least. Lets the hem of a long skirt hang while its waist follows the thigh. [code]0.0[/code] disables the falloff.
 			</description>
 		</method>
 		<method name="set_sync_bone_name">
@@ -411,16 +473,25 @@
 			The radius of each joint against the collisions, in meters.
 		</member>
 		<member name="root_spring_forward_limit" type="float" setter="set_root_spring_forward_limit" getter="get_root_spring_forward_limit" default="0.005">
-			How far the root bone can move forward along its bone, in meters. Keeps a breast from stretching forward when the character stops.
+			How far the root bone can move forward along its bone, in meters, less as it moves to the side. Keeps a breast from stretching forward when the character stops.
 		</member>
 		<member name="root_spring_limit" type="float" setter="set_root_spring_limit" getter="get_root_spring_limit" default="0.04">
 			How far the root bone can move from the pose, in meters.
+		</member>
+		<member name="root_spring_noise" type="float" setter="set_root_spring_noise" getter="get_root_spring_noise" default="0.0">
+			How much the root spring's strength wavers over time, from [code]0.0[/code] to [code]1.0[/code], differently in each chain. Keeps two breasts from bouncing in step. [code]0.0[/code] disables it.
 		</member>
 		<member name="root_spring_stiffness" type="float" setter="set_root_spring_stiffness" getter="get_root_spring_stiffness" default="0.0">
 			Lets the root bone sway too, for a part that moves as a lump, such as a breast. Lower values bounce longer. [code]0.0[/code] disables it.
 		</member>
 		<member name="rotation_speed_limit" type="float" setter="set_rotation_speed_limit" getter="get_rotation_speed_limit" default="12.566371">
 			The character rotation speed, in radians per second, above which the cloth stops reacting to faster turns.
+		</member>
+		<member name="shock_propagation" type="float" setter="set_shock_propagation" getter="get_shock_propagation" default="0.0">
+			How much of its root's motion in the animation each chain takes at once, from [code]0.0[/code] to [code]1.0[/code]. Keeps hair from trailing far behind a quick head turn. [code]0.0[/code] disables it.
+		</member>
+		<member name="shock_threshold" type="float" setter="set_shock_threshold" getter="get_shock_threshold" default="0.0">
+			The acceleration of a chain's first bone, in meters per second squared, above which the chain moves with its root at once. Catches sudden jerks, not smooth motion. [code]0.0[/code] disables it.
 		</member>
 		<member name="stabilization_time" type="float" setter="set_stabilization_time" getter="get_stabilization_time" default="0.0">
 			How long, in seconds, the motion fades in from the animation after the simulation starts or resets. Hides the jolt when a character appears while running or turning. [code]0.0[/code] disables it.
@@ -444,10 +515,13 @@
 			How far the chains turn with the sync bones ([member sync/bone_count]), from [code]0.0[/code] to [code]1.0[/code]. At [code]1.0[/code], a chain on a bone's side turns as far as the bone swings, and a chain hanging from a bone moves with it as without sync bones. [code]0.7[/code] suits a skirt, [code]0.5[/code] a VRoid skirt.
 		</member>
 		<member name="teleport_angle" type="float" setter="set_teleport_angle" getter="get_teleport_angle" default="1.5707964">
-			A turn of the character larger than this in one frame, in radians, is a teleport, and the cloth ignores it.
+			A turn of the character larger than this in one frame, in radians, is a teleport, handled by [member teleport_mode].
 		</member>
 		<member name="teleport_distance" type="float" setter="set_teleport_distance" getter="get_teleport_distance" default="0.5">
-			A move of the character farther than this in one frame, in meters, is a teleport, and the cloth ignores it.
+			A move of the character farther than this in one frame, in meters, is a teleport, handled by [member teleport_mode].
+		</member>
+		<member name="teleport_mode" type="int" setter="set_teleport_mode" getter="get_teleport_mode" enum="BoneClothSimulator3D.TeleportMode" default="0">
+			What the cloth does after a teleport, see [member teleport_distance] and [member teleport_angle].
 		</member>
 		<member name="tether_limit" type="float" setter="set_tether_limit" getter="get_tether_limit" default="0.0">
 			How close a joint may come to its chain's root, as a share of their distance in the pose, from [code]0.0[/code] to [code]1.0[/code]. Keeps tips from folding back toward the root on violent moves. [code]0.0[/code] disables it.
@@ -495,6 +569,24 @@
 		</constant>
 		<constant name="LIMIT_ANGLE_MODE_PER_AXIS" value="1" enum="LimitAngleMode">
 			Each bone swings within [member limit_angle/lower] and [member limit_angle/upper] around the axes of its parent bone.
+		</constant>
+		<constant name="TELEPORT_MODE_KEEP" value="0" enum="TeleportMode">
+			The cloth ignores the teleport's motion and keeps swinging as before it.
+		</constant>
+		<constant name="TELEPORT_MODE_RESET" value="1" enum="TeleportMode">
+			The cloth starts again from the animation, as after [method reset].
+		</constant>
+		<constant name="SYNC_DIRECTION_BOTH" value="0" enum="SyncDirection">
+			The chains follow the sync bone's swing along the axis both ways.
+		</constant>
+		<constant name="SYNC_DIRECTION_POSITIVE" value="1" enum="SyncDirection">
+			The chains follow the swing only toward the positive side of the axis.
+		</constant>
+		<constant name="SYNC_DIRECTION_NEGATIVE" value="2" enum="SyncDirection">
+			The chains follow the swing only toward the negative side of the axis.
+		</constant>
+		<constant name="SYNC_DIRECTION_NONE" value="3" enum="SyncDirection">
+			The chains do not follow the swing along the axis.
 		</constant>
 	</constants>
 </class>

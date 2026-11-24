@@ -39,6 +39,18 @@ public:
 		LIMIT_ANGLE_MODE_PER_AXIS,
 	};
 
+	enum TeleportMode {
+		TELEPORT_MODE_KEEP,
+		TELEPORT_MODE_RESET,
+	};
+
+	enum SyncDirection {
+		SYNC_DIRECTION_BOTH,
+		SYNC_DIRECTION_POSITIVE,
+		SYNC_DIRECTION_NEGATIVE,
+		SYNC_DIRECTION_NONE,
+	};
+
 private:
 	struct Joint {
 		int bone = -1;
@@ -96,6 +108,10 @@ private:
 		LocalVector<float> sync_shares;
 		LocalVector<bool> sync_inherited;
 
+		Vector3 shock_root;
+		Vector3 shock_next;
+		Vector3 shock_next_before;
+
 		uint32_t wind_index = 0;
 
 		int parent_chain = -1;
@@ -111,6 +127,10 @@ private:
 	struct SyncBone {
 		String bone_name;
 		int bone = -1;
+		SyncDirection directions[3] = { SYNC_DIRECTION_BOTH, SYNC_DIRECTION_BOTH, SYNC_DIRECTION_BOTH };
+		float falloff_inner = 0.0f;
+		float falloff_outer = 0.0f;
+		float falloff_amount = 1.0f;
 	};
 
 	struct Link {
@@ -229,12 +249,16 @@ private:
 	float movement_speed_limit = 5.0f;
 	float rotation_speed_limit = Math::deg_to_rad(720.0f);
 	float joint_speed_limit = 4.0f;
+	float shock_propagation = 0.0f;
+	float shock_threshold = 0.0f;
 	float teleport_distance = 0.5f;
 	float teleport_angle = Math::deg_to_rad(90.0f);
+	TeleportMode teleport_mode = TELEPORT_MODE_KEEP;
 
 	float root_spring_stiffness = 0.0f;
 	float root_spring_limit = 0.04f;
 	float root_spring_forward_limit = 0.005f;
+	float root_spring_noise = 0.0f;
 
 	float max_distance = 0.0f;
 	Ref<Curve> max_distance_damping_curve;
@@ -304,15 +328,18 @@ private:
 	void _read_center(Skeleton3D *p_skeleton);
 	void _read_backstop_center(Skeleton3D *p_skeleton);
 	void _update_local_shares(StepMotion &r_step, const Vector3 &p_center, const Quaternion &p_center_rotation) const;
-	Quaternion _get_sync_swing(Skeleton3D *p_skeleton, int p_bone) const;
+	Quaternion _get_sync_swing(Skeleton3D *p_skeleton, const SyncBone &p_sync_bone) const;
+	Quaternion _get_sync_turn(const Chain &p_chain, const LocalVector<Quaternion> &p_swings, const LocalVector<Vector3> &p_origins, const Vector3 &p_location) const;
 	void _apply_sync(Skeleton3D *p_skeleton);
+	void _keep_shock_pose(Chain &r_chain);
+	void _propagate_shock();
 	void _step(const StepMotion &p_step, const LocalVector<PosedCollision> &p_collisions);
 	void _follow_parent_chain(Chain &p_chain);
 	void _tether(Chain &p_chain);
 	void _apply_friction();
 	Vector3 _get_centrifugal_push(const Joint &p_joint, const StepMotion &p_step, const Vector3 &p_velocity) const;
 	void _move_joint(Joint &r_joint, const StepMotion &p_step, const Vector3 &p_force);
-	void _move_root(Chain &r_chain, const StepMotion &p_step);
+	void _move_root(Chain &r_chain, uint32_t p_index, const StepMotion &p_step);
 	void _simulate(Chain &p_chain, const StepMotion &p_step);
 	Vector3 _get_wind_force(const Joint &p_joint, const Chain &p_chain, const StepMotion &p_step) const;
 	void _build_wind(Skeleton3D *p_skeleton);
@@ -335,6 +362,7 @@ private:
 	bool _is_on_screen(const Skeleton3D *p_skeleton, const Camera3D *p_camera) const;
 	void _reset(const Transform3D &p_skeleton_transform);
 	void _reset_motion(const Transform3D &p_skeleton_transform);
+	bool _is_teleported(const Transform3D &p_skeleton_transform) const;
 	void _gather_collisions(LocalVector<PosedCollision> &r_collisions) const;
 	void _follow_anchor();
 	FrameMotion _measure_motion(double p_delta, const Transform3D &p_skeleton_transform);
@@ -449,6 +477,14 @@ public:
 	String get_sync_bone_name(int p_index) const;
 	void set_sync_bone(int p_index, int p_bone);
 	int get_sync_bone(int p_index) const;
+	void set_sync_bone_direction(int p_index, Vector3::Axis p_axis, SyncDirection p_direction);
+	SyncDirection get_sync_bone_direction(int p_index, Vector3::Axis p_axis) const;
+	void set_sync_bone_falloff_inner(int p_index, float p_radius);
+	float get_sync_bone_falloff_inner(int p_index) const;
+	void set_sync_bone_falloff_outer(int p_index, float p_radius);
+	float get_sync_bone_falloff_outer(int p_index) const;
+	void set_sync_bone_falloff_amount(int p_index, float p_amount);
+	float get_sync_bone_falloff_amount(int p_index) const;
 	void set_sync(float p_sync);
 	float get_sync() const;
 	void set_anchor(const NodePath &p_anchor);
@@ -473,16 +509,24 @@ public:
 	float get_rotation_speed_limit() const;
 	void set_joint_speed_limit(float p_limit);
 	float get_joint_speed_limit() const;
+	void set_shock_propagation(float p_propagation);
+	float get_shock_propagation() const;
+	void set_shock_threshold(float p_threshold);
+	float get_shock_threshold() const;
 	void set_teleport_distance(float p_distance);
 	float get_teleport_distance() const;
 	void set_teleport_angle(float p_angle);
 	float get_teleport_angle() const;
+	void set_teleport_mode(TeleportMode p_mode);
+	TeleportMode get_teleport_mode() const;
 	void set_root_spring_stiffness(float p_stiffness);
 	float get_root_spring_stiffness() const;
 	void set_root_spring_limit(float p_limit);
 	float get_root_spring_limit() const;
 	void set_root_spring_forward_limit(float p_limit);
 	float get_root_spring_forward_limit() const;
+	void set_root_spring_noise(float p_noise);
+	float get_root_spring_noise() const;
 	void set_max_distance(float p_distance);
 	float get_max_distance() const;
 	void set_max_distance_damping_curve(const Ref<Curve> &p_curve);
@@ -531,3 +575,5 @@ public:
 VARIANT_ENUM_CAST(BoneClothSimulator3D::LinkMode);
 VARIANT_ENUM_CAST(BoneClothSimulator3D::CameraCulling);
 VARIANT_ENUM_CAST(BoneClothSimulator3D::LimitAngleMode);
+VARIANT_ENUM_CAST(BoneClothSimulator3D::TeleportMode);
+VARIANT_ENUM_CAST(BoneClothSimulator3D::SyncDirection);
