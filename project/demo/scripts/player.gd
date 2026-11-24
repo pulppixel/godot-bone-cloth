@@ -14,6 +14,7 @@ const STRAFE_SPEEDS: Array[float] = [1.064, 1.064, 0.761, 1.143, 1.143, 1.143, 0
 
 const RUN := 7.65
 const STOP_SPEED := 0.2
+const STRAFE_SMOOTH := 10.0
 const SHARP_TURN := deg_to_rad(140.0)
 const SPEED_SLACK := 0.01
 
@@ -316,10 +317,7 @@ func _strafe(direction: Vector3, delta: float) -> void:
 	var to_skin := Basis(Vector3.UP, -_skin.rotation.y)
 	var wanted := to_skin * direction
 	var top_speed := _strafe_speed(atan2(-wanted.x, wanted.z)) * _scale
-	var flat := Vector3(velocity.x, 0.0, velocity.z)
-	var target := direction * top_speed
-	var change := acceleration if target.length() >= flat.length() else deceleration
-	flat = flat.move_toward(target, change * delta)
+	var flat := Vector3(velocity.x, 0.0, velocity.z).lerp(direction * top_speed, 1.0 - exp(-STRAFE_SMOOTH * delta))
 	velocity = Vector3(flat.x, velocity.y if not is_on_floor() else 0.0, flat.z)
 	if not _airborne() and is_on_floor() and Input.is_action_just_pressed("jump"):
 		velocity.y = sqrt(2.0 * _gravity * jump_height)
@@ -334,7 +332,7 @@ func _strafe(direction: Vector3, delta: float) -> void:
 	var moving := to_skin * flat
 	var at := Vector2(-moving.x, moving.z) / (_strafe_speed(atan2(-moving.x, moving.z)) * _scale)
 	_character.set_strafe(at)
-	_enter(Anim.STRAFE if at.length() > STOP_SPEED else Anim.IDLE)
+	_enter(Anim.STRAFE)
 
 
 func _strafe_speed(angle: float) -> float:
