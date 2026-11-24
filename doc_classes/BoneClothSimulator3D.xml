@@ -293,6 +293,9 @@
 		<member name="backstop/radius" type="float" setter="set_backstop_radius" getter="get_backstop_radius" default="10.0">
 			The radius, in meters, of the wall behind each joint. The default [code]10.0[/code] is almost flat, and smaller values curve it. [code]0.0[/code] disables the backstop.
 		</member>
+		<member name="camera_culling" type="int" setter="set_camera_culling" getter="get_camera_culling" enum="BoneClothSimulator3D.CameraCulling" default="0">
+			Stops the simulation while this node's bones are outside the camera view. Saves the cost of characters the camera does not see. [constant CAMERA_CULLING_OFF] disables it.
+		</member>
 		<member name="centrifugal_acceleration" type="float" setter="set_centrifugal_acceleration" getter="get_centrifugal_acceleration" default="0.0">
 			How far the chains swing outward while the character turns, from [code]0.0[/code] to [code]1.0[/code]. A skirt flares in a spin, and long hair fans out. Joints near the roots are pushed harder, and only while the turn pulls the chain along. [code]0.3[/code] suits skirts. [code]0.0[/code] disables it.
 		</member>
@@ -304,6 +307,12 @@
 		</member>
 		<member name="depth_inertia" type="float" setter="set_depth_inertia" getter="get_depth_inertia" default="0.0">
 			How steady the part near the roots stays while the character moves, from [code]0.0[/code] to [code]1.0[/code]. The tips still sway. Raise it to keep a skirt's waist steady while its hem swings.
+		</member>
+		<member name="distance_culling" type="float" setter="set_distance_culling" getter="get_distance_culling" default="0.0">
+			Stops the simulation while the camera is farther than this from the skeleton, in meters, and starts it again from the animation when it comes back. Saves the cost of crowds and distant characters. [code]0.0[/code] disables it.
+		</member>
+		<member name="distance_culling_fade" type="float" setter="set_distance_culling_fade" getter="get_distance_culling_fade" default="0.0">
+			Share of [member distance_culling], from 0.0 to 1.0, over which the motion fades into the animation before it stops. Keeps hair and skirts from snapping still at the cut. [code]0.0[/code] disables it.
 		</member>
 		<member name="drag/damping_curve" type="Curve" setter="set_drag_damping_curve" getter="get_drag_damping_curve">
 			Scales [member drag/value] from the roots ([code]0.0[/code]) to the tips ([code]1.0[/code]).
@@ -371,6 +380,9 @@
 			How far, in meters, each joint can move from its pose. It keeps chains from flying off in fast moves, such as a dash or a sudden stop. [code]0.0[/code] disables it.
 			To see the limits, check [b]Show Max Distance[/b] in the node's toolbar menu.
 		</member>
+		<member name="max_steps_per_frame" type="int" setter="set_max_steps_per_frame" getter="get_max_steps_per_frame" default="4">
+			The most simulation steps one frame may run, from 1 up. A slow frame runs this many and drops the rest of its time, so one hitch does not slow the next frames. Lower it to cap the cost.
+		</member>
 		<member name="movement_limit_stiffness" type="float" setter="set_movement_limit_stiffness" getter="get_movement_limit_stiffness" default="1.0">
 			How firmly [member max_distance/value] and the backstop hold, from [code]0.0[/code] to [code]1.0[/code]. Lower values let a joint pass the limit and come back over the next steps.
 		</member>
@@ -397,6 +409,9 @@
 		</member>
 		<member name="rotation_speed_limit" type="float" setter="set_rotation_speed_limit" getter="get_rotation_speed_limit" default="12.566371">
 			The character rotation speed, in radians per second, above which the cloth stops reacting to faster turns.
+		</member>
+		<member name="stabilization_time" type="float" setter="set_stabilization_time" getter="get_stabilization_time" default="0.0">
+			How long, in seconds, the motion fades in from the animation after the simulation starts or resets. Hides the jolt when a character appears while running or turning. [code]0.0[/code] disables it.
 		</member>
 		<member name="stiffness/damping_curve" type="Curve" setter="set_stiffness_damping_curve" getter="get_stiffness_damping_curve">
 			Scales [member stiffness/value] from the roots ([code]0.0[/code]) to the tips ([code]1.0[/code]).
@@ -425,6 +440,9 @@
 		<member name="tether_limit" type="float" setter="set_tether_limit" getter="get_tether_limit" default="0.0">
 			How close a joint may come to its chain's root, as a share of their distance in the pose, from [code]0.0[/code] to [code]1.0[/code]. Keeps tips from folding back toward the root on violent moves. [code]0.0[/code] disables it.
 		</member>
+		<member name="ticks_per_second" type="int" setter="set_ticks_per_second" getter="get_ticks_per_second" default="60">
+			How many simulation steps run each second. More steps follow fast moves more closely and cost more time, and fewer save time. The cloth hangs and swings about the same at any value.
+		</member>
 		<member name="wind_frequency" type="float" setter="set_wind_frequency" getter="get_wind_frequency" default="1.0">
 			How fast this simulator's chains waver in the wind, multiplied by [member BoneClothWind3D.frequency].
 		</member>
@@ -450,6 +468,15 @@
 		</constant>
 		<constant name="LINK_MODE_LOOP" value="2" enum="LinkMode">
 			The chains are linked all around, in their order around the direction they hang, whatever their list order. For a skirt all around.
+		</constant>
+		<constant name="CAMERA_CULLING_OFF" value="0" enum="CameraCulling">
+			The simulation runs whether its bones are on screen or not.
+		</constant>
+		<constant name="CAMERA_CULLING_RESET" value="1" enum="CameraCulling">
+			Off screen the simulation stops, and starts again from the animation when the bones come back into view.
+		</constant>
+		<constant name="CAMERA_CULLING_KEEP" value="2" enum="CameraCulling">
+			Off screen the simulation stops, and carries on where it stopped when the bones come back into view.
 		</constant>
 	</constants>
 </class>

@@ -187,6 +187,18 @@ void BoneClothSimulator3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_movement_limit_stiffness"), &BoneClothSimulator3D::get_movement_limit_stiffness);
 	ClassDB::bind_method(D_METHOD("set_tether_limit", "limit"), &BoneClothSimulator3D::set_tether_limit);
 	ClassDB::bind_method(D_METHOD("get_tether_limit"), &BoneClothSimulator3D::get_tether_limit);
+	ClassDB::bind_method(D_METHOD("set_ticks_per_second", "ticks"), &BoneClothSimulator3D::set_ticks_per_second);
+	ClassDB::bind_method(D_METHOD("get_ticks_per_second"), &BoneClothSimulator3D::get_ticks_per_second);
+	ClassDB::bind_method(D_METHOD("set_max_steps_per_frame", "steps"), &BoneClothSimulator3D::set_max_steps_per_frame);
+	ClassDB::bind_method(D_METHOD("get_max_steps_per_frame"), &BoneClothSimulator3D::get_max_steps_per_frame);
+	ClassDB::bind_method(D_METHOD("set_stabilization_time", "seconds"), &BoneClothSimulator3D::set_stabilization_time);
+	ClassDB::bind_method(D_METHOD("get_stabilization_time"), &BoneClothSimulator3D::get_stabilization_time);
+	ClassDB::bind_method(D_METHOD("set_camera_culling", "mode"), &BoneClothSimulator3D::set_camera_culling);
+	ClassDB::bind_method(D_METHOD("get_camera_culling"), &BoneClothSimulator3D::get_camera_culling);
+	ClassDB::bind_method(D_METHOD("set_distance_culling", "distance"), &BoneClothSimulator3D::set_distance_culling);
+	ClassDB::bind_method(D_METHOD("get_distance_culling"), &BoneClothSimulator3D::get_distance_culling);
+	ClassDB::bind_method(D_METHOD("set_distance_culling_fade", "fade"), &BoneClothSimulator3D::set_distance_culling_fade);
+	ClassDB::bind_method(D_METHOD("get_distance_culling_fade"), &BoneClothSimulator3D::get_distance_culling_fade);
 
 	ClassDB::bind_method(D_METHOD("reset"), &BoneClothSimulator3D::reset);
 
@@ -254,6 +266,16 @@ void BoneClothSimulator3D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "movement_limit_stiffness", PROPERTY_HINT_RANGE, "0,1,0.01"), "set_movement_limit_stiffness", "get_movement_limit_stiffness");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "tether_limit", PROPERTY_HINT_RANGE, "0,1,0.01"), "set_tether_limit", "get_tether_limit");
 
+	ADD_GROUP("Simulation", "");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "ticks_per_second", PROPERTY_HINT_RANGE, "30,150,1,or_greater"), "set_ticks_per_second", "get_ticks_per_second");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "max_steps_per_frame", PROPERTY_HINT_RANGE, "1,8,1,or_greater"), "set_max_steps_per_frame", "get_max_steps_per_frame");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "stabilization_time", PROPERTY_HINT_RANGE, "0,1,0.01,or_greater,suffix:s"), "set_stabilization_time", "get_stabilization_time");
+
+	ADD_GROUP("Culling", "");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "camera_culling", PROPERTY_HINT_ENUM, "Off,Reset,Keep"), "set_camera_culling", "get_camera_culling");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "distance_culling", PROPERTY_HINT_RANGE, "0,100,0.1,or_greater,suffix:m"), "set_distance_culling", "get_distance_culling");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "distance_culling_fade", PROPERTY_HINT_RANGE, "0,1,0.01"), "set_distance_culling_fade", "get_distance_culling_fade");
+
 	ADD_GROUP("", "");
 
 	// godot-cpp에는 ADD_ARRAY_COUNT가 없어서 PROPERTY_USAGE_ARRAY로 대신한다.
@@ -262,6 +284,9 @@ void BoneClothSimulator3D::_bind_methods() {
 	BIND_ENUM_CONSTANT(LINK_MODE_NONE);
 	BIND_ENUM_CONSTANT(LINK_MODE_SEQUENTIAL);
 	BIND_ENUM_CONSTANT(LINK_MODE_LOOP);
+	BIND_ENUM_CONSTANT(CAMERA_CULLING_OFF);
+	BIND_ENUM_CONSTANT(CAMERA_CULLING_RESET);
+	BIND_ENUM_CONSTANT(CAMERA_CULLING_KEEP);
 }
 
 void BoneClothSimulator3D::_notification(int p_what) {
@@ -1141,6 +1166,57 @@ float BoneClothSimulator3D::get_tether_limit() const {
 	return tether_limit;
 }
 
+void BoneClothSimulator3D::set_ticks_per_second(int p_ticks) {
+	ticks_per_second = MAX(p_ticks, 1);
+	step_seconds = 1.0 / ticks_per_second;
+	step_scale = 60.0f / ticks_per_second;
+	step_time = 0.0;
+}
+
+int BoneClothSimulator3D::get_ticks_per_second() const {
+	return ticks_per_second;
+}
+
+void BoneClothSimulator3D::set_max_steps_per_frame(int p_steps) {
+	max_steps_per_frame = MAX(p_steps, 1);
+}
+
+int BoneClothSimulator3D::get_max_steps_per_frame() const {
+	return max_steps_per_frame;
+}
+
+void BoneClothSimulator3D::set_stabilization_time(float p_seconds) {
+	stabilization_time = MAX(p_seconds, 0.0f);
+}
+
+float BoneClothSimulator3D::get_stabilization_time() const {
+	return stabilization_time;
+}
+
+void BoneClothSimulator3D::set_camera_culling(CameraCulling p_mode) {
+	camera_culling = p_mode;
+}
+
+BoneClothSimulator3D::CameraCulling BoneClothSimulator3D::get_camera_culling() const {
+	return camera_culling;
+}
+
+void BoneClothSimulator3D::set_distance_culling(float p_distance) {
+	distance_culling = MAX(p_distance, 0.0f);
+}
+
+float BoneClothSimulator3D::get_distance_culling() const {
+	return distance_culling;
+}
+
+void BoneClothSimulator3D::set_distance_culling_fade(float p_fade) {
+	distance_culling_fade = CLAMP(p_fade, 0.0f, 1.0f);
+}
+
+float BoneClothSimulator3D::get_distance_culling_fade() const {
+	return distance_culling_fade;
+}
+
 void BoneClothSimulator3D::reset() {
 	needs_reset = true;
 }
@@ -1294,11 +1370,21 @@ void BoneClothSimulator3D::_process_modification_with_delta(double p_delta) {
 	const std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
 
 	_rebuild_if_changed(skeleton);
+	if (!_update_culling(skeleton)) {
+		culled = true;
+		monitor_time.sum.fetch_add(std::chrono::nanoseconds(std::chrono::steady_clock::now() - start).count(), std::memory_order_relaxed);
+		return;
+	}
+	const bool resumed = culled;
+	culled = false;
+
 	_read_frame(skeleton);
 
 	const Transform3D skeleton_transform = skeleton->get_global_transform_interpolated();
 	if (needs_reset) {
 		_reset(skeleton_transform);
+	} else if (resumed) {
+		_reset_motion(skeleton_transform);
 	}
 
 	LocalVector<PosedCollision> collisions;

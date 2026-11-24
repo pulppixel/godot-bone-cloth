@@ -32,6 +32,9 @@ const FRICTION_SPHERE_OFFSET := Vector3(0.5, -0.25, 0.0) # m
 const FRICTION_SPHERE_RADIUS := 0.45 # m
 const FRICTION_SLIDE_RATIO := 0.5
 const GRAVITY_SAG_MIN := 0.1 # m
+const TICKS_TOLERANCE := 0.005 # m
+const STABILIZATION_RATIO := 0.5
+const CULLING_TOLERANCE := 0.00001 # m
 const TIME_MONITOR := &"bone_cloth/time"
 const JOINTS_MONITOR := &"bone_cloth/joints"
 
@@ -151,6 +154,11 @@ static func run(t) -> void:
 	await _collision_friction(t)
 	await _gravity_falloff(t)
 	await _stiffness_velocity_damping(t)
+	await _ticks_per_second(t)
+	await _max_steps_per_frame(t)
+	await _stabilization_time(t)
+	await _camera_culling(t)
+	await _distance_culling(t)
 	await _monitors(t)
 	_bone_lookup(t)
 	await _plane_and_inside(t)
@@ -1118,13 +1126,145 @@ static func _stiffness_velocity_damping(t) -> void:
 	t.check(crossings[0.8] < crossings[0.0], "Stiffness velocity damping 0.8: the tip swung across its pose %d times while settling, without it %d." % [crossings[0.8], crossings[0.0]])
 
 
+static func _ticks_per_second(t) -> void:
+	var cases := {
+		"default": {},
+		"stiffness 0.2, velocity damping 0.8": {"stiffness/value": 0.2, "stiffness/velocity_damping": 0.8},
+	}
+	for c in cases:
+		var tips := {}
+		for ticks in [60, 120, 240]:
+			var rig := Rig.new(t)
+			rig.simulator.set("gravity/direction", Vector3(-1, 0, 0))
+			rig.simulator.set("ticks_per_second", ticks)
+			for key in cases[c]:
+				rig.simulator.set(key, cases[c][key])
+			for frame in 300:
+				await rig.advance(1.0 / 60.0)
+			tips[ticks] = rig.tip()
+			rig.remove()
+
+		var off_60: float = tips[60].distance_to(tips[240])
+		var off_120: float = tips[120].distance_to(tips[240])
+		t.check(off_120 < off_60 * 0.5, "Ticks per second, %s: at 120 ticks the tip settles %.4f m from 240 ticks, at 60 ticks %.4f m." % [c, off_120, off_60])
+		if c == "default":
+			var off: float = tips[120].distance_to(tips[60])
+			t.check(off < TICKS_TOLERANCE, "Ticks per second 120: the tip settles %.4f m from 60 ticks." % off)
+
+
+static func _max_steps_per_frame(t) -> void:
+	var moved := {}
+	for steps in [1, 8]:
+		var rig := Rig.new(t)
+		rig.simulator.set("gravity/direction", Vector3(-1, 0, 0))
+		rig.simulator.set("max_steps_per_frame", steps)
+		for frame in 2:
+			await rig.advance(1.0 / 60.0)
+		var before := rig.tip()
+		await rig.advance(0.1)
+		await rig.advance(0.0)
+		moved[steps] = rig.tip().distance_to(before)
+		rig.remove()
+
+	t.check(moved[1] < moved[8] * 0.5, "Max steps per frame 1: a 0.1 s frame moved the tip %.4f m, with 8 steps %.4f m." % [moved[1], moved[8]])
+
+
+static func _stabilization_time(t) -> void:
+	var early := {}
+	var late := {}
+	for seconds in [0.0, 0.5]:
+		var rig := Rig.new(t)
+		rig.simulator.set("stabilization_time", seconds)
+		early[seconds] = 0.0
+		late[seconds] = 0.0
+		for frame in 90:
+			_move(rig, float(frame + 1) / 60.0)
+			await rig.advance(1.0 / 60.0)
+			var off := rig.poses[TIP].origin.distance_to(Vector3(0, -BONE_LENGTH * TIP, 0))
+			if frame < 18:
+				early[seconds] = maxf(early[seconds], off)
+			elif frame >= 60:
+				late[seconds] = maxf(late[seconds], off)
+		rig.remove()
+
+	t.check(early[0.5] < early[0.0] * STABILIZATION_RATIO, "Stabilization time 0.5 s: in the first 0.3 s the tip swung %.4f m from its pose, without it %.4f m." % [early[0.5], early[0.0]])
+	t.check(late[0.5] > SWING_MIN, "Stabilization time 0.5 s: after 1 s the tip swung only %.4f m, so the motion never came back." % late[0.5])
+
+
+static func _add_camera(p_rig: Rig, p_camera_position: Vector3) -> Camera3D:
+	var camera := Camera3D.new()
+	p_rig.stage.add_child(camera)
+	camera.position = p_camera_position
+	camera.current = true
+	return camera
+
+
+static func _camera_culling(t) -> void:
+	var cases := {"reset": 1, "keep": 2}
+	for c in cases:
+		var rig := Rig.new(t)
+		var camera := _add_camera(rig, Vector3(0, -0.2, 2.0))
+		rig.simulator.set("gravity/direction", Vector3(-1, 0, 0))
+		rig.simulator.set("camera_culling", cases[c])
+		for frame in 240:
+			await rig.advance(1.0 / 60.0)
+		var before := rig.tip()
+		camera.rotation = Vector3(0, PI, 0)
+		await rig.advance(1.0 / 60.0)
+		Performance.get_custom_monitor(JOINTS_MONITOR)
+		for frame in 10:
+			await rig.advance(1.0 / 60.0)
+		var joints: int = Performance.get_custom_monitor(JOINTS_MONITOR)
+		camera.rotation = Vector3()
+		for frame in 3:
+			await rig.advance(1.0 / 60.0)
+		var after := rig.tip()
+		rig.remove()
+
+		t.check(joints == 0, "Camera culling, %s: off screen the monitor shows %d joints." % [c, joints])
+		var pose := Vector3(0, -BONE_LENGTH * TIP, 0)
+		if c == "reset":
+			t.check(after.distance_to(pose) < after.distance_to(before) * 0.1, "Camera culling, reset: back on screen the tip is %.4f m from its pose and %.4f m from where it left." % [after.distance_to(pose), after.distance_to(before)])
+		else:
+			t.check(after.distance_to(before) < SWING_MIN, "Camera culling, keep: back on screen the tip is %.4f m from where it left." % after.distance_to(before))
+
+
+static func _distance_culling(t) -> void:
+	var rigs: Array[Rig] = [Rig.new(t), Rig.new(t)]
+	var camera := _add_camera(rigs[0], Vector3(0, 0, 3.75))
+	for rig in rigs:
+		rig.simulator.set("gravity/direction", Vector3(-1, 0, 0))
+	rigs[0].simulator.set("distance_culling", 5.0)
+	rigs[0].simulator.set("distance_culling_fade", 0.5)
+	for frame in 120:
+		rigs[1].skeleton.advance(1.0 / 60.0)
+		await rigs[0].advance(1.0 / 60.0)
+	var expected := Vector3(0, -BONE_LENGTH, 0).lerp(rigs[1].poses[1].origin, 0.5)
+	var off := rigs[0].poses[1].origin.distance_to(expected)
+
+	camera.position.z = 6.0
+	for frame in 2:
+		rigs[1].skeleton.advance(1.0 / 60.0)
+		await rigs[0].advance(1.0 / 60.0)
+	Performance.get_custom_monitor(JOINTS_MONITOR)
+	for frame in 10:
+		rigs[1].skeleton.advance(1.0 / 60.0)
+		await rigs[0].advance(1.0 / 60.0)
+	var joints: int = Performance.get_custom_monitor(JOINTS_MONITOR)
+	for rig in rigs:
+		rig.remove()
+
+	t.check(off < CULLING_TOLERANCE, "Distance culling fade: halfway into the fade a bone is %.6f m from halfway between pose and motion." % off)
+	t.check(joints == TIP + 2, "Distance culling: past the distance the monitor shows %d joints, for the other rig's %d." % [joints, TIP + 2])
+
+
 static func _preset_round_trip(t) -> void:
 	var resource_names: Array = Resource.new().get_property_list().map(func(property): return property.name)
 	var names: Array[String] = []
 	for property in ClassDB.instantiate("BoneClothPreset").get_property_list():
 		if property.usage & PROPERTY_USAGE_EDITOR and not property.name in resource_names:
 			names.append(property.name)
-	t.check(names.size() == 46, "Preset round trip: the preset holds %d values." % names.size())
+	t.check(names.size() == 49, "Preset round trip: the preset holds %d values." % names.size())
 
 	var source: Node = ClassDB.instantiate("BoneClothSimulator3D")
 	var target: Node = ClassDB.instantiate("BoneClothSimulator3D")
@@ -1135,6 +1275,8 @@ static func _preset_round_trip(t) -> void:
 		match typeof(value):
 			TYPE_BOOL:
 				source.set(name, not value)
+			TYPE_INT:
+				source.set(name, value + 1)
 			TYPE_FLOAT:
 				source.set(name, 0.5 * value + 0.01)
 			TYPE_VECTOR3:

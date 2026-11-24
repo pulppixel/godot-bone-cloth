@@ -5,6 +5,7 @@
 #include "bone_cloth_preset.h"
 #include "collision/bone_cloth_collision_3d.h"
 
+#include <godot_cpp/classes/camera3d.hpp>
 #include <godot_cpp/classes/curve.hpp>
 #include <godot_cpp/classes/skeleton3d.hpp>
 #include <godot_cpp/classes/skeleton_modifier3d.hpp>
@@ -26,6 +27,12 @@ public:
 		LINK_MODE_LOOP,
 	};
 
+	enum CameraCulling {
+		CAMERA_CULLING_OFF,
+		CAMERA_CULLING_RESET,
+		CAMERA_CULLING_KEEP,
+	};
+
 private:
 	struct Joint {
 		int bone = -1;
@@ -37,6 +44,7 @@ private:
 		Vector3 current_pose_location;
 
 		Vector3 animated_location;
+		Basis animated_basis;
 
 		Vector3 rest_location;
 
@@ -49,6 +57,7 @@ private:
 
 		float drag = 0.0f;
 		float stiffness = 0.0f;
+		float stiffness_damping = 0.0f;
 		float radius = 0.0f;
 		float limit_angle = 0.0f;
 		float gravity = 0.0f;
@@ -146,6 +155,7 @@ private:
 		Vector3 spin;
 		float move_share = 0.0f;
 		float turn_share = 0.0f;
+		float velocity_share = 1.0f;
 		Vector3 backstop_center;
 	};
 
@@ -211,12 +221,25 @@ private:
 	float movement_limit_stiffness = 1.0f;
 	float tether_limit = 0.0f;
 
+	int ticks_per_second = 60;
+	int max_steps_per_frame = 4;
+	float stabilization_time = 0.0f;
+
+	CameraCulling camera_culling = CAMERA_CULLING_OFF;
+	float distance_culling = 0.0f;
+	float distance_culling_fade = 0.0f;
+
 	float units_per_meter = 1.0f;
 
 	LocalVector<Link> links;
 	bool joints_dirty = true;
 	bool needs_reset = true;
+	bool culled = false;
+	double step_seconds = 1.0 / 60.0;
+	float step_scale = 1.0f;
 	double step_time = 0.0;
+	float stabilization = 1.0f;
+	float distance_weight = 1.0f;
 	Transform3D prev_skeleton_transform;
 	Transform3D prev_anchor_transform;
 	bool has_prev_anchor = false;
@@ -271,11 +294,14 @@ private:
 	void _limit_movement(Chain &p_chain, Vector3 Joint::*p_field, Vector3 Joint::*p_pose_field, const Vector3 &p_backstop_center);
 	Vector3 _get_root_display(const Chain &p_chain) const;
 	void _update_display(Chain &p_chain, float p_follow);
-	void _write_rotations(Skeleton3D *p_skeleton, const Chain &p_chain);
+	void _write_rotations(Skeleton3D *p_skeleton, const Chain &p_chain, float p_weight);
 
 	void _rebuild_if_changed(Skeleton3D *p_skeleton);
 	void _read_frame(Skeleton3D *p_skeleton);
+	bool _update_culling(Skeleton3D *p_skeleton);
+	bool _is_on_screen(const Skeleton3D *p_skeleton, const Camera3D *p_camera) const;
 	void _reset(const Transform3D &p_skeleton_transform);
+	void _reset_motion(const Transform3D &p_skeleton_transform);
 	void _gather_collisions(LocalVector<PosedCollision> &r_collisions) const;
 	void _follow_anchor();
 	FrameMotion _measure_motion(double p_delta, const Transform3D &p_skeleton_transform);
@@ -437,6 +463,20 @@ public:
 	void set_tether_limit(float p_limit);
 	float get_tether_limit() const;
 
+	void set_ticks_per_second(int p_ticks);
+	int get_ticks_per_second() const;
+	void set_max_steps_per_frame(int p_steps);
+	int get_max_steps_per_frame() const;
+	void set_stabilization_time(float p_seconds);
+	float get_stabilization_time() const;
+
+	void set_camera_culling(CameraCulling p_mode);
+	CameraCulling get_camera_culling() const;
+	void set_distance_culling(float p_distance);
+	float get_distance_culling() const;
+	void set_distance_culling_fade(float p_fade);
+	float get_distance_culling_fade() const;
+
 	void reset();
 	float get_units_per_meter() const;
 	PackedStringArray _get_configuration_warnings() const override;
@@ -448,3 +488,4 @@ public:
 };
 
 VARIANT_ENUM_CAST(BoneClothSimulator3D::LinkMode);
+VARIANT_ENUM_CAST(BoneClothSimulator3D::CameraCulling);

@@ -60,6 +60,7 @@ bool BoneClothSimulator3D::_build_joints(Skeleton3D *p_skeleton, Chain &p_chain)
 			const Transform3D end = p_skeleton->get_bone_global_rest(p_chain.joints[i - 1].bone);
 			joint.rest_location = end.origin + end.basis.orthonormalized().xform(p_chain.end_axis) * (p_chain.end_bone_length * units_per_meter);
 		}
+		joint.display_location = joint.rest_location;
 	}
 
 	return true;
