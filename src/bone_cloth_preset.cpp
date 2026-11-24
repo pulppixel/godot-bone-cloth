@@ -1,149 +1,40 @@
 #include "bone_cloth_preset.h"
 
+#include <godot_cpp/classes/curve.hpp>
 #include <godot_cpp/core/class_db.hpp>
 
 using namespace godot;
 
+static bool is_in_preset(const String &p_name) {
+	static const char *const NOT_IN_PRESET[] = { "link_mode", "sync/value", "sync/bone_count", "anchor", "anchor_inertia", "backstop/bone_name", "backstop/bone", "backstop/position_offset", "chain_count" };
+	for (const char *name : NOT_IN_PRESET) {
+		if (p_name == name) {
+			return false;
+		}
+	}
+	return true;
+}
+
 void BoneClothPreset::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("set_link_stiffness", "stiffness"), &BoneClothPreset::set_link_stiffness);
-	ClassDB::bind_method(D_METHOD("get_link_stiffness"), &BoneClothPreset::get_link_stiffness);
-	ClassDB::bind_method(D_METHOD("set_link_split_enabled", "enabled"), &BoneClothPreset::set_link_split_enabled);
-	ClassDB::bind_method(D_METHOD("is_link_split_enabled"), &BoneClothPreset::is_link_split_enabled);
-	ClassDB::bind_method(D_METHOD("set_link_spacing", "spacing"), &BoneClothPreset::set_link_spacing);
-	ClassDB::bind_method(D_METHOD("get_link_spacing"), &BoneClothPreset::get_link_spacing);
-	ClassDB::bind_method(D_METHOD("set_link_spacing_damping_curve", "curve"), &BoneClothPreset::set_link_spacing_damping_curve);
-	ClassDB::bind_method(D_METHOD("get_link_spacing_damping_curve"), &BoneClothPreset::get_link_spacing_damping_curve);
-	ClassDB::bind_method(D_METHOD("set_drag", "drag"), &BoneClothPreset::set_drag);
-	ClassDB::bind_method(D_METHOD("get_drag"), &BoneClothPreset::get_drag);
-	ClassDB::bind_method(D_METHOD("set_drag_damping_curve", "curve"), &BoneClothPreset::set_drag_damping_curve);
-	ClassDB::bind_method(D_METHOD("get_drag_damping_curve"), &BoneClothPreset::get_drag_damping_curve);
-	ClassDB::bind_method(D_METHOD("set_stiffness", "stiffness"), &BoneClothPreset::set_stiffness);
-	ClassDB::bind_method(D_METHOD("get_stiffness"), &BoneClothPreset::get_stiffness);
-	ClassDB::bind_method(D_METHOD("set_stiffness_damping_curve", "curve"), &BoneClothPreset::set_stiffness_damping_curve);
-	ClassDB::bind_method(D_METHOD("get_stiffness_damping_curve"), &BoneClothPreset::get_stiffness_damping_curve);
-	ClassDB::bind_method(D_METHOD("set_radius", "radius"), &BoneClothPreset::set_radius);
-	ClassDB::bind_method(D_METHOD("get_radius"), &BoneClothPreset::get_radius);
-	ClassDB::bind_method(D_METHOD("set_radius_damping_curve", "curve"), &BoneClothPreset::set_radius_damping_curve);
-	ClassDB::bind_method(D_METHOD("get_radius_damping_curve"), &BoneClothPreset::get_radius_damping_curve);
-	ClassDB::bind_method(D_METHOD("set_rest_overlap_enabled", "enabled"), &BoneClothPreset::set_rest_overlap_enabled);
-	ClassDB::bind_method(D_METHOD("is_rest_overlap_enabled"), &BoneClothPreset::is_rest_overlap_enabled);
-	ClassDB::bind_method(D_METHOD("set_limit_angle", "angle"), &BoneClothPreset::set_limit_angle);
-	ClassDB::bind_method(D_METHOD("get_limit_angle"), &BoneClothPreset::get_limit_angle);
-	ClassDB::bind_method(D_METHOD("set_limit_angle_damping_curve", "curve"), &BoneClothPreset::set_limit_angle_damping_curve);
-	ClassDB::bind_method(D_METHOD("get_limit_angle_damping_curve"), &BoneClothPreset::get_limit_angle_damping_curve);
-	ClassDB::bind_method(D_METHOD("set_limit_angle_stiffness", "stiffness"), &BoneClothPreset::set_limit_angle_stiffness);
-	ClassDB::bind_method(D_METHOD("get_limit_angle_stiffness"), &BoneClothPreset::get_limit_angle_stiffness);
-	ClassDB::bind_method(D_METHOD("set_gravity", "gravity"), &BoneClothPreset::set_gravity);
-	ClassDB::bind_method(D_METHOD("get_gravity"), &BoneClothPreset::get_gravity);
-	ClassDB::bind_method(D_METHOD("set_gravity_damping_curve", "curve"), &BoneClothPreset::set_gravity_damping_curve);
-	ClassDB::bind_method(D_METHOD("get_gravity_damping_curve"), &BoneClothPreset::get_gravity_damping_curve);
-	ClassDB::bind_method(D_METHOD("set_gravity_direction", "direction"), &BoneClothPreset::set_gravity_direction);
-	ClassDB::bind_method(D_METHOD("get_gravity_direction"), &BoneClothPreset::get_gravity_direction);
-	ClassDB::bind_method(D_METHOD("set_wind_influence", "influence"), &BoneClothPreset::set_wind_influence);
-	ClassDB::bind_method(D_METHOD("get_wind_influence"), &BoneClothPreset::get_wind_influence);
-	ClassDB::bind_method(D_METHOD("set_wind_influence_damping_curve", "curve"), &BoneClothPreset::set_wind_influence_damping_curve);
-	ClassDB::bind_method(D_METHOD("get_wind_influence_damping_curve"), &BoneClothPreset::get_wind_influence_damping_curve);
-	ClassDB::bind_method(D_METHOD("set_wind_sync", "sync"), &BoneClothPreset::set_wind_sync);
-	ClassDB::bind_method(D_METHOD("get_wind_sync"), &BoneClothPreset::get_wind_sync);
-	ClassDB::bind_method(D_METHOD("set_wind_turbulence", "turbulence"), &BoneClothPreset::set_wind_turbulence);
-	ClassDB::bind_method(D_METHOD("get_wind_turbulence"), &BoneClothPreset::get_wind_turbulence);
-	ClassDB::bind_method(D_METHOD("set_wind_frequency", "frequency"), &BoneClothPreset::set_wind_frequency);
-	ClassDB::bind_method(D_METHOD("get_wind_frequency"), &BoneClothPreset::get_wind_frequency);
-	ClassDB::bind_method(D_METHOD("set_inertia", "inertia"), &BoneClothPreset::set_inertia);
-	ClassDB::bind_method(D_METHOD("get_inertia"), &BoneClothPreset::get_inertia);
-	ClassDB::bind_method(D_METHOD("set_centrifugal_acceleration", "acceleration"), &BoneClothPreset::set_centrifugal_acceleration);
-	ClassDB::bind_method(D_METHOD("get_centrifugal_acceleration"), &BoneClothPreset::get_centrifugal_acceleration);
-	ClassDB::bind_method(D_METHOD("set_inertia_smoothing", "smoothing"), &BoneClothPreset::set_inertia_smoothing);
-	ClassDB::bind_method(D_METHOD("get_inertia_smoothing"), &BoneClothPreset::get_inertia_smoothing);
-	ClassDB::bind_method(D_METHOD("set_depth_inertia", "depth_inertia"), &BoneClothPreset::set_depth_inertia);
-	ClassDB::bind_method(D_METHOD("get_depth_inertia"), &BoneClothPreset::get_depth_inertia);
-	ClassDB::bind_method(D_METHOD("set_local_movement_speed_limit", "limit"), &BoneClothPreset::set_local_movement_speed_limit);
-	ClassDB::bind_method(D_METHOD("get_local_movement_speed_limit"), &BoneClothPreset::get_local_movement_speed_limit);
-	ClassDB::bind_method(D_METHOD("set_local_rotation_speed_limit", "limit"), &BoneClothPreset::set_local_rotation_speed_limit);
-	ClassDB::bind_method(D_METHOD("get_local_rotation_speed_limit"), &BoneClothPreset::get_local_rotation_speed_limit);
-	ClassDB::bind_method(D_METHOD("set_movement_speed_limit", "limit"), &BoneClothPreset::set_movement_speed_limit);
-	ClassDB::bind_method(D_METHOD("get_movement_speed_limit"), &BoneClothPreset::get_movement_speed_limit);
-	ClassDB::bind_method(D_METHOD("set_rotation_speed_limit", "limit"), &BoneClothPreset::set_rotation_speed_limit);
-	ClassDB::bind_method(D_METHOD("get_rotation_speed_limit"), &BoneClothPreset::get_rotation_speed_limit);
-	ClassDB::bind_method(D_METHOD("set_joint_speed_limit", "limit"), &BoneClothPreset::set_joint_speed_limit);
-	ClassDB::bind_method(D_METHOD("get_joint_speed_limit"), &BoneClothPreset::get_joint_speed_limit);
-	ClassDB::bind_method(D_METHOD("set_teleport_distance", "distance"), &BoneClothPreset::set_teleport_distance);
-	ClassDB::bind_method(D_METHOD("get_teleport_distance"), &BoneClothPreset::get_teleport_distance);
-	ClassDB::bind_method(D_METHOD("set_teleport_angle", "angle"), &BoneClothPreset::set_teleport_angle);
-	ClassDB::bind_method(D_METHOD("get_teleport_angle"), &BoneClothPreset::get_teleport_angle);
-	ClassDB::bind_method(D_METHOD("set_root_spring_stiffness", "stiffness"), &BoneClothPreset::set_root_spring_stiffness);
-	ClassDB::bind_method(D_METHOD("get_root_spring_stiffness"), &BoneClothPreset::get_root_spring_stiffness);
-	ClassDB::bind_method(D_METHOD("set_root_spring_limit", "limit"), &BoneClothPreset::set_root_spring_limit);
-	ClassDB::bind_method(D_METHOD("get_root_spring_limit"), &BoneClothPreset::get_root_spring_limit);
-	ClassDB::bind_method(D_METHOD("set_root_spring_forward_limit", "limit"), &BoneClothPreset::set_root_spring_forward_limit);
-	ClassDB::bind_method(D_METHOD("get_root_spring_forward_limit"), &BoneClothPreset::get_root_spring_forward_limit);
-	ClassDB::bind_method(D_METHOD("set_max_distance", "distance"), &BoneClothPreset::set_max_distance);
-	ClassDB::bind_method(D_METHOD("get_max_distance"), &BoneClothPreset::get_max_distance);
-	ClassDB::bind_method(D_METHOD("set_max_distance_damping_curve", "curve"), &BoneClothPreset::set_max_distance_damping_curve);
-	ClassDB::bind_method(D_METHOD("get_max_distance_damping_curve"), &BoneClothPreset::get_max_distance_damping_curve);
-	ClassDB::bind_method(D_METHOD("set_backstop_distance", "distance"), &BoneClothPreset::set_backstop_distance);
-	ClassDB::bind_method(D_METHOD("get_backstop_distance"), &BoneClothPreset::get_backstop_distance);
-	ClassDB::bind_method(D_METHOD("set_backstop_damping_curve", "curve"), &BoneClothPreset::set_backstop_damping_curve);
-	ClassDB::bind_method(D_METHOD("get_backstop_damping_curve"), &BoneClothPreset::get_backstop_damping_curve);
-	ClassDB::bind_method(D_METHOD("set_backstop_radius", "radius"), &BoneClothPreset::set_backstop_radius);
-	ClassDB::bind_method(D_METHOD("get_backstop_radius"), &BoneClothPreset::get_backstop_radius);
-	ClassDB::bind_method(D_METHOD("set_movement_limit_stiffness", "stiffness"), &BoneClothPreset::set_movement_limit_stiffness);
-	ClassDB::bind_method(D_METHOD("get_movement_limit_stiffness"), &BoneClothPreset::get_movement_limit_stiffness);
+}
 
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "link_stiffness", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_link_stiffness", "get_link_stiffness");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "link_split"), "set_link_split_enabled", "is_link_split_enabled");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "link_spacing/value", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_link_spacing", "get_link_spacing");
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "link_spacing/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_link_spacing_damping_curve", "get_link_spacing_damping_curve");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "drag/value", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_drag", "get_drag");
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "drag/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_drag_damping_curve", "get_drag_damping_curve");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "stiffness/value", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_stiffness", "get_stiffness");
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "stiffness/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_stiffness_damping_curve", "get_stiffness_damping_curve");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "radius/value", PROPERTY_HINT_RANGE, "0,0.2,0.001,or_greater,suffix:m"), "set_radius", "get_radius");
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "radius/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_radius_damping_curve", "get_radius_damping_curve");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "radius/rest_overlap"), "set_rest_overlap_enabled", "is_rest_overlap_enabled");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "limit_angle/value", PROPERTY_HINT_RANGE, "0,180,0.1,radians_as_degrees"), "set_limit_angle", "get_limit_angle");
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "limit_angle/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_limit_angle_damping_curve", "get_limit_angle_damping_curve");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "limit_angle/stiffness", PROPERTY_HINT_RANGE, "0,1,0.01"), "set_limit_angle_stiffness", "get_limit_angle_stiffness");
-
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "gravity/value", PROPERTY_HINT_RANGE, "0,20,0.01,or_greater,or_less,suffix:m/s^2"), "set_gravity", "get_gravity");
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "gravity/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_gravity_damping_curve", "get_gravity_damping_curve");
-	ADD_PROPERTY(PropertyInfo(Variant::VECTOR3, "gravity/direction"), "set_gravity_direction", "get_gravity_direction");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "wind_influence/value", PROPERTY_HINT_RANGE, "0,2,0.01,or_greater"), "set_wind_influence", "get_wind_influence");
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "wind_influence/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_wind_influence_damping_curve", "get_wind_influence_damping_curve");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "wind_sync", PROPERTY_HINT_RANGE, "0,1,0.01"), "set_wind_sync", "get_wind_sync");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "wind_turbulence", PROPERTY_HINT_RANGE, "0,2,0.01"), "set_wind_turbulence", "get_wind_turbulence");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "wind_frequency", PROPERTY_HINT_RANGE, "0,2,0.01"), "set_wind_frequency", "get_wind_frequency");
-
-	ADD_GROUP("Inertia", "");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "inertia", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_inertia", "get_inertia");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "inertia_smoothing", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_inertia_smoothing", "get_inertia_smoothing");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "depth_inertia", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_depth_inertia", "get_depth_inertia");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "centrifugal_acceleration", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_centrifugal_acceleration", "get_centrifugal_acceleration");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "local_movement_speed_limit", PROPERTY_HINT_RANGE, "0,20,0.01,or_greater,suffix:m/s"), "set_local_movement_speed_limit", "get_local_movement_speed_limit");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "local_rotation_speed_limit", PROPERTY_HINT_RANGE, "0,1440,0.1,radians_as_degrees,suffix:/s"), "set_local_rotation_speed_limit", "get_local_rotation_speed_limit");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "movement_speed_limit", PROPERTY_HINT_RANGE, "0,20,0.01,or_greater,suffix:m/s"), "set_movement_speed_limit", "get_movement_speed_limit");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "rotation_speed_limit", PROPERTY_HINT_RANGE, "0,1440,0.1,radians_as_degrees,suffix:/s"), "set_rotation_speed_limit", "get_rotation_speed_limit");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "joint_speed_limit", PROPERTY_HINT_RANGE, "0,10,0.01,or_greater,suffix:m/s"), "set_joint_speed_limit", "get_joint_speed_limit");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "teleport_distance", PROPERTY_HINT_RANGE, "0,10,0.01,or_greater,suffix:m"), "set_teleport_distance", "get_teleport_distance");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "teleport_angle", PROPERTY_HINT_RANGE, "0,180,0.1,radians_as_degrees"), "set_teleport_angle", "get_teleport_angle");
-
-	ADD_GROUP("Root Spring", "root_spring_");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "root_spring_stiffness", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_root_spring_stiffness", "get_root_spring_stiffness");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "root_spring_limit", PROPERTY_HINT_RANGE, "0,0.2,0.001,or_greater,suffix:m"), "set_root_spring_limit", "get_root_spring_limit");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "root_spring_forward_limit", PROPERTY_HINT_RANGE, "0,0.2,0.001,or_greater,suffix:m"), "set_root_spring_forward_limit", "get_root_spring_forward_limit");
-
-	ADD_GROUP("Movement Limit", "");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "max_distance/value", PROPERTY_HINT_RANGE, "0,1,0.001,or_greater,suffix:m"), "set_max_distance", "get_max_distance");
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "max_distance/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_max_distance_damping_curve", "get_max_distance_damping_curve");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "backstop/distance", PROPERTY_HINT_RANGE, "0,0.2,0.001,or_greater,suffix:m"), "set_backstop_distance", "get_backstop_distance");
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "backstop/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_backstop_damping_curve", "get_backstop_damping_curve");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "backstop/radius", PROPERTY_HINT_RANGE, "0,10,0.01,or_greater,suffix:m"), "set_backstop_radius", "get_backstop_radius");
-	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "movement_limit_stiffness", PROPERTY_HINT_RANGE, "0,1,0.01"), "set_movement_limit_stiffness", "get_movement_limit_stiffness");
+TypedArray<Dictionary> BoneClothPreset::_get_value_properties() {
+	TypedArray<Dictionary> kept;
+	const TypedArray<Dictionary> properties = ClassDB::class_get_property_list("BoneClothSimulator3D", true);
+	for (int i = 0; i < properties.size(); i++) {
+		const Dictionary property = properties[i];
+		const int usage = property["usage"];
+		const bool group = usage & (PROPERTY_USAGE_GROUP | PROPERTY_USAGE_SUBGROUP);
+		if (group || ((usage & PROPERTY_USAGE_STORAGE) && is_in_preset(property["name"]))) {
+			kept.push_back(property);
+		}
+	}
+	return kept;
 }
 
 PackedStringArray BoneClothPreset::get_value_names() {
 	PackedStringArray names;
-	const TypedArray<Dictionary> properties = ClassDB::class_get_property_list(get_class_static(), true);
+	const TypedArray<Dictionary> properties = _get_value_properties();
 	for (int i = 0; i < properties.size(); i++) {
 		const Dictionary property = properties[i];
 		if (int(property["usage"]) & PROPERTY_USAGE_STORAGE) {
@@ -153,385 +44,67 @@ PackedStringArray BoneClothPreset::get_value_names() {
 	return names;
 }
 
+Variant BoneClothPreset::_get_default(const StringName &p_name) {
+	return ClassDB::class_get_property_default_value("BoneClothSimulator3D", p_name);
+}
+
 Variant BoneClothPreset::copy_value(const Variant &p_value) {
 	const Ref<Curve> curve = p_value;
 	return curve.is_valid() ? Variant(curve->duplicate()) : p_value;
 }
 
-void BoneClothPreset::set_link_stiffness(float p_stiffness) {
-	link_stiffness = p_stiffness;
+bool BoneClothPreset::_set(const StringName &p_name, const Variant &p_value) {
+	if (!get_value_names().has(p_name)) {
+		return false;
+	}
+
+	// 시뮬레이터 값이 float이라서, 0.1을 넣어도 기본값 0.1f와 같게 맞춘다.
+	const Variant value = p_value.get_type() == Variant::FLOAT ? Variant(float(p_value)) : p_value;
+	if (value == _get_default(p_name)) {
+		values.erase(p_name);
+	} else {
+		values[p_name] = value;
+	}
 	emit_changed();
-}
-
-float BoneClothPreset::get_link_stiffness() const {
-	return link_stiffness;
-}
-
-void BoneClothPreset::set_link_split_enabled(bool p_enabled) {
-	link_split = p_enabled;
-	emit_changed();
-}
-
-bool BoneClothPreset::is_link_split_enabled() const {
-	return link_split;
-}
-
-void BoneClothPreset::set_link_spacing(float p_spacing) {
-	link_spacing = p_spacing;
-	emit_changed();
-}
-
-float BoneClothPreset::get_link_spacing() const {
-	return link_spacing;
-}
-
-void BoneClothPreset::set_link_spacing_damping_curve(const Ref<Curve> &p_curve) {
-	link_spacing_damping_curve = p_curve;
-	emit_changed();
-}
-
-Ref<Curve> BoneClothPreset::get_link_spacing_damping_curve() const {
-	return link_spacing_damping_curve;
-}
-
-void BoneClothPreset::set_drag(float p_drag) {
-	drag = p_drag;
-	emit_changed();
-}
-
-float BoneClothPreset::get_drag() const {
-	return drag;
-}
-
-void BoneClothPreset::set_drag_damping_curve(const Ref<Curve> &p_curve) {
-	drag_damping_curve = p_curve;
-	emit_changed();
-}
-
-Ref<Curve> BoneClothPreset::get_drag_damping_curve() const {
-	return drag_damping_curve;
-}
-
-void BoneClothPreset::set_stiffness(float p_stiffness) {
-	stiffness = p_stiffness;
-	emit_changed();
-}
-
-float BoneClothPreset::get_stiffness() const {
-	return stiffness;
-}
-
-void BoneClothPreset::set_stiffness_damping_curve(const Ref<Curve> &p_curve) {
-	stiffness_damping_curve = p_curve;
-	emit_changed();
-}
-
-Ref<Curve> BoneClothPreset::get_stiffness_damping_curve() const {
-	return stiffness_damping_curve;
-}
-
-void BoneClothPreset::set_radius(float p_radius) {
-	radius = p_radius;
-	emit_changed();
-}
-
-float BoneClothPreset::get_radius() const {
-	return radius;
-}
-
-void BoneClothPreset::set_radius_damping_curve(const Ref<Curve> &p_curve) {
-	radius_damping_curve = p_curve;
-	emit_changed();
-}
-
-Ref<Curve> BoneClothPreset::get_radius_damping_curve() const {
-	return radius_damping_curve;
-}
-
-void BoneClothPreset::set_rest_overlap_enabled(bool p_enabled) {
-	rest_overlap = p_enabled;
-	emit_changed();
-}
-
-bool BoneClothPreset::is_rest_overlap_enabled() const {
-	return rest_overlap;
-}
-
-void BoneClothPreset::set_limit_angle(float p_angle) {
-	limit_angle = p_angle;
-	emit_changed();
-}
-
-float BoneClothPreset::get_limit_angle() const {
-	return limit_angle;
-}
-
-void BoneClothPreset::set_limit_angle_damping_curve(const Ref<Curve> &p_curve) {
-	limit_angle_damping_curve = p_curve;
-	emit_changed();
-}
-
-Ref<Curve> BoneClothPreset::get_limit_angle_damping_curve() const {
-	return limit_angle_damping_curve;
-}
-
-void BoneClothPreset::set_limit_angle_stiffness(float p_stiffness) {
-	limit_angle_stiffness = p_stiffness;
-	emit_changed();
-}
-
-float BoneClothPreset::get_limit_angle_stiffness() const {
-	return limit_angle_stiffness;
-}
-
-void BoneClothPreset::set_gravity(float p_gravity) {
-	gravity = p_gravity;
-	emit_changed();
-}
-
-float BoneClothPreset::get_gravity() const {
-	return gravity;
-}
-
-void BoneClothPreset::set_gravity_damping_curve(const Ref<Curve> &p_curve) {
-	gravity_damping_curve = p_curve;
-	emit_changed();
-}
-
-Ref<Curve> BoneClothPreset::get_gravity_damping_curve() const {
-	return gravity_damping_curve;
-}
-
-void BoneClothPreset::set_gravity_direction(const Vector3 &p_direction) {
-	ERR_FAIL_COND(p_direction.is_zero_approx());
-	gravity_direction = p_direction;
-	emit_changed();
-}
-
-Vector3 BoneClothPreset::get_gravity_direction() const {
-	return gravity_direction;
-}
-
-void BoneClothPreset::set_wind_influence(float p_influence) {
-	wind_influence = p_influence;
-	emit_changed();
-}
-
-float BoneClothPreset::get_wind_influence() const {
-	return wind_influence;
-}
-
-void BoneClothPreset::set_wind_influence_damping_curve(const Ref<Curve> &p_curve) {
-	wind_influence_damping_curve = p_curve;
-	emit_changed();
-}
-
-Ref<Curve> BoneClothPreset::get_wind_influence_damping_curve() const {
-	return wind_influence_damping_curve;
-}
-
-void BoneClothPreset::set_wind_sync(float p_sync) {
-	wind_sync = p_sync;
-	emit_changed();
-}
-
-float BoneClothPreset::get_wind_sync() const {
-	return wind_sync;
-}
-
-void BoneClothPreset::set_wind_turbulence(float p_turbulence) {
-	wind_turbulence = p_turbulence;
-	emit_changed();
-}
-
-float BoneClothPreset::get_wind_turbulence() const {
-	return wind_turbulence;
-}
-
-void BoneClothPreset::set_wind_frequency(float p_frequency) {
-	wind_frequency = p_frequency;
-	emit_changed();
-}
-
-float BoneClothPreset::get_wind_frequency() const {
-	return wind_frequency;
-}
-
-void BoneClothPreset::set_inertia(float p_inertia) {
-	inertia = p_inertia;
-	emit_changed();
-}
-
-float BoneClothPreset::get_inertia() const {
-	return inertia;
-}
-
-void BoneClothPreset::set_inertia_smoothing(float p_smoothing) {
-	inertia_smoothing = p_smoothing;
-	emit_changed();
-}
-
-float BoneClothPreset::get_inertia_smoothing() const {
-	return inertia_smoothing;
-}
-
-void BoneClothPreset::set_depth_inertia(float p_depth_inertia) {
-	depth_inertia = p_depth_inertia;
-	emit_changed();
-}
-
-float BoneClothPreset::get_depth_inertia() const {
-	return depth_inertia;
-}
-
-void BoneClothPreset::set_centrifugal_acceleration(float p_acceleration) {
-	centrifugal_acceleration = p_acceleration;
-}
-
-float BoneClothPreset::get_centrifugal_acceleration() const {
-	return centrifugal_acceleration;
-}
-
-void BoneClothPreset::set_local_movement_speed_limit(float p_limit) {
-	local_movement_speed_limit = p_limit;
-	emit_changed();
-}
-
-float BoneClothPreset::get_local_movement_speed_limit() const {
-	return local_movement_speed_limit;
-}
-
-void BoneClothPreset::set_local_rotation_speed_limit(float p_limit) {
-	local_rotation_speed_limit = p_limit;
-	emit_changed();
-}
-
-float BoneClothPreset::get_local_rotation_speed_limit() const {
-	return local_rotation_speed_limit;
-}
-
-void BoneClothPreset::set_movement_speed_limit(float p_limit) {
-	movement_speed_limit = p_limit;
-	emit_changed();
-}
-
-float BoneClothPreset::get_movement_speed_limit() const {
-	return movement_speed_limit;
-}
-
-void BoneClothPreset::set_rotation_speed_limit(float p_limit) {
-	rotation_speed_limit = p_limit;
-	emit_changed();
-}
-
-float BoneClothPreset::get_rotation_speed_limit() const {
-	return rotation_speed_limit;
-}
-
-void BoneClothPreset::set_joint_speed_limit(float p_limit) {
-	joint_speed_limit = p_limit;
-	emit_changed();
-}
-
-float BoneClothPreset::get_joint_speed_limit() const {
-	return joint_speed_limit;
-}
-
-void BoneClothPreset::set_teleport_distance(float p_distance) {
-	teleport_distance = p_distance;
-	emit_changed();
-}
-
-float BoneClothPreset::get_teleport_distance() const {
-	return teleport_distance;
-}
-
-void BoneClothPreset::set_teleport_angle(float p_angle) {
-	teleport_angle = p_angle;
-	emit_changed();
-}
-
-float BoneClothPreset::get_teleport_angle() const {
-	return teleport_angle;
-}
-
-void BoneClothPreset::set_root_spring_stiffness(float p_stiffness) {
-	root_spring_stiffness = p_stiffness;
-	emit_changed();
-}
-
-float BoneClothPreset::get_root_spring_stiffness() const {
-	return root_spring_stiffness;
-}
-
-void BoneClothPreset::set_root_spring_limit(float p_limit) {
-	root_spring_limit = p_limit;
-	emit_changed();
-}
-
-float BoneClothPreset::get_root_spring_limit() const {
-	return root_spring_limit;
-}
-
-void BoneClothPreset::set_root_spring_forward_limit(float p_limit) {
-	root_spring_forward_limit = p_limit;
-	emit_changed();
-}
-
-float BoneClothPreset::get_root_spring_forward_limit() const {
-	return root_spring_forward_limit;
-}
-
-void BoneClothPreset::set_max_distance(float p_distance) {
-	max_distance = p_distance;
-	emit_changed();
-}
-
-float BoneClothPreset::get_max_distance() const {
-	return max_distance;
-}
-
-void BoneClothPreset::set_max_distance_damping_curve(const Ref<Curve> &p_curve) {
-	max_distance_damping_curve = p_curve;
-	emit_changed();
-}
-
-Ref<Curve> BoneClothPreset::get_max_distance_damping_curve() const {
-	return max_distance_damping_curve;
-}
-
-void BoneClothPreset::set_backstop_distance(float p_distance) {
-	backstop_distance = p_distance;
-	emit_changed();
-}
-
-float BoneClothPreset::get_backstop_distance() const {
-	return backstop_distance;
-}
-
-void BoneClothPreset::set_backstop_damping_curve(const Ref<Curve> &p_curve) {
-	backstop_damping_curve = p_curve;
-	emit_changed();
-}
-
-Ref<Curve> BoneClothPreset::get_backstop_damping_curve() const {
-	return backstop_damping_curve;
-}
-
-void BoneClothPreset::set_backstop_radius(float p_radius) {
-	backstop_radius = p_radius;
-	emit_changed();
-}
-
-float BoneClothPreset::get_backstop_radius() const {
-	return backstop_radius;
-}
-
-void BoneClothPreset::set_movement_limit_stiffness(float p_stiffness) {
-	movement_limit_stiffness = p_stiffness;
-	emit_changed();
-}
-
-float BoneClothPreset::get_movement_limit_stiffness() const {
-	return movement_limit_stiffness;
+	return true;
+}
+
+bool BoneClothPreset::_get(const StringName &p_name, Variant &r_ret) const {
+	const Variant *value = values.getptr(p_name);
+	if (value) {
+		r_ret = *value;
+		return true;
+	}
+
+	if (!get_value_names().has(p_name)) {
+		return false;
+	}
+	r_ret = _get_default(p_name);
+	return true;
+}
+
+// 기본값인 값은 STORAGE를 빼서, 프리셋 파일에 바꾼 값만 저장한다.
+void BoneClothPreset::_get_property_list(List<PropertyInfo> *p_list) const {
+	const TypedArray<Dictionary> properties = _get_value_properties();
+	for (int i = 0; i < properties.size(); i++) {
+		const Dictionary property = properties[i];
+		const StringName name = property["name"];
+		uint32_t usage = int(property["usage"]);
+		if (!values.has(name)) {
+			usage &= ~PROPERTY_USAGE_STORAGE;
+		}
+		p_list->push_back(PropertyInfo(Variant::Type(int(property["type"])), name, PropertyHint(int(property["hint"])), property["hint_string"], usage, property["class_name"]));
+	}
+}
+
+bool BoneClothPreset::_property_can_revert(const StringName &p_name) const {
+	return values.has(p_name);
+}
+
+bool BoneClothPreset::_property_get_revert(const StringName &p_name, Variant &r_property) const {
+	if (!values.has(p_name)) {
+		return false;
+	}
+	r_property = _get_default(p_name);
+	return true;
 }

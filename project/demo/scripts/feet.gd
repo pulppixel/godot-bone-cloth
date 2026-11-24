@@ -99,13 +99,8 @@ func _ready() -> void:
 		leg.lower = _skeleton.find_bone(names[1])
 		leg.ankle = _skeleton.find_bone(names[2])
 		leg.toes = _skeleton.find_bone(names[3])
-		leg.target = Node3D.new()
-		leg.pole = Node3D.new()
-		for marker in [leg.target, leg.pole]:
-			marker.visible = false
-			marker.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
-		add_child(leg.target)
-		add_child(leg.pole)
+		leg.target = CharacterSkin.add_marker(self)
+		leg.pole = CharacterSkin.add_marker(self)
 		_legs.append(leg)
 	
 	for i in _skin.clip_count():

@@ -71,7 +71,7 @@ func _ready() -> void:
 	for shape in _shapes:
 		_shapes[shape] = _face.find_blend_shape_by_name(shape)
 		if _shapes[shape] < 0:
-			push_error("%s: 얼굴에 blend shape %s가 없다." % [_skin.name, shape])
+			push_error("%s: the face has no blend shape %s." % [_skin.name, shape])
 			set_process(false)
 			return
 		_weights[shape] = 0.0

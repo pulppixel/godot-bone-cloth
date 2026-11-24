@@ -98,7 +98,7 @@ const FOOT_GROUND := 2
 @export var pick_reach := 1.5
 @export var prompt_rise := 0.35
 
-@export var camera_rig: Node3D
+@export var camera_rig: CameraRig
 @export var board: Node3D
 @export var crosshair: Crosshair
 @export var pick_prompt: Node3D
@@ -109,14 +109,13 @@ var _left_foot := -1
 var _right_foot := -1
 var _scale := 1.0
 var _anim := Anim.IDLE
-var _stop: Stop
+var _stop_decel := 0.0
 var _lean := 0.0
 var _step_offset := 0.0
 var _step_speed := 0.0
 var _ground_normal := Vector3.UP
 var _skin_y := 0.0
 var _rig_y := 0.0
-var _brake := 0.0
 var _since_top := INF
 var _exit_pending := false
 var _run_time := 0.0
@@ -137,11 +136,6 @@ var _used_here := false
 
 @onready var _skin: Node3D = $Skin
 @onready var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
-
-
-class Stop:
-	var time := 0.0
-	var decel := 0.0
 
 
 class BoardRide:
@@ -165,7 +159,6 @@ func _ready() -> void:
 func use(character: Node3D) -> void:
 	if _anim == Anim.STOP:
 		_anim = Anim.IDLE
-		_stop = null
 		velocity = Vector3(0.0, velocity.y, 0.0)
 	if _character:
 		_character.hold(null)
@@ -178,7 +171,7 @@ func use(character: Node3D) -> void:
 	_character.request(TREE_STATE[_anim])
 	_character.rest(&"still")
 	_character.feet.board = board if _riding else null
-	(camera_rig as CameraRig).frame(_character)
+	camera_rig.frame(_character)
 	_anchor_cloth()
 
 
@@ -222,8 +215,8 @@ func _physics_process(delta: float) -> void:
 	elif not exit_wait:
 		var clip_now := Vector2(velocity.x, velocity.z).length() / _scale
 		var braking := not _airborne() and _anim == Anim.MOVE and direction.is_zero_approx() and clip_now > 0.0
-		_brake = run_brake if braking and clip_now > walk_speed + SPEED_SLACK else deceleration
-		turned = _steer(direction, top_speed, delta)
+		var brake := run_brake if braking and clip_now > walk_speed + SPEED_SLACK else deceleration
+		turned = _steer(direction, top_speed, brake, delta)
 	
 	if not _airborne() and Input.is_action_just_pressed("jump"):
 		velocity.y = sqrt(2.0 * _gravity * jump_height)
@@ -276,9 +269,8 @@ func _slot_in_reach() -> GunSlot:
 func _aim_toward(delta: float) -> bool:
 	var aiming := (Input.is_action_pressed("aim") or Input.is_action_pressed("fire")) and _riding == null and _slot != null
 	_aim = move_toward(_aim, 1.0 if aiming else 0.0, delta / aim_time)
-	var rig := camera_rig as CameraRig
-	rig.set_aim(_aim)
-	_character.set_aim(_aim, rig.pitch())
+	camera_rig.set_aim(_aim)
+	_character.set_aim(_aim, camera_rig.pitch())
 	crosshair.visible = aiming
 	return aiming
 
@@ -301,7 +293,7 @@ func _fire(delta: float) -> void:
 		if not near.is_empty():
 			hit = near
 		_character.launch(hit.get("position", far), hit.get("normal", Vector3.ZERO), hit.get("collider"))
-	(camera_rig as CameraRig).kick()
+	camera_rig.kick()
 	_spread = minf(_spread + gun.spread_per_shot_deg, gun.spread_max_deg)
 	_since_shot = 0.0
 
@@ -370,9 +362,8 @@ func _watch_exit(direction: Vector3, delta: float) -> bool:
 
 
 func _decelerate(delta: float) -> void:
-	_stop.time += delta
 	var flat := Vector3(velocity.x, 0.0, velocity.z)
-	var slower := move_toward(flat.length(), 0.0, _stop.decel * delta)
+	var slower := move_toward(flat.length(), 0.0, _stop_decel * delta)
 	flat = flat.normalized() * slower if slower > 0.0 else Vector3.ZERO
 	velocity.x = flat.x
 	velocity.z = flat.z
@@ -400,9 +391,8 @@ func _transition(pressing: bool, speed: float, exit_wait: bool) -> void:
 	elif _anim == Anim.STOP:
 		if pressing:
 			_enter(Anim.MOVE)
-		elif _stop.time >= _character.exit_length:
+		elif _state_age >= _character.exit_length:
 			_anim = Anim.IDLE
-			_stop = null
 	elif exit_wait and not _airborne():
 		var foot := _exit_foot()
 		if foot >= 0:
@@ -444,8 +434,7 @@ func _enter(anim: Anim) -> void:
 
 func _enter_stop(foot: int, speed: float) -> void:
 	_character.set_exit_foot(foot)
-	_stop = Stop.new()
-	_stop.decel = speed / EXIT_STOP
+	_stop_decel = speed / EXIT_STOP
 	_enter(Anim.STOP)
 
 
@@ -498,7 +487,7 @@ func _right_ahead() -> bool:
 	return right.z > left.z
 
 
-func _steer(direction: Vector3, top_speed: float, delta: float) -> float:
+func _steer(direction: Vector3, top_speed: float, brake: float, delta: float) -> float:
 	var horizontal := Vector3(velocity.x, 0.0, velocity.z)
 	var speed := horizontal.length()
 	var yaw := atan2(horizontal.x, horizontal.z)
@@ -506,7 +495,7 @@ func _steer(direction: Vector3, top_speed: float, delta: float) -> float:
 	var wanted := direction.length() * top_speed
 	var turned := 0.0
 	if direction.is_zero_approx():
-		speed = move_toward(speed, 0.0, _brake * delta)
+		speed = move_toward(speed, 0.0, brake * delta)
 	elif speed < STOP_SPEED:
 		yaw = target
 		speed = move_toward(speed, _aligned(yaw) * wanted, acceleration * delta)
@@ -561,7 +550,6 @@ func _ray(from: Vector3, to: Vector3, extra_mask := 0) -> Dictionary:
 func _set_boarding(on: bool) -> void:
 	board.visible = on
 	_character.feet.board = board if on else null
-	_stop = null
 	if on:
 		_riding = BoardRide.new()
 		var flat := Vector3(velocity.x, 0.0, velocity.z)

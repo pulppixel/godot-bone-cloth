@@ -191,7 +191,6 @@ blend_point_8/pos = Vector2(-0.7071, 0.7071)
 blend_point_8/name = &"8"
 
 [resource]
-graph_offset = Vector2(1963.576, -297.1073)
 nodes/output/position = Vector2(2900, -133.33333)
 nodes/Idle/node = SubResource("AnimationNodeAnimation_jx6rg")
 nodes/Idle/position = Vector2(520, -680)

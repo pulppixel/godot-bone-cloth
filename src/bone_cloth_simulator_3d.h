@@ -107,6 +107,15 @@ private:
 		bool mirror = false;
 	};
 
+	struct Forces {
+		Vector3 gravity_direction;
+		Vector3 wind_forward;
+		Vector3 wind_up;
+		Vector3 wind_side;
+		float wind_speed = 0.0f;
+		float wind_turbulence = 0.0f;
+	};
+
 	struct FrameMotion {
 		Transform3D skeleton_transform;
 		Vector3 move_location;
@@ -121,22 +130,12 @@ private:
 		float smoothing_rate = 0.0f;
 		Vector3 frame_velocity;
 		Basis to_skeleton;
-		Vector3 gravity_direction;
-		Vector3 wind_forward;
-		Vector3 wind_up;
-		Vector3 wind_side;
-		float wind_speed = 0.0f;
-		float wind_turbulence = 0.0f;
+		Forces forces;
 		float wind_rate = 0.0f;
 	};
 
 	struct StepMotion {
-		Vector3 gravity_direction;
-		Vector3 wind_forward;
-		Vector3 wind_up;
-		Vector3 wind_side;
-		float wind_speed = 0.0f;
-		float wind_turbulence = 0.0f;
+		Forces forces;
 		float wind_swell = 1.0f;
 		Vector3 move;
 		Quaternion turn;
@@ -261,6 +260,7 @@ private:
 	void _restore_limits_and_lengths(Chain &p_chain);
 	void _restore_lengths(Chain &p_chain, Vector3 Joint::*p_field, Vector3 Joint::*p_pose_field);
 	void _limit_movement(Chain &p_chain, Vector3 Joint::*p_field, Vector3 Joint::*p_pose_field, const Vector3 &p_backstop_center);
+	Vector3 _get_root_display(const Chain &p_chain) const;
 	void _update_display(Chain &p_chain, float p_follow);
 	void _write_rotations(Skeleton3D *p_skeleton, const Chain &p_chain);
 

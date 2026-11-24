@@ -12,7 +12,7 @@ func _post_import(scene: Node) -> Object:
 		for i in mesh.get_surface_count():
 			var path := MATERIALS % [character, mesh.surface_get_material(i).resource_name]
 			if not ResourceLoader.exists(path):
-				push_error("%s: %s가 없다." % [get_source_file(), path])
+				push_error("%s: %s does not exist." % [get_source_file(), path])
 				continue
 			mesh.surface_set_material(i, load(path))
 	return scene

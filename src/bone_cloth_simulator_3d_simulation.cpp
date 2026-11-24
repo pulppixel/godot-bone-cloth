@@ -364,7 +364,7 @@ void BoneClothSimulator3D::_simulate(Chain &p_chain, const StepMotion &p_step) {
 	for (uint32_t i = 1; i < p_chain.joints.size(); i++) {
 		Joint &joint = p_chain.joints[i];
 		const Joint &parent = p_chain.joints[i - 1];
-		_move_joint(joint, p_step, p_step.gravity_direction * joint.gravity + _get_wind_force(joint, p_chain, p_step) * joint.wind);
+		_move_joint(joint, p_step, p_step.forces.gravity_direction * joint.gravity + _get_wind_force(joint, p_chain, p_step) * joint.wind);
 		joint.contact *= WIND_CONTACT_DECAY;
 		const Vector3 target = parent.location + (joint.pose_location - parent.pose_location);
 		joint.location += (target - joint.location) * joint.stiffness;
@@ -381,7 +381,8 @@ static double wind_noise(double p_u, double p_seed) {
 }
 
 Vector3 BoneClothSimulator3D::_get_wind_force(const Joint &p_joint, const Chain &p_chain, const StepMotion &p_step) const {
-	if (p_joint.wind == 0.0f || p_step.wind_speed < 0.01f) {
+	const Forces &forces = p_step.forces;
+	if (p_joint.wind == 0.0f || forces.wind_speed < 0.01f) {
 		return Vector3();
 	}
 
@@ -390,13 +391,13 @@ Vector3 BoneClothSimulator3D::_get_wind_force(const Joint &p_joint, const Chain 
 	const double noise = wind_noise(phase + wind_time * WIND_NOISE_RATE, 1.7);
 	const float wave = float(Math::lerp(sine, noise, double(WIND_NOISE_BLEND)));
 
-	const float turbulence = p_step.wind_turbulence * wind_turbulence;
+	const float turbulence = forces.wind_turbulence * wind_turbulence;
 	const float pitch = wave * WIND_TURN * turbulence;
 	const float yaw = wave * WIND_TURN * WIND_YAW_SHARE * turbulence;
-	const Vector3 direction = p_step.wind_forward * (Math::cos(pitch) * Math::cos(yaw)) + p_step.wind_up * Math::sin(pitch) + p_step.wind_side * (Math::cos(pitch) * Math::sin(yaw));
+	const Vector3 direction = forces.wind_forward * (Math::cos(pitch) * Math::cos(yaw)) + forces.wind_up * Math::sin(pitch) + forces.wind_side * (Math::cos(pitch) * Math::sin(yaw));
 
-	const float lull = MIN((wave + 1.0f) * 0.5f * CLAMP(1.0f - p_step.wind_speed / WIND_BASE_SPEED, 0.0f, 1.0f) * turbulence, 1.0f);
-	Vector3 force = direction * (p_step.wind_speed * (1.0f - lull) * p_step.wind_swell);
+	const float lull = MIN((wave + 1.0f) * 0.5f * CLAMP(1.0f - forces.wind_speed / WIND_BASE_SPEED, 0.0f, 1.0f) * turbulence, 1.0f);
+	Vector3 force = direction * (forces.wind_speed * (1.0f - lull) * p_step.wind_swell);
 	const float into = force.dot(p_joint.contact_normal);
 	if (into < 0.0f) {
 		force -= p_joint.contact_normal * (into * p_joint.contact);
@@ -601,9 +602,13 @@ void BoneClothSimulator3D::_restore_limits_and_lengths(Chain &p_chain) {
 	}
 }
 
+Vector3 BoneClothSimulator3D::_get_root_display(const Chain &p_chain) const {
+	const Joint &root = p_chain.joints[0];
+	return p_chain.parent_chain >= 0 ? chains[p_chain.parent_chain].joints[p_chain.parent_joint].display_location : root.current_pose_location + (root.location - root.pose_location);
+}
+
 void BoneClothSimulator3D::_update_display(Chain &p_chain, float p_follow) {
-	Joint &root = p_chain.joints[0];
-	root.display_location = p_chain.parent_chain >= 0 ? chains[p_chain.parent_chain].joints[p_chain.parent_joint].display_location : root.current_pose_location + (root.location - root.pose_location);
+	p_chain.joints[0].display_location = _get_root_display(p_chain);
 
 	for (uint32_t i = 1; i < p_chain.joints.size(); i++) {
 		Joint &joint = p_chain.joints[i];
@@ -731,19 +736,20 @@ BoneClothSimulator3D::FrameMotion BoneClothSimulator3D::_measure_motion(double p
 	motion.smoothing_rate = CLAMP(Math::pow(1.0f - inertia_smoothing, 3.0f) * 0.99f + 0.01f, 0.0f, 1.0f);
 	motion.frame_velocity = p_skeleton_transform.basis.xform((-motion.move_location / float(motion.elapsed)).limit_length(speed_limit));
 	motion.to_skeleton = p_skeleton_transform.basis.inverse();
-	motion.gravity_direction = motion.to_skeleton.xform(gravity_direction).normalized();
+	Forces &forces = motion.forces;
+	forces.gravity_direction = motion.to_skeleton.xform(gravity_direction).normalized();
 	const BoneClothWind3D::Total wind = BoneClothWind3D::get_total_wind(this);
-	motion.wind_speed = wind.force.length();
-	motion.wind_turbulence = wind.turbulence;
-	motion.wind_rate = MIN((0.2f + motion.wind_speed / WIND_BASE_SPEED * 0.5f) * wind.frequency * wind_frequency, 1.5f);
-	if (motion.wind_speed >= 0.01f) {
-		const Vector3 forward = wind.force / motion.wind_speed;
+	forces.wind_speed = wind.force.length();
+	forces.wind_turbulence = wind.turbulence;
+	motion.wind_rate = MIN((0.2f + forces.wind_speed / WIND_BASE_SPEED * 0.5f) * wind.frequency * wind_frequency, 1.5f);
+	if (forces.wind_speed >= 0.01f) {
+		const Vector3 forward = wind.force / forces.wind_speed;
 		const Vector3 cross = forward.cross(Vector3(0, 1, 0));
 		const Vector3 side = cross.is_zero_approx() ? forward.get_any_perpendicular() : cross.normalized();
 		const Vector3 up = side.cross(forward);
-		motion.wind_forward = motion.to_skeleton.xform(forward).normalized();
-		motion.wind_up = motion.to_skeleton.xform(up).normalized();
-		motion.wind_side = motion.to_skeleton.xform(side).normalized();
+		forces.wind_forward = motion.to_skeleton.xform(forward).normalized();
+		forces.wind_up = motion.to_skeleton.xform(up).normalized();
+		forces.wind_side = motion.to_skeleton.xform(side).normalized();
 	}
 
 	return motion;
@@ -767,12 +773,7 @@ void BoneClothSimulator3D::_run_steps(FrameMotion &r_motion, const LocalVector<P
 		const Vector3 center = prev_frame_center.lerp(frame_center, weight);
 		const Quaternion center_rotation = prev_frame_center_rotation.slerp(frame_center_rotation, weight).normalized();
 		StepMotion step_motion;
-		step_motion.gravity_direction = r_motion.gravity_direction;
-		step_motion.wind_forward = r_motion.wind_forward;
-		step_motion.wind_up = r_motion.wind_up;
-		step_motion.wind_side = r_motion.wind_side;
-		step_motion.wind_speed = r_motion.wind_speed;
-		step_motion.wind_turbulence = r_motion.wind_turbulence;
+		step_motion.forces = r_motion.forces;
 		wind_time += r_motion.wind_rate * STEP;
 		wind_seconds += STEP;
 		step_motion.wind_swell = Math::lerp(WIND_SWELL_MIN, 1.0f, float(wind_noise(wind_seconds / WIND_SWELL_SECONDS, wind_swell_seed)) * 0.5f + 0.5f);

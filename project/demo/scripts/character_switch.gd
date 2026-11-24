@@ -34,7 +34,7 @@ func _ready() -> void:
 	wind_direction_slider.value_changed.connect(func(value: float) -> void: wind.rotation.y = deg_to_rad(value))
 	anchor_inertia_slider.value_changed.connect(_set_anchor_inertia)
 	_set_anchor_inertia(anchor_inertia_slider.value)
-	_show(0)
+	_choose(0, _cloth)
 
 
 func _process(_delta: float) -> void:
@@ -52,17 +52,13 @@ func _unhandled_input(event: InputEvent) -> void:
 	
 	var index := key.physical_keycode - KEY_1
 	if index >= 0 and index < characters.size():
-		_show(index)
+		_choose(index, _cloth)
 
 
 func _set_anchor_inertia(value: float) -> void:
 	for character in characters:
 		for simulator: BoneClothSimulator3D in character.find_children("*", "BoneClothSimulator3D", true, false):
 			simulator.anchor_inertia = value
-
-
-func _show(index: int) -> void:
-	_choose(index, _cloth)
 
 
 func _choose(character: int, cloth: bool) -> void:

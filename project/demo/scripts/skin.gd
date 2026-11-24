@@ -129,24 +129,13 @@ func _hold_with_both_hands() -> void:
 	_grip.hold = HOLD
 	_arms = TwoBoneIK3D.new()
 	_hands = CopyTransformModifier3D.new()
-	var cloth := skeleton.get_child_count()
-	for child in skeleton.get_children():
-		if child is BoneClothSimulator3D:
-			cloth = child.get_index()
-			break
 	for modifier in [_grip, _arms, _hands]:
-		skeleton.add_child(modifier)
-		skeleton.move_child(modifier, cloth)
-		cloth += 1
+		add_before_cloth(skeleton, modifier)
 	_arms.setting_count = ARMS.size()
 	_hands.setting_count = ARMS.size()
 	for i in ARMS.size():
-		var target := Node3D.new()
-		var pole := Node3D.new()
-		for marker in [target, pole]:
-			marker.visible = false
-			marker.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
-			add_child(marker)
+		var target := add_marker(self)
+		var pole := add_marker(self)
 		pole.position = POLES[i]
 		_grip.targets.append(target)
 		_arms.set_root_bone_name(i, ARMS[i][0])
@@ -162,16 +151,32 @@ func _hold_with_both_hands() -> void:
 	set_aim(0.0, 0.0)
 
 
+static func add_marker(p_parent: Node) -> Node3D:
+	var marker := Node3D.new()
+	marker.visible = false
+	marker.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
+	p_parent.add_child(marker)
+	return marker
+
+
+static func add_before_cloth(p_skeleton: Skeleton3D, p_modifier: SkeletonModifier3D) -> void:
+	p_skeleton.add_child(p_modifier)
+	for child in p_skeleton.get_children():
+		if child is BoneClothSimulator3D:
+			p_skeleton.move_child(p_modifier, child.get_index())
+			return
+
+
 func _pose_in(p_clip: StringName, p_bone: int) -> Quaternion:
-	var clip := tree.get_animation(p_clip)
+	var animation := tree.get_animation(p_clip)
 	var chain: Array[int] = []
 	while p_bone >= 0:
 		chain.push_front(p_bone)
 		p_bone = skeleton.get_bone_parent(p_bone)
 	var pose := Quaternion.IDENTITY
 	for bone in chain:
-		var track := clip.find_track(NodePath("%GeneralSkeleton:" + skeleton.get_bone_name(bone)), Animation.TYPE_ROTATION_3D)
-		pose *= clip.rotation_track_interpolate(track, 0.0) if track >= 0 else skeleton.get_bone_rest(bone).basis.get_rotation_quaternion()
+		var track := animation.find_track(NodePath("%GeneralSkeleton:" + skeleton.get_bone_name(bone)), Animation.TYPE_ROTATION_3D)
+		pose *= animation.rotation_track_interpolate(track, 0.0) if track >= 0 else skeleton.get_bone_rest(bone).basis.get_rotation_quaternion()
 	return pose
 
 

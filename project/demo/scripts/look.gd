@@ -70,13 +70,8 @@ var _saccade_at := -1.0
 func _ready() -> void:
 	_skin = get_parent() as CharacterSkin
 	_skeleton = _skin.skeleton
-	_head_target = Node3D.new()
-	_eye_target = Node3D.new()
-	for marker in [_head_target, _eye_target]:
-		marker.visible = false
-		marker.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
-	add_child(_head_target)
-	add_child(_eye_target)
+	_head_target = CharacterSkin.add_marker(self)
+	_eye_target = CharacterSkin.add_marker(self)
 	for part in BODY:
 		var look := _add_look(part[0], _head_target, SkeletonModifier3D.BONE_AXIS_PLUS_Z, Vector3.AXIS_Y, part[1], true)
 		look.influence = part[2]
@@ -105,11 +100,7 @@ func _add_look(bone: StringName, target: Node3D, forward: SkeletonModifier3D.Bon
 	look.secondary_limit_angle = deg_to_rad(limit.y * 2.0)
 	look.primary_damp_threshold = DAMP
 	look.secondary_damp_threshold = DAMP
-	_skeleton.add_child(look)
-	for child in _skeleton.get_children():
-		if child is BoneClothSimulator3D:
-			_skeleton.move_child(look, child.get_index())
-			break
+	CharacterSkin.add_before_cloth(_skeleton, look)
 	look.target_node = look.get_path_to(target)
 	return look
 

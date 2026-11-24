@@ -1021,21 +1021,18 @@ static func _anchor(t) -> void:
 
 
 static func _preset_round_trip(t) -> void:
+	var resource_names: Array = Resource.new().get_property_list().map(func(property): return property.name)
 	var names: Array[String] = []
-	for property in ClassDB.class_get_property_list("BoneClothPreset", true):
-		if property.usage & PROPERTY_USAGE_STORAGE:
+	for property in ClassDB.instantiate("BoneClothPreset").get_property_list():
+		if property.usage & PROPERTY_USAGE_EDITOR and not property.name in resource_names:
 			names.append(property.name)
-	t.check(names.size() == 42, "Preset round trip: the preset stores %d values." % names.size())
-	
+	t.check(names.size() == 42, "Preset round trip: the preset holds %d values." % names.size())
+
 	var source: Node = ClassDB.instantiate("BoneClothSimulator3D")
 	var target: Node = ClassDB.instantiate("BoneClothSimulator3D")
-	var defaults: Resource = ClassDB.instantiate("BoneClothPreset")
-	var simulator_names: Array[String] = []
-	for property in source.get_property_list():
-		simulator_names.append(property.name)
+	var stored: Array = source.call("make_preset").get_property_list().filter(func(property): return property.usage & PROPERTY_USAGE_STORAGE and not property.name in resource_names)
+	t.check(stored.is_empty(), "Preset round trip: a preset of default values stores %s." % [stored.map(func(property): return property.name)])
 	for name in names:
-		t.check(name in simulator_names, "Preset round trip: the simulator has no %s." % name)
-		t.check(source.get(name) == defaults.get(name), "Preset round trip, %s: the simulator starts at %s, the preset at %s." % [name, source.get(name), defaults.get(name)])
 		var value: Variant = source.get(name)
 		match typeof(value):
 			TYPE_BOOL:

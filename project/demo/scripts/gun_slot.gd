@@ -10,10 +10,6 @@ func _ready() -> void:
 	put_back()
 
 
-func is_full() -> bool:
-	return _shown != null
-
-
 func take() -> void:
 	_shown.queue_free()
 	_shown = null

@@ -73,9 +73,9 @@ func _process(_delta: float) -> void:
 
 
 func _turn(degrees: Vector2) -> void:
-		rotation.y -= deg_to_rad(degrees.x)
-		var tilt := _arm.rotation.x - deg_to_rad(degrees.y)
-		_arm.rotation.x = clampf(tilt, deg_to_rad(pitch_min_deg), deg_to_rad(pitch_max_deg))
+	rotation.y -= deg_to_rad(degrees.x)
+	var tilt := _arm.rotation.x - deg_to_rad(degrees.y)
+	_arm.rotation.x = clampf(tilt, deg_to_rad(pitch_min_deg), deg_to_rad(pitch_max_deg))
 
 
 func kick() -> void:
