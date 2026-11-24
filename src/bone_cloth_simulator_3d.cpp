@@ -95,22 +95,18 @@ void BoneClothSimulator3D::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("reset"), &BoneClothSimulator3D::reset);
 
-	BIND_PROPERTY(PropertyInfo(Variant::INT, "link_mode", PROPERTY_HINT_ENUM, "None,Sequential,Loop"), link_mode, "mode");
-	BIND_PROPERTY(PropertyInfo(Variant::FLOAT, "link_stiffness", PROPERTY_HINT_RANGE, "0,1,0.001"), link_stiffness, "stiffness");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "link_split"), "set_link_split_enabled", "is_link_split_enabled");
-	BIND_PROPERTY(PropertyInfo(Variant::FLOAT, "link_spacing/value", PROPERTY_HINT_RANGE, "0,1,0.001"), link_spacing, "spacing");
-	BIND_PROPERTY(PropertyInfo(Variant::OBJECT, "link_spacing/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), link_spacing_damping_curve, "curve");
-	BIND_PROPERTY(PropertyInfo(Variant::FLOAT, "link_bending", PROPERTY_HINT_RANGE, "0,1,0.001"), link_bending, "bending");
+	// godot-cpp에는 ADD_ARRAY_COUNT가 없어서 PROPERTY_USAGE_ARRAY로 대신한다.
+	BIND_PROPERTY(PropertyInfo(Variant::INT, "chain_count", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_ARRAY, "Chains,chains/"), chain_count, "count");
 
-	BIND_PROPERTY(PropertyInfo(Variant::FLOAT, "drag/value", PROPERTY_HINT_RANGE, "0,1,0.001"), drag, "drag");
-	BIND_PROPERTY(PropertyInfo(Variant::OBJECT, "drag/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), drag_damping_curve, "curve");
 	BIND_PROPERTY(PropertyInfo(Variant::FLOAT, "stiffness/value", PROPERTY_HINT_RANGE, "0,1,0.001"), stiffness, "stiffness");
 	BIND_PROPERTY(PropertyInfo(Variant::OBJECT, "stiffness/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), stiffness_damping_curve, "curve");
 	BIND_PROPERTY(PropertyInfo(Variant::FLOAT, "stiffness/velocity_damping", PROPERTY_HINT_RANGE, "0,1,0.01"), stiffness_velocity_damping, "damping");
-	BIND_PROPERTY(PropertyInfo(Variant::FLOAT, "radius/value", PROPERTY_HINT_RANGE, "0,0.2,0.001,or_greater,suffix:m"), radius, "radius");
-	BIND_PROPERTY(PropertyInfo(Variant::OBJECT, "radius/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), radius_damping_curve, "curve");
-	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "radius/rest_overlap"), "set_rest_overlap_enabled", "is_rest_overlap_enabled");
-	BIND_PROPERTY(PropertyInfo(Variant::FLOAT, "collision_friction", PROPERTY_HINT_RANGE, "0,0.5,0.001"), collision_friction, "friction");
+	BIND_PROPERTY(PropertyInfo(Variant::FLOAT, "drag/value", PROPERTY_HINT_RANGE, "0,1,0.001"), drag, "drag");
+	BIND_PROPERTY(PropertyInfo(Variant::OBJECT, "drag/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), drag_damping_curve, "curve");
+	BIND_PROPERTY(PropertyInfo(Variant::FLOAT, "gravity/value", PROPERTY_HINT_RANGE, "0,20,0.01,or_greater,or_less,suffix:m/s^2"), gravity, "gravity");
+	BIND_PROPERTY(PropertyInfo(Variant::OBJECT, "gravity/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), gravity_damping_curve, "curve");
+	BIND_PROPERTY(PropertyInfo(Variant::VECTOR3, "gravity/direction"), gravity_direction, "direction");
+	BIND_PROPERTY(PropertyInfo(Variant::FLOAT, "gravity/falloff", PROPERTY_HINT_RANGE, "0,1,0.01"), gravity_falloff, "falloff");
 	BIND_PROPERTY(PropertyInfo(Variant::FLOAT, "limit_angle/value", PROPERTY_HINT_RANGE, "0,180,0.1,radians_as_degrees"), limit_angle, "angle");
 	BIND_PROPERTY(PropertyInfo(Variant::OBJECT, "limit_angle/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), limit_angle_damping_curve, "curve");
 	BIND_PROPERTY(PropertyInfo(Variant::FLOAT, "limit_angle/stiffness", PROPERTY_HINT_RANGE, "0,1,0.01"), limit_angle_stiffness, "stiffness");
@@ -118,18 +114,29 @@ void BoneClothSimulator3D::_bind_methods() {
 	BIND_PROPERTY(PropertyInfo(Variant::VECTOR3, "limit_angle/lower", PROPERTY_HINT_RANGE, "-180,0,0.1,radians_as_degrees"), limit_angle_lower, "lower");
 	BIND_PROPERTY(PropertyInfo(Variant::VECTOR3, "limit_angle/upper", PROPERTY_HINT_RANGE, "0,180,0.1,radians_as_degrees"), limit_angle_upper, "upper");
 
-	BIND_PROPERTY(PropertyInfo(Variant::FLOAT, "gravity/value", PROPERTY_HINT_RANGE, "0,20,0.01,or_greater,or_less,suffix:m/s^2"), gravity, "gravity");
-	BIND_PROPERTY(PropertyInfo(Variant::OBJECT, "gravity/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), gravity_damping_curve, "curve");
-	BIND_PROPERTY(PropertyInfo(Variant::VECTOR3, "gravity/direction"), gravity_direction, "direction");
-	BIND_PROPERTY(PropertyInfo(Variant::FLOAT, "gravity/falloff", PROPERTY_HINT_RANGE, "0,1,0.01"), gravity_falloff, "falloff");
+	ADD_GROUP("Collision", "");
+	BIND_PROPERTY(PropertyInfo(Variant::FLOAT, "radius/value", PROPERTY_HINT_RANGE, "0,0.2,0.001,or_greater,suffix:m"), radius, "radius");
+	BIND_PROPERTY(PropertyInfo(Variant::OBJECT, "radius/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), radius_damping_curve, "curve");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "radius/rest_overlap"), "set_rest_overlap_enabled", "is_rest_overlap_enabled");
+	BIND_PROPERTY(PropertyInfo(Variant::FLOAT, "collision_friction", PROPERTY_HINT_RANGE, "0,0.5,0.001"), collision_friction, "friction");
 
+	ADD_GROUP("Link", "link_");
+	BIND_PROPERTY(PropertyInfo(Variant::INT, "link_mode", PROPERTY_HINT_ENUM, "None,Sequential,Loop"), link_mode, "mode");
+	BIND_PROPERTY(PropertyInfo(Variant::FLOAT, "link_stiffness", PROPERTY_HINT_RANGE, "0,1,0.001"), link_stiffness, "stiffness");
+	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "link_split"), "set_link_split_enabled", "is_link_split_enabled");
+	BIND_PROPERTY(PropertyInfo(Variant::FLOAT, "link_spacing/value", PROPERTY_HINT_RANGE, "0,1,0.001"), link_spacing, "spacing");
+	BIND_PROPERTY(PropertyInfo(Variant::OBJECT, "link_spacing/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), link_spacing_damping_curve, "curve");
+	BIND_PROPERTY(PropertyInfo(Variant::FLOAT, "link_bending", PROPERTY_HINT_RANGE, "0,1,0.001"), link_bending, "bending");
+
+	ADD_GROUP("Wind", "wind_");
 	BIND_PROPERTY(PropertyInfo(Variant::FLOAT, "wind_influence/value", PROPERTY_HINT_RANGE, "0,2,0.01,or_greater"), wind_influence, "influence");
 	BIND_PROPERTY(PropertyInfo(Variant::OBJECT, "wind_influence/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), wind_influence_damping_curve, "curve");
 	BIND_PROPERTY(PropertyInfo(Variant::FLOAT, "wind_sync", PROPERTY_HINT_RANGE, "0,1,0.01"), wind_sync, "sync");
 	BIND_PROPERTY(PropertyInfo(Variant::FLOAT, "wind_turbulence", PROPERTY_HINT_RANGE, "0,2,0.01"), wind_turbulence, "turbulence");
 	BIND_PROPERTY(PropertyInfo(Variant::FLOAT, "wind_frequency", PROPERTY_HINT_RANGE, "0,2,0.01"), wind_frequency, "frequency");
+
+	ADD_GROUP("", "");
 	BIND_PROPERTY(PropertyInfo(Variant::FLOAT, "sync/value", PROPERTY_HINT_RANGE, "0,1,0.001"), sync, "sync");
-	// godot-cpp에는 ADD_ARRAY_COUNT가 없어서 PROPERTY_USAGE_ARRAY로 대신한다.
 	BIND_PROPERTY(PropertyInfo(Variant::INT, "sync/bone_count", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_ARRAY, "Sync Bones,sync/bones/"), sync_bone_count, "count");
 
 	ADD_GROUP("Inertia", "");
@@ -181,10 +188,6 @@ void BoneClothSimulator3D::_bind_methods() {
 	BIND_PROPERTY(PropertyInfo(Variant::INT, "camera_culling", PROPERTY_HINT_ENUM, "Off,Reset,Keep"), camera_culling, "mode");
 	BIND_PROPERTY(PropertyInfo(Variant::FLOAT, "distance_culling", PROPERTY_HINT_RANGE, "0,100,0.1,or_greater,suffix:m"), distance_culling, "distance");
 	BIND_PROPERTY(PropertyInfo(Variant::FLOAT, "distance_culling_fade", PROPERTY_HINT_RANGE, "0,1,0.01"), distance_culling_fade, "fade");
-
-	ADD_GROUP("", "");
-
-	BIND_PROPERTY(PropertyInfo(Variant::INT, "chain_count", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_ARRAY, "Chains,chains/"), chain_count, "count");
 
 	BIND_ENUM_CONSTANT(LINK_MODE_NONE);
 	BIND_ENUM_CONSTANT(LINK_MODE_SEQUENTIAL);
