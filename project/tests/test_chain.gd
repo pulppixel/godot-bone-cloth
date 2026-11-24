@@ -35,6 +35,7 @@ const GRAVITY_SAG_MIN := 0.1 # m
 const TICKS_TOLERANCE := 0.005 # m
 const STABILIZATION_RATIO := 0.5
 const CULLING_TOLERANCE := 0.00001 # m
+const BENDING_RATIO := 1.5
 const TIME_MONITOR := &"bone_cloth/time"
 const JOINTS_MONITOR := &"bone_cloth/joints"
 
@@ -159,6 +160,9 @@ static func run(t) -> void:
 	await _stabilization_time(t)
 	await _camera_culling(t)
 	await _distance_culling(t)
+	await _per_axis_limit(t)
+	await _box_collision(t)
+	await _link_bending(t)
 	await _monitors(t)
 	_bone_lookup(t)
 	await _plane_and_inside(t)
@@ -1258,13 +1262,124 @@ static func _distance_culling(t) -> void:
 	t.check(joints == TIP + 2, "Distance culling: past the distance the monitor shows %d joints, for the other rig's %d." % [joints, TIP + 2])
 
 
+static func _per_axis_limit(t) -> void:
+	var cases := {
+		"off": [0, Vector3(), Vector3()],
+		"hinge": [1, Vector3(0.0, -PI, deg_to_rad(-30.0)), Vector3(0.0, PI, deg_to_rad(30.0))],
+		"one way": [1, Vector3(0.0, -PI, 0.0), Vector3(0.0, PI, deg_to_rad(40.0))],
+		"ellipse": [1, Vector3(deg_to_rad(-10.0), -PI, deg_to_rad(-40.0)), Vector3(deg_to_rad(10.0), PI, deg_to_rad(40.0))],
+	}
+	var lowest := {}
+	var highest := {}
+	for c in cases:
+		var rig := Rig.new(t)
+		rig.simulator.set("limit_angle/mode", cases[c][0])
+		rig.simulator.set("limit_angle/lower", cases[c][1])
+		rig.simulator.set("limit_angle/upper", cases[c][2])
+		lowest[c] = Vector3.ONE * INF
+		highest[c] = -Vector3.ONE * INF
+		for frame in 180:
+			var time := float(frame + 1) / 60.0
+			rig.character.position = Vector3(sin(time * 6.0) * 0.6, 0, sin(time * 5.0) * 0.5)
+			rig.character.rotation = Vector3(0, sin(time * 4.0) * 0.8, 0)
+			await rig.advance(1.0 / 60.0)
+			for i in range(1, TIP + 1):
+				var bone := (rig.poses[i].origin - rig.poses[i - 1].origin).normalized()
+				var swing := Vector3.DOWN.cross(bone).normalized() * Vector3.DOWN.angle_to(bone)
+				lowest[c] = lowest[c].min(swing)
+				highest[c] = highest[c].max(swing)
+		rig.remove()
+
+	t.check(highest["off"].x > deg_to_rad(15.0) and lowest["off"].z < deg_to_rad(-35.0) and highest["off"].z > deg_to_rad(45.0), "Per axis limit off: the bones swung only %s to %s deg, so the limit was not tested." % [lowest["off"] * 180.0 / PI, highest["off"] * 180.0 / PI])
+	for c in ["hinge", "one way", "ellipse"]:
+		var lower: Vector3 = cases[c][1]
+		var upper: Vector3 = cases[c][2]
+		var inside: bool = lowest[c].x > lower.x - ANGLE_TOLERANCE and highest[c].x < upper.x + ANGLE_TOLERANCE and lowest[c].z > lower.z - ANGLE_TOLERANCE and highest[c].z < upper.z + ANGLE_TOLERANCE
+		t.check(inside, "Per axis limit, %s: the bones swung %s to %s deg around X and Z." % [c, lowest[c] * 180.0 / PI, highest[c] * 180.0 / PI])
+
+
+static func _box_distance(p_point: Vector3, p_half_size: Vector3) -> float:
+	var over := p_point.abs() - p_half_size
+	return over.max(Vector3.ZERO).length() + minf(maxf(over.x, maxf(over.y, over.z)), 0.0)
+
+
+static func _box_collision(t) -> void:
+	var center := Vector3(0.03, -0.25, 0.0)
+	var half_size := Vector3(0.05, 0.05, 0.1)
+	var deepest := {}
+	for on in [false, true]:
+		var rig := Rig.new(t)
+		rig.simulator.set("radius/rest_overlap", false)
+		if on:
+			var box: Node = ClassDB.instantiate("BoneClothCollisionBox3D")
+			rig.simulator.add_child(box)
+			box.set("bone_name", "b0")
+			box.set("position_offset", center)
+			box.set("size", half_size * 2.0)
+		for frame in 180:
+			await rig.advance(1.0 / 60.0)
+		deepest[on] = -INF
+		for i in range(1, TIP + 1):
+			deepest[on] = maxf(deepest[on], 0.02 - _box_distance(rig.poses[i].origin - center, half_size))
+		rig.remove()
+
+	t.check(deepest[true] <= SHAPE_TOLERANCE, "Box collision: a bone is %.4f m into the box." % deepest[true])
+	t.check(deepest[false] > SWING_MIN, "Box collision off: the bones came only %.4f m into the box, so it was not tested." % deepest[false])
+
+
+#   r +-- a0 - a1 - a2 - a3   (x -0.1)
+#     +-- b0 - b1 - b2 - b3   (x 0)
+#     +-- c0 - c1 - c2 - c3   (x 0.1)
+static func _link_bending(t) -> void:
+	var followed := {}
+	for bending in [0.0, 1.0]:
+		var skeleton := Skeleton3D.new()
+		t.root.add_child(skeleton)
+		skeleton.add_bone("r")
+		for side in [["a", -0.1], ["b", 0.0], ["c", 0.1]]:
+			for i in 4:
+				var bone := skeleton.add_bone("%s%d" % [side[0], i])
+				skeleton.set_bone_parent(bone, 0 if i == 0 else bone - 1)
+				skeleton.set_bone_rest(bone, Transform3D(Basis(), Vector3(side[1], 0, 0) if i == 0 else Vector3(0, -BONE_LENGTH, 0)))
+				skeleton.set_bone_pose(bone, skeleton.get_bone_rest(bone))
+		skeleton.modifier_callback_mode_process = Skeleton3D.MODIFIER_CALLBACK_MODE_PROCESS_MANUAL
+		var simulator: Node = ClassDB.instantiate("BoneClothSimulator3D")
+		skeleton.add_child(simulator)
+		simulator.set("chain_count", 3)
+		for i in 3:
+			simulator.set("chains/%d/root_bone_name" % i, "abc"[i] + "0")
+			simulator.set("chains/%d/end_bone_name" % i, "abc"[i] + "3")
+			simulator.set("chains/%d/extend_end_bone" % i, false)
+		simulator.set("link_mode", 1)
+		simulator.set("link_bending", bending)
+		simulator.set("stiffness/value", 0.05)
+		simulator.set("radius/value", 0.02)
+		var sphere: Node3D = ClassDB.instantiate("BoneClothCollisionSphere3D")
+		simulator.add_child(sphere)
+		sphere.position = Vector3(0.0, -0.25, -0.03)
+		sphere.set("radius", 0.05)
+		for i in [0, 2]:
+			simulator.call("set_enable_all_child_collisions", i, false)
+		var neighbors := [0.0, 0.0] # a3, c3 의 z (skeleton 공간)
+		skeleton.skeleton_updated.connect(func() -> void:
+			neighbors[0] = skeleton.get_bone_global_pose(4).origin.z
+			neighbors[1] = skeleton.get_bone_global_pose(12).origin.z)
+		for frame in 60:
+			skeleton.advance(1.0 / 60.0)
+			await t.process_frame
+		followed[bending] = minf(neighbors[0], neighbors[1])
+		skeleton.free()
+
+	t.check(followed[0.0] < followed[1.0] / BENDING_RATIO, "Link bending 1: the chains beside a pushed chain followed it %.4f m, without bending %.4f m." % [followed[1.0], followed[0.0]])
+
+
 static func _preset_round_trip(t) -> void:
 	var resource_names: Array = Resource.new().get_property_list().map(func(property): return property.name)
 	var names: Array[String] = []
 	for property in ClassDB.instantiate("BoneClothPreset").get_property_list():
 		if property.usage & PROPERTY_USAGE_EDITOR and not property.name in resource_names:
 			names.append(property.name)
-	t.check(names.size() == 49, "Preset round trip: the preset holds %d values." % names.size())
+	t.check(names.size() == 53, "Preset round trip: the preset holds %d values." % names.size())
 
 	var source: Node = ClassDB.instantiate("BoneClothSimulator3D")
 	var target: Node = ClassDB.instantiate("BoneClothSimulator3D")

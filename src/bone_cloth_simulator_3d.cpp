@@ -82,6 +82,8 @@ void BoneClothSimulator3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_link_spacing"), &BoneClothSimulator3D::get_link_spacing);
 	ClassDB::bind_method(D_METHOD("set_link_spacing_damping_curve", "curve"), &BoneClothSimulator3D::set_link_spacing_damping_curve);
 	ClassDB::bind_method(D_METHOD("get_link_spacing_damping_curve"), &BoneClothSimulator3D::get_link_spacing_damping_curve);
+	ClassDB::bind_method(D_METHOD("set_link_bending", "bending"), &BoneClothSimulator3D::set_link_bending);
+	ClassDB::bind_method(D_METHOD("get_link_bending"), &BoneClothSimulator3D::get_link_bending);
 
 	ClassDB::bind_method(D_METHOD("set_drag", "drag"), &BoneClothSimulator3D::set_drag);
 	ClassDB::bind_method(D_METHOD("get_drag"), &BoneClothSimulator3D::get_drag);
@@ -108,6 +110,12 @@ void BoneClothSimulator3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_limit_angle_damping_curve"), &BoneClothSimulator3D::get_limit_angle_damping_curve);
 	ClassDB::bind_method(D_METHOD("set_limit_angle_stiffness", "stiffness"), &BoneClothSimulator3D::set_limit_angle_stiffness);
 	ClassDB::bind_method(D_METHOD("get_limit_angle_stiffness"), &BoneClothSimulator3D::get_limit_angle_stiffness);
+	ClassDB::bind_method(D_METHOD("set_limit_angle_mode", "mode"), &BoneClothSimulator3D::set_limit_angle_mode);
+	ClassDB::bind_method(D_METHOD("get_limit_angle_mode"), &BoneClothSimulator3D::get_limit_angle_mode);
+	ClassDB::bind_method(D_METHOD("set_limit_angle_lower", "lower"), &BoneClothSimulator3D::set_limit_angle_lower);
+	ClassDB::bind_method(D_METHOD("get_limit_angle_lower"), &BoneClothSimulator3D::get_limit_angle_lower);
+	ClassDB::bind_method(D_METHOD("set_limit_angle_upper", "upper"), &BoneClothSimulator3D::set_limit_angle_upper);
+	ClassDB::bind_method(D_METHOD("get_limit_angle_upper"), &BoneClothSimulator3D::get_limit_angle_upper);
 	ClassDB::bind_method(D_METHOD("set_gravity", "gravity"), &BoneClothSimulator3D::set_gravity);
 	ClassDB::bind_method(D_METHOD("get_gravity"), &BoneClothSimulator3D::get_gravity);
 	ClassDB::bind_method(D_METHOD("set_gravity_damping_curve", "curve"), &BoneClothSimulator3D::set_gravity_damping_curve);
@@ -207,6 +215,7 @@ void BoneClothSimulator3D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "link_split"), "set_link_split_enabled", "is_link_split_enabled");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "link_spacing/value", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_link_spacing", "get_link_spacing");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "link_spacing/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_link_spacing_damping_curve", "get_link_spacing_damping_curve");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "link_bending", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_link_bending", "get_link_bending");
 
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "drag/value", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_drag", "get_drag");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "drag/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_drag_damping_curve", "get_drag_damping_curve");
@@ -220,6 +229,9 @@ void BoneClothSimulator3D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "limit_angle/value", PROPERTY_HINT_RANGE, "0,180,0.1,radians_as_degrees"), "set_limit_angle", "get_limit_angle");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "limit_angle/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_limit_angle_damping_curve", "get_limit_angle_damping_curve");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "limit_angle/stiffness", PROPERTY_HINT_RANGE, "0,1,0.01"), "set_limit_angle_stiffness", "get_limit_angle_stiffness");
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "limit_angle/mode", PROPERTY_HINT_ENUM, "Cone,Per Axis"), "set_limit_angle_mode", "get_limit_angle_mode");
+	ADD_PROPERTY(PropertyInfo(Variant::VECTOR3, "limit_angle/lower", PROPERTY_HINT_RANGE, "-180,0,0.1,radians_as_degrees"), "set_limit_angle_lower", "get_limit_angle_lower");
+	ADD_PROPERTY(PropertyInfo(Variant::VECTOR3, "limit_angle/upper", PROPERTY_HINT_RANGE, "0,180,0.1,radians_as_degrees"), "set_limit_angle_upper", "get_limit_angle_upper");
 
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "gravity/value", PROPERTY_HINT_RANGE, "0,20,0.01,or_greater,or_less,suffix:m/s^2"), "set_gravity", "get_gravity");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "gravity/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_gravity_damping_curve", "get_gravity_damping_curve");
@@ -287,6 +299,8 @@ void BoneClothSimulator3D::_bind_methods() {
 	BIND_ENUM_CONSTANT(CAMERA_CULLING_OFF);
 	BIND_ENUM_CONSTANT(CAMERA_CULLING_RESET);
 	BIND_ENUM_CONSTANT(CAMERA_CULLING_KEEP);
+	BIND_ENUM_CONSTANT(LIMIT_ANGLE_MODE_CONE);
+	BIND_ENUM_CONSTANT(LIMIT_ANGLE_MODE_PER_AXIS);
 }
 
 void BoneClothSimulator3D::_notification(int p_what) {
@@ -469,7 +483,12 @@ void BoneClothSimulator3D::_get_property_list(List<PropertyInfo> *p_list) const 
 }
 
 void BoneClothSimulator3D::_validate_property(PropertyInfo &p_property) const {
-	if (link_mode == LINK_MODE_NONE && (p_property.name == StringName("link_stiffness") || p_property.name == StringName("link_split") || String(p_property.name).begins_with("link_spacing/"))) {
+	if (link_mode == LINK_MODE_NONE && (p_property.name == StringName("link_stiffness") || p_property.name == StringName("link_split") || p_property.name == StringName("link_bending") || String(p_property.name).begins_with("link_spacing/"))) {
+		p_property.usage = PROPERTY_USAGE_NO_EDITOR;
+	}
+
+	const bool per_axis = limit_angle_mode == LIMIT_ANGLE_MODE_PER_AXIS;
+	if ((per_axis && p_property.name == StringName("limit_angle/value")) || (!per_axis && (p_property.name == StringName("limit_angle/lower") || p_property.name == StringName("limit_angle/upper")))) {
 		p_property.usage = PROPERTY_USAGE_NO_EDITOR;
 	}
 
@@ -728,6 +747,14 @@ Ref<Curve> BoneClothSimulator3D::get_link_spacing_damping_curve() const {
 	return link_spacing_damping_curve;
 }
 
+void BoneClothSimulator3D::set_link_bending(float p_bending) {
+	link_bending = p_bending;
+}
+
+float BoneClothSimulator3D::get_link_bending() const {
+	return link_bending;
+}
+
 void BoneClothSimulator3D::set_drag(float p_drag) {
 	drag = p_drag;
 }
@@ -822,6 +849,31 @@ void BoneClothSimulator3D::set_limit_angle_stiffness(float p_stiffness) {
 
 float BoneClothSimulator3D::get_limit_angle_stiffness() const {
 	return limit_angle_stiffness;
+}
+
+void BoneClothSimulator3D::set_limit_angle_mode(LimitAngleMode p_mode) {
+	limit_angle_mode = p_mode;
+	notify_property_list_changed();
+}
+
+BoneClothSimulator3D::LimitAngleMode BoneClothSimulator3D::get_limit_angle_mode() const {
+	return limit_angle_mode;
+}
+
+void BoneClothSimulator3D::set_limit_angle_lower(const Vector3 &p_lower) {
+	limit_angle_lower = p_lower;
+}
+
+Vector3 BoneClothSimulator3D::get_limit_angle_lower() const {
+	return limit_angle_lower;
+}
+
+void BoneClothSimulator3D::set_limit_angle_upper(const Vector3 &p_upper) {
+	limit_angle_upper = p_upper;
+}
+
+Vector3 BoneClothSimulator3D::get_limit_angle_upper() const {
+	return limit_angle_upper;
 }
 
 void BoneClothSimulator3D::set_gravity(float p_gravity) {

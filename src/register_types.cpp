@@ -4,6 +4,7 @@
 #include "bone_cloth_simulator_3d.h"
 #include "bone_cloth_wind_3d.h"
 #include "collision/bone_cloth_collision_3d.h"
+#include "collision/bone_cloth_collision_box_3d.h"
 #include "collision/bone_cloth_collision_capsule_3d.h"
 #include "collision/bone_cloth_collision_plane_3d.h"
 #include "collision/bone_cloth_collision_sphere_3d.h"
@@ -29,6 +30,7 @@ void initialize_bone_cloth_module(ModuleInitializationLevel p_level) {
 		GDREGISTER_CLASS(BoneClothCollisionCapsule3D);
 		GDREGISTER_CLASS(BoneClothCollisionPlane3D);
 		GDREGISTER_CLASS(BoneClothCollisionTaperedCapsule3D);
+		GDREGISTER_CLASS(BoneClothCollisionBox3D);
 		BoneClothSimulator3D::add_monitors();
 	}
 

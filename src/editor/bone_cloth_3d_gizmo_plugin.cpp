@@ -2,6 +2,7 @@
 
 #include "bone_cloth_simulator_3d.h"
 #include "collision/bone_cloth_collision_3d.h"
+#include "collision/bone_cloth_collision_box_3d.h"
 #include "collision/bone_cloth_collision_capsule_3d.h"
 #include "collision/bone_cloth_collision_plane_3d.h"
 #include "collision/bone_cloth_collision_sphere_3d.h"
@@ -41,6 +42,17 @@ static void add_sphere(PackedVector3Array &r_lines, const Vector3 &p_center, flo
 	add_arc(r_lines, p_center, Vector3(0, 0, 1), Vector3(1, 0, 0), p_radius, 0.0f, Math::TAU);
 }
 
+static void add_box(PackedVector3Array &r_lines, const Vector3 &p_size) {
+	const AABB box(-p_size * 0.5f, p_size);
+	for (int i = 0; i < 12; i++) {
+		Vector3 from;
+		Vector3 to;
+		box.get_edge(i, from, to);
+		r_lines.push_back(from);
+		r_lines.push_back(to);
+	}
+}
+
 void BoneClothCollision3DGizmoPlugin::_bind_methods() {
 }
 
@@ -76,6 +88,10 @@ String BoneClothCollision3DGizmoPlugin::_get_handle_name(const Ref<EditorNode3DG
 		static const char *names[4] = { "Height", "Height", "Top Radius", "Bottom Radius" };
 		return names[p_handle_id];
 	}
+	if (Object::cast_to<BoneClothCollisionBox3D>(node)) {
+		static const char *names[3] = { "Size X", "Size Y", "Size Z" };
+		return names[p_handle_id / 2];
+	}
 	return "";
 }
 
@@ -92,6 +108,10 @@ Variant BoneClothCollision3DGizmoPlugin::_get_handle_value(const Ref<EditorNode3
 	BoneClothCollisionTaperedCapsule3D *tapered_capsule = Object::cast_to<BoneClothCollisionTaperedCapsule3D>(node);
 	if (tapered_capsule) {
 		return Vector3(tapered_capsule->get_top_radius(), tapered_capsule->get_bottom_radius(), tapered_capsule->get_height());
+	}
+	BoneClothCollisionBox3D *box = Object::cast_to<BoneClothCollisionBox3D>(node);
+	if (box) {
+		return box->get_size();
 	}
 	return Variant();
 }
@@ -119,6 +139,22 @@ void BoneClothCollision3DGizmoPlugin::_set_handle(const Ref<EditorNode3DGizmo> &
 	BoneClothCollisionSphere3D *sphere = Object::cast_to<BoneClothCollisionSphere3D>(node);
 	if (sphere) {
 		sphere->set_radius(MAX(_get_distance_along(Vector3(), side, p_camera, p_screen_pos), MIN_SIZE));
+		return;
+	}
+
+	BoneClothCollisionBox3D *box = Object::cast_to<BoneClothCollisionBox3D>(node);
+	if (box) {
+		const int axis = p_handle_id / 2;
+		const float sign = p_handle_id % 2 == 0 ? 1.0f : -1.0f;
+		Vector3 direction;
+		direction[axis] = sign;
+		const Vector3 initial_size = initial_value;
+		const float distance = _get_distance_along(Vector3(), direction, p_camera, p_screen_pos);
+		const bool keep_center = Input::get_singleton()->is_key_pressed(KEY_ALT);
+		Vector3 size = initial_size;
+		size[axis] = MAX(keep_center ? distance * 2.0f : initial_size[axis] * 0.5f + distance, MIN_SIZE);
+		box->set_size(size);
+		node->set_global_position(keep_center ? initial_transform.origin : initial_transform.xform(direction * ((size[axis] - initial_size[axis]) * 0.5f)));
 		return;
 	}
 
@@ -192,6 +228,9 @@ void BoneClothCollision3DGizmoPlugin::_commit_handle(const Ref<EditorNode3DGizmo
 		const Vector3 initial = initial_value;
 		properties = { "top_radius", "bottom_radius", "height", "global_position" };
 		initial_values = { initial.x, initial.y, initial.z, initial_transform.origin };
+	} else if (Object::cast_to<BoneClothCollisionBox3D>(node)) {
+		properties = { "size", "global_position" };
+		initial_values = { initial_value, initial_transform.origin };
 	} else {
 		return;
 	}
@@ -254,6 +293,18 @@ void BoneClothCollision3DGizmoPlugin::_redraw(const Ref<EditorNode3DGizmo> &p_gi
 	BoneClothCollisionPlane3D *plane = Object::cast_to<BoneClothCollisionPlane3D>(node);
 	if (plane) {
 		_add_plane(lines);
+	}
+
+	BoneClothCollisionBox3D *box = Object::cast_to<BoneClothCollisionBox3D>(node);
+	if (box) {
+		const Vector3 size = box->get_size();
+		add_box(lines, size);
+		for (int i = 0; i < 3; i++) {
+			Vector3 half;
+			half[i] = size[i] * 0.5f;
+			handles.push_back(half);
+			handles.push_back(-half);
+		}
 	}
 
 	if (lines.is_empty()) {
@@ -399,6 +450,7 @@ static void add_skeleton_lines(const Ref<EditorNode3DGizmo> &p_gizmo, PackedVect
 void BoneClothSimulator3DGizmoPlugin::_redraw(const Ref<EditorNode3DGizmo> &p_gizmo) {
 	static constexpr float CONE_SCALE = 0.5f;
 	static constexpr int CONE_LINE_COUNT = 4;
+	static constexpr int LIMIT_BOUNDARY_STEPS = 32;
 	static constexpr float BACKSTOP_MARK = 0.02f;
 
 	p_gizmo->clear();
@@ -445,7 +497,8 @@ void BoneClothSimulator3DGizmoPlugin::_redraw(const Ref<EditorNode3DGizmo> &p_gi
 
 			const Vector3 pose_vector = joint.current_pose_location - parent.current_pose_location;
 			const float length = pose_vector.length();
-			if (!show_limit_angle || simulator->limit_angle <= 0.0f || length < CMP_EPSILON) {
+			const bool per_axis = simulator->limit_angle_mode == BoneClothSimulator3D::LIMIT_ANGLE_MODE_PER_AXIS;
+			if (!show_limit_angle || (!per_axis && simulator->limit_angle <= 0.0f) || length < CMP_EPSILON) {
 				continue;
 			}
 
@@ -454,6 +507,22 @@ void BoneClothSimulator3DGizmoPlugin::_redraw(const Ref<EditorNode3DGizmo> &p_gi
 			const float cone_length = length * CONE_SCALE;
 			lines.push_back(apex);
 			lines.push_back(apex + direction * cone_length);
+
+			if (per_axis) {
+				const SwingFrame frame = make_swing_frame(parent.pose_basis, joint.twist_axis, direction);
+				Vector3 previous = apex + compose_swing(frame, direction, get_limit_boundary(joint.swing_limit, 0.0f)) * cone_length;
+				for (int k = 1; k <= LIMIT_BOUNDARY_STEPS; k++) {
+					const Vector3 point = apex + compose_swing(frame, direction, get_limit_boundary(joint.swing_limit, float(k) / LIMIT_BOUNDARY_STEPS)) * cone_length;
+					lines.push_back(previous);
+					lines.push_back(point);
+					if (k % (LIMIT_BOUNDARY_STEPS / CONE_LINE_COUNT) == 0) {
+						lines.push_back(apex);
+						lines.push_back(point);
+					}
+					previous = point;
+				}
+				continue;
+			}
 
 			const float circle_radius = cone_length * Math::sin(joint.limit_angle);
 			if (circle_radius < CMP_EPSILON) {

@@ -36,6 +36,7 @@ protected:
 	void _notification(int p_what);
 
 	static void _push_segment_out(Vector3 &r_a, Vector3 &r_b, const Vector3 &p_on_segment, const Vector3 &p_on_shape, float p_limit, const Vector3 &p_fallback);
+	static void _push_segment(Vector3 &r_a, Vector3 &r_b, const Vector3 &p_on_segment, const Vector3 &p_push);
 
 	virtual Vector3 _collide(const Transform3D &p_pose, const Vector3 &p_point, float p_radius) const;
 	virtual void _collide_segment(const Transform3D &p_pose, Vector3 &r_a, Vector3 &r_b, float p_radius) const;

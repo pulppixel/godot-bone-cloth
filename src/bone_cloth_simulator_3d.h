@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "bone_cloth_angle_limit.h"
 #include "bone_cloth_preset.h"
 #include "collision/bone_cloth_collision_3d.h"
 
@@ -33,6 +34,11 @@ public:
 		CAMERA_CULLING_KEEP,
 	};
 
+	enum LimitAngleMode {
+		LIMIT_ANGLE_MODE_CONE,
+		LIMIT_ANGLE_MODE_PER_AXIS,
+	};
+
 private:
 	struct Joint {
 		int bone = -1;
@@ -60,6 +66,8 @@ private:
 		float stiffness_damping = 0.0f;
 		float radius = 0.0f;
 		float limit_angle = 0.0f;
+		int twist_axis = 1;
+		SwingLimit swing_limit;
 		float gravity = 0.0f;
 		float wind = 0.0f;
 		float contact = 0.0f;
@@ -111,6 +119,20 @@ private:
 		uint32_t depth = 0;
 		float length = 0.0f;
 	};
+
+	struct JointRef {
+		uint32_t chain = 0;
+		uint32_t depth = 0;
+	};
+
+	struct Bend {
+		uint32_t joints[4] = {};
+		bool volume = false;
+	};
+
+	static constexpr float BEND_VOLUME_SCALE = 1000.0f;
+	static float get_bend_angle(const Vector3 *p_points);
+	static float get_bend_volume(const Vector3 *p_points);
 
 	struct PosedCollision {
 		const BoneClothCollision3D *collision = nullptr;
@@ -165,6 +187,7 @@ private:
 	bool link_split = false;
 	float link_spacing = 0.0f;
 	Ref<Curve> link_spacing_damping_curve;
+	float link_bending = 0.0f;
 	float drag = 0.1f;
 	Ref<Curve> drag_damping_curve;
 	float stiffness = 0.05f;
@@ -177,6 +200,9 @@ private:
 	float limit_angle = 0.0f;
 	Ref<Curve> limit_angle_damping_curve;
 	float limit_angle_stiffness = 1.0f;
+	LimitAngleMode limit_angle_mode = LIMIT_ANGLE_MODE_CONE;
+	Vector3 limit_angle_lower = Vector3(1, 1, 1) * Math::deg_to_rad(-30.0f);
+	Vector3 limit_angle_upper = Vector3(1, 1, 1) * Math::deg_to_rad(30.0f);
 	float gravity = 0.0f;
 	Ref<Curve> gravity_damping_curve;
 	Vector3 gravity_direction = Vector3(0, -1, 0);
@@ -232,6 +258,10 @@ private:
 	float units_per_meter = 1.0f;
 
 	LocalVector<Link> links;
+	LocalVector<JointRef> bend_joints;
+	LocalVector<Bend> bends;
+	LocalVector<Vector3> bend_sums;
+	LocalVector<int> bend_counts;
 	bool joints_dirty = true;
 	bool needs_reset = true;
 	bool culled = false;
@@ -265,6 +295,7 @@ private:
 	void _build_same_chains();
 	void _sort_around(LocalVector<uint32_t> &r_chains) const;
 	void _build_links();
+	void _build_bends();
 	void _build_sync(Skeleton3D *p_skeleton);
 	bool _is_child_collision(const NodePath &p_node_path) const;
 	void _find_chain_collisions(const LocalVector<PosedCollision> &p_collisions);
@@ -286,9 +317,11 @@ private:
 	Vector3 _get_wind_force(const Joint &p_joint, const Chain &p_chain, const StepMotion &p_step) const;
 	void _build_wind(Skeleton3D *p_skeleton);
 	void _solve_links();
+	void _bend();
 	void _space_links();
 	void _collide_segment(Joint &r_a, Joint &r_b, float p_radius, const LocalVector<PosedCollision> &p_collisions, const LocalVector<bool> &p_collides_a, const LocalVector<bool> &p_collides_b, Vector3 Joint::*p_field, bool p_split);
 	void _collide(const LocalVector<PosedCollision> &p_collisions, Vector3 Joint::*p_field);
+	Vector3 _limit_to_axes(const Vector3 &p_offset, const Vector3 &p_pose_vector, const Joint &p_parent, const Joint &p_joint, float p_stiffness) const;
 	void _restore_limits_and_lengths(Chain &p_chain);
 	void _restore_lengths(Chain &p_chain, Vector3 Joint::*p_field, Vector3 Joint::*p_pose_field);
 	void _limit_movement(Chain &p_chain, Vector3 Joint::*p_field, Vector3 Joint::*p_pose_field, const Vector3 &p_backstop_center);
@@ -360,6 +393,8 @@ public:
 	float get_link_spacing() const;
 	void set_link_spacing_damping_curve(const Ref<Curve> &p_curve);
 	Ref<Curve> get_link_spacing_damping_curve() const;
+	void set_link_bending(float p_bending);
+	float get_link_bending() const;
 	void set_drag(float p_drag);
 	float get_drag() const;
 	void set_drag_damping_curve(const Ref<Curve> &p_curve);
@@ -384,6 +419,12 @@ public:
 	Ref<Curve> get_limit_angle_damping_curve() const;
 	void set_limit_angle_stiffness(float p_stiffness);
 	float get_limit_angle_stiffness() const;
+	void set_limit_angle_mode(LimitAngleMode p_mode);
+	LimitAngleMode get_limit_angle_mode() const;
+	void set_limit_angle_lower(const Vector3 &p_lower);
+	Vector3 get_limit_angle_lower() const;
+	void set_limit_angle_upper(const Vector3 &p_upper);
+	Vector3 get_limit_angle_upper() const;
 	void set_gravity(float p_gravity);
 	float get_gravity() const;
 	void set_gravity_damping_curve(const Ref<Curve> &p_curve);
@@ -489,3 +530,4 @@ public:
 
 VARIANT_ENUM_CAST(BoneClothSimulator3D::LinkMode);
 VARIANT_ENUM_CAST(BoneClothSimulator3D::CameraCulling);
+VARIANT_ENUM_CAST(BoneClothSimulator3D::LimitAngleMode);

@@ -289,14 +289,16 @@ void BoneClothCollision3D::_push_segment_out(Vector3 &r_a, Vector3 &r_b, const V
 
 	const float distance = Math::sqrt(distance_squared);
 	const Vector3 direction = distance > CMP_EPSILON ? offset / distance : p_fallback;
-	const Vector3 push = direction * (p_limit - distance);
+	_push_segment(r_a, r_b, p_on_segment, direction * (p_limit - distance));
+}
 
+void BoneClothCollision3D::_push_segment(Vector3 &r_a, Vector3 &r_b, const Vector3 &p_on_segment, const Vector3 &p_push) {
 	const Vector3 line = r_b - r_a;
 	const float line_length_squared = line.length_squared();
 	const float s = line_length_squared > 0.0f ? (p_on_segment - r_a).dot(line) / line_length_squared : 0.0f;
 	const float scale = 1.0f / ((1.0f - s) * (1.0f - s) + s * s);
-	r_a += push * ((1.0f - s) * scale);
-	r_b += push * (s * scale);
+	r_a += p_push * ((1.0f - s) * scale);
+	r_b += p_push * (s * scale);
 }
 
 BoneClothCollision3D::BoneClothCollision3D() {

@@ -73,6 +73,9 @@ void BoneClothSimulator3D::_update_joint_settings(Chain &p_chain) {
 		}
 		joint.radius = MAX(radius * sample_curve(radius_damping_curve, joint.length_rate), 0.0f) * units_per_meter;
 		joint.limit_angle = MAX(limit_angle * sample_curve(limit_angle_damping_curve, joint.length_rate), 0.0f);
+		if (limit_angle_mode == LIMIT_ANGLE_MODE_PER_AXIS) {
+			joint.swing_limit = make_swing_limit(joint.twist_axis, limit_angle_lower, limit_angle_upper, sample_curve(limit_angle_damping_curve, joint.length_rate));
+		}
 		joint.gravity = gravity * sample_curve(gravity_damping_curve, joint.length_rate) * units_per_meter;
 		joint.wind = wind_influence * sample_curve(wind_influence_damping_curve, joint.length_rate) * units_per_meter;
 		joint.spacing = per_step(CLAMP(link_spacing * sample_curve(link_spacing_damping_curve, joint.length_rate), 0.0f, 1.0f), step_scale);
@@ -213,6 +216,7 @@ void BoneClothSimulator3D::_step(const StepMotion &p_step, const LocalVector<Pos
 	}
 
 	_solve_links();
+	_bend();
 	_collide(p_collisions, &Joint::location);
 	_solve_links();
 
@@ -533,6 +537,115 @@ void BoneClothSimulator3D::_solve_links() {
 	}
 }
 
+float BoneClothSimulator3D::get_bend_angle(const Vector3 *p_points) {
+	const Vector3 n1 = (p_points[2] - p_points[0]).cross(p_points[3] - p_points[0]).normalized();
+	const Vector3 n2 = (p_points[3] - p_points[1]).cross(p_points[2] - p_points[1]).normalized();
+	const float angle = Math::acos(CLAMP(n1.dot(n2), -1.0f, 1.0f));
+	return n1.cross(n2).dot(p_points[3] - p_points[2]) < 0.0f ? -angle : angle;
+}
+
+float BoneClothSimulator3D::get_bend_volume(const Vector3 *p_points) {
+	return (p_points[1] - p_points[0]).cross(p_points[2] - p_points[0]).dot(p_points[3] - p_points[0]) / 6.0f * BEND_VOLUME_SCALE;
+}
+
+void BoneClothSimulator3D::_bend() {
+	if (link_bending <= 0.0f || bends.is_empty()) {
+		return;
+	}
+
+	const float stiffness = per_step(link_bending, step_scale);
+	for (uint32_t i = 0; i < bend_joints.size(); i++) {
+		bend_sums[i] = Vector3();
+		bend_counts[i] = 0;
+	}
+
+	for (const Bend &bend : bends) {
+		Vector3 p[4];
+		Vector3 pose[4];
+		float w[4];
+		for (int v = 0; v < 4; v++) {
+			const JointRef &ref = bend_joints[bend.joints[v]];
+			const Joint &joint = chains[ref.chain].joints[ref.depth];
+			p[v] = joint.location;
+			pose[v] = joint.pose_location;
+			w[v] = ref.depth > 0 ? 1.0f : 0.0f;
+		}
+
+		Vector3 corrections[4];
+		if (bend.volume) {
+			const float rest = get_bend_volume(pose);
+			const float volume = get_bend_volume(p);
+			const Vector3 gradients[4] = { (p[1] - p[2]).cross(p[3] - p[2]), (p[2] - p[0]).cross(p[3] - p[0]), (p[0] - p[1]).cross(p[3] - p[1]), (p[1] - p[0]).cross(p[2] - p[0]) };
+			float lambda = 0.0f;
+			for (int v = 0; v < 4; v++) {
+				lambda += w[v] * gradients[v].length_squared();
+			}
+			lambda *= BEND_VOLUME_SCALE;
+			if (Math::abs(lambda) < 1e-6f) {
+				continue;
+			}
+
+			lambda = stiffness * (rest - volume) / lambda;
+			for (int v = 0; v < 4; v++) {
+				corrections[v] = gradients[v] * (lambda * w[v]);
+			}
+		} else {
+			const Vector3 edge = p[3] - p[2];
+			const float edge_length = edge.length();
+			if (edge_length < 1e-8f) {
+				continue;
+			}
+
+			Vector3 n1 = (p[2] - p[0]).cross(p[3] - p[0]);
+			Vector3 n2 = (p[3] - p[1]).cross(p[2] - p[1]);
+			const float n1_squared = n1.length_squared();
+			const float n2_squared = n2.length_squared();
+			if (n1_squared == 0.0f || n2_squared == 0.0f) {
+				continue;
+			}
+			n1 /= n1_squared;
+			n2 /= n2_squared;
+
+			const Vector3 gradients[4] = {
+				n1 * edge_length,
+				n2 * edge_length,
+				n1 * ((p[0] - p[3]).dot(edge) / edge_length) + n2 * ((p[1] - p[3]).dot(edge) / edge_length),
+				n1 * ((p[2] - p[0]).dot(edge) / edge_length) + n2 * ((p[2] - p[1]).dot(edge) / edge_length),
+			};
+			n1.normalize();
+			n2.normalize();
+			float angle = Math::acos(CLAMP(n1.dot(n2), -1.0f, 1.0f));
+			if (n1.cross(n2).dot(edge) < 0.0f) {
+				angle = -angle;
+			}
+
+			float lambda = 0.0f;
+			for (int v = 0; v < 4; v++) {
+				lambda += w[v] * gradients[v].length_squared();
+			}
+			if (lambda == 0.0f) {
+				continue;
+			}
+
+			lambda = (get_bend_angle(pose) - angle) / lambda * stiffness;
+			for (int v = 0; v < 4; v++) {
+				corrections[v] = gradients[v] * (-w[v] * lambda);
+			}
+		}
+
+		for (int v = 0; v < 4; v++) {
+			bend_sums[bend.joints[v]] += corrections[v];
+			bend_counts[bend.joints[v]]++;
+		}
+	}
+
+	for (uint32_t i = 0; i < bend_joints.size(); i++) {
+		if (bend_counts[i] > 0 && bend_joints[i].depth > 0) {
+			chains[bend_joints[i].chain].joints[bend_joints[i].depth].location += bend_sums[i] / float(bend_counts[i]);
+		}
+	}
+}
+
 static Vector3 combine_pushes(const LocalVector<Vector3> &p_pushes) {
 	Vector3 direction_sum;
 	int count = 0;
@@ -691,6 +804,21 @@ static Vector3 limit_to_cone(const Vector3 &p_offset, const Vector3 &p_pose_vect
 	return p_offset.rotated(turn_axis, (p_limit - angle) * p_stiffness);
 }
 
+Vector3 BoneClothSimulator3D::_limit_to_axes(const Vector3 &p_offset, const Vector3 &p_pose_vector, const Joint &p_parent, const Joint &p_joint, float p_stiffness) const {
+	const Vector3 pose_direction = p_pose_vector.normalized();
+	const Vector3 direction = p_offset.normalized();
+	if (pose_direction.is_zero_approx() || direction.is_zero_approx()) {
+		return p_offset;
+	}
+
+	Vector3 clamped = direction;
+	const SwingFrame frame = make_swing_frame(p_parent.pose_basis, p_joint.twist_axis, pose_direction);
+	if (!clamp_direction(frame, pose_direction, p_joint.swing_limit, clamped)) {
+		return p_offset;
+	}
+	return (p_stiffness < 1.0f ? direction.slerp(clamped, p_stiffness) : clamped) * p_offset.length();
+}
+
 void BoneClothSimulator3D::_restore_limits_and_lengths(Chain &p_chain) {
 	const float limit_stiffness = per_step(limit_angle_stiffness, step_scale);
 	for (uint32_t i = 1; i < p_chain.joints.size(); i++) {
@@ -699,7 +827,9 @@ void BoneClothSimulator3D::_restore_limits_and_lengths(Chain &p_chain) {
 		const Vector3 pose_vector = joint.pose_location - parent.pose_location;
 
 		Vector3 offset = joint.location - parent.location;
-		if (limit_angle > 0.0f) {
+		if (limit_angle_mode == LIMIT_ANGLE_MODE_PER_AXIS) {
+			offset = _limit_to_axes(offset, pose_vector, parent, joint, limit_stiffness);
+		} else if (limit_angle > 0.0f) {
 			offset = limit_to_cone(offset, pose_vector, joint.limit_angle, limit_stiffness);
 		}
 
