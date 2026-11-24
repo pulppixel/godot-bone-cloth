@@ -299,6 +299,9 @@
 		<member name="chain_count" type="int" setter="set_chain_count" getter="get_chain_count" default="0">
 			The number of chains.
 		</member>
+		<member name="collision_friction" type="float" setter="set_collision_friction" getter="get_collision_friction" default="0.0">
+			How firmly joints grip a collision they touch, from [code]0.0[/code] to [code]0.5[/code]. A skirt clings to the thighs instead of slipping off them. [code]0.0[/code] disables it.
+		</member>
 		<member name="depth_inertia" type="float" setter="set_depth_inertia" getter="get_depth_inertia" default="0.0">
 			How steady the part near the roots stays while the character moves, from [code]0.0[/code] to [code]1.0[/code]. The tips still sway. Raise it to keep a skirt's waist steady while its hem swings.
 		</member>
@@ -313,6 +316,9 @@
 		</member>
 		<member name="gravity/direction" type="Vector3" setter="set_gravity_direction" getter="get_gravity_direction" default="Vector3(0, -1, 0)">
 			The direction of gravity, in world space. It cannot be zero.
+		</member>
+		<member name="gravity/falloff" type="float" setter="set_gravity_falloff" getter="get_gravity_falloff" default="0.0">
+			How much weaker gravity is while the chains hang as in the rest pose, from [code]0.0[/code] to [code]1.0[/code]. Hair keeps its shape while the head is upright and falls when the character bends over. [code]0.0[/code] disables it.
 		</member>
 		<member name="gravity/value" type="float" setter="set_gravity" getter="get_gravity" default="0.0">
 			The gravity, in m/s^2. [code]9.8[/code] is the earth's gravity. [code]0.0[/code] disables it.
@@ -399,6 +405,9 @@
 			How strongly the chains return to the pose, from [code]0.0[/code] to [code]1.0[/code]. Higher values swing less. Recommended values are between [code]0.05[/code] and [code]0.2[/code].
 			[b]Note:[/b] Values from [SpringBoneSimulator3D] do not carry over.
 		</member>
+		<member name="stiffness/velocity_damping" type="float" setter="set_stiffness_velocity_damping" getter="get_stiffness_velocity_damping" default="0.0">
+			Keeps the pull of [member stiffness/value] from building speed, from [code]0.0[/code] to [code]1.0[/code]. The chains return to the pose more slowly, without swinging past it. [code]0.0[/code] disables it.
+		</member>
 		<member name="sync/bone_count" type="int" setter="set_sync_bone_count" getter="get_sync_bone_count" default="0">
 			The number of sync bones. The chains turn from their roots as these bones swing, as a skirt follows the thighs so that the legs do not pass through it. Add both thighs for a skirt or a long coat.
 			Each chain follows each sync bone by where it hangs around the body: fully on the bone's side, a quarter at a right angle to it, not at all on the opposite side. A bone turning around its own length does not turn the chains.
@@ -412,6 +421,9 @@
 		</member>
 		<member name="teleport_distance" type="float" setter="set_teleport_distance" getter="get_teleport_distance" default="0.5">
 			A move of the character farther than this in one frame, in meters, is a teleport, and the cloth ignores it.
+		</member>
+		<member name="tether_limit" type="float" setter="set_tether_limit" getter="get_tether_limit" default="0.0">
+			How close a joint may come to its chain's root, as a share of their distance in the pose, from [code]0.0[/code] to [code]1.0[/code]. Keeps tips from folding back toward the root on violent moves. [code]0.0[/code] disables it.
 		</member>
 		<member name="wind_frequency" type="float" setter="set_wind_frequency" getter="get_wind_frequency" default="1.0">
 			How fast this simulator's chains waver in the wind, multiplied by [member BoneClothWind3D.frequency].

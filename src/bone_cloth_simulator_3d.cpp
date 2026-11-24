@@ -92,12 +92,16 @@ void BoneClothSimulator3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_stiffness"), &BoneClothSimulator3D::get_stiffness);
 	ClassDB::bind_method(D_METHOD("set_stiffness_damping_curve", "curve"), &BoneClothSimulator3D::set_stiffness_damping_curve);
 	ClassDB::bind_method(D_METHOD("get_stiffness_damping_curve"), &BoneClothSimulator3D::get_stiffness_damping_curve);
+	ClassDB::bind_method(D_METHOD("set_stiffness_velocity_damping", "damping"), &BoneClothSimulator3D::set_stiffness_velocity_damping);
+	ClassDB::bind_method(D_METHOD("get_stiffness_velocity_damping"), &BoneClothSimulator3D::get_stiffness_velocity_damping);
 	ClassDB::bind_method(D_METHOD("set_radius", "radius"), &BoneClothSimulator3D::set_radius);
 	ClassDB::bind_method(D_METHOD("get_radius"), &BoneClothSimulator3D::get_radius);
 	ClassDB::bind_method(D_METHOD("set_radius_damping_curve", "curve"), &BoneClothSimulator3D::set_radius_damping_curve);
 	ClassDB::bind_method(D_METHOD("get_radius_damping_curve"), &BoneClothSimulator3D::get_radius_damping_curve);
 	ClassDB::bind_method(D_METHOD("set_rest_overlap_enabled", "enabled"), &BoneClothSimulator3D::set_rest_overlap_enabled);
 	ClassDB::bind_method(D_METHOD("is_rest_overlap_enabled"), &BoneClothSimulator3D::is_rest_overlap_enabled);
+	ClassDB::bind_method(D_METHOD("set_collision_friction", "friction"), &BoneClothSimulator3D::set_collision_friction);
+	ClassDB::bind_method(D_METHOD("get_collision_friction"), &BoneClothSimulator3D::get_collision_friction);
 	ClassDB::bind_method(D_METHOD("set_limit_angle", "angle"), &BoneClothSimulator3D::set_limit_angle);
 	ClassDB::bind_method(D_METHOD("get_limit_angle"), &BoneClothSimulator3D::get_limit_angle);
 	ClassDB::bind_method(D_METHOD("set_limit_angle_damping_curve", "curve"), &BoneClothSimulator3D::set_limit_angle_damping_curve);
@@ -110,6 +114,8 @@ void BoneClothSimulator3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_gravity_damping_curve"), &BoneClothSimulator3D::get_gravity_damping_curve);
 	ClassDB::bind_method(D_METHOD("set_gravity_direction", "direction"), &BoneClothSimulator3D::set_gravity_direction);
 	ClassDB::bind_method(D_METHOD("get_gravity_direction"), &BoneClothSimulator3D::get_gravity_direction);
+	ClassDB::bind_method(D_METHOD("set_gravity_falloff", "falloff"), &BoneClothSimulator3D::set_gravity_falloff);
+	ClassDB::bind_method(D_METHOD("get_gravity_falloff"), &BoneClothSimulator3D::get_gravity_falloff);
 	ClassDB::bind_method(D_METHOD("set_wind_influence", "influence"), &BoneClothSimulator3D::set_wind_influence);
 	ClassDB::bind_method(D_METHOD("get_wind_influence"), &BoneClothSimulator3D::get_wind_influence);
 	ClassDB::bind_method(D_METHOD("set_wind_influence_damping_curve", "curve"), &BoneClothSimulator3D::set_wind_influence_damping_curve);
@@ -179,6 +185,8 @@ void BoneClothSimulator3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_backstop_radius"), &BoneClothSimulator3D::get_backstop_radius);
 	ClassDB::bind_method(D_METHOD("set_movement_limit_stiffness", "stiffness"), &BoneClothSimulator3D::set_movement_limit_stiffness);
 	ClassDB::bind_method(D_METHOD("get_movement_limit_stiffness"), &BoneClothSimulator3D::get_movement_limit_stiffness);
+	ClassDB::bind_method(D_METHOD("set_tether_limit", "limit"), &BoneClothSimulator3D::set_tether_limit);
+	ClassDB::bind_method(D_METHOD("get_tether_limit"), &BoneClothSimulator3D::get_tether_limit);
 
 	ClassDB::bind_method(D_METHOD("reset"), &BoneClothSimulator3D::reset);
 
@@ -192,9 +200,11 @@ void BoneClothSimulator3D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "drag/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_drag_damping_curve", "get_drag_damping_curve");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "stiffness/value", PROPERTY_HINT_RANGE, "0,1,0.001"), "set_stiffness", "get_stiffness");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "stiffness/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_stiffness_damping_curve", "get_stiffness_damping_curve");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "stiffness/velocity_damping", PROPERTY_HINT_RANGE, "0,1,0.01"), "set_stiffness_velocity_damping", "get_stiffness_velocity_damping");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "radius/value", PROPERTY_HINT_RANGE, "0,0.2,0.001,or_greater,suffix:m"), "set_radius", "get_radius");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "radius/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_radius_damping_curve", "get_radius_damping_curve");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "radius/rest_overlap"), "set_rest_overlap_enabled", "is_rest_overlap_enabled");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "collision_friction", PROPERTY_HINT_RANGE, "0,0.5,0.001"), "set_collision_friction", "get_collision_friction");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "limit_angle/value", PROPERTY_HINT_RANGE, "0,180,0.1,radians_as_degrees"), "set_limit_angle", "get_limit_angle");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "limit_angle/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_limit_angle_damping_curve", "get_limit_angle_damping_curve");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "limit_angle/stiffness", PROPERTY_HINT_RANGE, "0,1,0.01"), "set_limit_angle_stiffness", "get_limit_angle_stiffness");
@@ -202,6 +212,7 @@ void BoneClothSimulator3D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "gravity/value", PROPERTY_HINT_RANGE, "0,20,0.01,or_greater,or_less,suffix:m/s^2"), "set_gravity", "get_gravity");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "gravity/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_gravity_damping_curve", "get_gravity_damping_curve");
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR3, "gravity/direction"), "set_gravity_direction", "get_gravity_direction");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "gravity/falloff", PROPERTY_HINT_RANGE, "0,1,0.01"), "set_gravity_falloff", "get_gravity_falloff");
 
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "wind_influence/value", PROPERTY_HINT_RANGE, "0,2,0.01,or_greater"), "set_wind_influence", "get_wind_influence");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "wind_influence/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_wind_influence_damping_curve", "get_wind_influence_damping_curve");
@@ -241,6 +252,7 @@ void BoneClothSimulator3D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "backstop/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), "set_backstop_damping_curve", "get_backstop_damping_curve");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "backstop/radius", PROPERTY_HINT_RANGE, "0,10,0.01,or_greater,suffix:m"), "set_backstop_radius", "get_backstop_radius");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "movement_limit_stiffness", PROPERTY_HINT_RANGE, "0,1,0.01"), "set_movement_limit_stiffness", "get_movement_limit_stiffness");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "tether_limit", PROPERTY_HINT_RANGE, "0,1,0.01"), "set_tether_limit", "get_tether_limit");
 
 	ADD_GROUP("", "");
 
@@ -723,6 +735,14 @@ Ref<Curve> BoneClothSimulator3D::get_stiffness_damping_curve() const {
 	return stiffness_damping_curve;
 }
 
+void BoneClothSimulator3D::set_stiffness_velocity_damping(float p_damping) {
+	stiffness_velocity_damping = p_damping;
+}
+
+float BoneClothSimulator3D::get_stiffness_velocity_damping() const {
+	return stiffness_velocity_damping;
+}
+
 void BoneClothSimulator3D::set_radius(float p_radius) {
 	radius = p_radius;
 }
@@ -745,6 +765,14 @@ void BoneClothSimulator3D::set_rest_overlap_enabled(bool p_enabled) {
 
 bool BoneClothSimulator3D::is_rest_overlap_enabled() const {
 	return rest_overlap;
+}
+
+void BoneClothSimulator3D::set_collision_friction(float p_friction) {
+	collision_friction = p_friction;
+}
+
+float BoneClothSimulator3D::get_collision_friction() const {
+	return collision_friction;
 }
 
 void BoneClothSimulator3D::set_limit_angle(float p_angle) {
@@ -794,6 +822,14 @@ void BoneClothSimulator3D::set_gravity_direction(const Vector3 &p_direction) {
 
 Vector3 BoneClothSimulator3D::get_gravity_direction() const {
 	return gravity_direction;
+}
+
+void BoneClothSimulator3D::set_gravity_falloff(float p_falloff) {
+	gravity_falloff = p_falloff;
+}
+
+float BoneClothSimulator3D::get_gravity_falloff() const {
+	return gravity_falloff;
 }
 
 void BoneClothSimulator3D::set_wind_influence(float p_influence) {
@@ -1095,6 +1131,14 @@ void BoneClothSimulator3D::set_movement_limit_stiffness(float p_stiffness) {
 
 float BoneClothSimulator3D::get_movement_limit_stiffness() const {
 	return movement_limit_stiffness;
+}
+
+void BoneClothSimulator3D::set_tether_limit(float p_limit) {
+	tether_limit = p_limit;
+}
+
+float BoneClothSimulator3D::get_tether_limit() const {
+	return tether_limit;
 }
 
 void BoneClothSimulator3D::reset() {

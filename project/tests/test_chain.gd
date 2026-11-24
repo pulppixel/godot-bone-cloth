@@ -26,6 +26,12 @@ const BACKSTOP_OFFSET := Vector3(0.1, 0.0, 0.0) # m
 const BACKSTOP_RADIUS := 10.0 # m
 const MOVEMENT_LIMIT_TOLERANCE := 0.00001 # m
 const ANCHOR_TOLERANCE := 0.00001 # m
+const TETHER_LIMIT := 0.8
+const TETHER_CLOSEST := 0.5
+const FRICTION_SPHERE_OFFSET := Vector3(0.5, -0.25, 0.0) # m
+const FRICTION_SPHERE_RADIUS := 0.45 # m
+const FRICTION_SLIDE_RATIO := 0.5
+const GRAVITY_SAG_MIN := 0.1 # m
 const TIME_MONITOR := &"bone_cloth/time"
 const JOINTS_MONITOR := &"bone_cloth/joints"
 
@@ -141,6 +147,10 @@ static func run(t) -> void:
 	await _backstop(t)
 	await _movement_limit_stiffness(t)
 	await _anchor(t)
+	await _tether(t)
+	await _collision_friction(t)
+	await _gravity_falloff(t)
+	await _stiffness_velocity_damping(t)
 	await _monitors(t)
 	_bone_lookup(t)
 	await _plane_and_inside(t)
@@ -1020,13 +1030,101 @@ static func _anchor(t) -> void:
 	t.check(anchored < ANCHOR_TOLERANCE, "Anchor: on the moving anchor the tip is up to %.6f m from the still stage." % anchored)
 
 
+static func _tether(t) -> void:
+	var closest := {}
+	for limit in [0.0, TETHER_LIMIT]:
+		var rig := Rig.new(t)
+		rig.simulator.set("stiffness/value", 0.0)
+		rig.simulator.set("tether_limit", limit)
+		closest[limit] = 1.0
+		for frame in 300:
+			var time := float(frame + 1) / 60.0
+			rig.character.position = Vector3(sin(time * 6.0) * 0.6, sin(time * 5.0) * 0.4, 0)
+			rig.character.rotation = Vector3(sin(time * 3.0) * 1.2, sin(time * 4.0) * 0.8, 0)
+			await rig.advance(1.0 / 60.0)
+			closest[limit] = minf(closest[limit], rig.poses[TIP].origin.length() / (BONE_LENGTH * TIP))
+		rig.remove()
+
+	t.check(closest[TETHER_LIMIT] > TETHER_CLOSEST, "Tether limit %.1f: the tip came to %.4f of its pose distance from the root." % [TETHER_LIMIT, closest[TETHER_LIMIT]])
+	t.check(closest[0.0] < TETHER_CLOSEST, "Tether off: the tip came only to %.4f of its pose distance from the root, so the tether was not tested." % closest[0.0])
+
+
+static func _collision_friction(t) -> void:
+	var slide := {}
+	for friction in [0.0, 0.5]:
+		var rig := Rig.new(t)
+		var sphere: Node = ClassDB.instantiate("BoneClothCollisionSphere3D")
+		rig.simulator.add_child(sphere)
+		sphere.set("bone_name", "b0")
+		sphere.set("position_offset", FRICTION_SPHERE_OFFSET)
+		sphere.set("radius", FRICTION_SPHERE_RADIUS)
+		rig.simulator.set("gravity/direction", Vector3(1, 0, 0))
+		rig.simulator.set("collision_friction", friction)
+		slide[friction] = 0.0
+		var last := 0.0
+		for frame in 240:
+			rig.character.position = Vector3(0, 0, sin(float(frame + 1) / 60.0 * 4.0) * 0.3)
+			await rig.advance(1.0 / 60.0)
+			var z := rig.poses[TIP].origin.z
+			if frame >= 60:
+				slide[friction] += absf(z - last)
+			last = z
+		rig.remove()
+
+	t.check(slide[0.5] < slide[0.0] * FRICTION_SLIDE_RATIO, "Collision friction 0.5: the tip slid %.4f m across the sphere, without friction %.4f m." % [slide[0.5], slide[0.0]])
+
+
+static func _gravity_falloff(t) -> void:
+	var cases := {
+		"off": [0.0, Quaternion()],
+		"upright": [1.0, Quaternion()],
+		"turned": [1.0, Quaternion(Vector3.UP, PI)],
+	}
+	var sag := {}
+	for c in cases:
+		var rig := Rig.new(t)
+		rig.simulator.set("gravity/direction", Vector3(-1, 0, 0))
+		rig.simulator.set("gravity/falloff", cases[c][0])
+		rig.skeleton.set_bone_pose_rotation(0, cases[c][1])
+		for frame in 180:
+			await rig.advance(1.0 / 60.0)
+		sag[c] = rig.poses[TIP].origin.distance_to(Vector3(0, -BONE_LENGTH * TIP, 0))
+		rig.remove()
+
+	t.check(sag["off"] > GRAVITY_SAG_MIN, "Gravity falloff off: the tip sagged only %.4f m, so the falloff was not tested." % sag["off"])
+	t.check(sag["upright"] < SWING_MIN, "Gravity falloff 1, upright: the tip sagged %.4f m." % sag["upright"])
+	t.check(absf(sag["turned"] - sag["off"]) < SHAPE_TOLERANCE, "Gravity falloff 1, turned over: the tip sagged %.4f m, without falloff %.4f m." % [sag["turned"], sag["off"]])
+
+
+static func _stiffness_velocity_damping(t) -> void:
+	var crossings := {}
+	for damping in [0.0, 0.8]:
+		var rig := Rig.new(t)
+		rig.simulator.set("stiffness/value", 0.2)
+		rig.simulator.set("gravity/value", 0.0)
+		rig.simulator.set("stiffness/velocity_damping", damping)
+		crossings[damping] = 0
+		var last_x := 0.0
+		for frame in 240:
+			if frame < 60:
+				_move(rig, float(frame + 1) / 60.0)
+			await rig.advance(1.0 / 60.0)
+			var x := rig.poses[TIP].origin.x
+			if frame > 60 and signf(x) != signf(last_x):
+				crossings[damping] += 1
+			last_x = x
+		rig.remove()
+
+	t.check(crossings[0.8] < crossings[0.0], "Stiffness velocity damping 0.8: the tip swung across its pose %d times while settling, without it %d." % [crossings[0.8], crossings[0.0]])
+
+
 static func _preset_round_trip(t) -> void:
 	var resource_names: Array = Resource.new().get_property_list().map(func(property): return property.name)
 	var names: Array[String] = []
 	for property in ClassDB.instantiate("BoneClothPreset").get_property_list():
 		if property.usage & PROPERTY_USAGE_EDITOR and not property.name in resource_names:
 			names.append(property.name)
-	t.check(names.size() == 42, "Preset round trip: the preset holds %d values." % names.size())
+	t.check(names.size() == 46, "Preset round trip: the preset holds %d values." % names.size())
 
 	var source: Node = ClassDB.instantiate("BoneClothSimulator3D")
 	var target: Node = ClassDB.instantiate("BoneClothSimulator3D")

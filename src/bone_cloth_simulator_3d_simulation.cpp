@@ -23,6 +23,12 @@ static constexpr float WIND_CONTACT_DECAY = 0.6f;
 static constexpr float MOVEMENT_LIMIT_CARRY = 0.95f;
 static constexpr float CENTRIFUGAL_RATE = 1.8f;
 
+static constexpr float TETHER_RAMP = 0.3f;
+static constexpr float TETHER_VELOCITY_DAMPING = 0.7f;
+static constexpr float STATIC_FRICTION_GAIN = 0.04f;
+static constexpr float STATIC_FRICTION_RELEASE = 0.05f;
+static constexpr float STATIC_FRICTION_SLIP_SPEED = 0.2f;
+
 void BoneClothSimulator3D::_read_pose(Skeleton3D *p_skeleton, Chain &p_chain) {
 	for (Joint &joint : p_chain.joints) {
 		if (joint.bone >= 0) {
@@ -188,6 +194,7 @@ void BoneClothSimulator3D::_step(const StepMotion &p_step, const LocalVector<Pos
 		}
 		_follow_parent_chain(chain);
 		_simulate(chain, p_step);
+		_tether(chain);
 	}
 
 	_solve_links();
@@ -213,6 +220,8 @@ void BoneClothSimulator3D::_step(const StepMotion &p_step, const LocalVector<Pos
 		_restore_lengths(chain, &Joint::location, &Joint::pose_location);
 		_limit_movement(chain, &Joint::location, &Joint::pose_location, p_step.backstop_center);
 	}
+
+	_apply_friction();
 }
 
 void BoneClothSimulator3D::_restore_lengths(Chain &p_chain, Vector3 Joint::*p_field, Vector3 Joint::*p_pose_field) {
@@ -293,6 +302,79 @@ void BoneClothSimulator3D::_follow_parent_chain(Chain &p_chain) {
 	root.location = chains[p_chain.parent_chain].joints[p_chain.parent_joint].location;
 }
 
+void BoneClothSimulator3D::_tether(Chain &p_chain) {
+	if (tether_limit <= 0.0f || p_chain.joints.is_empty()) {
+		return;
+	}
+
+	const Chain *top = &p_chain;
+	while (top->parent_chain >= 0) {
+		top = &chains[top->parent_chain];
+	}
+	const Joint &root = top->joints[0];
+	for (uint32_t i = 1; i < p_chain.joints.size(); i++) {
+		Joint &joint = p_chain.joints[i];
+		const Vector3 offset = joint.location - root.location;
+		const float distance = offset.length();
+		const float pose_distance = joint.pose_location.distance_to(root.pose_location);
+		if (distance < 1e-6f || pose_distance < 1e-6f) {
+			continue;
+		}
+
+		const float ratio = distance / pose_distance;
+		if (ratio >= tether_limit) {
+			continue;
+		}
+
+		const float share = MIN((tether_limit - ratio) / TETHER_RAMP, 1.0f);
+		const Vector3 push = offset / distance * ((tether_limit * pose_distance - distance) * share);
+		joint.location += push;
+		joint.prev_location += push * TETHER_VELOCITY_DAMPING;
+	}
+}
+
+void BoneClothSimulator3D::_apply_friction() {
+	if (collision_friction <= 0.0f) {
+		return;
+	}
+
+	const float dt = float(STEP);
+	const float hold_speed = collision_friction * units_per_meter;
+	const float slip_speed = STATIC_FRICTION_SLIP_SPEED * units_per_meter;
+	for (Chain &chain : chains) {
+		if (chain.same_as >= 0) {
+			continue;
+		}
+
+		for (uint32_t i = 1; i < chain.joints.size(); i++) {
+			Joint &joint = chain.joints[i];
+			if (joint.contact < 1.0f) {
+				joint.static_friction = MAX(joint.static_friction - STATIC_FRICTION_RELEASE, 0.0f);
+				continue;
+			}
+
+			const Vector3 normal = joint.contact_normal;
+			const Vector3 move = joint.location - joint.prev_location;
+			const Vector3 slide = move - normal * move.dot(normal);
+			const float slide_speed = slide.length() / dt;
+			if (slide_speed < hold_speed) {
+				joint.static_friction = MIN(joint.static_friction + STATIC_FRICTION_GAIN, 1.0f);
+			} else {
+				joint.static_friction = MAX(joint.static_friction - MAX((slide_speed - hold_speed) / slip_speed, STATIC_FRICTION_RELEASE), 0.0f);
+			}
+			joint.location -= slide * joint.static_friction;
+			joint.prev_location -= slide * joint.static_friction;
+
+			const Vector3 velocity = joint.location - joint.prev_location;
+			if (!velocity.is_zero_approx()) {
+				const float away = 0.5f + 0.5f * normal.dot(velocity.normalized());
+				const float against = 1.0f - away * away;
+				joint.prev_location = joint.location - velocity * (1.0f - against * collision_friction);
+			}
+		}
+	}
+}
+
 Vector3 BoneClothSimulator3D::_get_centrifugal_push(const Joint &p_joint, const StepMotion &p_step, const Vector3 &p_velocity) const {
 	const float spin_speed = p_step.spin.length();
 	if (centrifugal_acceleration <= 0.0f || spin_speed < 1e-6f || p_velocity.is_zero_approx()) {
@@ -364,10 +446,12 @@ void BoneClothSimulator3D::_simulate(Chain &p_chain, const StepMotion &p_step) {
 	for (uint32_t i = 1; i < p_chain.joints.size(); i++) {
 		Joint &joint = p_chain.joints[i];
 		const Joint &parent = p_chain.joints[i - 1];
-		_move_joint(joint, p_step, p_step.forces.gravity_direction * joint.gravity + _get_wind_force(joint, p_chain, p_step) * joint.wind);
+		_move_joint(joint, p_step, p_step.forces.gravity_direction * (joint.gravity * p_step.forces.gravity_share) + _get_wind_force(joint, p_chain, p_step) * joint.wind);
 		joint.contact *= WIND_CONTACT_DECAY;
 		const Vector3 target = parent.location + (joint.pose_location - parent.pose_location);
-		joint.location += (target - joint.location) * joint.stiffness;
+		const Vector3 restore = (target - joint.location) * joint.stiffness;
+		joint.location += restore;
+		joint.prev_location += restore * stiffness_velocity_damping;
 	}
 }
 
@@ -651,10 +735,12 @@ void BoneClothSimulator3D::_reset(const Transform3D &p_skeleton_transform) {
 			joint.pose_location = joint.current_pose_location;
 			joint.prev_pose_location = joint.current_pose_location;
 			joint.display_location = joint.current_pose_location;
+			joint.static_friction = 0.0f;
 		}
 	}
 
 	step_time = 0.0;
+	reset_to_skeleton = p_skeleton_transform.basis.inverse();
 	prev_skeleton_transform = p_skeleton_transform;
 	has_prev_anchor = false;
 	prev_step_move = Vector3();
@@ -738,6 +824,11 @@ BoneClothSimulator3D::FrameMotion BoneClothSimulator3D::_measure_motion(double p
 	motion.to_skeleton = p_skeleton_transform.basis.inverse();
 	Forces &forces = motion.forces;
 	forces.gravity_direction = motion.to_skeleton.xform(gravity_direction).normalized();
+	if (gravity_falloff > 0.0f) {
+		const Vector3 rest_down = frame_center_rotation.xform(reset_to_skeleton.xform(gravity_direction).normalized());
+		const float upright = CLAMP(rest_down.dot(forces.gravity_direction) * 0.5f + 0.5f, 0.0f, 1.0f);
+		forces.gravity_share = Math::lerp(1.0f - gravity_falloff, 1.0f, 1.0f - upright);
+	}
 	const BoneClothWind3D::Total wind = BoneClothWind3D::get_total_wind(this);
 	forces.wind_speed = wind.force.length();
 	forces.wind_turbulence = wind.turbulence;

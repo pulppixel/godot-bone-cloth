@@ -55,6 +55,7 @@ private:
 		float wind = 0.0f;
 		float contact = 0.0f;
 		Vector3 contact_normal;
+		float static_friction = 0.0f;
 		float spacing = 0.0f;
 		float max_distance = 0.0f;
 		float backstop_distance = 0.0f;
@@ -109,6 +110,7 @@ private:
 
 	struct Forces {
 		Vector3 gravity_direction;
+		float gravity_share = 1.0f;
 		Vector3 wind_forward;
 		Vector3 wind_up;
 		Vector3 wind_side;
@@ -157,15 +159,18 @@ private:
 	Ref<Curve> drag_damping_curve;
 	float stiffness = 0.05f;
 	Ref<Curve> stiffness_damping_curve;
+	float stiffness_velocity_damping = 0.0f;
 	float radius = 0.03f;
 	Ref<Curve> radius_damping_curve;
 	bool rest_overlap = true;
+	float collision_friction = 0.0f;
 	float limit_angle = 0.0f;
 	Ref<Curve> limit_angle_damping_curve;
 	float limit_angle_stiffness = 1.0f;
 	float gravity = 0.0f;
 	Ref<Curve> gravity_damping_curve;
 	Vector3 gravity_direction = Vector3(0, -1, 0);
+	float gravity_falloff = 0.0f;
 	float wind_influence = 1.0f;
 	Ref<Curve> wind_influence_damping_curve;
 	float wind_sync = 0.7f;
@@ -204,6 +209,7 @@ private:
 	Ref<Curve> backstop_damping_curve;
 	float backstop_radius = 10.0f;
 	float movement_limit_stiffness = 1.0f;
+	float tether_limit = 0.0f;
 
 	float units_per_meter = 1.0f;
 
@@ -228,6 +234,7 @@ private:
 	Vector3 backstop_center;
 
 	Vector3 smoothing_velocity;
+	Basis reset_to_skeleton;
 
 	float _get_units_per_meter(const Skeleton3D *p_skeleton) const;
 	bool _build_joints(Skeleton3D *p_skeleton, Chain &p_chain);
@@ -247,6 +254,8 @@ private:
 	void _apply_sync(Skeleton3D *p_skeleton);
 	void _step(const StepMotion &p_step, const LocalVector<PosedCollision> &p_collisions);
 	void _follow_parent_chain(Chain &p_chain);
+	void _tether(Chain &p_chain);
+	void _apply_friction();
 	Vector3 _get_centrifugal_push(const Joint &p_joint, const StepMotion &p_step, const Vector3 &p_velocity) const;
 	void _move_joint(Joint &r_joint, const StepMotion &p_step, const Vector3 &p_force);
 	void _move_root(Chain &r_chain, const StepMotion &p_step);
@@ -333,12 +342,16 @@ public:
 	float get_stiffness() const;
 	void set_stiffness_damping_curve(const Ref<Curve> &p_curve);
 	Ref<Curve> get_stiffness_damping_curve() const;
+	void set_stiffness_velocity_damping(float p_damping);
+	float get_stiffness_velocity_damping() const;
 	void set_radius(float p_radius);
 	float get_radius() const;
 	void set_radius_damping_curve(const Ref<Curve> &p_curve);
 	Ref<Curve> get_radius_damping_curve() const;
 	void set_rest_overlap_enabled(bool p_enabled);
 	bool is_rest_overlap_enabled() const;
+	void set_collision_friction(float p_friction);
+	float get_collision_friction() const;
 	void set_limit_angle(float p_angle);
 	float get_limit_angle() const;
 	void set_limit_angle_damping_curve(const Ref<Curve> &p_curve);
@@ -351,6 +364,8 @@ public:
 	Ref<Curve> get_gravity_damping_curve() const;
 	void set_gravity_direction(const Vector3 &p_direction);
 	Vector3 get_gravity_direction() const;
+	void set_gravity_falloff(float p_falloff);
+	float get_gravity_falloff() const;
 	void set_wind_influence(float p_influence);
 	float get_wind_influence() const;
 	void set_wind_influence_damping_curve(const Ref<Curve> &p_curve);
@@ -419,6 +434,8 @@ public:
 	float get_backstop_radius() const;
 	void set_movement_limit_stiffness(float p_stiffness);
 	float get_movement_limit_stiffness() const;
+	void set_tether_limit(float p_limit);
+	float get_tether_limit() const;
 
 	void reset();
 	float get_units_per_meter() const;
