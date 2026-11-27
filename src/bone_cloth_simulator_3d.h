@@ -160,9 +160,15 @@ private:
 		bool volume = false;
 	};
 
+	struct MeshWeights {
+		int bones[4] = { -1, -1, -1, -1 };
+		float weights[4] = {};
+	};
+
 	struct MeshPoints {
 		LocalVector<Vector3> positions;
 		LocalVector<bool> fixed;
+		LocalVector<MeshWeights> weights;
 		LocalVector<uint32_t> indices;
 	};
 
@@ -299,6 +305,17 @@ private:
 	NodePath mesh_instance;
 	float mesh_point_spacing = 0.05f;
 	LocalVector<String> mesh_fixed_bones;
+	LocalVector<JointRef> mesh_point_joints;
+	LocalVector<MeshWeights> mesh_point_weights;
+	LocalVector<Vector3i> mesh_triangles;
+	LocalVector<Quaternion> mesh_triangle_rests;
+	LocalVector<int> mesh_skin_bones;
+	LocalVector<Transform3D> mesh_skins;
+	LocalVector<Transform3D> mesh_poses;
+	ObjectID mesh_original;
+	ObjectID mesh_copy_skeleton;
+	ObjectID mesh_copy;
+	bool mesh_copy_shown = false;
 
 	LocalVector<Link> links;
 	LocalVector<JointRef> bend_joints;
@@ -346,6 +363,12 @@ private:
 	void _join_pieces(MeshPoints &r_points) const;
 	void _grow_mesh_tree(const MeshPoints &p_points, const LocalVector<LocalVector<uint32_t>> &p_neighbors, LocalVector<int> &r_parents) const;
 	void _build_mesh(Skeleton3D *p_skeleton);
+	void _make_mesh_copy(Skeleton3D *p_skeleton, const LocalVector<Vector3> &p_rests, const LocalVector<LocalVector<uint32_t>> &p_neighbors, float p_weight_length);
+	void _clear_mesh_copy();
+	void _show_mesh_copy(bool p_shown);
+	void _refresh_mesh_copy();
+	void _read_mesh_pose(Skeleton3D *p_skeleton);
+	void _write_mesh(float p_weight);
 	void _build_sync(Skeleton3D *p_skeleton);
 	bool _is_child_collision(const NodePath &p_node_path) const;
 	void _find_chain_collisions(const LocalVector<PosedCollision> &p_collisions);

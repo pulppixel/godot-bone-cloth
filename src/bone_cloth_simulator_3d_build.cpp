@@ -485,6 +485,7 @@ void BoneClothSimulator3D::_rebuild_if_changed(Skeleton3D *p_skeleton) {
 			_build_wind(p_skeleton);
 			return;
 		}
+		_clear_mesh_copy();
 		for (Chain &chain : chains) {
 			if (!_build_joints(p_skeleton, chain)) {
 				chain.joints.clear();

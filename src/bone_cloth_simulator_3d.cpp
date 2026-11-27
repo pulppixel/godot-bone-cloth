@@ -220,6 +220,12 @@ void BoneClothSimulator3D::_notification(int p_what) {
 			if (Engine::get_singleton()->is_editor_hint()) {
 				set_notify_transform(true);
 			}
+			if (!mesh_instance.is_empty()) {
+				joints_dirty = true;
+			}
+		} break;
+		case NOTIFICATION_EXIT_TREE: {
+			_clear_mesh_copy();
 		} break;
 		case NOTIFICATION_CHILD_ORDER_CHANGED:
 		case NOTIFICATION_TRANSFORM_CHANGED: {
@@ -1091,11 +1097,11 @@ void BoneClothSimulator3D::_process_modification_with_delta(double p_delta) {
 	const std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
 
 	_rebuild_if_changed(skeleton);
-	if (!mesh_instance.is_empty()) {
-		update_gizmos();
-		return;
+	const bool culling = !_update_culling(skeleton);
+	if (!mesh_instance.is_empty() && mesh_copy_shown == culling) {
+		_show_mesh_copy(!culling);
 	}
-	if (!_update_culling(skeleton)) {
+	if (culling) {
 		culled = true;
 		monitor_time.sum.fetch_add(std::chrono::nanoseconds(std::chrono::steady_clock::now() - start).count(), std::memory_order_relaxed);
 		return;

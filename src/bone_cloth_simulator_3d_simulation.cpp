@@ -99,7 +99,8 @@ void BoneClothSimulator3D::_read_center(Skeleton3D *p_skeleton) {
 		}
 
 		const Joint &root = chain.joints[0];
-		Quaternion rotation = (root.pose_basis.orthonormalized() * p_skeleton->get_bone_global_rest(root.bone).basis.orthonormalized().inverse()).get_rotation_quaternion();
+		const Basis rest = mesh_instance.is_empty() ? p_skeleton->get_bone_global_rest(root.bone).basis.orthonormalized().inverse() : Basis();
+		Quaternion rotation = (root.pose_basis.orthonormalized() * rest).get_rotation_quaternion();
 		if (count == 0) {
 			first_rotation = rotation;
 		} else if (first_rotation.dot(rotation) < 0.0f) {
@@ -1045,9 +1046,14 @@ void BoneClothSimulator3D::_write_rotations(Skeleton3D *p_skeleton, const Chain 
 }
 
 void BoneClothSimulator3D::_read_frame(Skeleton3D *p_skeleton) {
+	if (!mesh_instance.is_empty()) {
+		_read_mesh_pose(p_skeleton);
+	}
 	for (Chain &chain : chains) {
 		if (!chain.joints.is_empty()) {
-			_read_pose(p_skeleton, chain);
+			if (mesh_instance.is_empty()) {
+				_read_pose(p_skeleton, chain);
+			}
 			_update_joint_settings(chain);
 		}
 	}
@@ -1097,7 +1103,7 @@ bool BoneClothSimulator3D::_is_on_screen(const Skeleton3D *p_skeleton, const Cam
 		if (chain.joints.is_empty()) {
 			continue;
 		}
-		const Vector3 shift = p_skeleton->get_bone_global_pose(chain.joints[0].bone).origin - chain.joints[0].display_location;
+		const Vector3 shift = mesh_instance.is_empty() ? p_skeleton->get_bone_global_pose(chain.joints[0].bone).origin - chain.joints[0].display_location : Vector3();
 		for (const Joint &joint : chain.joints) {
 			if (found) {
 				local_bounds.expand_to(joint.display_location + shift);
@@ -1365,7 +1371,12 @@ void BoneClothSimulator3D::_end_frame(Skeleton3D *p_skeleton) {
 			joint.prev_pose_location = joint.current_pose_location;
 		}
 
-		_write_rotations(p_skeleton, chain, weight);
+		if (mesh_instance.is_empty()) {
+			_write_rotations(p_skeleton, chain, weight);
+		}
+	}
+	if (!mesh_instance.is_empty()) {
+		_write_mesh(weight);
 	}
 
 	update_gizmos();
