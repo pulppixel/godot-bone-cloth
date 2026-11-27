@@ -12,6 +12,7 @@ point_count = 2
 stiffness/value = 0.15
 stiffness/velocity_damping = 0.8
 drag/value = 0.15
+gravity/value = 7.0
 limit_angle/value = 0.7853982
 limit_angle/damping_curve = SubResource("Curve_gof18")
 collision_friction = 0.1

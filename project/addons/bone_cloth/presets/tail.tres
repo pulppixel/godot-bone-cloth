@@ -4,6 +4,7 @@
 stiffness/value = 0.08
 stiffness/velocity_damping = 0.5
 drag/value = 0.12
+gravity/value = 0.0
 radius/value = 0.04
 collision_friction = 0.05
 wind_sync = 0.35

@@ -3,6 +3,7 @@
 [resource]
 stiffness/value = 0.25
 drag/value = 0.3
+gravity/value = 0.0
 limit_angle/value = 0.5235988
 radius/value = 0.05
 wind_influence/value = 0.0

@@ -4,6 +4,7 @@
 stiffness/value = 0.15
 stiffness/velocity_damping = 0.6
 drag/value = 0.2
+gravity/value = 0.0
 limit_angle/value = 0.7853982
 radius/value = 0.015
 collision_friction = 0.05

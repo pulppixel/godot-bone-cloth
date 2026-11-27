@@ -12,7 +12,6 @@ point_count = 4
 stiffness/value = 0.02
 stiffness/velocity_damping = 0.8
 drag/value = 0.2
-gravity/value = 5.0
 limit_angle/value = 1.3089969
 limit_angle/damping_curve = SubResource("Curve_6lddl")
 limit_angle/stiffness = 0.66

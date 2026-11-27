@@ -385,7 +385,7 @@
 		<member name="gravity/falloff" type="float" setter="set_gravity_falloff" getter="get_gravity_falloff" default="0.0">
 			How much weaker gravity is while the chains hang as in the rest pose, from [code]0.0[/code] to [code]1.0[/code]. Hair keeps its shape while the head is upright and falls when the character bends over. [code]0.0[/code] disables it.
 		</member>
-		<member name="gravity/value" type="float" setter="set_gravity" getter="get_gravity" default="0.0">
+		<member name="gravity/value" type="float" setter="set_gravity" getter="get_gravity" default="5.0">
 			The gravity, in meters per second squared. [code]9.8[/code] is the earth's gravity. [code]0.0[/code] disables it.
 			[b]Note:[/b] Unlike [SpringBoneSimulator3D], this is an acceleration, not a velocity.
 		</member>
@@ -498,10 +498,10 @@
 			Keeps the pull of [member stiffness/value] from building speed, from [code]0.0[/code] to [code]1.0[/code]. The chains return to the pose more slowly, without swinging past it. [code]0.0[/code] disables it.
 		</member>
 		<member name="sync/bone_count" type="int" setter="set_sync_bone_count" getter="get_sync_bone_count" default="0">
-			The number of sync bones, such as both thighs for a skirt or a long coat. The chains on a bone's side turn from their roots as it swings, so the legs do not pass through the cloth. [code]0[/code] disables it.
+			The number of sync bones, such as both thighs for a skirt or a long coat. The chains in the way of a bone's swing move with it as if hung from it, so the legs do not pass through the cloth. [code]0[/code] disables it.
 		</member>
 		<member name="sync/value" type="float" setter="set_sync" getter="get_sync" default="1.0">
-			How far the chains turn with the sync bones, from [code]0.0[/code] to [code]1.0[/code]. [code]0.7[/code] suits a skirt. A VRoid skirt hangs from the thighs and lifts less with them at lower values, and [code]0.5[/code] suits it.
+			How far the chains turn with the sync bones, from [code]0.0[/code] to [code]1.0[/code]. At lower values their roots still move with the bones, and the chains lift less. [code]0.5[/code] suits a skirt.
 		</member>
 		<member name="teleport_angle" type="float" setter="set_teleport_angle" getter="get_teleport_angle" default="1.5707964">
 			A turn of the character larger than this in one frame, in radians, is a teleport, such as a snap to a new facing. [member teleport_mode] handles it. [code]0.0[/code] disables it.

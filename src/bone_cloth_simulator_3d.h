@@ -113,7 +113,6 @@ private:
 
 		Vector3 end_axis;
 
-		LocalVector<float> sync_shares;
 		LocalVector<bool> sync_inherited;
 
 		Vector3 shock_root;
@@ -229,7 +228,7 @@ private:
 	LimitAngleMode limit_angle_mode = LIMIT_ANGLE_MODE_CONE;
 	Vector3 limit_angle_lower = Vector3(1, 1, 1) * Math::deg_to_rad(-30.0f);
 	Vector3 limit_angle_upper = Vector3(1, 1, 1) * Math::deg_to_rad(30.0f);
-	float gravity = 0.0f;
+	float gravity = 5.0f;
 	Ref<Curve> gravity_damping_curve;
 	Vector3 gravity_direction = Vector3(0, -1, 0);
 	float gravity_falloff = 0.0f;
@@ -334,7 +333,7 @@ private:
 	void _read_backstop_center(Skeleton3D *p_skeleton);
 	void _update_local_shares(StepMotion &r_step, const Vector3 &p_center, const Quaternion &p_center_rotation) const;
 	Quaternion _get_sync_swing(Skeleton3D *p_skeleton, const SyncBone &p_sync_bone) const;
-	Quaternion _get_sync_turn(const Chain &p_chain, const LocalVector<Quaternion> &p_swings, const LocalVector<Vector3> &p_origins, const Vector3 &p_location) const;
+	float _get_sync_follow(const SyncBone &p_sync_bone, const Vector3 &p_origin, const Vector3 &p_location) const;
 	void _apply_sync(Skeleton3D *p_skeleton);
 	void _propagate_shock();
 	void _step(const StepMotion &p_step, const LocalVector<PosedCollision> &p_collisions);

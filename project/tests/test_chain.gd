@@ -192,6 +192,7 @@ static func run(t) -> void:
 	await _shock_propagation(t)
 	await _shock_threshold(t)
 	await _sync_bone(t)
+	await _sync_bone_other_side(t)
 	await _sync_bone_above(t)
 	await _sync_bone_direction(t)
 	await _sync_bone_falloff(t)
@@ -766,33 +767,58 @@ static func _sync_rig(t, p_turn: Quaternion, p_rest := Transform3D(Basis(Vector3
 	return rig
 
 
+static func _hung(p_rest: Vector3, p_origin: Vector3, p_swing: Quaternion, p_share: float, p_value: float) -> Vector3:
+	return p_origin + Quaternion().slerp(p_swing, p_share) * -p_origin + Quaternion().slerp(p_swing, p_share * p_value) * p_rest
+
+
 static func _sync_bone(t) -> void:
+	var front := Vector3(0, 0, 0.05)
 	var cases := {
-		"rest": [Vector3(0, 0, 0.05), Quaternion(), 1.0, Quaternion()],
-		"swing": [Vector3(0, 0, 0.05), Quaternion(Vector3.RIGHT, 0.5), 1.0, Quaternion(Vector3.RIGHT, 0.5)],
-		"back": [Vector3(0, 0, 0.05), Quaternion(Vector3.RIGHT, -0.5), 1.0, Quaternion(Vector3.RIGHT, -0.5)],
-		"half": [Vector3(0, 0, 0.05), Quaternion(Vector3.RIGHT, 0.5), 0.5, Quaternion(Vector3.RIGHT, 0.25)],
-		"side": [Vector3(0.05, 0, 0), Quaternion(Vector3.RIGHT, 0.5), 1.0, Quaternion(Vector3.RIGHT, 0.125)],
-		"twist": [Vector3(0, 0, 0.05), Quaternion(Vector3.UP, 0.5), 1.0, Quaternion()],
-		"off": [Vector3(0, 0, 0.05), Quaternion(Vector3.RIGHT, 0.5), 0.0, Quaternion()],
+		"rest": [front, Quaternion(), 1.0, 1.0],
+		"toward": [front, Quaternion(Vector3.RIGHT, 0.5), 1.0, 1.0],
+		"away": [front, Quaternion(Vector3.RIGHT, -0.5), 1.0, 0.0],
+		"half": [front, Quaternion(Vector3.RIGHT, 0.5), 0.5, 1.0],
+		"zero": [front, Quaternion(Vector3.RIGHT, 0.5), 0.0, 1.0],
+		"diagonal": [Vector3(0.05, 0, 0.05), Quaternion(Vector3.RIGHT, 0.5), 1.0, 0.5 + 0.5 * sqrt(0.5)],
+		"twist": [front, Quaternion(Vector3.UP, 0.5), 1.0, 0.0],
 	}
 	var tips := {}
 	var tilt := 0.0
 	for case in cases:
-		var rig := _sync_rig(t, cases[case][1], Transform3D(Basis(), cases[case][0]))
+		var rig := _sync_rig(t, cases[case][1], Transform3D(Basis(Vector3.BACK, PI), cases[case][0]))
 		rig.simulator.set("sync/value", cases[case][2])
 		for frame in 30:
 			await rig.advance(1.0 / 60.0)
 		tips[case] = rig.tip()
-		if case == "swing":
+		if case == "toward":
 			tilt = (rig.poses[0].basis * Vector3(0, -BONE_LENGTH, 0.05)).angle_to(rig.poses[1].origin - rig.poses[0].origin)
 		rig.remove()
 
 	for case in cases:
-		var expected: Vector3 = cases[case][3] * tips["rest"]
-		t.check(tips[case].distance_to(expected) < SYNC_TOLERANCE, "Sync bone, %s: the chain end is %.5f m off the chain turned from its root." % [case, tips[case].distance_to(expected)])
-	t.check(tips["swing"].distance_to(tips["rest"]) > SWING_MIN, "Sync bone, swing: the chain end moves %.4f m." % tips["swing"].distance_to(tips["rest"]))
-	t.check(tilt < ANGLE_TOLERANCE, "Sync bone, swing: the root bone's rotation points %.4f rad off the moved joint." % tilt)
+		var expected := _hung(tips["rest"], cases[case][0], cases[case][1], cases[case][3], cases[case][2])
+		t.check(tips[case].distance_to(expected) < SYNC_TOLERANCE, "Sync bone, %s: the chain end is %.5f m off the chain hung from the bone by %.2f of its swing." % [case, tips[case].distance_to(expected), cases[case][3]])
+	t.check(tips["toward"].distance_to(tips["rest"]) > SWING_MIN, "Sync bone, toward: the chain end moves %.4f m." % tips["toward"].distance_to(tips["rest"]))
+	t.check(tilt < ANGLE_TOLERANCE, "Sync bone, toward: the root bone's rotation points %.4f rad off the moved joint." % tilt)
+
+
+static func _sync_bone_other_side(t) -> void:
+	var rest := Vector3(0, -BONE_LENGTH, 0.05) + Vector3(0, -BONE_LENGTH * (TIP - 1), 0)
+	var origin := Vector3(0.1, 0, 0.05)
+	var swing := Quaternion(Vector3.RIGHT, 0.5)
+	for other in [false, true]:
+		var rig := _sync_rig(t, swing, Transform3D(Basis(Vector3.BACK, PI), origin))
+		if other:
+			var thigh := rig.skeleton.add_bone("other_thigh")
+			rig.skeleton.set_bone_parent(thigh, 0)
+			rig.skeleton.set_bone_rest(thigh, Transform3D(Basis(Vector3.BACK, PI), Vector3(0, 0, 0.05)))
+			rig.skeleton.set_bone_pose(thigh, rig.skeleton.get_bone_rest(thigh))
+			_set_all(rig.simulator, {"sync/bone_count": 2, "sync/bones/1/bone_name": "other_thigh"})
+		for frame in 30:
+			await rig.advance(1.0 / 60.0)
+		var share := 0.0 if other else 0.5 + 0.5 * (-origin).normalized().dot(Vector3.FORWARD)
+		var expected := _hung(rest, origin, swing, share, 1.0)
+		t.check(rig.tip().distance_to(expected) < SYNC_TOLERANCE, "Sync bone, %s: the chain end is %.5f m off the chain hung from the bone by %.2f of its swing." % ["beside the other bone" if other else "alone", rig.tip().distance_to(expected), share])
+		rig.remove()
 
 
 static func _sync_bone_above(t) -> void:
@@ -813,18 +839,19 @@ static func _sync_bone_above(t) -> void:
 static func _sync_bone_direction(t) -> void:
 	var rest := Vector3(0, -BONE_LENGTH, 0.05) + Vector3(0, -BONE_LENGTH * (TIP - 1), 0)
 	var cases := {
-		"positive z, tip to -z": [1, 0.5, Quaternion()],
-		"positive z, tip to +z": [1, -0.5, Quaternion(Vector3.RIGHT, -0.5)],
-		"negative z, tip to -z": [2, 0.5, Quaternion(Vector3.RIGHT, 0.5)],
-		"none z": [3, -0.5, Quaternion()],
+		"positive z, tip to -z": [1, 0.5, 0.05, 0.0],
+		"positive z, tip to +z": [1, -0.5, -0.05, 1.0],
+		"negative z, tip to -z": [2, 0.5, 0.05, 1.0],
+		"none z": [3, -0.5, -0.05, 0.0],
 	}
 	for c in cases:
-		var rig := _sync_rig(t, Quaternion(Vector3.RIGHT, cases[c][1]))
+		var origin := Vector3(0, 0, cases[c][2])
+		var rig := _sync_rig(t, Quaternion(Vector3.RIGHT, cases[c][1]), Transform3D(Basis(Vector3.BACK, PI), origin))
 		rig.simulator.set("sync/bones/0/direction_z", cases[c][0])
 		for frame in 30:
 			await rig.advance(1.0 / 60.0)
-		var expected: Vector3 = cases[c][2] * rest
-		t.check(rig.tip().distance_to(expected) < SYNC_TOLERANCE, "Sync bone direction, %s: the chain end is %.5f m off the chain turned from its root." % [c, rig.tip().distance_to(expected)])
+		var expected := _hung(rest, origin, Quaternion(Vector3.RIGHT, cases[c][1]), cases[c][3], 1.0)
+		t.check(rig.tip().distance_to(expected) < SYNC_TOLERANCE, "Sync bone direction, %s: the chain end is %.5f m off the chain hung from the bone." % [c, rig.tip().distance_to(expected)])
 		rig.remove()
 
 	var simulator: Node = ClassDB.instantiate("BoneClothSimulator3D")
@@ -842,7 +869,8 @@ static func _sync_bone_falloff(t) -> void:
 		for frame in 30:
 			await rig.advance(1.0 / 60.0)
 		var bone := Vector3(0, -BONE_LENGTH, 0)
-		var expected := swing * (Vector3(0, -BONE_LENGTH, 0.05) + bone) + Quaternion().slerp(swing, 1.0 - 0.5 * amount) * bone + Quaternion().slerp(swing, 1.0 - amount) * bone
+		var origin := Vector3(0, 0, 0.05)
+		var expected := origin - swing * origin + swing * (Vector3(0, -BONE_LENGTH, 0.05) + bone) + Quaternion().slerp(swing, 1.0 - 0.5 * amount) * bone + Quaternion().slerp(swing, 1.0 - amount) * bone
 		t.check(rig.tip().distance_to(expected) < SYNC_TOLERANCE, "Sync bone falloff, amount %.1f: the chain end is %.5f m off the chain bent by distance." % [amount, rig.tip().distance_to(expected)])
 		var miss := 0.0
 		for i in range(1, TIP):

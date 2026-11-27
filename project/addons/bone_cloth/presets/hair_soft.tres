@@ -3,6 +3,8 @@
 [resource]
 stiffness/value = 0.02
 stiffness/velocity_damping = 0.6
+gravity/value = 2.0
+gravity/falloff = 1.0
 limit_angle/value = 1.0471976
 radius/value = 0.02
 collision_friction = 0.05
