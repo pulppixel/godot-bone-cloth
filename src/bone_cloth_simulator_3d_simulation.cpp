@@ -670,8 +670,8 @@ void BoneClothSimulator3D::_solve_links() {
 	const float stiffness_per_step = per_step(link_stiffness, step_scale);
 
 	for (const Link &link : links) {
-		Joint &joint_a = chains[link.chain_a].joints[link.depth];
-		Joint &joint_b = chains[link.chain_b].joints[link.depth];
+		Joint &joint_a = _get_joint(link.a);
+		Joint &joint_b = _get_joint(link.b);
 		const Vector3 delta = joint_b.location - joint_a.location;
 		const float distance = delta.length();
 		if (distance <= 0.0f) {
@@ -834,8 +834,8 @@ void BoneClothSimulator3D::_space_links() {
 	}
 
 	for (const Link &link : links) {
-		Joint &joint_a = chains[link.chain_a].joints[link.depth];
-		Joint &joint_b = chains[link.chain_b].joints[link.depth];
+		Joint &joint_a = _get_joint(link.a);
+		Joint &joint_b = _get_joint(link.b);
 		const float strength = (joint_a.spacing + joint_b.spacing) * 0.5f;
 		const float spacing = joint_a.radius + joint_b.radius;
 		const Vector3 delta = joint_b.location - joint_a.location;
@@ -858,12 +858,12 @@ void BoneClothSimulator3D::_limit_link_stretch() {
 
 	const float limit = MAX(link_stretch_limit, 1.0f);
 	for (const Link &link : links) {
-		if (link.depth == 0) {
+		if (link.a.depth == 0 && link.b.depth == 0) {
 			continue;
 		}
 
-		Joint &joint_a = chains[link.chain_a].joints[link.depth];
-		Joint &joint_b = chains[link.chain_b].joints[link.depth];
+		Joint &joint_a = _get_joint(link.a);
+		Joint &joint_b = _get_joint(link.b);
 		const Vector3 delta = joint_b.location - joint_a.location;
 		const float distance = delta.length();
 		const float longest = link.length * limit;
@@ -932,11 +932,9 @@ void BoneClothSimulator3D::_collide(const LocalVector<PosedCollision> &p_collisi
 	}
 
 	for (const Link &link : links) {
-		Chain &chain_a = chains[link.chain_a];
-		Chain &chain_b = chains[link.chain_b];
-		Joint &joint_a = chain_a.joints[link.depth];
-		Joint &joint_b = chain_b.joints[link.depth];
-		_collide_segment(joint_a, joint_b, (joint_a.radius + joint_b.radius) * 0.5f, p_collisions, chain_a.collides, chain_b.collides, p_field, link_split);
+		Joint &joint_a = _get_joint(link.a);
+		Joint &joint_b = _get_joint(link.b);
+		_collide_segment(joint_a, joint_b, (joint_a.radius + joint_b.radius) * 0.5f, p_collisions, chains[link.a.chain].collides, chains[link.b.chain].collides, p_field, link_split);
 	}
 
 	for (Chain &chain : chains) {

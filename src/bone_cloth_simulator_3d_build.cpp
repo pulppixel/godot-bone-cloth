@@ -240,9 +240,8 @@ void BoneClothSimulator3D::_build_links() {
 			}
 
 			Link link;
-			link.chain_a = a;
-			link.chain_b = b;
-			link.depth = depth;
+			link.a = { a, depth };
+			link.b = { b, depth };
 			link.length = (chain_a.joints[depth].rest_location - chain_b.joints[depth].rest_location).length();
 			links.push_back(link);
 		}
@@ -255,10 +254,6 @@ static constexpr float BEND_MAX_ANGLE = Math::deg_to_rad(120.0f);
 static constexpr float BEND_VOLUME_MIN_ANGLE = Math::deg_to_rad(90.0f);
 static constexpr float BEND_VOLUME_MAX_ANGLE = Math::deg_to_rad(179.0f);
 
-static uint64_t pack_edge(uint32_t p_a, uint32_t p_b) {
-	return (uint64_t(MIN(p_a, p_b)) << 32) | uint64_t(MAX(p_a, p_b));
-}
-
 void BoneClothSimulator3D::_build_bends() {
 	bend_joints.clear();
 	bends.clear();
@@ -269,7 +264,7 @@ void BoneClothSimulator3D::_build_bends() {
 		first_joint[c] = -1;
 	}
 	for (const Link &link : links) {
-		for (uint32_t c : { link.chain_a, link.chain_b }) {
+		for (uint32_t c : { link.a.chain, link.b.chain }) {
 			if (first_joint[c] >= 0) {
 				continue;
 			}
@@ -292,18 +287,18 @@ void BoneClothSimulator3D::_build_bends() {
 
 	HashSet<uint64_t> linked_pairs;
 	for (const Link &link : links) {
-		if (linked_pairs.has(pack_edge(link.chain_a, link.chain_b))) {
+		if (linked_pairs.has(pack_edge(link.a.chain, link.b.chain))) {
 			continue;
 		}
-		linked_pairs.insert(pack_edge(link.chain_a, link.chain_b));
-		const uint32_t a = first_joint[link.chain_a];
-		const uint32_t b = first_joint[link.chain_b];
+		linked_pairs.insert(pack_edge(link.a.chain, link.b.chain));
+		const uint32_t a = first_joint[link.a.chain];
+		const uint32_t b = first_joint[link.b.chain];
 		neighbors[a].push_back(b);
 		neighbors[b].push_back(a);
 	}
 	for (const Link &link : links) {
-		const uint32_t a = first_joint[link.chain_a] + link.depth;
-		const uint32_t b = first_joint[link.chain_b] + link.depth;
+		const uint32_t a = first_joint[link.a.chain] + link.a.depth;
+		const uint32_t b = first_joint[link.b.chain] + link.b.depth;
 		neighbors[a].push_back(b);
 		neighbors[b].push_back(a);
 	}
@@ -347,10 +342,19 @@ void BoneClothSimulator3D::_build_bends() {
 		}
 	}
 
+	_add_bends(triangles);
+}
+
+void BoneClothSimulator3D::_add_bends(const LocalVector<Vector3i> &p_triangles) {
+	const uint32_t count = bend_joints.size();
+	const auto rest = [&](uint32_t p_index) -> const Vector3 & {
+		return chains[bend_joints[p_index].chain].joints[bend_joints[p_index].depth].rest_location;
+	};
+
 	HashMap<uint64_t, LocalVector<uint32_t>> edge_triangles;
 	LocalVector<uint64_t> edges;
-	for (uint32_t t = 0; t < triangles.size(); t++) {
-		const Vector3i &triangle = triangles[t];
+	for (uint32_t t = 0; t < p_triangles.size(); t++) {
+		const Vector3i &triangle = p_triangles[t];
 		for (const uint64_t edge : { pack_edge(triangle.x, triangle.y), pack_edge(triangle.y, triangle.z), pack_edge(triangle.x, triangle.z) }) {
 			if (!edge_triangles.has(edge)) {
 				edges.push_back(edge);
@@ -366,8 +370,8 @@ void BoneClothSimulator3D::_build_bends() {
 		const LocalVector<uint32_t> &shared = edge_triangles[edge];
 		for (uint32_t i = 0; i + 1 < shared.size(); i++) {
 			for (uint32_t j = i + 1; j < shared.size(); j++) {
-				const Vector3i &first = triangles[shared[i]];
-				const Vector3i &second = triangles[shared[j]];
+				const Vector3i &first = p_triangles[shared[i]];
+				const Vector3i &second = p_triangles[shared[j]];
 				const uint32_t opposite_a = uint32_t(first.x + first.y + first.z) - edge_a - edge_b;
 				const uint32_t opposite_b = uint32_t(second.x + second.y + second.z) - edge_a - edge_b;
 				const uint32_t vertices[4] = { opposite_a, opposite_b, edge_a, edge_b };

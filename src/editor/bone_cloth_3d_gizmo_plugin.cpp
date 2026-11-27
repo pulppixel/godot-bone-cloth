@@ -543,8 +543,8 @@ void BoneClothSimulator3DGizmoPlugin::_redraw(const Ref<EditorNode3DGizmo> &p_gi
 	}
 
 	for (const BoneClothSimulator3D::Link &link : simulator->links) {
-		lines.push_back(simulator->chains[link.chain_a].joints[link.depth].display_location);
-		lines.push_back(simulator->chains[link.chain_b].joints[link.depth].display_location);
+		lines.push_back(simulator->_get_joint(link.a).display_location);
+		lines.push_back(simulator->_get_joint(link.b).display_location);
 	}
 
 	if (show_backstop) {

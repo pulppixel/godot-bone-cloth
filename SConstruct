@@ -6,9 +6,11 @@ env = SConscript("godot-cpp/SConstruct", {"api_version": "4.7"})
 
 # The object files go to build/, leaving src/ to the sources; duplicate=False compiles from src/ without copying it.
 env.VariantDir("build", "src", duplicate=False)
+env.VariantDir("build/thirdparty", "thirdparty", duplicate=False)
 
-env.Append(CPPPATH=["src/"])
+env.Append(CPPPATH=["src/", "thirdparty/"])
 sources = Glob("build/*.cpp") + Glob("build/collision/*.cpp") + Glob("build/editor/*.cpp")
+sources += Glob("build/thirdparty/meshoptimizer/*.cpp")
 
 # The class reference in doc_classes/, made by godot --doctool, compiled into the editor and debug builds for F1 and the
 # inspector tooltips, as the godot-cpp template does; generated into build/ beside the object files.

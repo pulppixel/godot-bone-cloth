@@ -24,6 +24,10 @@ using namespace godot;
 
 class BoneClothSimulator3DGizmoPlugin;
 
+inline uint64_t pack_edge(uint32_t p_a, uint32_t p_b) {
+	return (uint64_t(MIN(p_a, p_b)) << 32) | uint64_t(MAX(p_a, p_b));
+}
+
 class BoneClothSimulator3D : public SkeletonModifier3D {
 	GDCLASS(BoneClothSimulator3D, SkeletonModifier3D)
 
@@ -140,16 +144,15 @@ private:
 		float falloff_amount = 1.0f;
 	};
 
-	struct Link {
-		uint32_t chain_a = 0;
-		uint32_t chain_b = 0;
-		uint32_t depth = 0;
-		float length = 0.0f;
-	};
-
 	struct JointRef {
 		uint32_t chain = 0;
 		uint32_t depth = 0;
+	};
+
+	struct Link {
+		JointRef a;
+		JointRef b;
+		float length = 0.0f;
 	};
 
 	struct Bend {
@@ -318,6 +321,8 @@ private:
 	Vector3 smoothing_velocity;
 	Basis reset_to_skeleton;
 
+	Joint &_get_joint(const JointRef &p_ref) { return chains[p_ref.chain].joints[p_ref.depth]; }
+	const Joint &_get_joint(const JointRef &p_ref) const { return chains[p_ref.chain].joints[p_ref.depth]; }
 	float _get_units_per_meter(const Skeleton3D *p_skeleton) const;
 	bool _build_joints(Skeleton3D *p_skeleton, Chain &p_chain);
 	void _build_branches();
@@ -325,6 +330,7 @@ private:
 	void _sort_around(LocalVector<uint32_t> &r_chains) const;
 	void _build_links();
 	void _build_bends();
+	void _add_bends(const LocalVector<Vector3i> &p_triangles);
 	void _build_sync(Skeleton3D *p_skeleton);
 	bool _is_child_collision(const NodePath &p_node_path) const;
 	void _find_chain_collisions(const LocalVector<PosedCollision> &p_collisions);
