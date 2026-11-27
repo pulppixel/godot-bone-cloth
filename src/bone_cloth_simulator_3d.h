@@ -312,6 +312,7 @@ private:
 	LocalVector<int> mesh_skin_bones;
 	LocalVector<Transform3D> mesh_skins;
 	LocalVector<Transform3D> mesh_poses;
+	LocalVector<StringName> mesh_instance_parameters;
 	ObjectID mesh_original;
 	ObjectID mesh_copy_skeleton;
 	ObjectID mesh_copy;

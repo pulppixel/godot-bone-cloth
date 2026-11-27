@@ -3,6 +3,7 @@
 #include "meshoptimizer/meshoptimizer.h"
 
 #include <godot_cpp/classes/array_mesh.hpp>
+#include <godot_cpp/classes/class_db_singleton.hpp>
 #include <godot_cpp/classes/mesh_instance3d.hpp>
 #include <godot_cpp/classes/rendering_server.hpp>
 #include <godot_cpp/classes/skin.hpp>
@@ -84,6 +85,48 @@ static void get_vertex_weights(const PackedInt32Array &p_bones, const PackedFloa
 	}
 	for (int slot = 0; slot < 4; slot++) {
 		r_weights[slot] = total > 0.0f ? r_weights[slot] / total : 0.0f;
+	}
+}
+
+static Dictionary get_surface_lods(const Ref<ArrayMesh> &p_mesh, int p_surface) {
+	const Dictionary surface = RenderingServer::get_singleton()->mesh_get_surface(p_mesh->get_rid(), p_surface);
+	const Array lods = surface.get("lods", Array());
+	// RenderingServer는 버텍스가 65536개 이하인 서피스의 인덱스를 16비트로 저장한다(mesh_surface_get_lods와 같다).
+	const bool wide = int64_t(surface.get("vertex_count", 0)) > 65536;
+	Dictionary result;
+	for (int64_t i = 0; i < lods.size(); i++) {
+		const Dictionary lod = lods[i];
+		const PackedByteArray data = lod["index_data"];
+		PackedInt32Array indices;
+		if (wide) {
+			indices = data.to_int32_array();
+		} else {
+			indices.resize(data.size() / 2);
+			for (int64_t k = 0; k < indices.size(); k++) {
+				indices.set(k, int32_t(data.decode_u16(k * 2)));
+			}
+		}
+		result[lod["edge_length"]] = indices;
+	}
+	return result;
+}
+
+static void copy_instance_values(const MeshInstance3D *p_from, MeshInstance3D *p_to) {
+	HashSet<String> names;
+	for (const char *class_name : { "VisualInstance3D", "GeometryInstance3D" }) {
+		const TypedArray<Dictionary> list = ClassDBSingleton::get_singleton()->class_get_property_list(class_name, true);
+		for (int64_t i = 0; i < list.size(); i++) {
+			names.insert(Dictionary(list[i])["name"]);
+		}
+	}
+
+	const TypedArray<Dictionary> properties = p_from->get_property_list();
+	for (int64_t i = 0; i < properties.size(); i++) {
+		const Dictionary property = properties[i];
+		const String name = property["name"];
+		if ((int64_t(property["usage"]) & PROPERTY_USAGE_STORAGE) && (names.has(name) || name.begins_with("instance_shader_parameters/") || name.begins_with("surface_material_override/"))) {
+			p_to->set(name, p_from->get(name));
+		}
 	}
 }
 
@@ -777,7 +820,7 @@ void BoneClothSimulator3D::_make_mesh_copy(Skeleton3D *p_skeleton, const LocalVe
 			blends[b] = blend;
 		}
 
-		copy_mesh->add_surface_from_arrays(mesh->surface_get_primitive_type(s), arrays, blends, Dictionary(), BitField<Mesh::ArrayFormat>(int64_t(mesh->surface_get_format(s)) & int64_t(CUSTOM_FORMATS)));
+		copy_mesh->add_surface_from_arrays(mesh->surface_get_primitive_type(s), arrays, blends, get_surface_lods(mesh, s), BitField<Mesh::ArrayFormat>(int64_t(mesh->surface_get_format(s)) & int64_t(CUSTOM_FORMATS)));
 		copy_mesh->surface_set_material(s, mesh->surface_get_material(s));
 		copy_mesh->surface_set_name(s, mesh->surface_get_name(s));
 	}
@@ -798,15 +841,14 @@ void BoneClothSimulator3D::_make_mesh_copy(Skeleton3D *p_skeleton, const LocalVe
 	copy->set_mesh(copy_mesh);
 	copy->set_skin(skin);
 	copy->set_skeleton_path(NodePath(".."));
-	copy->set_material_override(original->get_material_override());
-	copy->set_material_overlay(original->get_material_overlay());
-	copy->set_cast_shadows_setting(original->get_cast_shadows_setting());
-	copy->set_transparency(original->get_transparency());
-	copy->set_layer_mask(original->get_layer_mask());
-	for (int s = 0; s < original->get_surface_override_material_count(); s++) {
-		copy->set_surface_override_material(s, original->get_surface_override_material(s));
-	}
+	copy_instance_values(original, copy);
 	copy_skeleton->add_child(copy);
+
+	mesh_instance_parameters.clear();
+	const TypedArray<Dictionary> parameters = RenderingServer::get_singleton()->instance_geometry_get_shader_parameter_list(original->get_instance());
+	for (int64_t i = 0; i < parameters.size(); i++) {
+		mesh_instance_parameters.push_back(Dictionary(parameters[i])["name"]);
+	}
 	original->add_child(copy_skeleton, false, Node::INTERNAL_MODE_BACK);
 
 	mesh_original = ObjectID(original->get_instance_id());
@@ -840,6 +882,7 @@ void BoneClothSimulator3D::_clear_mesh_copy() {
 	mesh_copy = ObjectID();
 	mesh_copy_shown = false;
 	mesh_point_joints.clear();
+	mesh_instance_parameters.clear();
 	set_process_internal(false);
 }
 
@@ -927,9 +970,18 @@ void BoneClothSimulator3D::_write_mesh(float p_weight) {
 
 	MeshInstance3D *original = Object::cast_to<MeshInstance3D>(ObjectDB::get_instance(mesh_original));
 	MeshInstance3D *copy = Object::cast_to<MeshInstance3D>(ObjectDB::get_instance(mesh_copy));
-	for (int b = 0; original && copy && b < original->get_blend_shape_count(); b++) {
+	if (!original || !copy) {
+		return;
+	}
+	for (int b = 0; b < original->get_blend_shape_count(); b++) {
 		if (copy->get_blend_shape_value(b) != original->get_blend_shape_value(b)) {
 			copy->set_blend_shape_value(b, original->get_blend_shape_value(b));
+		}
+	}
+	for (const StringName &name : mesh_instance_parameters) {
+		const Variant value = original->get_instance_shader_parameter(name);
+		if (copy->get_instance_shader_parameter(name) != value) {
+			copy->set_instance_shader_parameter(name, value);
 		}
 	}
 }
