@@ -1,6 +1,5 @@
 #include "collision/bone_cloth_collision_capsule_3d.h"
 
-#include <godot_cpp/classes/geometry3d.hpp>
 #include <godot_cpp/core/class_db.hpp>
 
 using namespace godot;
@@ -95,8 +94,10 @@ void BoneClothCollisionCapsule3D::_collide_segment(const Transform3D &p_pose, Ve
 	Vector3 tail;
 	_get_head_and_tail(p_pose, head, tail);
 	const Vector3 scale = _get_scale(p_pose.basis);
-	const PackedVector3Array closest = _get_closest_points(r_a, r_b, head, tail);
-	_push_segment_out(r_a, r_b, closest[0], closest[1], radius * (scale.x + scale.z) * 0.5f + p_radius, p_pose.basis.get_column(0).normalized());
+	Vector3 on_segment;
+	Vector3 on_axis;
+	_get_closest_points(r_a, r_b, head, tail, on_segment, on_axis);
+	_push_segment_out(r_a, r_b, on_segment, on_axis, radius * (scale.x + scale.z) * 0.5f + p_radius, p_pose.basis.get_column(0).normalized());
 }
 
 float BoneClothCollisionCapsule3D::_segment_depth(const Transform3D &p_pose, const Vector3 &p_a, const Vector3 &p_b, float p_radius) const {
@@ -108,6 +109,19 @@ float BoneClothCollisionCapsule3D::_segment_depth(const Transform3D &p_pose, con
 	Vector3 tail;
 	_get_head_and_tail(p_pose, head, tail);
 	const Vector3 scale = _get_scale(p_pose.basis);
-	const PackedVector3Array closest = _get_closest_points(p_a, p_b, head, tail);
-	return MAX(radius * (scale.x + scale.z) * 0.5f + p_radius - closest[0].distance_to(closest[1]), 0.0f);
+	Vector3 on_segment;
+	Vector3 on_axis;
+	_get_closest_points(p_a, p_b, head, tail, on_segment, on_axis);
+	return MAX(radius * (scale.x + scale.z) * 0.5f + p_radius - on_segment.distance_to(on_axis), 0.0f);
+}
+
+float BoneClothCollisionCapsule3D::_get_reach(const Transform3D &p_pose) const {
+	if (inside) {
+		return -1.0f;
+	}
+	Vector3 head;
+	Vector3 tail;
+	_get_head_and_tail(p_pose, head, tail);
+	const Vector3 scale = _get_scale(p_pose.basis);
+	return head.distance_to(p_pose.origin) + radius * MAX(scale.x, scale.z);
 }

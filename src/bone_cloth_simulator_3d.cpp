@@ -3,6 +3,7 @@
 #include "bone_cloth_bone_lookup.h"
 
 #include <godot_cpp/classes/engine.hpp>
+#include <godot_cpp/classes/mesh_instance3d.hpp>
 #include <godot_cpp/classes/performance.hpp>
 #include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/core/math.hpp>
@@ -226,6 +227,12 @@ void BoneClothSimulator3D::_notification(int p_what) {
 		} break;
 		case NOTIFICATION_EXIT_TREE: {
 			_clear_mesh_copy();
+		} break;
+		case NOTIFICATION_INTERNAL_PROCESS: {
+			if (!is_active() && mesh_copy_shown) {
+				_show_mesh_copy(false);
+				needs_reset = true;
+			}
 		} break;
 		case NOTIFICATION_CHILD_ORDER_CHANGED:
 		case NOTIFICATION_TRANSFORM_CHANGED: {
@@ -512,6 +519,7 @@ void BoneClothSimulator3D::set_mesh_fixed_bone_count(int p_count) {
 	mesh_fixed_bones.resize(p_count);
 	joints_dirty = true;
 	notify_property_list_changed();
+	update_configuration_warnings();
 }
 
 int BoneClothSimulator3D::get_mesh_fixed_bone_count() const {
@@ -522,6 +530,7 @@ void BoneClothSimulator3D::set_mesh_fixed_bone(int p_index, const String &p_bone
 	ERR_FAIL_INDEX(p_index, int(mesh_fixed_bones.size()));
 	mesh_fixed_bones[p_index] = p_bone_name;
 	joints_dirty = true;
+	update_configuration_warnings();
 }
 
 String BoneClothSimulator3D::get_mesh_fixed_bone(int p_index) const {
@@ -971,6 +980,21 @@ PackedStringArray BoneClothSimulator3D::_get_configuration_warnings() const {
 
 	if (!anchor.is_empty() && is_inside_tree() && !Object::cast_to<Node3D>(get_node_or_null(anchor))) {
 		warnings.push_back(vformat("Anchor '%s' is not a Node3D.", anchor));
+	}
+
+	if (!mesh_instance.is_empty() && is_inside_tree()) {
+		const MeshInstance3D *mesh_node = Object::cast_to<MeshInstance3D>(get_node_or_null(mesh_instance));
+		if (!mesh_node || mesh_node->get_mesh().is_null() || mesh_node->get_skin().is_null()) {
+			warnings.push_back(vformat("Mesh '%s' is not a MeshInstance3D with a mesh and a skin.", mesh_instance));
+		}
+		if (mesh_fixed_bones.is_empty()) {
+			warnings.push_back("No fixed bones. Add the bones the mesh hangs from under Fixed Bones, such as the hips.");
+		}
+		for (uint32_t i = 0; i < mesh_fixed_bones.size() && skeleton; i++) {
+			if (skeleton->find_bone(mesh_fixed_bones[i]) < 0) {
+				warnings.push_back(vformat("Fixed bone %d: '%s' is not in the skeleton.", i, mesh_fixed_bones[i]));
+			}
+		}
 	}
 
 	if (skeleton && !backstop_bone_name.is_empty() && backstop_bone < 0) {

@@ -1,6 +1,5 @@
 #include "collision/bone_cloth_collision_sphere_3d.h"
 
-#include <godot_cpp/classes/geometry3d.hpp>
 #include <godot_cpp/core/class_db.hpp>
 
 using namespace godot;
@@ -46,7 +45,7 @@ void BoneClothCollisionSphere3D::_collide_segment(const Transform3D &p_pose, Vec
 	}
 
 	const Vector3 scale = _get_scale(p_pose.basis);
-	const Vector3 on_segment = Geometry3D::get_singleton()->get_closest_point_to_segment(p_pose.origin, r_a, r_b);
+	const Vector3 on_segment = _get_closest_point_to_segment(p_pose.origin, r_a, r_b);
 	_push_segment_out(r_a, r_b, on_segment, p_pose.origin, radius * (scale.x + scale.y + scale.z) / 3.0f + p_radius, p_pose.basis.get_column(0).normalized());
 }
 
@@ -56,6 +55,14 @@ float BoneClothCollisionSphere3D::_segment_depth(const Transform3D &p_pose, cons
 	}
 
 	const Vector3 scale = _get_scale(p_pose.basis);
-	const Vector3 on_segment = Geometry3D::get_singleton()->get_closest_point_to_segment(p_pose.origin, p_a, p_b);
+	const Vector3 on_segment = _get_closest_point_to_segment(p_pose.origin, p_a, p_b);
 	return MAX(radius * (scale.x + scale.y + scale.z) / 3.0f + p_radius - on_segment.distance_to(p_pose.origin), 0.0f);
+}
+
+float BoneClothCollisionSphere3D::_get_reach(const Transform3D &p_pose) const {
+	if (inside) {
+		return -1.0f;
+	}
+	const Vector3 scale = _get_scale(p_pose.basis);
+	return radius * MAX(MAX(scale.x, scale.y), scale.z);
 }

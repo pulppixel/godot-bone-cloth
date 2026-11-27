@@ -29,6 +29,8 @@ class BoneClothCollision3D : public Node3D {
 	Transform3D mirror_pose;
 	Transform3D rest_pose;
 	Transform3D mirror_rest_pose;
+	float reach = -1.0f;
+	float mirror_reach = -1.0f;
 
 protected:
 	static void _bind_methods();
@@ -38,12 +40,14 @@ protected:
 	static void _push_segment_out(Vector3 &r_a, Vector3 &r_b, const Vector3 &p_on_segment, const Vector3 &p_on_shape, float p_limit, const Vector3 &p_fallback);
 	static void _push_segment(Vector3 &r_a, Vector3 &r_b, const Vector3 &p_on_segment, const Vector3 &p_push);
 	static Vector3 _get_scale(const Basis &p_basis);
-	static PackedVector3Array _get_closest_points(const Vector3 &p_a, const Vector3 &p_b, const Vector3 &p_head, const Vector3 &p_tail);
+	static void _get_closest_points(const Vector3 &p_a, const Vector3 &p_b, const Vector3 &p_head, const Vector3 &p_tail, Vector3 &r_on_segment, Vector3 &r_on_axis);
+	static Vector3 _get_closest_point_to_segment(const Vector3 &p_point, const Vector3 &p_a, const Vector3 &p_b);
 	static Vector3 _collide_sphere(const Vector3 &p_center, float p_radius, bool p_inside, const Vector3 &p_fallback, const Vector3 &p_point, float p_point_radius);
 
 	virtual Vector3 _collide(const Transform3D &p_pose, const Vector3 &p_point, float p_radius) const;
 	virtual void _collide_segment(const Transform3D &p_pose, Vector3 &r_a, Vector3 &r_b, float p_radius) const;
 	virtual float _segment_depth(const Transform3D &p_pose, const Vector3 &p_a, const Vector3 &p_b, float p_radius) const;
+	virtual float _get_reach(const Transform3D &p_pose) const;
 
 public:
 	PackedStringArray _get_configuration_warnings() const override;

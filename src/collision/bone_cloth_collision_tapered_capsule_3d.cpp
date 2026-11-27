@@ -1,6 +1,5 @@
 #include "collision/bone_cloth_collision_tapered_capsule_3d.h"
 
-#include <godot_cpp/classes/geometry3d.hpp>
 #include <godot_cpp/core/class_db.hpp>
 
 using namespace godot;
@@ -124,11 +123,13 @@ void BoneClothCollisionTaperedCapsule3D::_collide_segment(const Transform3D &p_p
 	Vector3 head;
 	Vector3 tail;
 	_get_head_and_tail(p_pose, head, tail);
-	const PackedVector3Array closest = _get_closest_points(r_a, r_b, head, tail);
+	Vector3 on_segment;
+	Vector3 on_axis;
+	_get_closest_points(r_a, r_b, head, tail, on_segment, on_axis);
 	Vector3 center;
 	float radius;
-	_get_nearest_sphere(p_pose, head, tail, closest[0], center, radius);
-	_push_segment_out(r_a, r_b, closest[0], center, radius + p_radius, p_pose.basis.get_column(0).normalized());
+	_get_nearest_sphere(p_pose, head, tail, on_segment, center, radius);
+	_push_segment_out(r_a, r_b, on_segment, center, radius + p_radius, p_pose.basis.get_column(0).normalized());
 }
 
 float BoneClothCollisionTaperedCapsule3D::_segment_depth(const Transform3D &p_pose, const Vector3 &p_a, const Vector3 &p_b, float p_radius) const {
@@ -139,9 +140,23 @@ float BoneClothCollisionTaperedCapsule3D::_segment_depth(const Transform3D &p_po
 	Vector3 head;
 	Vector3 tail;
 	_get_head_and_tail(p_pose, head, tail);
-	const PackedVector3Array closest = _get_closest_points(p_a, p_b, head, tail);
+	Vector3 on_segment;
+	Vector3 on_axis;
+	_get_closest_points(p_a, p_b, head, tail, on_segment, on_axis);
 	Vector3 center;
 	float radius;
-	_get_nearest_sphere(p_pose, head, tail, closest[0], center, radius);
-	return MAX(radius + p_radius - closest[0].distance_to(center), 0.0f);
+	_get_nearest_sphere(p_pose, head, tail, on_segment, center, radius);
+	return MAX(radius + p_radius - on_segment.distance_to(center), 0.0f);
+}
+
+float BoneClothCollisionTaperedCapsule3D::_get_reach(const Transform3D &p_pose) const {
+	if (inside) {
+		return -1.0f;
+	}
+	Vector3 head;
+	Vector3 tail;
+	_get_head_and_tail(p_pose, head, tail);
+	const Vector3 scale = _get_scale(p_pose.basis);
+	const float across = MAX(scale.x, scale.z);
+	return MAX(head.distance_to(p_pose.origin) + top_radius * across, tail.distance_to(p_pose.origin) + bottom_radius * across);
 }

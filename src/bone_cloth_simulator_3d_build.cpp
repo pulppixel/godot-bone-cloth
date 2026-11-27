@@ -431,7 +431,8 @@ void BoneClothSimulator3D::_build_sync(Skeleton3D *p_skeleton) {
 
 		for (const SyncBone &sync_bone : sync_bones) {
 			bool inherited = false;
-			for (int bone = p_skeleton->get_bone_parent(chain.joints[0].bone); bone >= 0; bone = p_skeleton->get_bone_parent(bone)) {
+			const int start = mesh_instance.is_empty() ? p_skeleton->get_bone_parent(chain.joints[0].bone) : mesh_point_weights[chain.joints[0].bone].bones[0];
+			for (int bone = start; bone >= 0; bone = p_skeleton->get_bone_parent(bone)) {
 				if (bone == sync_bone.bone) {
 					inherited = true;
 					break;
@@ -483,6 +484,7 @@ void BoneClothSimulator3D::_rebuild_if_changed(Skeleton3D *p_skeleton) {
 		if (!mesh_instance.is_empty()) {
 			_build_mesh(p_skeleton);
 			_build_wind(p_skeleton);
+			_build_sync(p_skeleton);
 			return;
 		}
 		_clear_mesh_copy();

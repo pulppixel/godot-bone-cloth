@@ -1376,7 +1376,7 @@ void BoneClothSimulator3D::_end_frame(Skeleton3D *p_skeleton) {
 		}
 	}
 	if (!mesh_instance.is_empty()) {
-		_write_mesh(weight);
+		_write_mesh(weight * get_influence());
 	}
 
 	update_gizmos();

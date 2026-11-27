@@ -814,6 +814,7 @@ void BoneClothSimulator3D::_make_mesh_copy(Skeleton3D *p_skeleton, const LocalVe
 	mesh_copy = ObjectID(copy->get_instance_id());
 	original->connect("visibility_changed", callable_mp(this, &BoneClothSimulator3D::_refresh_mesh_copy));
 	_show_mesh_copy(true);
+	set_process_internal(true);
 }
 
 void BoneClothSimulator3D::_clear_mesh_copy() {
@@ -839,6 +840,7 @@ void BoneClothSimulator3D::_clear_mesh_copy() {
 	mesh_copy = ObjectID();
 	mesh_copy_shown = false;
 	mesh_point_joints.clear();
+	set_process_internal(false);
 }
 
 void BoneClothSimulator3D::_show_mesh_copy(bool p_shown) {

@@ -92,3 +92,7 @@ float BoneClothCollisionBox3D::_segment_depth(const Transform3D &p_pose, const V
 	Vector3 normal;
 	return MAX(p_radius - _find_deepest(p_pose, p_a, p_b, point, normal), 0.0f);
 }
+
+float BoneClothCollisionBox3D::_get_reach(const Transform3D &p_pose) const {
+	return (size * 0.5f * _get_scale(p_pose.basis)).length();
+}

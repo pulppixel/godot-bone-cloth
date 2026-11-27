@@ -4,7 +4,6 @@
 #include "bone_cloth_simulator_3d.h"
 
 #include <godot_cpp/classes/engine.hpp>
-#include <godot_cpp/classes/geometry3d.hpp>
 #include <godot_cpp/core/class_db.hpp>
 
 using namespace godot;
@@ -202,6 +201,8 @@ void BoneClothCollision3D::sync_pose() {
 		pose = skeleton_global.affine_inverse() * get_global_transform();
 	}
 
+	const float meters = 1.0f / units_per_meter;
+	reach = _get_reach(Transform3D(pose.basis * meters, pose.origin * meters)) * units_per_meter;
 	if (!has_mirror()) {
 		return;
 	}
@@ -215,6 +216,7 @@ void BoneClothCollision3D::sync_pose() {
 	const Quaternion mirror_rotation = mirror_rest.inverse() * mirrored_rotation;
 	mirror_pose = get_pose_on_bone(skeleton, mirror_bone, mirror_offset, mirror_rotation, units_per_meter);
 	mirror_rest_pose = get_pose_on_bone(skeleton, mirror_bone, mirror_offset, mirror_rotation, units_per_meter, true);
+	mirror_reach = _get_reach(Transform3D(mirror_pose.basis * meters, mirror_pose.origin * meters)) * units_per_meter;
 	update_gizmos();
 }
 
@@ -240,8 +242,17 @@ void BoneClothCollision3D::_take_offsets_from_transform() {
 }
 
 void BoneClothCollision3D::collide_segment(Vector3 &r_a, Vector3 &r_b, float p_radius, bool p_mirror) const {
-	const float meters = 1.0f / units_per_meter;
 	const Transform3D &shape = p_mirror ? mirror_pose : pose;
+	const float shape_reach = p_mirror ? mirror_reach : reach;
+	if (shape_reach >= 0.0f) {
+		// float 오차로 닿는 선분을 건너뛰지 않게 조금 넉넉하게 본다.
+		const float limit = (shape_reach + p_radius) * 1.001f;
+		if (_get_closest_point_to_segment(shape.origin, r_a, r_b).distance_squared_to(shape.origin) > limit * limit) {
+			return;
+		}
+	}
+
+	const float meters = 1.0f / units_per_meter;
 	const Vector3 a = r_a * meters;
 	const Vector3 b = r_b * meters;
 	Vector3 pushed_a = a;
@@ -283,6 +294,10 @@ Vector3 BoneClothCollision3D::_collide(const Transform3D &p_pose, const Vector3 
 	return p_point;
 }
 
+float BoneClothCollision3D::_get_reach(const Transform3D &p_pose) const {
+	return -1.0f;
+}
+
 void BoneClothCollision3D::_collide_segment(const Transform3D &p_pose, Vector3 &r_a, Vector3 &r_b, float p_radius) const {
 	r_a = _collide(p_pose, r_a, p_radius);
 	r_b = _collide(p_pose, r_b, p_radius);
@@ -306,7 +321,87 @@ Vector3 BoneClothCollision3D::_get_scale(const Basis &p_basis) {
 	return scale.is_equal_approx(Vector3(1, 1, 1)) ? Vector3(1, 1, 1) : scale;
 }
 
-PackedVector3Array BoneClothCollision3D::_get_closest_points(const Vector3 &p_a, const Vector3 &p_b, const Vector3 &p_head, const Vector3 &p_tail) {
+// Godot 4.7.2 Geometry3D의 같은 함수를 옮겨 왔다. 엔진 API로 부르면 호출마다 배열을 새로 만들어서 그것이 충돌 비용의 대부분이 된다.
+static void closest_points_between_segments(const Vector3 &p_p0, const Vector3 &p_p1, const Vector3 &p_q0, const Vector3 &p_q1, Vector3 &r_ps, Vector3 &r_qt) {
+	const Vector3 p = p_p1 - p_p0;
+	const Vector3 q = p_q1 - p_q0;
+	const Vector3 r = p_p0 - p_q0;
+
+	const float a = p.dot(p);
+	const float b = p.dot(q);
+	const float c = q.dot(q);
+	const float d = p.dot(r);
+	const float e = q.dot(r);
+
+	float s = 0.0f;
+	float t = 0.0f;
+
+	const float det = a * c - b * b;
+	if (det > CMP_EPSILON) {
+		const float bte = b * e;
+		const float ctd = c * d;
+
+		if (bte <= ctd) {
+			if (e <= 0.0f) {
+				s = (-d >= a ? 1 : (-d > 0.0f ? -d / a : 0.0f));
+				t = 0.0f;
+			} else if (e < c) {
+				s = 0.0f;
+				t = e / c;
+			} else {
+				s = (b - d >= a ? 1 : (b - d > 0.0f ? (b - d) / a : 0.0f));
+				t = 1;
+			}
+		} else {
+			s = bte - ctd;
+			if (s >= det) {
+				if (b + e <= 0.0f) {
+					s = (-d <= 0.0f ? 0.0f : (-d < a ? -d / a : 1));
+					t = 0.0f;
+				} else if (b + e < c) {
+					s = 1;
+					t = (b + e) / c;
+				} else {
+					s = (b - d <= 0.0f ? 0.0f : (b - d < a ? (b - d) / a : 1));
+					t = 1;
+				}
+			} else {
+				const float ate = a * e;
+				const float btd = b * d;
+
+				if (ate <= btd) {
+					s = (-d <= 0.0f ? 0.0f : (-d >= a ? 1 : -d / a));
+					t = 0.0f;
+				} else {
+					t = ate - btd;
+					if (t >= det) {
+						s = (b - d <= 0.0f ? 0.0f : (b - d >= a ? 1 : (b - d) / a));
+						t = 1;
+					} else {
+						s /= det;
+						t /= det;
+					}
+				}
+			}
+		}
+	} else {
+		if (e <= 0.0f) {
+			s = (-d <= 0.0f ? 0.0f : (-d >= a ? 1 : -d / a));
+			t = 0.0f;
+		} else if (e >= c) {
+			s = (b - d <= 0.0f ? 0.0f : (b - d >= a ? 1 : (b - d) / a));
+			t = 1;
+		} else {
+			s = 0.0f;
+			t = e / c;
+		}
+	}
+
+	r_ps = (1 - s) * p_p0 + s * p_p1;
+	r_qt = (1 - t) * p_q0 + t * p_q1;
+}
+
+void BoneClothCollision3D::_get_closest_points(const Vector3 &p_a, const Vector3 &p_b, const Vector3 &p_head, const Vector3 &p_tail, Vector3 &r_on_segment, Vector3 &r_on_axis) {
 	const Vector3 segment = p_b - p_a;
 	const Vector3 axis = p_tail - p_head;
 	const float a = segment.dot(segment);
@@ -315,14 +410,31 @@ PackedVector3Array BoneClothCollision3D::_get_closest_points(const Vector3 &p_a,
 	const float det = a * c - b * b;
 	// Geometry3D는 det를 고정값 1e-5 m^4와 비교해서, 짧은 마디와 짧은 캡슐은 직각으로 만나도 평행으로 본다.
 	if (det > CMP_EPSILON || det <= CMP_EPSILON * a * c) {
-		return Geometry3D::get_singleton()->get_closest_points_between_segments(p_a, p_b, p_head, p_tail);
+		closest_points_between_segments(p_a, p_b, p_head, p_tail, r_on_segment, r_on_axis);
+		return;
 	}
 
 	const float scale = 1.0f / Math::sqrt(Math::sqrt(a * c));
-	PackedVector3Array closest = Geometry3D::get_singleton()->get_closest_points_between_segments(p_a * scale, p_b * scale, p_head * scale, p_tail * scale);
-	closest[0] /= scale;
-	closest[1] /= scale;
-	return closest;
+	closest_points_between_segments(p_a * scale, p_b * scale, p_head * scale, p_tail * scale, r_on_segment, r_on_axis);
+	r_on_segment /= scale;
+	r_on_axis /= scale;
+}
+
+Vector3 BoneClothCollision3D::_get_closest_point_to_segment(const Vector3 &p_point, const Vector3 &p_a, const Vector3 &p_b) {
+	const Vector3 p = p_point - p_a;
+	const Vector3 n = p_b - p_a;
+	const float l2 = n.length_squared();
+	if (l2 < 1e-20f) {
+		return p_a;
+	}
+
+	const float d = n.dot(p) / l2;
+	if (d <= 0.0f) {
+		return p_a;
+	} else if (d >= 1.0f) {
+		return p_b;
+	}
+	return p_a + n * d;
 }
 
 Vector3 BoneClothCollision3D::_collide_sphere(const Vector3 &p_center, float p_radius, bool p_inside, const Vector3 &p_fallback, const Vector3 &p_point, float p_point_radius) {
