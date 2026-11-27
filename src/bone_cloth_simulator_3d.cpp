@@ -94,6 +94,14 @@ void BoneClothSimulator3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_sync_bone_falloff_amount", "index"), &BoneClothSimulator3D::get_sync_bone_falloff_amount);
 
 	ClassDB::bind_method(D_METHOD("reset"), &BoneClothSimulator3D::reset);
+	ClassDB::bind_method(D_METHOD("set_mesh_fixed_bone", "index", "bone_name"), &BoneClothSimulator3D::set_mesh_fixed_bone);
+	ClassDB::bind_method(D_METHOD("get_mesh_fixed_bone", "index"), &BoneClothSimulator3D::get_mesh_fixed_bone);
+
+	ADD_GROUP("Mesh", "mesh_");
+	BIND_PROPERTY(PropertyInfo(Variant::NODE_PATH, "mesh_instance", PROPERTY_HINT_NODE_PATH_VALID_TYPES, "MeshInstance3D"), mesh_instance, "path");
+	BIND_PROPERTY(PropertyInfo(Variant::FLOAT, "mesh_point_spacing", PROPERTY_HINT_RANGE, "0.01,0.2,0.001,or_greater,suffix:m"), mesh_point_spacing, "spacing");
+	BIND_PROPERTY(PropertyInfo(Variant::INT, "mesh_fixed_bone_count", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_ARRAY, "Fixed Bones,mesh_fixed_bones/"), mesh_fixed_bone_count, "count");
+	ADD_GROUP("", "");
 
 	// godot-cpp에는 ADD_ARRAY_COUNT가 없어서 PROPERTY_USAGE_ARRAY로 대신한다.
 	BIND_PROPERTY(PropertyInfo(Variant::INT, "chain_count", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_ARRAY, "Chains,chains/"), chain_count, "count");
@@ -222,6 +230,13 @@ void BoneClothSimulator3D::_notification(int p_what) {
 
 bool BoneClothSimulator3D::_set(const StringName &p_name, const Variant &p_value) {
 	const String path = p_name;
+	if (path.begins_with("mesh_fixed_bones/")) {
+		const int which = path.get_slice("/", 1).to_int();
+		ERR_FAIL_INDEX_V(which, int(mesh_fixed_bones.size()), false);
+		set_mesh_fixed_bone(which, p_value);
+		return true;
+	}
+
 	if (path.begins_with("sync/bones/")) {
 		const int which = path.get_slice("/", 2).to_int();
 		const String what = path.get_slice("/", 3);
@@ -292,6 +307,13 @@ bool BoneClothSimulator3D::_set(const StringName &p_name, const Variant &p_value
 
 bool BoneClothSimulator3D::_get(const StringName &p_name, Variant &r_ret) const {
 	const String path = p_name;
+	if (path.begins_with("mesh_fixed_bones/")) {
+		const int which = path.get_slice("/", 1).to_int();
+		ERR_FAIL_INDEX_V(which, int(mesh_fixed_bones.size()), false);
+		r_ret = get_mesh_fixed_bone(which);
+		return true;
+	}
+
 	if (path.begins_with("sync/bones/")) {
 		const int which = path.get_slice("/", 2).to_int();
 		const String what = path.get_slice("/", 3);
@@ -365,6 +387,10 @@ void BoneClothSimulator3D::_get_property_list(List<PropertyInfo> *p_list) const 
 	const PropertyHint hint = skeleton ? PROPERTY_HINT_ENUM_SUGGESTION : PROPERTY_HINT_NONE;
 	const String bone_names = skeleton ? String(skeleton->get_concatenated_bone_names()) : String();
 
+	for (uint32_t i = 0; i < mesh_fixed_bones.size(); i++) {
+		p_list->push_back(PropertyInfo(Variant::STRING, "mesh_fixed_bones/" + itos(i), hint, bone_names));
+	}
+
 	for (uint32_t i = 0; i < sync_bones.size(); i++) {
 		String path = "sync/bones/" + itos(i) + "/";
 		p_list->push_back(PropertyInfo(Variant::STRING, path + "bone_name", hint, bone_names));
@@ -378,7 +404,7 @@ void BoneClothSimulator3D::_get_property_list(List<PropertyInfo> *p_list) const 
 		p_list->push_back(PropertyInfo(Variant::FLOAT, path + "falloff_amount", PROPERTY_HINT_RANGE, "0,1,0.001", falloff_usage));
 	}
 
-	for (uint32_t i = 0; i < chains.size(); i++) {
+	for (uint32_t i = 0; i < chains.size() && mesh_instance.is_empty(); i++) {
 		String path = "chains/" + itos(i) + "/";
 		p_list->push_back(PropertyInfo(Variant::STRING, path + "root_bone_name", hint, bone_names));
 		p_list->push_back(PropertyInfo(Variant::INT, path + "root_bone", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NO_EDITOR));
@@ -409,6 +435,10 @@ void BoneClothSimulator3D::_get_property_list(List<PropertyInfo> *p_list) const 
 }
 
 void BoneClothSimulator3D::_validate_property(PropertyInfo &p_property) const {
+	if (!mesh_instance.is_empty() && p_property.name == StringName("chain_count")) {
+		p_property.usage = PROPERTY_USAGE_NONE;
+	}
+
 	if (link_mode == LINK_MODE_NONE && (p_property.name == StringName("link_stiffness") || p_property.name == StringName("link_stretch_limit") || p_property.name == StringName("link_split") || p_property.name == StringName("link_bending") || String(p_property.name).begins_with("link_spacing/"))) {
 		p_property.usage = PROPERTY_USAGE_NO_EDITOR;
 	}
@@ -445,6 +475,52 @@ Ref<BoneClothPreset> BoneClothSimulator3D::make_preset() const {
 		made->set(name, BoneClothPreset::copy_value(get(name)));
 	}
 	return made;
+}
+
+void BoneClothSimulator3D::set_mesh_instance(const NodePath &p_path) {
+	if (p_path == mesh_instance) {
+		return;
+	}
+	mesh_instance = p_path;
+	chains.clear();
+	joints_dirty = true;
+	notify_property_list_changed();
+	update_configuration_warnings();
+}
+
+NodePath BoneClothSimulator3D::get_mesh_instance() const {
+	return mesh_instance;
+}
+
+void BoneClothSimulator3D::set_mesh_point_spacing(float p_spacing) {
+	mesh_point_spacing = MAX(p_spacing, 0.001f);
+	joints_dirty = true;
+}
+
+float BoneClothSimulator3D::get_mesh_point_spacing() const {
+	return mesh_point_spacing;
+}
+
+void BoneClothSimulator3D::set_mesh_fixed_bone_count(int p_count) {
+	ERR_FAIL_COND(p_count < 0);
+	mesh_fixed_bones.resize(p_count);
+	joints_dirty = true;
+	notify_property_list_changed();
+}
+
+int BoneClothSimulator3D::get_mesh_fixed_bone_count() const {
+	return mesh_fixed_bones.size();
+}
+
+void BoneClothSimulator3D::set_mesh_fixed_bone(int p_index, const String &p_bone_name) {
+	ERR_FAIL_INDEX(p_index, int(mesh_fixed_bones.size()));
+	mesh_fixed_bones[p_index] = p_bone_name;
+	joints_dirty = true;
+}
+
+String BoneClothSimulator3D::get_mesh_fixed_bone(int p_index) const {
+	ERR_FAIL_INDEX_V(p_index, int(mesh_fixed_bones.size()), String());
+	return mesh_fixed_bones[p_index];
 }
 
 void BoneClothSimulator3D::set_chain_count(int p_count) {
@@ -869,7 +945,7 @@ static bool is_on_bone_path(const Skeleton3D *p_skeleton, int p_root, int p_end,
 
 PackedStringArray BoneClothSimulator3D::_get_configuration_warnings() const {
 	PackedStringArray warnings;
-	if (chains.is_empty()) {
+	if (chains.is_empty() && mesh_instance.is_empty()) {
 		warnings.push_back("No chains. Add a chain under Chains and pick its root bone and end bone.");
 	}
 
@@ -1015,6 +1091,10 @@ void BoneClothSimulator3D::_process_modification_with_delta(double p_delta) {
 	const std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
 
 	_rebuild_if_changed(skeleton);
+	if (!mesh_instance.is_empty()) {
+		update_gizmos();
+		return;
+	}
 	if (!_update_culling(skeleton)) {
 		culled = true;
 		monitor_time.sum.fetch_add(std::chrono::nanoseconds(std::chrono::steady_clock::now() - start).count(), std::memory_order_relaxed);

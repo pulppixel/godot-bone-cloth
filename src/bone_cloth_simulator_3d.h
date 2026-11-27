@@ -160,6 +160,12 @@ private:
 		bool volume = false;
 	};
 
+	struct MeshPoints {
+		LocalVector<Vector3> positions;
+		LocalVector<bool> fixed;
+		LocalVector<uint32_t> indices;
+	};
+
 	static constexpr float BEND_VOLUME_SCALE = 1000.0f;
 	static float get_bend_angle(const Vector3 *p_points);
 	static float get_bend_volume(const Vector3 *p_points);
@@ -290,6 +296,10 @@ private:
 
 	float units_per_meter = 1.0f;
 
+	NodePath mesh_instance;
+	float mesh_point_spacing = 0.05f;
+	LocalVector<String> mesh_fixed_bones;
+
 	LocalVector<Link> links;
 	LocalVector<JointRef> bend_joints;
 	LocalVector<Bend> bends;
@@ -331,6 +341,11 @@ private:
 	void _build_links();
 	void _build_bends();
 	void _add_bends(const LocalVector<Vector3i> &p_triangles);
+	bool _read_mesh(Skeleton3D *p_skeleton, MeshPoints &r_points) const;
+	void _reduce_mesh(MeshPoints &r_points) const;
+	void _join_pieces(MeshPoints &r_points) const;
+	void _grow_mesh_tree(const MeshPoints &p_points, const LocalVector<LocalVector<uint32_t>> &p_neighbors, LocalVector<int> &r_parents) const;
+	void _build_mesh(Skeleton3D *p_skeleton);
 	void _build_sync(Skeleton3D *p_skeleton);
 	bool _is_child_collision(const NodePath &p_node_path) const;
 	void _find_chain_collisions(const LocalVector<PosedCollision> &p_collisions);
@@ -397,6 +412,15 @@ protected:
 public:
 	void apply_preset(const Ref<BoneClothPreset> &p_preset);
 	Ref<BoneClothPreset> make_preset() const;
+
+	void set_mesh_instance(const NodePath &p_path);
+	NodePath get_mesh_instance() const;
+	void set_mesh_point_spacing(float p_spacing);
+	float get_mesh_point_spacing() const;
+	void set_mesh_fixed_bone_count(int p_count);
+	int get_mesh_fixed_bone_count() const;
+	void set_mesh_fixed_bone(int p_index, const String &p_bone_name);
+	String get_mesh_fixed_bone(int p_index) const;
 
 	void set_chain_count(int p_count);
 	int get_chain_count() const;

@@ -480,6 +480,11 @@ void BoneClothSimulator3D::_rebuild_if_changed(Skeleton3D *p_skeleton) {
 	if (joints_dirty) {
 		joints_dirty = false;
 		needs_reset = true;
+		if (!mesh_instance.is_empty()) {
+			_build_mesh(p_skeleton);
+			_build_wind(p_skeleton);
+			return;
+		}
 		for (Chain &chain : chains) {
 			if (!_build_joints(p_skeleton, chain)) {
 				chain.joints.clear();
