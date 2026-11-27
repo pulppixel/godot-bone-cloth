@@ -303,6 +303,7 @@ private:
 	float units_per_meter = 1.0f;
 
 	NodePath mesh_instance;
+	int64_t mesh_surfaces = 0;
 	float mesh_point_spacing = 0.05f;
 	LocalVector<String> mesh_fixed_bones;
 	LocalVector<JointRef> mesh_point_joints;
@@ -316,6 +317,7 @@ private:
 	ObjectID mesh_original;
 	ObjectID mesh_copy_skeleton;
 	ObjectID mesh_copy;
+	ObjectID mesh_other;
 	bool mesh_copy_shown = false;
 
 	LocalVector<Link> links;
@@ -439,6 +441,8 @@ public:
 
 	void set_mesh_instance(const NodePath &p_path);
 	NodePath get_mesh_instance() const;
+	void set_mesh_surfaces(int64_t p_surfaces);
+	int64_t get_mesh_surfaces() const;
 	void set_mesh_point_spacing(float p_spacing);
 	float get_mesh_point_spacing() const;
 	void set_mesh_fixed_bone_count(int p_count);

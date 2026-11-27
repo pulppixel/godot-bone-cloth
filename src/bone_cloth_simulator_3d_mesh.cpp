@@ -111,7 +111,11 @@ static Dictionary get_surface_lods(const Ref<ArrayMesh> &p_mesh, int p_surface) 
 	return result;
 }
 
-static void copy_instance_values(const MeshInstance3D *p_from, MeshInstance3D *p_to) {
+static bool is_surface_chosen(int64_t p_surfaces, int p_surface) {
+	return p_surfaces == 0 || (p_surface < 64 && ((p_surfaces >> p_surface) & 1));
+}
+
+static void copy_instance_values(const MeshInstance3D *p_from, MeshInstance3D *p_to, const LocalVector<int> &p_surfaces) {
 	HashSet<String> names;
 	for (const char *class_name : { "VisualInstance3D", "GeometryInstance3D" }) {
 		const TypedArray<Dictionary> list = ClassDBSingleton::get_singleton()->class_get_property_list(class_name, true);
@@ -124,8 +128,30 @@ static void copy_instance_values(const MeshInstance3D *p_from, MeshInstance3D *p
 	for (int64_t i = 0; i < properties.size(); i++) {
 		const Dictionary property = properties[i];
 		const String name = property["name"];
-		if ((int64_t(property["usage"]) & PROPERTY_USAGE_STORAGE) && (names.has(name) || name.begins_with("instance_shader_parameters/") || name.begins_with("surface_material_override/"))) {
+		if (!(int64_t(property["usage"]) & PROPERTY_USAGE_STORAGE)) {
+			continue;
+		}
+		if (name.begins_with("surface_material_override/")) {
+			const int surface = name.get_slicec('/', 1).to_int();
+			if (surface < int(p_surfaces.size()) && p_surfaces[surface] >= 0) {
+				p_to->set_surface_override_material(p_surfaces[surface], p_from->get_surface_override_material(surface));
+			}
+		} else if (names.has(name) || name.begins_with("instance_shader_parameters/")) {
 			p_to->set(name, p_from->get(name));
+		}
+	}
+}
+
+static void follow_original(const MeshInstance3D *p_original, MeshInstance3D *p_copy, const LocalVector<StringName> &p_parameters) {
+	for (int b = 0; b < p_original->get_blend_shape_count(); b++) {
+		if (p_copy->get_blend_shape_value(b) != p_original->get_blend_shape_value(b)) {
+			p_copy->set_blend_shape_value(b, p_original->get_blend_shape_value(b));
+		}
+	}
+	for (const StringName &name : p_parameters) {
+		const Variant value = p_original->get_instance_shader_parameter(name);
+		if (p_copy->get_instance_shader_parameter(name) != value) {
+			p_copy->set_instance_shader_parameter(name, value);
 		}
 	}
 }
@@ -229,7 +255,7 @@ bool BoneClothSimulator3D::_read_mesh(Skeleton3D *p_skeleton, MeshPoints &r_poin
 	const float weld = WELD_DISTANCE * units_per_meter;
 	HashMap<Vector3i, uint32_t> welded;
 	for (int s = 0; s < mesh->get_surface_count(); s++) {
-		if (mesh->surface_get_primitive_type(s) != Mesh::PRIMITIVE_TRIANGLES) {
+		if (!is_surface_chosen(mesh_surfaces, s) || mesh->surface_get_primitive_type(s) != Mesh::PRIMITIVE_TRIANGLES) {
 			continue;
 		}
 
@@ -745,13 +771,28 @@ void BoneClothSimulator3D::_make_mesh_copy(Skeleton3D *p_skeleton, const LocalVe
 	const bool relative = mesh->get_blend_shape_mode() == Mesh::BLEND_SHAPE_MODE_RELATIVE;
 
 	Ref<ArrayMesh> copy_mesh;
-	copy_mesh.instantiate();
-	for (int b = 0; b < mesh->get_blend_shape_count(); b++) {
-		copy_mesh->add_blend_shape(mesh->get_blend_shape_name(b));
+	Ref<ArrayMesh> other_mesh;
+	for (Ref<ArrayMesh> *made : { &copy_mesh, &other_mesh }) {
+		made->instantiate();
+		for (int b = 0; b < mesh->get_blend_shape_count(); b++) {
+			(*made)->add_blend_shape(mesh->get_blend_shape_name(b));
+		}
+		(*made)->set_blend_shape_mode(mesh->get_blend_shape_mode());
 	}
-	copy_mesh->set_blend_shape_mode(mesh->get_blend_shape_mode());
 
+	LocalVector<int> copy_surfaces;
+	LocalVector<int> other_surfaces;
 	for (int s = 0; s < mesh->get_surface_count(); s++) {
+		copy_surfaces.push_back(-1);
+		other_surfaces.push_back(-1);
+		if (!is_surface_chosen(mesh_surfaces, s)) {
+			other_surfaces[s] = other_mesh->get_surface_count();
+			other_mesh->add_surface_from_arrays(mesh->surface_get_primitive_type(s), mesh->surface_get_arrays(s), mesh->surface_get_blend_shape_arrays(s), get_surface_lods(mesh, s), BitField<Mesh::ArrayFormat>(int64_t(mesh->surface_get_format(s)) & int64_t(CUSTOM_FORMATS | Mesh::ARRAY_FLAG_USE_8_BONE_WEIGHTS)));
+			other_mesh->surface_set_material(other_surfaces[s], mesh->surface_get_material(s));
+			other_mesh->surface_set_name(other_surfaces[s], mesh->surface_get_name(s));
+			continue;
+		}
+
 		Array arrays = mesh->surface_get_arrays(s);
 		PackedVector3Array vertices = arrays[Mesh::ARRAY_VERTEX];
 		PackedVector3Array normals = arrays[Mesh::ARRAY_NORMAL];
@@ -820,9 +861,10 @@ void BoneClothSimulator3D::_make_mesh_copy(Skeleton3D *p_skeleton, const LocalVe
 			blends[b] = blend;
 		}
 
+		copy_surfaces[s] = copy_mesh->get_surface_count();
 		copy_mesh->add_surface_from_arrays(mesh->surface_get_primitive_type(s), arrays, blends, get_surface_lods(mesh, s), BitField<Mesh::ArrayFormat>(int64_t(mesh->surface_get_format(s)) & int64_t(CUSTOM_FORMATS)));
-		copy_mesh->surface_set_material(s, mesh->surface_get_material(s));
-		copy_mesh->surface_set_name(s, mesh->surface_get_name(s));
+		copy_mesh->surface_set_material(copy_surfaces[s], mesh->surface_get_material(s));
+		copy_mesh->surface_set_name(copy_surfaces[s], mesh->surface_get_name(s));
 	}
 
 	Skeleton3D *copy_skeleton = memnew(Skeleton3D);
@@ -841,7 +883,7 @@ void BoneClothSimulator3D::_make_mesh_copy(Skeleton3D *p_skeleton, const LocalVe
 	copy->set_mesh(copy_mesh);
 	copy->set_skin(skin);
 	copy->set_skeleton_path(NodePath(".."));
-	copy_instance_values(original, copy);
+	copy_instance_values(original, copy, copy_surfaces);
 	copy_skeleton->add_child(copy);
 
 	mesh_instance_parameters.clear();
@@ -850,6 +892,19 @@ void BoneClothSimulator3D::_make_mesh_copy(Skeleton3D *p_skeleton, const LocalVe
 		mesh_instance_parameters.push_back(Dictionary(parameters[i])["name"]);
 	}
 	original->add_child(copy_skeleton, false, Node::INTERNAL_MODE_BACK);
+
+	if (other_mesh->get_surface_count() > 0) {
+		Node *original_skeleton = original->get_node_or_null(original->get_skeleton_path());
+		MeshInstance3D *other = memnew(MeshInstance3D);
+		other->set_name("BoneClothOtherSurfaces");
+		other->set_mesh(other_mesh);
+		other->set_skin(original->get_skin());
+		// 기본 경로 ".."는 점 스켈레톤을 가리키므로, 트리에 넣기 전에 원본의 스켈레톤으로 바꾼다.
+		other->set_skeleton_path(NodePath("../../" + String(original->get_path_to(original_skeleton ? original_skeleton : p_skeleton))));
+		copy_instance_values(original, other, other_surfaces);
+		copy_skeleton->add_child(other);
+		mesh_other = ObjectID(other->get_instance_id());
+	}
 
 	mesh_original = ObjectID(original->get_instance_id());
 	mesh_copy_skeleton = ObjectID(copy_skeleton->get_instance_id());
@@ -880,6 +935,7 @@ void BoneClothSimulator3D::_clear_mesh_copy() {
 	mesh_original = ObjectID();
 	mesh_copy_skeleton = ObjectID();
 	mesh_copy = ObjectID();
+	mesh_other = ObjectID();
 	mesh_copy_shown = false;
 	mesh_point_joints.clear();
 	mesh_instance_parameters.clear();
@@ -895,6 +951,10 @@ void BoneClothSimulator3D::_show_mesh_copy(bool p_shown) {
 
 	mesh_copy_shown = p_shown;
 	copy->set_visible(p_shown);
+	MeshInstance3D *other = Object::cast_to<MeshInstance3D>(ObjectDB::get_instance(mesh_other));
+	if (other) {
+		other->set_visible(p_shown);
+	}
 	RenderingServer::get_singleton()->instance_set_visible(original->get_instance(), original->is_visible_in_tree() && !p_shown);
 }
 
@@ -973,15 +1033,9 @@ void BoneClothSimulator3D::_write_mesh(float p_weight) {
 	if (!original || !copy) {
 		return;
 	}
-	for (int b = 0; b < original->get_blend_shape_count(); b++) {
-		if (copy->get_blend_shape_value(b) != original->get_blend_shape_value(b)) {
-			copy->set_blend_shape_value(b, original->get_blend_shape_value(b));
-		}
-	}
-	for (const StringName &name : mesh_instance_parameters) {
-		const Variant value = original->get_instance_shader_parameter(name);
-		if (copy->get_instance_shader_parameter(name) != value) {
-			copy->set_instance_shader_parameter(name, value);
-		}
+	follow_original(original, copy, mesh_instance_parameters);
+	MeshInstance3D *other = Object::cast_to<MeshInstance3D>(ObjectDB::get_instance(mesh_other));
+	if (other) {
+		follow_original(original, other, mesh_instance_parameters);
 	}
 }

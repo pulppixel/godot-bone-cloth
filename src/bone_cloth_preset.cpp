@@ -6,7 +6,7 @@
 using namespace godot;
 
 static bool is_in_preset(const String &p_name) {
-	static const char *const NOT_IN_PRESET[] = { "link_mode", "sync/value", "sync/bone_count", "anchor", "anchor_inertia", "backstop/bone_name", "backstop/bone", "backstop/position_offset", "chain_count", "mesh_instance", "mesh_point_spacing", "mesh_fixed_bone_count", "ticks_per_second", "max_steps_per_frame", "camera_culling", "distance_culling", "distance_culling_fade" };
+	static const char *const NOT_IN_PRESET[] = { "link_mode", "sync/value", "sync/bone_count", "anchor", "anchor_inertia", "backstop/bone_name", "backstop/bone", "backstop/position_offset", "chain_count", "mesh_instance", "mesh_surfaces", "mesh_point_spacing", "mesh_fixed_bone_count", "ticks_per_second", "max_steps_per_frame", "camera_culling", "distance_culling", "distance_culling_fade" };
 	for (const char *name : NOT_IN_PRESET) {
 		if (p_name == name) {
 			return false;

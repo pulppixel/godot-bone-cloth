@@ -100,6 +100,7 @@ void BoneClothSimulator3D::_bind_methods() {
 
 	ADD_GROUP("Mesh", "mesh_");
 	BIND_PROPERTY(PropertyInfo(Variant::NODE_PATH, "mesh_instance", PROPERTY_HINT_NODE_PATH_VALID_TYPES, "MeshInstance3D"), mesh_instance, "path");
+	BIND_PROPERTY(PropertyInfo(Variant::INT, "mesh_surfaces", PROPERTY_HINT_FLAGS), mesh_surfaces, "surfaces");
 	BIND_PROPERTY(PropertyInfo(Variant::FLOAT, "mesh_point_spacing", PROPERTY_HINT_RANGE, "0.01,0.2,0.001,or_greater,suffix:m"), mesh_point_spacing, "spacing");
 	BIND_PROPERTY(PropertyInfo(Variant::INT, "mesh_fixed_bone_count", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_ARRAY, "Fixed Bones,mesh_fixed_bones/"), mesh_fixed_bone_count, "count");
 	ADD_GROUP("", "");
@@ -448,6 +449,20 @@ void BoneClothSimulator3D::_get_property_list(List<PropertyInfo> *p_list) const 
 }
 
 void BoneClothSimulator3D::_validate_property(PropertyInfo &p_property) const {
+	if (p_property.name == StringName("mesh_surfaces")) {
+		const MeshInstance3D *mesh_node = is_inside_tree() ? Object::cast_to<MeshInstance3D>(get_node_or_null(mesh_instance)) : nullptr;
+		const Ref<ArrayMesh> mesh = mesh_node ? mesh_node->get_mesh() : Ref<ArrayMesh>();
+		PackedStringArray names;
+		for (int s = 0; mesh.is_valid() && s < MIN(mesh->get_surface_count(), 32); s++) {
+			const String name = mesh->surface_get_name(s);
+			names.push_back(name.is_empty() ? vformat("Surface %d", s) : name.replace(",", " ").replace(":", " "));
+		}
+		p_property.hint_string = String(",").join(names);
+		if (mesh_instance.is_empty()) {
+			p_property.usage = PROPERTY_USAGE_NO_EDITOR;
+		}
+	}
+
 	if (!mesh_instance.is_empty() && p_property.name == StringName("chain_count")) {
 		p_property.usage = PROPERTY_USAGE_NONE;
 	}
@@ -503,6 +518,16 @@ void BoneClothSimulator3D::set_mesh_instance(const NodePath &p_path) {
 
 NodePath BoneClothSimulator3D::get_mesh_instance() const {
 	return mesh_instance;
+}
+
+void BoneClothSimulator3D::set_mesh_surfaces(int64_t p_surfaces) {
+	mesh_surfaces = p_surfaces;
+	joints_dirty = true;
+	update_configuration_warnings();
+}
+
+int64_t BoneClothSimulator3D::get_mesh_surfaces() const {
+	return mesh_surfaces;
 }
 
 void BoneClothSimulator3D::set_mesh_point_spacing(float p_spacing) {
@@ -986,6 +1011,11 @@ PackedStringArray BoneClothSimulator3D::_get_configuration_warnings() const {
 		const MeshInstance3D *mesh_node = Object::cast_to<MeshInstance3D>(get_node_or_null(mesh_instance));
 		if (!mesh_node || mesh_node->get_mesh().is_null() || mesh_node->get_skin().is_null()) {
 			warnings.push_back(vformat("Mesh '%s' is not a MeshInstance3D with a mesh and a skin.", mesh_instance));
+		}
+		for (int s = 0; mesh_node && mesh_node->get_mesh().is_valid() && s < 64; s++) {
+			if (((mesh_surfaces >> s) & 1) && s >= mesh_node->get_mesh()->get_surface_count()) {
+				warnings.push_back(vformat("Surface %d is not in the mesh.", s));
+			}
 		}
 		if (mesh_fixed_bones.is_empty()) {
 			warnings.push_back("No fixed bones. Add the bones the mesh hangs from under Fixed Bones, such as the hips.");
