@@ -209,6 +209,7 @@ private:
 	LocalVector<Chain> chains;
 	LinkMode link_mode = LINK_MODE_NONE;
 	float link_stiffness = 0.0f;
+	float link_stretch_limit = 0.0f;
 	bool link_split = false;
 	float link_spacing = 0.0f;
 	Ref<Curve> link_spacing_damping_curve;
@@ -347,6 +348,7 @@ private:
 	Vector3 _get_wind_force(const Joint &p_joint, const Chain &p_chain, const StepMotion &p_step) const;
 	void _build_wind(Skeleton3D *p_skeleton);
 	void _solve_links();
+	void _limit_link_stretch();
 	void _bend();
 	void _space_links();
 	void _collide_segment(Joint &r_a, Joint &r_b, float p_radius, const LocalVector<PosedCollision> &p_collisions, const LocalVector<bool> &p_collides_a, const LocalVector<bool> &p_collides_b, Vector3 Joint::*p_field, bool p_split);
@@ -421,6 +423,7 @@ public:
 	void set_link_mode(LinkMode p_mode);
 	LinkMode get_link_mode() const;
 	BONE_CLOTH_VALUE(float, link_stiffness)
+	BONE_CLOTH_VALUE(float, link_stretch_limit)
 	void set_link_split_enabled(bool p_enabled);
 	bool is_link_split_enabled() const;
 	BONE_CLOTH_VALUE(float, link_spacing)

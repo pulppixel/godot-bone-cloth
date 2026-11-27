@@ -381,6 +381,7 @@ void BoneClothSimulator3D::_step(const StepMotion &p_step, const LocalVector<Pos
 		_limit_movement(chain, &Joint::location, &Joint::pose_location, p_step.backstop_center);
 	}
 
+	_limit_link_stretch();
 	_apply_friction();
 }
 
@@ -660,6 +661,7 @@ Vector3 BoneClothSimulator3D::_get_wind_force(const Joint &p_joint, const Chain 
 
 void BoneClothSimulator3D::_solve_links() {
 	_space_links();
+	_limit_link_stretch();
 	if (link_stiffness <= 0.0f) {
 		return;
 	}
@@ -844,6 +846,32 @@ void BoneClothSimulator3D::_space_links() {
 
 		const float ramp = MIN((1.0f - distance / spacing) / LINK_SPACING_RAMP, 1.0f);
 		const Vector3 correction = delta / distance * ((distance - spacing) * ramp * strength * 0.5f);
+		joint_a.location += slide_on_contact(joint_a.collision_pushes, correction);
+		joint_b.location += slide_on_contact(joint_b.collision_pushes, -correction);
+	}
+}
+
+void BoneClothSimulator3D::_limit_link_stretch() {
+	if (link_stretch_limit <= 0.0f) {
+		return;
+	}
+
+	const float limit = MAX(link_stretch_limit, 1.0f);
+	for (const Link &link : links) {
+		if (link.depth == 0) {
+			continue;
+		}
+
+		Joint &joint_a = chains[link.chain_a].joints[link.depth];
+		Joint &joint_b = chains[link.chain_b].joints[link.depth];
+		const Vector3 delta = joint_b.location - joint_a.location;
+		const float distance = delta.length();
+		const float longest = link.length * limit;
+		if (distance <= longest) {
+			continue;
+		}
+
+		const Vector3 correction = delta / distance * ((distance - longest) * 0.5f);
 		joint_a.location += slide_on_contact(joint_a.collision_pushes, correction);
 		joint_b.location += slide_on_contact(joint_b.collision_pushes, -correction);
 	}

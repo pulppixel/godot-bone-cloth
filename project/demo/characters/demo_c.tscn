@@ -47,6 +47,7 @@ drag/value = 0.15
 limit_angle/value = 1.3089969
 limit_angle/damping_curve = SubResource("Curve_skirt_limit")
 collision_friction = 0.05
+link_stretch_limit = 1.3
 link_bending = 0.5
 wind_influence/damping_curve = SubResource("Curve_wind_skirt")
 depth_inertia = 0.7

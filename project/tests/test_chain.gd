@@ -200,6 +200,7 @@ static func run(t) -> void:
 	await _rest_overlap(t)
 	await _link_split(t)
 	await _link_spacing(t)
+	await _link_stretch_limit(t)
 	await _same_place_chains(t)
 	await _loop_order(t)
 	await _root_spring(t)
@@ -955,6 +956,21 @@ static func _link_spacing(t) -> void:
 	t.check(gap[1.0] > LINK_SPACING_MIN, "Link spacing: two chains 2 cm apart with 2 cm joints are pushed %.4f m apart." % gap[1.0])
 
 
+static func _link_stretch_limit(t) -> void:
+	var gap := {}
+	for limit in [0.0, 1.2]:
+		var chains := Chains.new(t, {"a": Vector3(-0.05, 0, 0), "c": Vector3(0.05, 0, 0)}, 3, 1)
+		_set_all(chains.simulator, {"link_stretch_limit": limit, "stiffness/value": 0.02, "radius/value": 0.01})
+		_add_collision(chains.simulator, {"position": Vector3(0, -0.2, 0), "radius": 0.12})
+		for frame in 60:
+			await chains.advance()
+		gap[limit] = chains.origin("a2").distance_to(chains.origin("c2"))
+		chains.remove()
+
+	t.check(gap[0.0] > 0.1 * 1.2 + LINK_SPACING_TOLERANCE, "Link stretch limit off: a sphere pushes two chains 0.1 m apart to %.4f m." % gap[0.0])
+	t.check(gap[1.2] < 0.1 * 1.2 + LINK_SPACING_TOLERANCE, "Link stretch limit 1.2: the same chains part to %.4f m, at most 0.12 m." % gap[1.2])
+
+
 static func _same_place_chains(t) -> void:
 	var center := Vector3(0.0, -BONE_LENGTH, 0.01)
 	var chains := Chains.new(t, {"a": Vector3(-0.05, 0, 0), "b": Vector3(-0.05, 0, 0), "c": Vector3(0.05, 0, 0)}, 3, 1)
@@ -1540,7 +1556,7 @@ static func _preset_round_trip(t) -> void:
 	for property in ClassDB.instantiate("BoneClothPreset").get_property_list():
 		if property.usage & PROPERTY_USAGE_EDITOR and not property.name in resource_names:
 			names.append(property.name)
-	t.check(names.size() == 55, "Preset round trip: the preset holds %d values." % names.size())
+	t.check(names.size() == 56, "Preset round trip: the preset holds %d values." % names.size())
 
 	var source: Node = ClassDB.instantiate("BoneClothSimulator3D")
 	var target: Node = ClassDB.instantiate("BoneClothSimulator3D")

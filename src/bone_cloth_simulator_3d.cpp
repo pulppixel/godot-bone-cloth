@@ -123,6 +123,7 @@ void BoneClothSimulator3D::_bind_methods() {
 	ADD_GROUP("Link", "link_");
 	BIND_PROPERTY(PropertyInfo(Variant::INT, "link_mode", PROPERTY_HINT_ENUM, "None,Sequential,Loop"), link_mode, "mode");
 	BIND_PROPERTY(PropertyInfo(Variant::FLOAT, "link_stiffness", PROPERTY_HINT_RANGE, "0,1,0.001"), link_stiffness, "stiffness");
+	BIND_PROPERTY(PropertyInfo(Variant::FLOAT, "link_stretch_limit", PROPERTY_HINT_RANGE, "0,3,0.01,or_greater"), link_stretch_limit, "limit");
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "link_split"), "set_link_split_enabled", "is_link_split_enabled");
 	BIND_PROPERTY(PropertyInfo(Variant::FLOAT, "link_spacing/value", PROPERTY_HINT_RANGE, "0,1,0.001"), link_spacing, "spacing");
 	BIND_PROPERTY(PropertyInfo(Variant::OBJECT, "link_spacing/damping_curve", PROPERTY_HINT_RESOURCE_TYPE, "Curve"), link_spacing_damping_curve, "curve");
@@ -408,7 +409,7 @@ void BoneClothSimulator3D::_get_property_list(List<PropertyInfo> *p_list) const 
 }
 
 void BoneClothSimulator3D::_validate_property(PropertyInfo &p_property) const {
-	if (link_mode == LINK_MODE_NONE && (p_property.name == StringName("link_stiffness") || p_property.name == StringName("link_split") || p_property.name == StringName("link_bending") || String(p_property.name).begins_with("link_spacing/"))) {
+	if (link_mode == LINK_MODE_NONE && (p_property.name == StringName("link_stiffness") || p_property.name == StringName("link_stretch_limit") || p_property.name == StringName("link_split") || p_property.name == StringName("link_bending") || String(p_property.name).begins_with("link_spacing/"))) {
 		p_property.usage = PROPERTY_USAGE_NO_EDITOR;
 	}
 
