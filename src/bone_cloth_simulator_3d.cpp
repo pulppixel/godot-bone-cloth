@@ -95,14 +95,11 @@ void BoneClothSimulator3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_sync_bone_falloff_amount", "index"), &BoneClothSimulator3D::get_sync_bone_falloff_amount);
 
 	ClassDB::bind_method(D_METHOD("reset"), &BoneClothSimulator3D::reset);
-	ClassDB::bind_method(D_METHOD("set_mesh_fixed_bone", "index", "bone_name"), &BoneClothSimulator3D::set_mesh_fixed_bone);
-	ClassDB::bind_method(D_METHOD("get_mesh_fixed_bone", "index"), &BoneClothSimulator3D::get_mesh_fixed_bone);
 
 	ADD_GROUP("Mesh", "mesh_");
 	BIND_PROPERTY(PropertyInfo(Variant::NODE_PATH, "mesh_instance", PROPERTY_HINT_NODE_PATH_VALID_TYPES, "MeshInstance3D"), mesh_instance, "path");
-	BIND_PROPERTY(PropertyInfo(Variant::INT, "mesh_surfaces", PROPERTY_HINT_FLAGS), mesh_surfaces, "surfaces");
 	BIND_PROPERTY(PropertyInfo(Variant::FLOAT, "mesh_point_spacing", PROPERTY_HINT_RANGE, "0.01,0.2,0.001,or_greater,suffix:m"), mesh_point_spacing, "spacing");
-	BIND_PROPERTY(PropertyInfo(Variant::INT, "mesh_fixed_bone_count", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_ARRAY, "Fixed Bones,mesh_fixed_bones/"), mesh_fixed_bone_count, "count");
+	BIND_PROPERTY(PropertyInfo(Variant::PACKED_VECTOR4_ARRAY, "mesh_paint", PROPERTY_HINT_NONE, "", PROPERTY_USAGE_STORAGE), mesh_paint, "paint");
 	ADD_GROUP("", "");
 
 	// godot-cpp에는 ADD_ARRAY_COUNT가 없어서 PROPERTY_USAGE_ARRAY로 대신한다.
@@ -214,6 +211,9 @@ void BoneClothSimulator3D::_bind_methods() {
 	BIND_ENUM_CONSTANT(SYNC_DIRECTION_POSITIVE);
 	BIND_ENUM_CONSTANT(SYNC_DIRECTION_NEGATIVE);
 	BIND_ENUM_CONSTANT(SYNC_DIRECTION_NONE);
+	BIND_ENUM_CONSTANT(MESH_PAINT_NONE);
+	BIND_ENUM_CONSTANT(MESH_PAINT_MOVE);
+	BIND_ENUM_CONSTANT(MESH_PAINT_FIXED);
 }
 
 void BoneClothSimulator3D::_notification(int p_what) {
@@ -244,13 +244,6 @@ void BoneClothSimulator3D::_notification(int p_what) {
 
 bool BoneClothSimulator3D::_set(const StringName &p_name, const Variant &p_value) {
 	const String path = p_name;
-	if (path.begins_with("mesh_fixed_bones/")) {
-		const int which = path.get_slice("/", 1).to_int();
-		ERR_FAIL_INDEX_V(which, int(mesh_fixed_bones.size()), false);
-		set_mesh_fixed_bone(which, p_value);
-		return true;
-	}
-
 	if (path.begins_with("sync/bones/")) {
 		const int which = path.get_slice("/", 2).to_int();
 		const String what = path.get_slice("/", 3);
@@ -321,13 +314,6 @@ bool BoneClothSimulator3D::_set(const StringName &p_name, const Variant &p_value
 
 bool BoneClothSimulator3D::_get(const StringName &p_name, Variant &r_ret) const {
 	const String path = p_name;
-	if (path.begins_with("mesh_fixed_bones/")) {
-		const int which = path.get_slice("/", 1).to_int();
-		ERR_FAIL_INDEX_V(which, int(mesh_fixed_bones.size()), false);
-		r_ret = get_mesh_fixed_bone(which);
-		return true;
-	}
-
 	if (path.begins_with("sync/bones/")) {
 		const int which = path.get_slice("/", 2).to_int();
 		const String what = path.get_slice("/", 3);
@@ -401,10 +387,6 @@ void BoneClothSimulator3D::_get_property_list(List<PropertyInfo> *p_list) const 
 	const PropertyHint hint = skeleton ? PROPERTY_HINT_ENUM_SUGGESTION : PROPERTY_HINT_NONE;
 	const String bone_names = skeleton ? String(skeleton->get_concatenated_bone_names()) : String();
 
-	for (uint32_t i = 0; i < mesh_fixed_bones.size(); i++) {
-		p_list->push_back(PropertyInfo(Variant::STRING, "mesh_fixed_bones/" + itos(i), hint, bone_names));
-	}
-
 	for (uint32_t i = 0; i < sync_bones.size(); i++) {
 		String path = "sync/bones/" + itos(i) + "/";
 		p_list->push_back(PropertyInfo(Variant::STRING, path + "bone_name", hint, bone_names));
@@ -449,20 +431,6 @@ void BoneClothSimulator3D::_get_property_list(List<PropertyInfo> *p_list) const 
 }
 
 void BoneClothSimulator3D::_validate_property(PropertyInfo &p_property) const {
-	if (p_property.name == StringName("mesh_surfaces")) {
-		const MeshInstance3D *mesh_node = is_inside_tree() ? Object::cast_to<MeshInstance3D>(get_node_or_null(mesh_instance)) : nullptr;
-		const Ref<ArrayMesh> mesh = mesh_node ? mesh_node->get_mesh() : Ref<ArrayMesh>();
-		PackedStringArray names;
-		for (int s = 0; mesh.is_valid() && s < MIN(mesh->get_surface_count(), 32); s++) {
-			const String name = mesh->surface_get_name(s);
-			names.push_back(name.is_empty() ? vformat("Surface %d", s) : name.replace(",", " ").replace(":", " "));
-		}
-		p_property.hint_string = String(",").join(names);
-		if (mesh_instance.is_empty()) {
-			p_property.usage = PROPERTY_USAGE_NO_EDITOR;
-		}
-	}
-
 	if (!mesh_instance.is_empty() && p_property.name == StringName("chain_count")) {
 		p_property.usage = PROPERTY_USAGE_NONE;
 	}
@@ -520,16 +488,6 @@ NodePath BoneClothSimulator3D::get_mesh_instance() const {
 	return mesh_instance;
 }
 
-void BoneClothSimulator3D::set_mesh_surfaces(int64_t p_surfaces) {
-	mesh_surfaces = p_surfaces;
-	joints_dirty = true;
-	update_configuration_warnings();
-}
-
-int64_t BoneClothSimulator3D::get_mesh_surfaces() const {
-	return mesh_surfaces;
-}
-
 void BoneClothSimulator3D::set_mesh_point_spacing(float p_spacing) {
 	mesh_point_spacing = MAX(p_spacing, 0.001f);
 	joints_dirty = true;
@@ -539,28 +497,14 @@ float BoneClothSimulator3D::get_mesh_point_spacing() const {
 	return mesh_point_spacing;
 }
 
-void BoneClothSimulator3D::set_mesh_fixed_bone_count(int p_count) {
-	ERR_FAIL_COND(p_count < 0);
-	mesh_fixed_bones.resize(p_count);
-	joints_dirty = true;
-	notify_property_list_changed();
-	update_configuration_warnings();
-}
-
-int BoneClothSimulator3D::get_mesh_fixed_bone_count() const {
-	return mesh_fixed_bones.size();
-}
-
-void BoneClothSimulator3D::set_mesh_fixed_bone(int p_index, const String &p_bone_name) {
-	ERR_FAIL_INDEX(p_index, int(mesh_fixed_bones.size()));
-	mesh_fixed_bones[p_index] = p_bone_name;
+void BoneClothSimulator3D::set_mesh_paint(const PackedVector4Array &p_paint) {
+	mesh_paint = p_paint;
 	joints_dirty = true;
 	update_configuration_warnings();
 }
 
-String BoneClothSimulator3D::get_mesh_fixed_bone(int p_index) const {
-	ERR_FAIL_INDEX_V(p_index, int(mesh_fixed_bones.size()), String());
-	return mesh_fixed_bones[p_index];
+PackedVector4Array BoneClothSimulator3D::get_mesh_paint() const {
+	return mesh_paint;
 }
 
 void BoneClothSimulator3D::set_chain_count(int p_count) {
@@ -1012,18 +956,12 @@ PackedStringArray BoneClothSimulator3D::_get_configuration_warnings() const {
 		if (!mesh_node || mesh_node->get_mesh().is_null() || mesh_node->get_skin().is_null()) {
 			warnings.push_back(vformat("Mesh '%s' is not a MeshInstance3D with a mesh and a skin.", mesh_instance));
 		}
-		for (int s = 0; mesh_node && mesh_node->get_mesh().is_valid() && s < 64; s++) {
-			if (((mesh_surfaces >> s) & 1) && s >= mesh_node->get_mesh()->get_surface_count()) {
-				warnings.push_back(vformat("Surface %d is not in the mesh.", s));
-			}
+		bool moves = false;
+		for (int64_t i = 0; i < mesh_paint.size() && !moves; i++) {
+			moves = int(mesh_paint[i].w) == MESH_PAINT_MOVE;
 		}
-		if (mesh_fixed_bones.is_empty()) {
-			warnings.push_back("No fixed bones. Add the bones the mesh hangs from under Fixed Bones, such as the hips.");
-		}
-		for (uint32_t i = 0; i < mesh_fixed_bones.size() && skeleton; i++) {
-			if (skeleton->find_bone(mesh_fixed_bones[i]) < 0) {
-				warnings.push_back(vformat("Fixed bone %d: '%s' is not in the skeleton.", i, mesh_fixed_bones[i]));
-			}
+		if (!moves) {
+			warnings.push_back("Nothing is painted Move, so the mesh does not sway. Paint the cloth Move and the part it hangs from, such as the waistband, Fixed.");
 		}
 	}
 

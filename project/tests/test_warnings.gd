@@ -59,6 +59,10 @@ const EXPECTED := {
 		["Anchor 'Missing' is not a Node3D."],
 		[],
 	],
+	"MeshNotPainted": [
+		["Nothing is painted Move, so the mesh does not sway. Paint the cloth Move and the part it hangs from, such as the waistband, Fixed."],
+		[],
+	],
 }
 
 
@@ -144,6 +148,13 @@ static func _set_up(p_case: String, p_simulator: Node) -> void:
 		p_simulator.set("backstop/bone_name", "nope_head")
 	if p_case == "AnchorNotFound":
 		p_simulator.set("anchor", NodePath("Missing"))
+	if p_case == "MeshNotPainted":
+		var mesh := MeshInstance3D.new()
+		mesh.name = "Mesh"
+		mesh.mesh = BoxMesh.new()
+		mesh.skin = Skin.new()
+		p_simulator.get_parent().add_child(mesh)
+		p_simulator.set("mesh_instance", NodePath("../Mesh"))
 
 
 static func _collision(p_class: String, p_name: String) -> Node:
@@ -170,6 +181,7 @@ static func _change(p_cases: Node3D) -> void:
 	p_cases.get_node("SyncNotInSkeleton/Skeleton3D/Sim").set("sync/bones/0/bone_name", "d0")
 	p_cases.get_node("BackstopNotInSkeleton/Skeleton3D/Sim").set("backstop/bone_name", "b0")
 	p_cases.get_node("AnchorNotFound/Skeleton3D/Sim").set("anchor", NodePath("../.."))
+	p_cases.get_node("MeshNotPainted/Skeleton3D/Sim").set("mesh_paint", PackedVector4Array([Vector4(0, 0, 0, BoneClothSimulator3D.MESH_PAINT_MOVE)]))
 
 
 static func _compare(t, p_cases: Node3D, p_label: String, p_column: int) -> void:

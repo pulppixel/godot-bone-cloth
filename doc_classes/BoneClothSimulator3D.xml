@@ -7,7 +7,7 @@
 		Each chain runs from its root bone, which follows the pose, down to its end bone, and can branch from a bone of an earlier chain. The values apply to every chain, so parts that need others take a separate node. [BoneClothCollision3D] children keep the chains out of the body. For a skinned mesh with no bones along the cloth, set [member mesh_instance] instead of chains.
 		Start from a preset in the node's toolbar menu and tune [member stiffness/value] and [member drag/value]. The menu's [b]Show[/b] items draw the radius, the limits and the backstop.
 		Lengths and speeds are in meters at the model's size, so a centimeter rig takes the same values as a meter rig.
-		[b]Note:[/b] Most methods in this class take an [code]index[/code] parameter. This parameter specifies which chain to use (e.g. [code]chains/&lt;index&gt;/root_bone_name[/code]), except in the sync bone methods, where it specifies which sync bone to use (e.g. [code]sync/bones/&lt;index&gt;/bone_name[/code]), and in the mesh fixed bone methods, where it specifies which fixed bone to use (e.g. [code]mesh_fixed_bones/&lt;index&gt;[/code]).
+		[b]Note:[/b] Most methods in this class take an [code]index[/code] parameter. This parameter specifies which chain to use (e.g. [code]chains/&lt;index&gt;/root_bone_name[/code]), except in the sync bone methods, where it specifies which sync bone to use (e.g. [code]sync/bones/&lt;index&gt;/bone_name[/code]).
 	</description>
 	<tutorials>
 	</tutorials>
@@ -96,13 +96,6 @@
 			<param index="1" name="collision" type="int" />
 			<description>
 				Returns the node path of the [BoneClothCollision3D] at [param collision] in the chain's exclude collision list.
-			</description>
-		</method>
-		<method name="get_mesh_fixed_bone" qualifiers="const">
-			<return type="String" />
-			<param index="0" name="index" type="int" />
-			<description>
-				Returns the bone name of the fixed bone.
 			</description>
 		</method>
 		<method name="get_root_bone" qualifiers="const">
@@ -263,14 +256,6 @@
 			<description>
 				If [param enabled] is [code]true[/code], the chain's end bone gets a tail so that it can sway too.
 				[b]Note:[/b] Unlike [SpringBoneSimulator3D], the end bone is extended by default, with a length of [code]0.1[/code].
-			</description>
-		</method>
-		<method name="set_mesh_fixed_bone">
-			<return type="void" />
-			<param index="0" name="index" type="int" />
-			<param index="1" name="bone_name" type="String" />
-			<description>
-				Sets the bone name of the fixed bone, such as the hips. See [member mesh_fixed_bone_count].
 			</description>
 		</method>
 		<method name="set_root_bone">
@@ -467,17 +452,14 @@
 		<member name="max_steps_per_frame" type="int" setter="set_max_steps_per_frame" getter="get_max_steps_per_frame" default="4">
 			The most simulation steps one frame may run, from [code]1[/code] up. A slow frame runs this many and drops the rest of its time, so one hitch does not slow the next frames. Lower it to cap the cost.
 		</member>
-		<member name="mesh_fixed_bone_count" type="int" setter="set_mesh_fixed_bone_count" getter="get_mesh_fixed_bone_count" default="0">
-			The number of fixed bones. Vertices weighted mostly to these bones, such as the hips and the spine for a skirt's waistband, follow the pose instead of swaying. At least one is needed.
-		</member>
 		<member name="mesh_instance" type="NodePath" setter="set_mesh_instance" getter="get_mesh_instance" default="NodePath(&quot;&quot;)">
 			A skinned [MeshInstance3D] to sway as cloth, such as a skirt skinned to the legs with no bones along it. The node simulates points spread over its surface and draws the mesh from them in place of the original, whose blend shapes and instance shader parameters it keeps following. An empty path sways the chains instead.
 		</member>
+		<member name="mesh_paint" type="PackedVector4Array" setter="set_mesh_paint" getter="get_mesh_paint" default="PackedVector4Array()">
+			The painted points of [member mesh_instance]: [code]x[/code], [code]y[/code] and [code]z[/code] place a point on the mesh in the skeleton's rest pose, and [code]w[/code] is its [enum MeshPaint]. Each vertex takes the paint of the nearest point. With nothing painted [constant MESH_PAINT_MOVE], the mesh does not sway.
+		</member>
 		<member name="mesh_point_spacing" type="float" setter="set_mesh_point_spacing" getter="get_mesh_point_spacing" default="0.05">
 			The distance between the simulated points on the mesh's surface. Smaller values follow folds more closely and cost more. [code]0.05[/code] suits a knee-length skirt.
-		</member>
-		<member name="mesh_surfaces" type="int" setter="set_mesh_surfaces" getter="get_mesh_surfaces" default="0">
-			The surfaces of [member mesh_instance] to sway, such as the dress in a VRoid body that holds the whole character. The other surfaces keep following their bones as before. With none checked, every surface sways.
 		</member>
 		<member name="movement_limit_stiffness" type="float" setter="set_movement_limit_stiffness" getter="get_movement_limit_stiffness" default="1.0">
 			How firmly [member max_distance/value] and the backstop hold, from [code]0.0[/code] to [code]1.0[/code]. Lower values let a joint pass the limit and come back over the next steps.
@@ -606,6 +588,15 @@
 		</constant>
 		<constant name="SYNC_DIRECTION_NONE" value="3" enum="SyncDirection">
 			The chains do not follow the swing along the axis.
+		</constant>
+		<constant name="MESH_PAINT_NONE" value="0" enum="MeshPaint">
+			Unpainted. The vertices keep following their bones.
+		</constant>
+		<constant name="MESH_PAINT_MOVE" value="1" enum="MeshPaint">
+			The vertices sway as cloth.
+		</constant>
+		<constant name="MESH_PAINT_FIXED" value="2" enum="MeshPaint">
+			The vertices follow the pose and hold the cloth, such as a skirt's waistband.
 		</constant>
 	</constants>
 </class>

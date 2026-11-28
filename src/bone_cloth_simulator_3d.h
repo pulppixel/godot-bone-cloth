@@ -63,6 +63,12 @@ public:
 		SYNC_DIRECTION_NONE,
 	};
 
+	enum MeshPaint {
+		MESH_PAINT_NONE,
+		MESH_PAINT_MOVE,
+		MESH_PAINT_FIXED,
+	};
+
 private:
 	struct Joint {
 		int bone = -1;
@@ -303,9 +309,8 @@ private:
 	float units_per_meter = 1.0f;
 
 	NodePath mesh_instance;
-	int64_t mesh_surfaces = 0;
 	float mesh_point_spacing = 0.05f;
-	LocalVector<String> mesh_fixed_bones;
+	PackedVector4Array mesh_paint;
 	LocalVector<JointRef> mesh_point_joints;
 	LocalVector<MeshWeights> mesh_point_weights;
 	LocalVector<Vector3i> mesh_triangles;
@@ -443,14 +448,10 @@ public:
 
 	void set_mesh_instance(const NodePath &p_path);
 	NodePath get_mesh_instance() const;
-	void set_mesh_surfaces(int64_t p_surfaces);
-	int64_t get_mesh_surfaces() const;
 	void set_mesh_point_spacing(float p_spacing);
 	float get_mesh_point_spacing() const;
-	void set_mesh_fixed_bone_count(int p_count);
-	int get_mesh_fixed_bone_count() const;
-	void set_mesh_fixed_bone(int p_index, const String &p_bone_name);
-	String get_mesh_fixed_bone(int p_index) const;
+	void set_mesh_paint(const PackedVector4Array &p_paint);
+	PackedVector4Array get_mesh_paint() const;
 
 	void set_chain_count(int p_count);
 	int get_chain_count() const;
@@ -594,3 +595,4 @@ VARIANT_ENUM_CAST(BoneClothSimulator3D::CameraCulling);
 VARIANT_ENUM_CAST(BoneClothSimulator3D::LimitAngleMode);
 VARIANT_ENUM_CAST(BoneClothSimulator3D::TeleportMode);
 VARIANT_ENUM_CAST(BoneClothSimulator3D::SyncDirection);
+VARIANT_ENUM_CAST(BoneClothSimulator3D::MeshPaint);

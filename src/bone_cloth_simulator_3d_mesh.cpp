@@ -15,7 +15,7 @@
 using namespace godot;
 
 static constexpr float WELD_DISTANCE = 0.0001f;
-static constexpr float FIXED_WEIGHT = 0.5f;
+static constexpr float PAINT_REACH = 2.0f;
 static constexpr float EQUILATERAL_AREA = 0.4330127f;
 static constexpr float MAPPING_REACH = 1.5f;
 static constexpr float MAPPING_FALLOFF = 3.0f;
@@ -111,8 +111,22 @@ static Dictionary get_surface_lods(const Ref<ArrayMesh> &p_mesh, int p_surface) 
 	return result;
 }
 
-static bool is_surface_chosen(int64_t p_surfaces, int p_surface) {
-	return p_surfaces == 0 || (p_surface < 64 && ((p_surfaces >> p_surface) & 1));
+static int get_paint(const PackedVector4Array &p_paint, const HashMap<Vector3i, LocalVector<uint32_t>> &p_cells, float p_reach, const Vector3 &p_position) {
+	int paint = BoneClothSimulator3D::MESH_PAINT_NONE;
+	float nearest = p_reach;
+	const Vector3i cell = Vector3i((p_position / p_reach).floor());
+	for (int i = 0; i < 27; i++) {
+		const LocalVector<uint32_t> *found = p_cells.getptr(cell + Vector3i(i % 3 - 1, i / 3 % 3 - 1, i / 9 - 1));
+		for (uint32_t k = 0; found && k < found->size(); k++) {
+			const Vector4 &point = p_paint[(*found)[k]];
+			const float distance = p_position.distance_to(Vector3(point.x, point.y, point.z));
+			if (distance <= nearest) {
+				nearest = distance;
+				paint = int(point.w);
+			}
+		}
+	}
+	return paint;
 }
 
 static void copy_instance_values(const MeshInstance3D *p_from, MeshInstance3D *p_to, const LocalVector<int> &p_surfaces) {
@@ -243,21 +257,12 @@ bool BoneClothSimulator3D::_read_mesh(Skeleton3D *p_skeleton, MeshPoints &r_poin
 	LocalVector<Transform3D> binds;
 	read_binds(p_skeleton, mesh_node->get_skin(), bind_bones, binds);
 
-	HashSet<int> fixed;
-	for (const String &name : mesh_fixed_bones) {
-		fixed.insert(p_skeleton->find_bone(name));
-	}
-	LocalVector<bool> fixed_binds;
-	for (const int bone : bind_bones) {
-		fixed_binds.push_back(fixed.has(bone));
-	}
-
 	const float weld = WELD_DISTANCE * units_per_meter;
 	HashMap<Vector3i, uint32_t> welded;
 	LocalVector<LocalVector<uint32_t>> to_points;
 	to_points.resize(mesh->get_surface_count());
 	for (int s = 0; s < mesh->get_surface_count(); s++) {
-		if (!is_surface_chosen(mesh_surfaces, s) || mesh->surface_get_primitive_type(s) != Mesh::PRIMITIVE_TRIANGLES) {
+		if (mesh->surface_get_primitive_type(s) != Mesh::PRIMITIVE_TRIANGLES) {
 			continue;
 		}
 
@@ -281,7 +286,6 @@ bool BoneClothSimulator3D::_read_mesh(Skeleton3D *p_skeleton, MeshPoints &r_poin
 		to_point.resize(vertices.size());
 		for (int64_t v = 0; v < vertices.size(); v++) {
 			Vector3 position;
-			float fixed_weight = 0.0f;
 			for (int64_t k = 0; k < per_vertex; k++) {
 				const int bind = bones[v * per_vertex + k];
 				const float weight = weights[v * per_vertex + k];
@@ -289,7 +293,6 @@ bool BoneClothSimulator3D::_read_mesh(Skeleton3D *p_skeleton, MeshPoints &r_poin
 					continue;
 				}
 				position += binds[bind].xform(vertices[v]) * weight;
-				fixed_weight += fixed_binds[bind] ? weight : 0.0f;
 			}
 
 			const Vector3i key = Vector3i((position / weld).round());
@@ -301,7 +304,6 @@ bool BoneClothSimulator3D::_read_mesh(Skeleton3D *p_skeleton, MeshPoints &r_poin
 			to_point[v] = r_points.positions.size();
 			welded.insert(key, to_point[v]);
 			r_points.positions.push_back(position);
-			r_points.fixed.push_back(fixed_weight > FIXED_WEIGHT);
 			MeshWeights point_weights;
 			get_vertex_weights(bones, weights, v, per_vertex, bind_bones, point_weights.bones, point_weights.weights);
 			r_points.weights.push_back(point_weights);
@@ -320,8 +322,19 @@ bool BoneClothSimulator3D::_read_mesh(Skeleton3D *p_skeleton, MeshPoints &r_poin
 	}
 
 	const float reach = mesh_point_spacing * units_per_meter;
+	const float paint_reach = reach * PAINT_REACH;
+	HashMap<Vector3i, LocalVector<uint32_t>> paint_cells;
+	for (int64_t i = 0; i < mesh_paint.size(); i++) {
+		const Vector4 &point = mesh_paint[i];
+		paint_cells[Vector3i((Vector3(point.x, point.y, point.z) / paint_reach).floor())].push_back(uint32_t(i));
+	}
+	LocalVector<int> paints;
+	paints.resize(r_points.positions.size());
 	HashMap<Vector3i, LocalVector<uint32_t>> free_cells;
 	for (uint32_t p = 0; p < r_points.positions.size(); p++) {
+		paints[p] = get_paint(mesh_paint, paint_cells, paint_reach, r_points.positions[p]);
+		// 칠하지 않은 점도 움직이는 점의 삼각형에 걸려 프록시에 들어오면 몸에 붙어 있어야 한다.
+		r_points.fixed.push_back(paints[p] != MESH_PAINT_MOVE);
 		if (!r_points.fixed[p]) {
 			free_cells[Vector3i((r_points.positions[p] / reach).floor())].push_back(p);
 		}
@@ -329,7 +342,10 @@ bool BoneClothSimulator3D::_read_mesh(Skeleton3D *p_skeleton, MeshPoints &r_poin
 	LocalVector<bool> near;
 	near.resize(r_points.positions.size());
 	for (uint32_t p = 0; p < r_points.positions.size(); p++) {
-		near[p] = !r_points.fixed[p];
+		near[p] = paints[p] == MESH_PAINT_MOVE;
+		if (paints[p] != MESH_PAINT_FIXED) {
+			continue;
+		}
 		const Vector3i cell = Vector3i((r_points.positions[p] / reach).floor());
 		for (int i = 0; i < 27 && !near[p]; i++) {
 			const LocalVector<uint32_t> *others = free_cells.getptr(cell + Vector3i(i % 3 - 1, i / 3 % 3 - 1, i / 9 - 1));
