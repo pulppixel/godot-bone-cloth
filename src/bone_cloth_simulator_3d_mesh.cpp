@@ -232,7 +232,7 @@ static void map_vertex(const Vector3 &p_position, const LocalVector<Vector3> &p_
 	}
 }
 
-bool BoneClothSimulator3D::_read_mesh(Skeleton3D *p_skeleton, MeshPoints &r_points) const {
+bool BoneClothSimulator3D::_read_mesh(Skeleton3D *p_skeleton, MeshPoints &r_points, LocalVector<LocalVector<bool>> &r_cloth) const {
 	const MeshInstance3D *mesh_node = Object::cast_to<MeshInstance3D>(get_node_or_null(mesh_instance));
 	const Ref<ArrayMesh> mesh = mesh_node ? mesh_node->get_mesh() : Ref<ArrayMesh>();
 	if (mesh.is_null() || mesh_node->get_skin().is_null()) {
@@ -254,6 +254,8 @@ bool BoneClothSimulator3D::_read_mesh(Skeleton3D *p_skeleton, MeshPoints &r_poin
 
 	const float weld = WELD_DISTANCE * units_per_meter;
 	HashMap<Vector3i, uint32_t> welded;
+	LocalVector<LocalVector<uint32_t>> to_points;
+	to_points.resize(mesh->get_surface_count());
 	for (int s = 0; s < mesh->get_surface_count(); s++) {
 		if (!is_surface_chosen(mesh_surfaces, s) || mesh->surface_get_primitive_type(s) != Mesh::PRIMITIVE_TRIANGLES) {
 			continue;
@@ -275,7 +277,7 @@ bool BoneClothSimulator3D::_read_mesh(Skeleton3D *p_skeleton, MeshPoints &r_poin
 		}
 
 		const int64_t per_vertex = bones.size() / vertices.size();
-		LocalVector<uint32_t> to_point;
+		LocalVector<uint32_t> &to_point = to_points[s];
 		to_point.resize(vertices.size());
 		for (int64_t v = 0; v < vertices.size(); v++) {
 			Vector3 position;
@@ -317,6 +319,56 @@ bool BoneClothSimulator3D::_read_mesh(Skeleton3D *p_skeleton, MeshPoints &r_poin
 		}
 	}
 
+	const float reach = mesh_point_spacing * units_per_meter;
+	HashMap<Vector3i, LocalVector<uint32_t>> free_cells;
+	for (uint32_t p = 0; p < r_points.positions.size(); p++) {
+		if (!r_points.fixed[p]) {
+			free_cells[Vector3i((r_points.positions[p] / reach).floor())].push_back(p);
+		}
+	}
+	LocalVector<bool> near;
+	near.resize(r_points.positions.size());
+	for (uint32_t p = 0; p < r_points.positions.size(); p++) {
+		near[p] = !r_points.fixed[p];
+		const Vector3i cell = Vector3i((r_points.positions[p] / reach).floor());
+		for (int i = 0; i < 27 && !near[p]; i++) {
+			const LocalVector<uint32_t> *others = free_cells.getptr(cell + Vector3i(i % 3 - 1, i / 3 % 3 - 1, i / 9 - 1));
+			for (uint32_t k = 0; others && k < others->size() && !near[p]; k++) {
+				near[p] = r_points.positions[p].distance_to(r_points.positions[(*others)[k]]) <= reach;
+			}
+		}
+	}
+
+	LocalVector<int> remap;
+	remap.resize(r_points.positions.size());
+	for (int &index : remap) {
+		index = -1;
+	}
+	MeshPoints kept;
+	for (uint32_t i = 0; i < r_points.indices.size(); i += 3) {
+		if (!near[r_points.indices[i]] && !near[r_points.indices[i + 1]] && !near[r_points.indices[i + 2]]) {
+			continue;
+		}
+		for (int e = 0; e < 3; e++) {
+			const uint32_t point = r_points.indices[i + e];
+			if (remap[point] < 0) {
+				remap[point] = int(kept.positions.size());
+				kept.positions.push_back(r_points.positions[point]);
+				kept.fixed.push_back(r_points.fixed[point]);
+				kept.weights.push_back(r_points.weights[point]);
+			}
+			kept.indices.push_back(uint32_t(remap[point]));
+		}
+	}
+	r_points = kept;
+
+	r_cloth.resize(to_points.size());
+	for (uint32_t s = 0; s < to_points.size(); s++) {
+		r_cloth[s].resize(to_points[s].size());
+		for (uint32_t v = 0; v < to_points[s].size(); v++) {
+			r_cloth[s][v] = remap[to_points[s][v]] >= 0;
+		}
+	}
 	return !r_points.indices.is_empty();
 }
 
@@ -551,7 +603,8 @@ void BoneClothSimulator3D::_build_mesh(Skeleton3D *p_skeleton) {
 	bends.clear();
 
 	MeshPoints points;
-	if (!_read_mesh(p_skeleton, points)) {
+	LocalVector<LocalVector<bool>> cloth;
+	if (!_read_mesh(p_skeleton, points, cloth)) {
 		return;
 	}
 	_reduce_mesh(points);
@@ -758,41 +811,35 @@ void BoneClothSimulator3D::_build_mesh(Skeleton3D *p_skeleton) {
 		}
 	}
 	if (edge_count > 0) {
-		_make_mesh_copy(p_skeleton, rests, point_neighbors, edge_sum / float(edge_count) * MAPPING_REACH);
+		_make_mesh_copy(p_skeleton, rests, point_neighbors, edge_sum / float(edge_count) * MAPPING_REACH, cloth);
 	}
 }
 
-void BoneClothSimulator3D::_make_mesh_copy(Skeleton3D *p_skeleton, const LocalVector<Vector3> &p_rests, const LocalVector<LocalVector<uint32_t>> &p_neighbors, float p_weight_length) {
+void BoneClothSimulator3D::_make_mesh_copy(Skeleton3D *p_skeleton, const LocalVector<Vector3> &p_rests, const LocalVector<LocalVector<uint32_t>> &p_neighbors, float p_weight_length, const LocalVector<LocalVector<bool>> &p_cloth) {
 	MeshInstance3D *original = Object::cast_to<MeshInstance3D>(get_node_or_null(mesh_instance));
 	const Ref<ArrayMesh> mesh = original->get_mesh();
+	const Ref<Skin> original_skin = original->get_skin();
 	LocalVector<int> bind_bones;
 	LocalVector<Transform3D> binds;
-	read_binds(p_skeleton, original->get_skin(), bind_bones, binds);
+	read_binds(p_skeleton, original_skin, bind_bones, binds);
 	const bool relative = mesh->get_blend_shape_mode() == Mesh::BLEND_SHAPE_MODE_RELATIVE;
 
 	Ref<ArrayMesh> copy_mesh;
-	Ref<ArrayMesh> other_mesh;
-	for (Ref<ArrayMesh> *made : { &copy_mesh, &other_mesh }) {
-		made->instantiate();
-		for (int b = 0; b < mesh->get_blend_shape_count(); b++) {
-			(*made)->add_blend_shape(mesh->get_blend_shape_name(b));
-		}
-		(*made)->set_blend_shape_mode(mesh->get_blend_shape_mode());
+	copy_mesh.instantiate();
+	for (int b = 0; b < mesh->get_blend_shape_count(); b++) {
+		copy_mesh->add_blend_shape(mesh->get_blend_shape_name(b));
 	}
+	copy_mesh->set_blend_shape_mode(mesh->get_blend_shape_mode());
 
+	LocalVector<int> follow_binds;
+	LocalVector<int> follows;
+	follows.resize(binds.size());
+	for (int &follow : follows) {
+		follow = -1;
+	}
 	LocalVector<int> copy_surfaces;
-	LocalVector<int> other_surfaces;
 	for (int s = 0; s < mesh->get_surface_count(); s++) {
-		copy_surfaces.push_back(-1);
-		other_surfaces.push_back(-1);
-		if (!is_surface_chosen(mesh_surfaces, s)) {
-			other_surfaces[s] = other_mesh->get_surface_count();
-			other_mesh->add_surface_from_arrays(mesh->surface_get_primitive_type(s), mesh->surface_get_arrays(s), mesh->surface_get_blend_shape_arrays(s), get_surface_lods(mesh, s), BitField<Mesh::ArrayFormat>(int64_t(mesh->surface_get_format(s)) & int64_t(CUSTOM_FORMATS | Mesh::ARRAY_FLAG_USE_8_BONE_WEIGHTS)));
-			other_mesh->surface_set_material(other_surfaces[s], mesh->surface_get_material(s));
-			other_mesh->surface_set_name(other_surfaces[s], mesh->surface_get_name(s));
-			continue;
-		}
-
+		copy_surfaces.push_back(s);
 		Array arrays = mesh->surface_get_arrays(s);
 		PackedVector3Array vertices = arrays[Mesh::ARRAY_VERTEX];
 		PackedVector3Array normals = arrays[Mesh::ARRAY_NORMAL];
@@ -801,14 +848,35 @@ void BoneClothSimulator3D::_make_mesh_copy(Skeleton3D *p_skeleton, const LocalVe
 		const PackedFloat32Array weights = arrays[Mesh::ARRAY_WEIGHTS];
 		const int64_t count = vertices.size();
 		const int64_t per_vertex = count > 0 && bones.size() == weights.size() && bones.size() % count == 0 ? bones.size() / count : 0;
+		const int64_t slots = MAX(per_vertex, int64_t(4));
+		const bool has_cloth = s < int(p_cloth.size()) && int64_t(p_cloth[s].size()) == count;
 
 		LocalVector<Transform3D> rests;
 		rests.resize(count);
-		PackedInt32Array point_bones;
-		PackedFloat32Array point_weights;
-		point_bones.resize(count * 4);
-		point_weights.resize(count * 4);
+		PackedInt32Array copy_bones;
+		PackedFloat32Array copy_weights;
+		copy_bones.resize(count * slots);
+		copy_weights.resize(count * slots);
+		copy_bones.fill(0);
+		copy_weights.fill(0.0f);
 		for (int64_t v = 0; v < count; v++) {
+			if (!has_cloth || !p_cloth[s][v]) {
+				for (int64_t k = 0; k < per_vertex; k++) {
+					const int bind = bones[v * per_vertex + k];
+					const float weight = weights[v * per_vertex + k];
+					if (weight <= 0.0f || bind < 0 || bind >= int(binds.size()) || bind_bones[bind] < 0) {
+						continue;
+					}
+					if (follows[bind] < 0) {
+						follows[bind] = int(p_rests.size() + follow_binds.size());
+						follow_binds.push_back(bind);
+					}
+					copy_bones.set(v * slots + k, follows[bind]);
+					copy_weights.set(v * slots + k, weight);
+				}
+				continue;
+			}
+
 			rests[v] = get_vertex_rest(bones, weights, v, per_vertex, binds);
 			vertices.set(v, rests[v].xform(vertices[v]));
 			if (normals.size() == count) {
@@ -820,7 +888,7 @@ void BoneClothSimulator3D::_make_mesh_copy(Skeleton3D *p_skeleton, const LocalVe
 				tangents.set(v * 4 + 1, tangent.y);
 				tangents.set(v * 4 + 2, tangent.z);
 			}
-			map_vertex(vertices[v], p_rests, p_neighbors, p_weight_length, point_bones.ptrw() + v * 4, point_weights.ptrw() + v * 4);
+			map_vertex(vertices[v], p_rests, p_neighbors, p_weight_length, copy_bones.ptrw() + v * slots, copy_weights.ptrw() + v * slots);
 		}
 		arrays[Mesh::ARRAY_VERTEX] = vertices;
 		if (normals.size() == count) {
@@ -829,8 +897,8 @@ void BoneClothSimulator3D::_make_mesh_copy(Skeleton3D *p_skeleton, const LocalVe
 		if (tangents.size() == count * 4) {
 			arrays[Mesh::ARRAY_TANGENT] = tangents;
 		}
-		arrays[Mesh::ARRAY_BONES] = point_bones;
-		arrays[Mesh::ARRAY_WEIGHTS] = point_weights;
+		arrays[Mesh::ARRAY_BONES] = copy_bones;
+		arrays[Mesh::ARRAY_WEIGHTS] = copy_weights;
 
 		TypedArray<Array> blends = mesh->surface_get_blend_shape_arrays(s);
 		for (int b = 0; b < blends.size(); b++) {
@@ -861,10 +929,9 @@ void BoneClothSimulator3D::_make_mesh_copy(Skeleton3D *p_skeleton, const LocalVe
 			blends[b] = blend;
 		}
 
-		copy_surfaces[s] = copy_mesh->get_surface_count();
-		copy_mesh->add_surface_from_arrays(mesh->surface_get_primitive_type(s), arrays, blends, get_surface_lods(mesh, s), BitField<Mesh::ArrayFormat>(int64_t(mesh->surface_get_format(s)) & int64_t(CUSTOM_FORMATS)));
-		copy_mesh->surface_set_material(copy_surfaces[s], mesh->surface_get_material(s));
-		copy_mesh->surface_set_name(copy_surfaces[s], mesh->surface_get_name(s));
+		copy_mesh->add_surface_from_arrays(mesh->surface_get_primitive_type(s), arrays, blends, get_surface_lods(mesh, s), BitField<Mesh::ArrayFormat>(int64_t(mesh->surface_get_format(s)) & int64_t(CUSTOM_FORMATS | Mesh::ARRAY_FLAG_USE_8_BONE_WEIGHTS)));
+		copy_mesh->surface_set_material(s, mesh->surface_get_material(s));
+		copy_mesh->surface_set_name(s, mesh->surface_get_name(s));
 	}
 
 	Skeleton3D *copy_skeleton = memnew(Skeleton3D);
@@ -876,6 +943,13 @@ void BoneClothSimulator3D::_make_mesh_copy(Skeleton3D *p_skeleton, const LocalVe
 		copy_skeleton->set_bone_rest(i, Transform3D(Basis(), p_rests[i]));
 		copy_skeleton->set_bone_pose_position(i, p_rests[i]);
 		skin->add_bind(i, Transform3D(Basis(), -p_rests[i]));
+	}
+	mesh_follow_bones.clear();
+	for (const int bind : follow_binds) {
+		const int bone = copy_skeleton->get_bone_count();
+		copy_skeleton->add_bone(p_skeleton->get_bone_name(bind_bones[bind]));
+		skin->add_bind(bone, original_skin->get_bind_pose(bind));
+		mesh_follow_bones.push_back(bind_bones[bind]);
 	}
 
 	MeshInstance3D *copy = memnew(MeshInstance3D);
@@ -893,25 +967,27 @@ void BoneClothSimulator3D::_make_mesh_copy(Skeleton3D *p_skeleton, const LocalVe
 	}
 	original->add_child(copy_skeleton, false, Node::INTERNAL_MODE_BACK);
 
-	if (other_mesh->get_surface_count() > 0) {
-		Node *original_skeleton = original->get_node_or_null(original->get_skeleton_path());
-		MeshInstance3D *other = memnew(MeshInstance3D);
-		other->set_name("BoneClothOtherSurfaces");
-		other->set_mesh(other_mesh);
-		other->set_skin(original->get_skin());
-		// 기본 경로 ".."는 점 스켈레톤을 가리키므로, 트리에 넣기 전에 원본의 스켈레톤으로 바꾼다.
-		other->set_skeleton_path(NodePath("../../" + String(original->get_path_to(original_skeleton ? original_skeleton : p_skeleton))));
-		copy_instance_values(original, other, other_surfaces);
-		copy_skeleton->add_child(other);
-		mesh_other = ObjectID(other->get_instance_id());
-	}
-
 	mesh_original = ObjectID(original->get_instance_id());
 	mesh_copy_skeleton = ObjectID(copy_skeleton->get_instance_id());
 	mesh_copy = ObjectID(copy->get_instance_id());
+	mesh_skeleton = ObjectID(p_skeleton->get_instance_id());
+	_follow_skeleton();
 	original->connect("visibility_changed", callable_mp(this, &BoneClothSimulator3D::_refresh_mesh_copy));
+	p_skeleton->connect("skeleton_updated", callable_mp(this, &BoneClothSimulator3D::_follow_skeleton));
 	_show_mesh_copy(true);
 	set_process_internal(true);
+}
+
+void BoneClothSimulator3D::_follow_skeleton() {
+	Skeleton3D *skeleton = Object::cast_to<Skeleton3D>(ObjectDB::get_instance(mesh_skeleton));
+	Skeleton3D *copy_skeleton = Object::cast_to<Skeleton3D>(ObjectDB::get_instance(mesh_copy_skeleton));
+	if (!skeleton || !copy_skeleton) {
+		return;
+	}
+	const int start = copy_skeleton->get_bone_count() - int(mesh_follow_bones.size());
+	for (uint32_t i = 0; i < mesh_follow_bones.size(); i++) {
+		copy_skeleton->set_bone_pose(start + int(i), skeleton->get_bone_global_pose(mesh_follow_bones[i]));
+	}
 }
 
 void BoneClothSimulator3D::_clear_mesh_copy() {
@@ -922,6 +998,11 @@ void BoneClothSimulator3D::_clear_mesh_copy() {
 			original->disconnect("visibility_changed", refresh);
 		}
 		RenderingServer::get_singleton()->instance_set_visible(original->get_instance(), original->is_visible_in_tree());
+	}
+	Skeleton3D *skeleton = Object::cast_to<Skeleton3D>(ObjectDB::get_instance(mesh_skeleton));
+	const Callable follow = callable_mp(this, &BoneClothSimulator3D::_follow_skeleton);
+	if (skeleton && skeleton->is_connected("skeleton_updated", follow)) {
+		skeleton->disconnect("skeleton_updated", follow);
 	}
 
 	Node *copy_skeleton = Object::cast_to<Node>(ObjectDB::get_instance(mesh_copy_skeleton));
@@ -935,7 +1016,8 @@ void BoneClothSimulator3D::_clear_mesh_copy() {
 	mesh_original = ObjectID();
 	mesh_copy_skeleton = ObjectID();
 	mesh_copy = ObjectID();
-	mesh_other = ObjectID();
+	mesh_skeleton = ObjectID();
+	mesh_follow_bones.clear();
 	mesh_copy_shown = false;
 	mesh_point_joints.clear();
 	mesh_instance_parameters.clear();
@@ -951,10 +1033,6 @@ void BoneClothSimulator3D::_show_mesh_copy(bool p_shown) {
 
 	mesh_copy_shown = p_shown;
 	copy->set_visible(p_shown);
-	MeshInstance3D *other = Object::cast_to<MeshInstance3D>(ObjectDB::get_instance(mesh_other));
-	if (other) {
-		other->set_visible(p_shown);
-	}
 	RenderingServer::get_singleton()->instance_set_visible(original->get_instance(), original->is_visible_in_tree() && !p_shown);
 }
 
@@ -1034,8 +1112,4 @@ void BoneClothSimulator3D::_write_mesh(float p_weight) {
 		return;
 	}
 	follow_original(original, copy, mesh_instance_parameters);
-	MeshInstance3D *other = Object::cast_to<MeshInstance3D>(ObjectDB::get_instance(mesh_other));
-	if (other) {
-		follow_original(original, other, mesh_instance_parameters);
-	}
 }

@@ -317,7 +317,8 @@ private:
 	ObjectID mesh_original;
 	ObjectID mesh_copy_skeleton;
 	ObjectID mesh_copy;
-	ObjectID mesh_other;
+	ObjectID mesh_skeleton;
+	LocalVector<int> mesh_follow_bones;
 	bool mesh_copy_shown = false;
 
 	LocalVector<Link> links;
@@ -361,12 +362,13 @@ private:
 	void _build_links();
 	void _build_bends();
 	void _add_bends(const LocalVector<Vector3i> &p_triangles);
-	bool _read_mesh(Skeleton3D *p_skeleton, MeshPoints &r_points) const;
+	bool _read_mesh(Skeleton3D *p_skeleton, MeshPoints &r_points, LocalVector<LocalVector<bool>> &r_cloth) const;
 	void _reduce_mesh(MeshPoints &r_points) const;
 	void _join_pieces(MeshPoints &r_points) const;
 	void _grow_mesh_tree(const MeshPoints &p_points, const LocalVector<LocalVector<uint32_t>> &p_neighbors, LocalVector<int> &r_parents) const;
 	void _build_mesh(Skeleton3D *p_skeleton);
-	void _make_mesh_copy(Skeleton3D *p_skeleton, const LocalVector<Vector3> &p_rests, const LocalVector<LocalVector<uint32_t>> &p_neighbors, float p_weight_length);
+	void _make_mesh_copy(Skeleton3D *p_skeleton, const LocalVector<Vector3> &p_rests, const LocalVector<LocalVector<uint32_t>> &p_neighbors, float p_weight_length, const LocalVector<LocalVector<bool>> &p_cloth);
+	void _follow_skeleton();
 	void _clear_mesh_copy();
 	void _show_mesh_copy(bool p_shown);
 	void _refresh_mesh_copy();
